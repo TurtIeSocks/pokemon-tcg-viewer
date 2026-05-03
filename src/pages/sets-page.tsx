@@ -6,21 +6,21 @@ import { SeriesTabs } from "../components/series-tabs";
 import { SetTabs } from "../components/set-tabs";
 import { useCards } from "../hooks/use-cards";
 import { useSets } from "../hooks/use-sets";
-import { useStore } from "../store";
+import { useSetIdParam } from "../hooks/use-url-selection";
 
 export function SetsPage() {
 	const sets = useSets();
-	const selectedSetId = useStore((s) => s.selectedSetId);
-	const setSelectedSetId = useStore((s) => s.setSelectedSetId);
+	const [selectedSetId, setSelectedSetId] = useSetIdParam();
 	const { cards, loading, loadMore } = useCards(selectedSetId, getCardsBySet);
 
 	useEffect(() => {
 		if (sets.length === 0) return;
-		// If nothing is selected yet, or the persisted ID points to a set that no
-		// longer exists (e.g. removed from the API), fall back to the newest set.
+		// If nothing is selected yet, or the URL setId points to a set that no
+		// longer exists (e.g. removed from the API), fall back to the newest
+		// set. Use replace:true so this default doesn't litter back history.
 		const exists = selectedSetId && sets.some((s) => s.id === selectedSetId);
 		if (!exists) {
-			setSelectedSetId(sets[0].id);
+			setSelectedSetId(sets[0].id, { replace: true });
 		}
 	}, [sets, selectedSetId, setSelectedSetId]);
 
