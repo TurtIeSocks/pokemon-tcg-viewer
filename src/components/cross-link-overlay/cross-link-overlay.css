@@ -1,0 +1,44 @@
+/*
+ * Hover overlay shown by HoloCard.hoverOverlay slot. Positioned by the
+ * parent .holo-card-overlay rule (top-right of card). This file owns
+ * its own visuals: a small dark pill with backdrop-blur, stacked link
+ * rows.
+ */
+
+.cross-link-overlay {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	padding: 0.5rem 0.75rem;
+	background: rgba(0, 0, 0, 0.6);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	border-radius: 8px;
+	color: #fff;
+	font-size: 0.85rem;
+	line-height: 1.2;
+	max-width: 16rem;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.cross-link-overlay-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	color: #fff;
+	text-decoration: none;
+	padding: 0.25rem 0.4rem;
+	border-radius: 4px;
+	transition: background 0.12s ease-out;
+}
+
+.cross-link-overlay-link:hover,
+.cross-link-overlay-link:focus-visible {
+	background: rgba(255, 255, 255, 0.12);
+	outline: none;
+}
+
+.cross-link-overlay-arrow {
+	font-size: 0.9em;
+	opacity: 0.8;
+}
