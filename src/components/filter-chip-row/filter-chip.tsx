@@ -57,31 +57,29 @@ export function FilterChip({ label, paramName, options }: FilterChipProps) {
 			: `${label} · ${values[0]} +${values.length - 1}`
 		: label;
 
-	// When active the chip doubles as the clear button so there is only one
-	// interactive element and role-queries by name remain unambiguous.
-	const ariaLabel = isActive ? `Clear ${label}` : label;
-
-	function handleClick() {
-		if (isActive) {
-			clear();
-		} else {
-			setIsOpen((o) => !o);
-		}
-	}
-
 	return (
 		<div className="filter-chip-container" ref={containerRef}>
 			<button
 				type="button"
 				className={`filter-chip${isActive ? " active" : ""}`}
-				onClick={handleClick}
+				onClick={() => setIsOpen((o) => !o)}
 				disabled={isDisabled}
 				aria-expanded={isOpen}
 				aria-haspopup="listbox"
-				aria-label={ariaLabel}
+				aria-label={label}
 			>
 				<span>{labelText}</span>
 			</button>
+			{isActive && (
+				<button
+					type="button"
+					className="filter-chip-clear"
+					onClick={clear}
+					aria-label={`Clear ${label}`}
+				>
+					×
+				</button>
+			)}
 			{isOpen && !isDisabled && (
 				<div className="filter-chip-popover" role="listbox">
 					{options.map((option) => (
