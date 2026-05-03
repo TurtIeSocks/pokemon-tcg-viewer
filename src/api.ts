@@ -13,6 +13,11 @@ export interface PokemonSet {
 	images: { symbol: string; logo: string };
 }
 
+export interface PokemonListEntry {
+	name: string;
+	url: string;
+}
+
 export async function getSets(): Promise<PokemonSet[]> {
 	const resp = await fetch(
 		"https://api.pokemontcg.io/v2/sets?orderBy=releaseDate&select=id,name,series,releaseDate,total,images&pageSize=250",

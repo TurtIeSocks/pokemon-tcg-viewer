@@ -1,17 +1,14 @@
-import { useEffect, useRef, useState } from "react";
-import { getSets, type PokemonSet } from "../api";
+import { useEffect } from "react";
+import type { PokemonSet } from "../api";
+import { useStore } from "../store";
 
 export function useSets(): PokemonSet[] {
-	const [sets, setSets] = useState<PokemonSet[]>([]);
-	const didFetchRef = useRef(false);
+	const sets = useStore((s) => s.sets);
+	const loadSets = useStore((s) => s.loadSets);
 
 	useEffect(() => {
-		if (didFetchRef.current) return;
-		didFetchRef.current = true;
-		getSets()
-			.then(setSets)
-			.catch((e) => console.error(e));
-	}, []);
+		loadSets();
+	}, [loadSets]);
 
-	return sets;
+	return sets ?? [];
 }

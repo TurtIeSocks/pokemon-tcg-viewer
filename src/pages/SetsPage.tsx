@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { getCardsBySet } from "../api";
 import { CardGrid } from "../components/CardGrid";
 import { Header } from "../components/Header";
@@ -6,17 +6,23 @@ import { SeriesTabs } from "../components/SeriesTabs";
 import { SetTabs } from "../components/SetTabs";
 import { useCards } from "../hooks/useCards";
 import { useSets } from "../hooks/useSets";
+import { useStore } from "../store";
 
 export function SetsPage() {
 	const sets = useSets();
-	const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
+	const selectedSetId = useStore((s) => s.selectedSetId);
+	const setSelectedSetId = useStore((s) => s.setSelectedSetId);
 	const { cards, loading, loadMore } = useCards(selectedSetId, getCardsBySet);
 
 	useEffect(() => {
-		if (!selectedSetId && sets.length > 0) {
+		if (sets.length === 0) return;
+		// If nothing is selected yet, or the persisted ID points to a set that no
+		// longer exists (e.g. removed from the API), fall back to the newest set.
+		const exists = selectedSetId && sets.some((s) => s.id === selectedSetId);
+		if (!exists) {
 			setSelectedSetId(sets[0].id);
 		}
-	}, [sets, selectedSetId]);
+	}, [sets, selectedSetId, setSelectedSetId]);
 
 	const currentSet = sets.find((s) => s.id === selectedSetId);
 

@@ -1,8 +1,9 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { getCardsByPokedexNumber } from "../api";
 import { CardGrid } from "../components/CardGrid";
 import { PokemonFilter } from "../components/PokemonFilter";
 import { type CardFetcher, useCards } from "../hooks/useCards";
+import { useStore } from "../store";
 
 // useCards keys by string, but the conceptual key here is a pokédex number.
 // Stringifying at the boundary keeps the cache key human-readable in devtools.
@@ -10,7 +11,8 @@ const fetcher: CardFetcher = (key, page, pageSize) =>
 	getCardsByPokedexNumber(Number(key), page, pageSize);
 
 export function PokemonPage() {
-	const [pokedexNumber, setPokedexNumber] = useState<number | null>(null);
+	const pokedexNumber = useStore((s) => s.selectedPokedexNumber);
+	const setPokedexNumber = useStore((s) => s.setSelectedPokedexNumber);
 	const key = pokedexNumber === null ? null : String(pokedexNumber);
 	const { cards, loading, loadMore } = useCards(key, fetcher);
 
