@@ -1,4 +1,4 @@
-import { NavLink, Route, Routes, ScrollRestoration } from "react-router";
+import { NavLink, Route, Routes } from "react-router";
 import "./app.css";
 import { PokemonPage } from "./pages/pokemon-page";
 import { SetsPage } from "./pages/sets-page";
@@ -6,7 +6,6 @@ import { SetsPage } from "./pages/sets-page";
 export default function App() {
 	return (
 		<div className="app">
-			<ScrollRestoration />
 			<nav className="primary-nav" aria-label="Filter mode">
 				<NavLink
 					to="/"
