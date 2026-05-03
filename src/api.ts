@@ -1,8 +1,28 @@
-import {
-	apiCardToProps,
-	type HoloCardData,
-	type PokemonApiCard,
-} from "pokemon-holo-cards";
+import type { HoloCardData } from "./components/holo-card";
+
+interface PokemonApiCard {
+	id: string;
+	name: string;
+	supertype: string;
+	subtypes?: string[];
+	rarity?: string;
+	number: string;
+	set: { id: string; name: string; series: string };
+	images: { small: string; large: string };
+}
+
+function apiCardToProps(card: PokemonApiCard): HoloCardData {
+	return {
+		id: card.id,
+		imageUrl: card.images.large,
+		name: card.name,
+		rarity: card.rarity,
+		subtypes: card.subtypes,
+		supertype: card.supertype,
+		setId: card.set.id,
+		cardNumber: card.number,
+	};
+}
 
 export interface PokemonSet {
 	id: string;
