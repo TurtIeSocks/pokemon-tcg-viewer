@@ -288,7 +288,6 @@
 	);
 
 	mix-blend-mode: hard-light;
-	filter: brightness(1) contrast(1);
 	opacity: calc(
 		(0.2 * var(--card-opacity, 0)) +
 		var(--card-opacity, 0) *
@@ -439,7 +438,7 @@
 		calc(100% * var(--pointer-from-top, 0.5)),
 		center center;
 
-	filter: brightness(var(--foil-brightness)) contrast(1.5) saturate(1);
+	filter: brightness(var(--foil-brightness)) contrast(1.5);
 	mix-blend-mode: color-dodge;
 	opacity: calc((1.5 * var(--card-opacity, 0)) - var(--pointer-from-center, 0));
 }
@@ -484,7 +483,7 @@
 		55% 55%,
 		center center;
 	background-blend-mode: soft-light, color-burn;
-	filter: brightness(1) contrast(1) saturate(0.9);
+	filter: saturate(0.9);
 	opacity: var(--card-opacity, 0);
 }
 
