@@ -1,6 +1,8 @@
 import { useCallback } from "react";
 import { getCardsByPokedexNumber } from "../api";
 import { CardGrid } from "../components/card-grid";
+import { CrossLinkOverlay } from "../components/cross-link-overlay";
+import type { HoloCardData } from "../components/holo-card";
 import "../components/header.css";
 import { PokemonFilter } from "../components/pokemon-filter";
 import { type CardFetcher, useCards } from "../hooks/use-cards";
@@ -11,6 +13,14 @@ import "./pokemon-page.css";
 // Stringifying at the boundary keeps the cache key human-readable in devtools.
 const fetcher: CardFetcher = (key, page, pageSize) =>
 	getCardsByPokedexNumber(Number(key), page, pageSize);
+
+function renderOverlay(card: HoloCardData) {
+	return (
+		<CrossLinkOverlay
+			links={[{ label: `Go to ${card.setName}`, to: `/?setId=${card.setId}` }]}
+		/>
+	);
+}
 
 export function PokemonPage() {
 	const [pokedexNumber, setPokedexNumber] = usePokedexParam();
@@ -35,7 +45,12 @@ export function PokemonPage() {
 				</div>
 			</header>
 			<PokemonFilter value={pokedexNumber} onChange={setPokedexNumber} />
-			<CardGrid setId={key} cards={cards} onEndReached={handleEndReached} />
+			<CardGrid
+				setId={key}
+				cards={cards}
+				onEndReached={handleEndReached}
+				renderOverlay={renderOverlay}
+			/>
 			{loading && <div className="loading-pill">Loading…</div>}
 		</>
 	);
