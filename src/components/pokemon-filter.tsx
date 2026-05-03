@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { usePokemonList } from "../hooks/usePokemonList";
+import { usePokemonList } from "../hooks/use-pokemon-list";
 
 interface PokemonFilterProps {
 	value: number | null;

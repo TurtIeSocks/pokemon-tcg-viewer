@@ -1,11 +1,11 @@
 import { useEffect, useMemo } from "react";
 import { getCardsBySet } from "../api";
-import { CardGrid } from "../components/CardGrid";
-import { Header } from "../components/Header";
-import { SeriesTabs } from "../components/SeriesTabs";
-import { SetTabs } from "../components/SetTabs";
-import { useCards } from "../hooks/useCards";
-import { useSets } from "../hooks/useSets";
+import { CardGrid } from "../components/card-grid";
+import { Header } from "../components/header";
+import { SeriesTabs } from "../components/series-tabs";
+import { SetTabs } from "../components/set-tabs";
+import { useCards } from "../hooks/use-cards";
+import { useSets } from "../hooks/use-sets";
 import { useStore } from "../store";
 
 export function SetsPage() {

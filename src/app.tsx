@@ -1,8 +1,8 @@
 import { CardZoomModal } from "pokemon-holo-cards";
 import { NavLink, Route, Routes } from "react-router";
-import "./App.css";
-import { PokemonPage } from "./pages/PokemonPage";
-import { SetsPage } from "./pages/SetsPage";
+import "./app.css";
+import { PokemonPage } from "./pages/pokemon-page";
+import { SetsPage } from "./pages/sets-page";
 
 export default function App() {
 	return (

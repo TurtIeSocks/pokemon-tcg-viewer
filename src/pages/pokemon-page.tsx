@@ -1,8 +1,8 @@
 import { useCallback } from "react";
 import { getCardsByPokedexNumber } from "../api";
-import { CardGrid } from "../components/CardGrid";
-import { PokemonFilter } from "../components/PokemonFilter";
-import { type CardFetcher, useCards } from "../hooks/useCards";
+import { CardGrid } from "../components/card-grid";
+import { PokemonFilter } from "../components/pokemon-filter";
+import { type CardFetcher, useCards } from "../hooks/use-cards";
 import { useStore } from "../store";
 
 // useCards keys by string, but the conceptual key here is a pokédex number.

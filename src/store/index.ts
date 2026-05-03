@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { type ApiCacheSlice, createApiCacheSlice } from "./apiCacheSlice";
-import { createUISlice, type UISlice } from "./uiSlice";
+import { type ApiCacheSlice, createApiCacheSlice } from "./api-cache-slice";
+import { createUISlice, type UISlice } from "./ui-slice";
 
 type AppStore = UISlice & ApiCacheSlice;
 
