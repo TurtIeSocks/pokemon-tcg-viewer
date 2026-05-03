@@ -79,6 +79,21 @@ describe("usePokedexParam", () => {
 		expect(screen.getByTestId("value").textContent).toBe("null");
 	});
 
+	test("returns null for dex=0", () => {
+		renderInRouter(<PokedexProbe />, "/?dex=0");
+		expect(screen.getByTestId("value").textContent).toBe("null");
+	});
+
+	test("returns null for negative dex", () => {
+		renderInRouter(<PokedexProbe />, "/?dex=-5");
+		expect(screen.getByTestId("value").textContent).toBe("null");
+	});
+
+	test("returns null for decimal dex", () => {
+		renderInRouter(<PokedexProbe />, "/?dex=25.5");
+		expect(screen.getByTestId("value").textContent).toBe("null");
+	});
+
 	test("setDex writes the number to URL", () => {
 		renderInRouter(<PokedexProbe />, "/");
 		fireEvent.click(screen.getByText("set"));

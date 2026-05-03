@@ -34,8 +34,9 @@ export function useSetIdParam(): [string | null, SetSetId] {
 export function usePokedexParam(): [number | null, SetDex] {
 	const [params, setParams] = useSearchParams();
 	const raw = params.get("dex");
-	const parsed = raw === null ? null : Number.parseInt(raw, 10);
-	const dex = parsed !== null && Number.isFinite(parsed) ? parsed : null;
+	// Require a positive integer. Rejects 0, negatives, decimals, non-numeric.
+	const parsed = raw === null ? Number.NaN : Number(raw);
+	const dex = Number.isInteger(parsed) && parsed >= 1 ? parsed : null;
 	const setDex: SetDex = (n, opts) => {
 		const next = new URLSearchParams(params);
 		if (n !== null && Number.isFinite(n)) next.set("dex", String(n));
