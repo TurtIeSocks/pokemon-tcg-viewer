@@ -1,7 +1,7 @@
 # Phase 1 / #4 — Cross-Mode Linking
 
 **Date:** 2026-05-03
-**Status:** Approved (design)
+**Status:** Implemented
 **Roadmap phase:** 1 of 5 (depends on Phase 0's `<HoloCard hoverOverlay={…} />` hook)
 
 ## Context
