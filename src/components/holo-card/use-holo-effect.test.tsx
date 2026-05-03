@@ -14,6 +14,10 @@ test("hook attaches default custom properties on mount", () => {
 	expect(el.style.getPropertyValue("--pointer-y")).toBe("50");
 	expect(el.style.getPropertyValue("--rotate-x")).toBe("0deg");
 	expect(el.style.getPropertyValue("--rotate-y")).toBe("0deg");
+	expect(el.style.getPropertyValue("--background-x")).toBe("50%");
+	expect(el.style.getPropertyValue("--background-y")).toBe("50%");
+	expect(el.style.getPropertyValue("--pointer-from-left")).toBe("0.5");
+	expect(el.style.getPropertyValue("--pointer-from-top")).toBe("0.5");
 });
 
 test("pointermove updates all custom properties from rect-relative position", () => {
@@ -55,6 +59,11 @@ test("pointermove updates all custom properties from rect-relative position", ()
 
 	const rotateY = Number.parseFloat(el.style.getPropertyValue("--rotate-y"));
 	expect(rotateY).toBeCloseTo(7.142857142857143, 6);
+
+	expect(el.style.getPropertyValue("--background-x")).toBe("37.5%");
+	expect(el.style.getPropertyValue("--background-y")).toBe("37.5%");
+	expect(el.style.getPropertyValue("--pointer-from-left")).toBe("0.75");
+	expect(el.style.getPropertyValue("--pointer-from-top")).toBe("0.75");
 });
 
 test("pointerleave resets pointer position to center", () => {
@@ -86,6 +95,10 @@ test("pointerleave resets pointer position to center", () => {
 	expect(el.style.getPropertyValue("--pointer-y")).toBe("50");
 	expect(el.style.getPropertyValue("--rotate-x")).toBe("0deg");
 	expect(el.style.getPropertyValue("--rotate-y")).toBe("0deg");
+	expect(el.style.getPropertyValue("--background-x")).toBe("50%");
+	expect(el.style.getPropertyValue("--background-y")).toBe("50%");
+	expect(el.style.getPropertyValue("--pointer-from-left")).toBe("0.5");
+	expect(el.style.getPropertyValue("--pointer-from-top")).toBe("0.5");
 });
 
 test("pointer events do not trigger re-renders (no-setState invariant)", () => {

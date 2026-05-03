@@ -67,9 +67,11 @@
 	z-index: 2;
 	border-radius: inherit;
 	pointer-events: none;
-	will-change:
-		transform, opacity, background-image, background-size, background-position,
-		background-blend-mode, filter;
+}
+
+.holo-card:not(.no-foil)::before,
+.holo-card:not(.no-foil)::after {
+	will-change: opacity, transform;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -87,8 +89,6 @@
 	--scanlines-dark: black;
 
 	--bars: 3%;
-	--bar-color: hsla(0, 0%, 70%, 1);
-	--bar-bg: hsla(0, 0%, 0%, 1);
 
 	background-image:
 		repeating-linear-gradient(
@@ -146,7 +146,8 @@
 }
 
 @media screen and (max-width: 900px) {
-	.holo-card.holo-basic::before {
+	.holo-card.holo-basic::before,
+	.holo-card.shining::before {
 		--scanlines-space: 0.5px;
 	}
 }
@@ -304,11 +305,14 @@
      .card__shine::after → ::after for exclusion blend. .card__glare dropped.
 ───────────────────────────────────────────────────────────────────────────── */
 
+.holo-card.holo-vstar {
+	--foil: url("/pokemon-tcg-viewer/holo-textures/ancient.png");
+	--imgsize: 18% 15%;
+}
+
 .holo-card.holo-vstar::before {
 	--space: 5%;
 	--angle: 133deg;
-	--foil: url("/pokemon-tcg-viewer/holo-textures/ancient.png");
-	--imgsize: 18% 15%;
 
 	background-image:
 		var(--foil),
@@ -873,11 +877,14 @@
      ::after as second gradient layer.
 ───────────────────────────────────────────────────────────────────────────── */
 
+.holo-card.ultra {
+	--foil: url("/pokemon-tcg-viewer/holo-textures/illusion.png");
+	--imgsize: 33%;
+}
+
 .holo-card.ultra::before {
 	--space: 5%;
 	--angle: 133deg;
-	--foil: url("/pokemon-tcg-viewer/holo-textures/illusion.png");
-	--imgsize: 33%;
 
 	background-image:
 		var(--foil),

@@ -23,6 +23,10 @@ function setVars(el: HTMLElement, pointerX: number, pointerY: number) {
 	el.style.setProperty("--pointer-from-center", `${fromCenter}`);
 	el.style.setProperty("--rotate-x", `${-(centerY / TILT_DIVISOR)}deg`);
 	el.style.setProperty("--rotate-y", `${centerX / TILT_DIVISOR}deg`);
+	el.style.setProperty("--background-x", `${50 + (px - 50) * -0.5}%`);
+	el.style.setProperty("--background-y", `${50 + (py - 50) * -0.5}%`);
+	el.style.setProperty("--pointer-from-left", `${px / 100}`);
+	el.style.setProperty("--pointer-from-top", `${py / 100}`);
 }
 
 /**
