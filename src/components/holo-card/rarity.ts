@@ -47,7 +47,11 @@ const RARITY_CLASS = {
 export function getRarityClass(rarity?: string): string {
 	if (!rarity) return "no-foil";
 	const cls = RARITY_CLASS[rarity as keyof typeof RARITY_CLASS];
-	if (cls) return cls;
+	if (cls !== undefined) return cls;
+	// Vite sets import.meta.env.DEV in dev / PROD in prod. Under `bun test`
+	// neither is defined, so we check `PROD !== true` to fire the warning in
+	// both dev-server and test runs while staying silent in `vite build`
+	// output.
 	if (import.meta.env.PROD !== true) {
 		console.warn(
 			`[holo-card] Unknown rarity "${rarity}" — using generic holo fallback`,
