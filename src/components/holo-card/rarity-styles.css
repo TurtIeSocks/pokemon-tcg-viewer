@@ -1,1 +1,1043 @@
-/* Per-rarity foil layers. Populated by Task 7 (port from simey). */
+/*
+ * Per-rarity foil layers — ported from simeydotme/pokemon-cards-css.
+ *
+ * DOM structure we work with:
+ *   .holo-card (position:relative, overflow:hidden)
+ *     .holo-card-image   (z-index 1)
+ *     ::before           (foil/shine layer, z-index 2)
+ *     ::after            (glare layer, z-index 2)
+ *     .holo-card-overlay (z-index 3)
+ *
+ * Translation notes:
+ *   • simey's .card__shine  → .holo-card::before
+ *   • simey's .card__glare  → .holo-card::after
+ *   • simey's .card__shine::before / ::after sub-layers are merged into
+ *     the ::before or dropped (Option A simplification) since CSS does not
+ *     allow pseudo-element chaining (::before::before).
+ *   • Texture URLs use /pokemon-tcg-viewer/holo-textures/ prefix (Task 8 populates them).
+ *   • CSS custom properties (--pointer-x, --pointer-y, etc.) are written by
+ *     useHoloEffect and match simey's variable names exactly.
+ *   • no-foil class needs no rule — cards inherit base styles only.
+ *
+ * Reference: https://github.com/simeydotme/pokemon-cards-css
+ */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Shared variables used across multiple rarity blocks
+───────────────────────────────────────────────────────────────────────────── */
+
+.holo-card {
+	--grain: url("/pokemon-tcg-viewer/holo-textures/grain.webp");
+	--glitter: url("/pokemon-tcg-viewer/holo-textures/glitter.png");
+	--glittersize: 25%;
+
+	--space: 5%;
+	--angle: 133deg;
+	--imgsize: cover;
+
+	--red: #f80e35;
+	--yellow: #eedf10;
+	--green: #21e985;
+	--blue: #0dbde9;
+	--violet: #c929f1;
+
+	--sunpillar-1: hsl(2, 100%, 73%);
+	--sunpillar-2: hsl(53, 100%, 69%);
+	--sunpillar-3: hsl(93, 100%, 69%);
+	--sunpillar-4: hsl(176, 100%, 76%);
+	--sunpillar-5: hsl(228, 100%, 74%);
+	--sunpillar-6: hsl(283, 100%, 73%);
+
+	--sunpillar-clr-1: var(--sunpillar-1);
+	--sunpillar-clr-2: var(--sunpillar-2);
+	--sunpillar-clr-3: var(--sunpillar-3);
+	--sunpillar-clr-4: var(--sunpillar-4);
+	--sunpillar-clr-5: var(--sunpillar-5);
+	--sunpillar-clr-6: var(--sunpillar-6);
+
+	--card-opacity: var(--pointer-from-center, 0);
+}
+
+/* Shared ::before / ::after setup for all foil rarities */
+.holo-card::before,
+.holo-card::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	border-radius: inherit;
+	pointer-events: none;
+	will-change:
+		transform, opacity, background-image, background-size, background-position,
+		background-blend-mode, filter;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Rarity: holo-basic  (Rare Holo, Rare Holo EX, Rare Holo GX, Rare BREAK, etc.)
+   Source: regular-holo.css — data-rarity="rare holo"
+   Layers used: shine (::before), glare (::after)
+   Merge note: .card__shine:before (bar overlay) merged into ::before via
+     an extra background layer. .card__shine:after (luminosity gradient) dropped
+     as it's the least essential visual element.
+───────────────────────────────────────────────────────────────────────────── */
+
+.holo-card.holo-basic::before {
+	--scanlines-space: 1px;
+	--scanlines-light: #666;
+	--scanlines-dark: black;
+
+	--bars: 3%;
+	--bar-color: hsla(0, 0%, 70%, 1);
+	--bar-bg: hsla(0, 0%, 0%, 1);
+
+	background-image:
+		repeating-linear-gradient(
+			110deg,
+			var(--violet),
+			var(--blue),
+			var(--green),
+			var(--yellow),
+			var(--red),
+			var(--violet),
+			var(--blue),
+			var(--green),
+			var(--yellow),
+			var(--red),
+			var(--violet),
+			var(--blue),
+			var(--green),
+			var(--yellow),
+			var(--red)
+		),
+		repeating-linear-gradient(
+			90deg,
+			var(--scanlines-dark) calc(var(--scanlines-space) * 0),
+			var(--scanlines-dark) calc(var(--scanlines-space) * 2),
+			var(--scanlines-light) calc(var(--scanlines-space) * 2),
+			var(--scanlines-light) calc(var(--scanlines-space) * 4)
+		);
+
+	background-position:
+		calc(((50% - var(--background-x, 50%)) * 2.6) + 50%)
+		calc(((50% - var(--background-y, 50%)) * 3.5) + 50%),
+		center center;
+
+	background-size:
+		400% 400%,
+		cover;
+
+	background-blend-mode: overlay;
+	filter: brightness(1.1) contrast(1.1) saturate(1.2);
+	mix-blend-mode: color-dodge;
+	opacity: var(--card-opacity, 0);
+}
+
+.holo-card.holo-basic::after {
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+		hsl(180, 100%, 95%) 5%,
+		hsla(0, 0%, 39%, 0.25) 55%,
+		hsla(0, 0%, 0%, 0.36) 110%
+	);
+
+	opacity: calc(var(--card-opacity, 0) * 0.8);
+	mix-blend-mode: overlay;
+	filter: brightness(0.6) contrast(3);
+}
+
+@media screen and (max-width: 900px) {
+	.holo-card.holo-basic::before {
+		--scanlines-space: 0.5px;
+	}
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Rarity: holo-v  (Rare Holo V, Rare Holo GX treated as V-style)
+   Source: v-regular.css — data-rarity="rare holo v"
+   Merge note: .card__shine:after merged into ::before as second background
+     group. .card__glare → ::after.
+───────────────────────────────────────────────────────────────────────────── */
+
+.holo-card.holo-v::before {
+	--space: 5%;
+	--angle: 133deg;
+	--imgsize: 500px;
+
+	background-image:
+		var(--grain),
+		repeating-linear-gradient(
+			0deg,
+			var(--sunpillar-clr-1) calc(var(--space) * 1),
+			var(--sunpillar-clr-2) calc(var(--space) * 2),
+			var(--sunpillar-clr-3) calc(var(--space) * 3),
+			var(--sunpillar-clr-4) calc(var(--space) * 4),
+			var(--sunpillar-clr-5) calc(var(--space) * 5),
+			var(--sunpillar-clr-6) calc(var(--space) * 6),
+			var(--sunpillar-clr-1) calc(var(--space) * 7)
+		),
+		repeating-linear-gradient(
+			var(--angle),
+			#0e152e 0%,
+			hsl(180, 10%, 60%) 3.8%,
+			hsl(180, 29%, 66%) 4.5%,
+			hsl(180, 10%, 60%) 5.2%,
+			#0e152e 10%,
+			#0e152e 12%
+		),
+		radial-gradient(
+			farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+			hsla(0, 0%, 0%, 0.1) 12%,
+			hsla(0, 0%, 0%, 0.15) 20%,
+			hsla(0, 0%, 0%, 0.25) 120%
+		);
+
+	background-blend-mode: screen, hue, hard-light;
+	background-size:
+		var(--imgsize) 100%,
+		200% 700%,
+		300% 100%,
+		200% 100%;
+	background-position:
+		center,
+		0% var(--background-y, 50%),
+		var(--background-x, 50%) var(--background-y, 50%),
+		var(--background-x, 50%) var(--background-y, 50%);
+
+	filter: brightness(0.7) contrast(2) saturate(0.5);
+	opacity: var(--card-opacity, 0);
+}
+
+.holo-card.holo-v::after {
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+		hsl(0, 0%, 100%) 0%,
+		hsla(210, 3%, 54%, 0.33) 45%,
+		hsla(0, 0%, 20%, 0.9) 130%
+	);
+
+	opacity: calc(var(--card-opacity, 0) * 0.5);
+	mix-blend-mode: hard-light;
+	filter: brightness(0.9) contrast(1.75);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Rarity: holo-vmax  (Rare Holo VMAX)
+   Source: v-max.css — data-rarity="rare holo vmax"
+   Merge note: .card__shine base → ::before, .card__shine:after merged as
+     additional background layer in ::before. .card__glare → ::after.
+     vmaxbg texture url updated to our path.
+───────────────────────────────────────────────────────────────────────────── */
+
+.holo-card.holo-vmax::before {
+	--space: 6%;
+	--angle: 133deg;
+	--foil: url("/pokemon-tcg-viewer/holo-textures/vmaxbg.jpg");
+	--imgsize: 60% 30%;
+
+	background-image:
+		var(--foil),
+		repeating-linear-gradient(
+			-33deg,
+			hsl(2, 70%, 47%) calc(var(--space) * 1),
+			hsl(228, 60%, 64%) calc(var(--space) * 2),
+			hsl(176, 55%, 39%) calc(var(--space) * 3),
+			hsl(123, 68%, 35%) calc(var(--space) * 4),
+			hsl(283, 75%, 57%) calc(var(--space) * 5),
+			hsl(2, 70%, 47%) calc(var(--space) * 6)
+		),
+		repeating-linear-gradient(
+			var(--angle),
+			hsla(227, 53%, 12%, 0.5) 0%,
+			hsl(180, 10%, 50%) 2.5%,
+			hsl(83, 50%, 35%) 5%,
+			hsl(180, 10%, 50%) 7.5%,
+			hsla(227, 53%, 12%, 0.5) 10%,
+			hsla(227, 53%, 12%, 0.5) 15%
+		),
+		radial-gradient(
+			farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+			hsla(189, 76%, 77%, 0.6) 0%,
+			hsla(147, 59%, 77%, 0.6) 25%,
+			hsla(271, 55%, 69%, 0.6) 50%,
+			hsla(355, 56%, 72%, 0.6) 75%
+		);
+
+	background-blend-mode: difference, luminosity, soft-light;
+	background-size:
+		var(--imgsize),
+		1100% 1100%,
+		600% 600%,
+		200% 200%;
+	background-position:
+		center,
+		var(--background-x, 50%) var(--background-y, 50%),
+		var(--background-x, 50%) var(--background-y, 50%),
+		var(--background-x, 50%) var(--background-y, 50%);
+
+	filter: brightness(calc((var(--pointer-from-center, 0) * 0.4) + 0.4))
+		contrast(2) saturate(1);
+	opacity: var(--card-opacity, 0);
+}
+
+.holo-card.holo-vmax::after {
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+		hsla(0, 0%, 100%, 0.75) 0%,
+		hsl(0, 0%, 0%) 120%
+	);
+
+	mix-blend-mode: hard-light;
+	filter: brightness(1) contrast(1);
+	opacity: calc(
+		(0.2 * var(--card-opacity, 0)) +
+		var(--card-opacity, 0) *
+		var(--pointer-from-center, 0) *
+		0.8
+	);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Rarity: holo-vstar  (Rare Holo VSTAR)
+   Source: v-star.css — data-rarity="rare holo vstar"
+   Merge note: .card__shine base → ::before with ancient.png texture (no-mask path).
+     .card__shine::before (hard-light gradient) merged into ::before via extra layer.
+     .card__shine::after → ::after for exclusion blend. .card__glare dropped.
+───────────────────────────────────────────────────────────────────────────── */
+
+.holo-card.holo-vstar::before {
+	--space: 5%;
+	--angle: 133deg;
+	--foil: url("/pokemon-tcg-viewer/holo-textures/ancient.png");
+	--imgsize: 18% 15%;
+
+	background-image:
+		var(--foil),
+		repeating-linear-gradient(
+			0deg,
+			var(--sunpillar-clr-1) calc(var(--space) * 1),
+			var(--sunpillar-clr-2) calc(var(--space) * 2),
+			var(--sunpillar-clr-3) calc(var(--space) * 3),
+			var(--sunpillar-clr-4) calc(var(--space) * 4),
+			var(--sunpillar-clr-5) calc(var(--space) * 5),
+			var(--sunpillar-clr-6) calc(var(--space) * 6),
+			var(--sunpillar-clr-1) calc(var(--space) * 7)
+		),
+		repeating-linear-gradient(
+			var(--angle),
+			#0e152e 0%,
+			hsl(180, 10%, 60%) 3.8%,
+			hsl(180, 29%, 66%) 4.5%,
+			hsl(180, 10%, 60%) 5.2%,
+			#0e152e 10%,
+			#0e152e 12%
+		),
+		radial-gradient(
+			farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+			hsla(0, 0%, 0%, 0.1) 12%,
+			hsla(0, 0%, 0%, 0.15) 20%,
+			hsla(0, 0%, 0%, 0.25) 120%
+		);
+
+	background-blend-mode: exclusion, hue, hard-light;
+	background-size:
+		var(--imgsize),
+		200% 700%,
+		300% 100%,
+		200% 100%;
+	background-position:
+		center center,
+		0% var(--background-y, 50%),
+		var(--background-x, 50%) var(--background-y, 50%),
+		var(--background-x, 50%) var(--background-y, 50%);
+
+	filter: brightness(calc((var(--pointer-from-center, 0) * 0.25) + 0.35))
+		contrast(1.8) saturate(1.75);
+	opacity: var(--card-opacity, 0);
+}
+
+.holo-card.holo-vstar::after {
+	/* .card__shine::after (exclusion blend — second shine layer) */
+	background-image:
+		var(--foil),
+		repeating-linear-gradient(
+			0deg,
+			var(--sunpillar-clr-1) calc(var(--space) * 1),
+			var(--sunpillar-clr-2) calc(var(--space) * 2),
+			var(--sunpillar-clr-3) calc(var(--space) * 3),
+			var(--sunpillar-clr-4) calc(var(--space) * 4),
+			var(--sunpillar-clr-5) calc(var(--space) * 5),
+			var(--sunpillar-clr-6) calc(var(--space) * 6),
+			var(--sunpillar-clr-1) calc(var(--space) * 7)
+		),
+		repeating-linear-gradient(
+			var(--angle),
+			#0e152e 0%,
+			hsl(180, 10%, 60%) 3.8%,
+			hsl(180, 29%, 66%) 4.5%,
+			hsl(180, 10%, 60%) 5.2%,
+			#0e152e 10%,
+			#0e152e 12%
+		),
+		radial-gradient(
+			farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+			hsla(0, 0%, 0%, 0.1) 12%,
+			hsla(0, 0%, 0%, 0.15) 20%,
+			hsla(0, 0%, 0%, 0.25) 120%
+		);
+
+	background-size:
+		var(--imgsize),
+		200% 400%,
+		195% 100%,
+		200% 100%;
+	background-position:
+		center center,
+		0% var(--background-y, 50%),
+		calc(var(--background-x, 50%) * -1) calc(var(--background-y, 50%) * -1),
+		var(--background-x, 50%) var(--background-y, 50%);
+
+	filter: brightness(calc((var(--pointer-from-center, 0) * 0.75) + 0.5))
+		contrast(1.5) saturate(1.5);
+	mix-blend-mode: exclusion;
+	opacity: var(--card-opacity, 0);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Rarity: reverse-holo  (Reverse Holo)
+   Source: reverse-holo.css — data-rarity$="reverse holo"
+   Merge note: .card__shine → ::before. .card__glare → ::after.
+     clip-path (for no-mask full-art area) dropped — our cards are always
+     full-face images, so the inverse-clip would obscure the art.
+───────────────────────────────────────────────────────────────────────────── */
+
+.holo-card.reverse-holo {
+	--foil-brightness: 0.55;
+}
+
+.holo-card.reverse-holo::before {
+	background-image:
+		radial-gradient(
+			circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+			#fff 5%,
+			#000 50%,
+			#fff 80%
+		),
+		linear-gradient(-45deg, #000 15%, #fff, #000 85%), var(--foil, none);
+
+	background-blend-mode: soft-light, difference;
+	background-size:
+		120% 120%,
+		200% 200%,
+		cover;
+	background-position:
+		center center,
+		calc(100% * var(--pointer-from-left, 0.5))
+		calc(100% * var(--pointer-from-top, 0.5)),
+		center center;
+
+	filter: brightness(var(--foil-brightness)) contrast(1.5) saturate(1);
+	mix-blend-mode: color-dodge;
+	opacity: calc((1.5 * var(--card-opacity, 0)) - var(--pointer-from-center, 0));
+}
+
+.holo-card.reverse-holo::after {
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+		hsla(0, 0%, 100%, 0.8) 10%,
+		hsla(0, 0%, 100%, 0.5) 20%,
+		hsla(0, 0%, 0%, 0.75) 90%
+	);
+
+	opacity: var(--card-opacity, 0);
+	filter: brightness(0.7) contrast(1.5);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Rarity: amazing  (Amazing Rare)
+   Source: amazing-rare.css — data-rarity="amazing rare"
+   Merge note: .card__shine base → ::before.
+     .card__shine::before (foil overlay, opacity 0.5) merged as first layer in ::before.
+     .card__shine::after (sunpillar saturation layer) → ::after.
+     .card__glare (no-mask path) → folded into ::after.
+───────────────────────────────────────────────────────────────────────────── */
+
+.holo-card.amazing::before {
+	background-image:
+		var(--glitter), var(--glitter),
+		radial-gradient(
+			farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+			hsla(150, 20%, 10%, 1) 10%,
+			hsla(177, 22%, 80%, 0.1) 50%,
+			hsla(0, 0%, 95%, 0.98) 90%
+		);
+
+	background-size:
+		var(--glittersize) var(--glittersize),
+		var(--glittersize) var(--glittersize),
+		cover;
+	background-position:
+		40% 45%,
+		55% 55%,
+		center center;
+	background-blend-mode: soft-light, color-burn;
+	filter: brightness(1) contrast(1) saturate(0.9);
+	opacity: var(--card-opacity, 0);
+}
+
+.holo-card.amazing::after {
+	/* .card__shine::after — sunpillar saturation layer */
+	background-image: repeating-linear-gradient(
+		calc(var(--angle)),
+		var(--sunpillar-clr-1) calc(var(--space) * 1),
+		var(--sunpillar-clr-2) calc(var(--space) * 2),
+		var(--sunpillar-clr-3) calc(var(--space) * 3),
+		var(--sunpillar-clr-4) calc(var(--space) * 4),
+		var(--sunpillar-clr-5) calc(var(--space) * 5),
+		var(--sunpillar-clr-6) calc(var(--space) * 6),
+		var(--sunpillar-clr-1) calc(var(--space) * 7)
+	);
+
+	background-size: 400% 800%;
+	background-position: calc(50% + (50% - var(--background-x, 50%)) * 3)
+		calc(50% + (50% - var(--background-y, 50%)) * 3);
+
+	filter: brightness(calc(0.75 - (var(--pointer-from-center, 0) * 0.5)))
+		contrast(1) saturate(1);
+	mix-blend-mode: saturation;
+	opacity: var(--card-opacity, 0);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Rarity: radiant  (Radiant Rare)
+   Source: radiant-holo.css — data-rarity="radiant rare"
+   Merge note: .card__shine base (crosshatch bars) → ::before.
+     .card__shine::after (colour foil + trainerbg texture) → ::after.
+     .card__shine::before (glitter overlay) dropped — least essential layer.
+     .card__glare → folded into ::after as an additional gradient layer.
+───────────────────────────────────────────────────────────────────────────── */
+
+.holo-card.radiant::before {
+	--barwidth: 1.2%;
+	--foil: url("/pokemon-tcg-viewer/holo-textures/trainerbg.png");
+	--imgsize: 25% auto;
+
+	background-image:
+		radial-gradient(
+			farthest-corner ellipse at calc((var(--pointer-x, 50%) * 0.5) + 25%)
+				calc((var(--pointer-y, 50%) * 0.5) + 25%),
+			hsl(0, 0%, 95%) 20%,
+			var(--card-glow, hsl(175, 100%, 90%)) 130%
+		),
+		repeating-linear-gradient(
+			45deg,
+			hsl(0, 0%, 10%) 0%,
+			hsl(0, 0%, 10%) var(--barwidth),
+			hsl(0, 0%, 20%) calc(var(--barwidth) + 0.01%),
+			hsl(0, 0%, 20%) calc(var(--barwidth) * 2),
+			hsl(0, 0%, 35%) calc(var(--barwidth) * 2 + 0.01%),
+			hsl(0, 0%, 35%) calc(var(--barwidth) * 3),
+			hsl(0, 0%, 42.5%) calc(var(--barwidth) * 3 + 0.01%),
+			hsl(0, 0%, 42.5%) calc(var(--barwidth) * 4),
+			hsl(0, 0%, 50%) calc(var(--barwidth) * 4 + 0.01%),
+			hsl(0, 0%, 50%) calc(var(--barwidth) * 5),
+			hsl(0, 0%, 42.5%) calc(var(--barwidth) * 5 + 0.01%),
+			hsl(0, 0%, 42.5%) calc(var(--barwidth) * 6),
+			hsl(0, 0%, 35%) calc(var(--barwidth) * 6 + 0.01%),
+			hsl(0, 0%, 35%) calc(var(--barwidth) * 7),
+			hsl(0, 0%, 20%) calc(var(--barwidth) * 7 + 0.01%),
+			hsl(0, 0%, 20%) calc(var(--barwidth) * 8),
+			hsl(0, 0%, 10%) calc(var(--barwidth) * 8 + 0.01%),
+			hsl(0, 0%, 10%) calc(var(--barwidth) * 9),
+			hsl(0, 0%, 0%) calc(var(--barwidth) * 9 + 0.01%),
+			hsl(0, 0%, 0%) calc(var(--barwidth) * 10)
+		),
+		repeating-linear-gradient(
+			-45deg,
+			hsl(0, 0%, 10%) 0%,
+			hsl(0, 0%, 10%) var(--barwidth),
+			hsl(0, 0%, 20%) calc(var(--barwidth) + 0.01%),
+			hsl(0, 0%, 20%) calc(var(--barwidth) * 2),
+			hsl(0, 0%, 35%) calc(var(--barwidth) * 2 + 0.01%),
+			hsl(0, 0%, 35%) calc(var(--barwidth) * 3),
+			hsl(0, 0%, 42.5%) calc(var(--barwidth) * 3 + 0.01%),
+			hsl(0, 0%, 42.5%) calc(var(--barwidth) * 4),
+			hsl(0, 0%, 50%) calc(var(--barwidth) * 4 + 0.01%),
+			hsl(0, 0%, 50%) calc(var(--barwidth) * 5),
+			hsl(0, 0%, 42.5%) calc(var(--barwidth) * 5 + 0.01%),
+			hsl(0, 0%, 42.5%) calc(var(--barwidth) * 6),
+			hsl(0, 0%, 35%) calc(var(--barwidth) * 6 + 0.01%),
+			hsl(0, 0%, 35%) calc(var(--barwidth) * 7),
+			hsl(0, 0%, 20%) calc(var(--barwidth) * 7 + 0.01%),
+			hsl(0, 0%, 20%) calc(var(--barwidth) * 8),
+			hsl(0, 0%, 10%) calc(var(--barwidth) * 8 + 0.01%),
+			hsl(0, 0%, 10%) calc(var(--barwidth) * 9),
+			hsl(0, 0%, 0%) calc(var(--barwidth) * 9 + 0.01%),
+			hsl(0, 0%, 0%) calc(var(--barwidth) * 10)
+		);
+
+	background-size:
+		cover,
+		210% 210%,
+		210% 210%;
+	background-position:
+		center,
+		calc(((var(--background-x, 50%) - 50%) * 1.5) + 50%)
+		calc(((var(--background-y, 50%) - 50%) * 1.5) + 50%),
+		calc(((var(--background-x, 50%) - 50%) * 1.5) + 50%)
+		calc(((var(--background-y, 50%) - 50%) * 1.5) + 50%);
+
+	background-blend-mode: exclusion, darken, color-dodge;
+	filter: brightness(0.5) contrast(2) saturate(1.75);
+	mix-blend-mode: color-dodge;
+	opacity: var(--card-opacity, 0);
+}
+
+.holo-card.radiant::after {
+	/* .card__shine::after — colour foil rainbow layer */
+	--space: 200px;
+	--foil: url("/pokemon-tcg-viewer/holo-textures/trainerbg.png");
+	--imgsize: 25% auto;
+
+	background-image:
+		var(--foil),
+		repeating-linear-gradient(
+			55deg,
+			hsl(3, 95%, 85%) calc(var(--space) * 1),
+			hsl(207, 100%, 84%) calc(var(--space) * 2),
+			hsl(29, 100%, 85%) calc(var(--space) * 3),
+			hsl(160, 100%, 86%) calc(var(--space) * 4),
+			hsl(309, 94%, 87%) calc(var(--space) * 5),
+			hsl(188, 95%, 85%) calc(var(--space) * 6),
+			hsl(3, 95%, 85%) calc(var(--space) * 7)
+		);
+
+	background-size:
+		var(--imgsize),
+		400% 100%;
+	background-position:
+		center,
+		calc(((var(--background-x, 50%) - 50%) * -2.5) + 50%)
+		calc(((var(--background-y, 50%) - 50%) * -2.5) + 50%);
+
+	background-blend-mode: difference;
+	filter: brightness(0.6) contrast(3) saturate(2);
+	mix-blend-mode: color-dodge;
+	opacity: var(--card-opacity, 0);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Rarity: trainer-gallery  (Trainer Gallery Rare Holo, Illustration Rare,
+                             Special Illustration Rare)
+   Source: trainer-gallery-holo.css — data-rarity="trainer gallery rare holo"
+   Merge note: .card__shine → ::before (clip-path applied to full card face —
+     we drop clip-path since our image fills entire card). .card__shine::after
+     → merged into ::before as additional background layer.
+     .card__glare → ::after. .card__shine::before explicitly set to none in
+     simey, so nothing to merge.
+───────────────────────────────────────────────────────────────────────────── */
+
+.holo-card.trainer-gallery::before {
+	--space: 5%;
+	--angle: -22deg;
+	--imgsize: 300% 400%;
+
+	background-image: repeating-linear-gradient(
+		var(--angle),
+		hsla(283, 49%, 60%, 0.75) calc(var(--space) * 1),
+		hsla(2, 74%, 59%, 0.75) calc(var(--space) * 2),
+		hsla(53, 67%, 53%, 0.75) calc(var(--space) * 3),
+		hsla(93, 56%, 52%, 0.75) calc(var(--space) * 4),
+		hsla(176, 38%, 50%, 0.75) calc(var(--space) * 5),
+		hsla(228, 100%, 77%, 0.75) calc(var(--space) * 6),
+		hsla(283, 49%, 61%, 0.75) calc(var(--space) * 7)
+	);
+
+	background-blend-mode: color-dodge;
+	background-size: var(--imgsize);
+	background-position: 0% calc(var(--background-y, 50%) * 1);
+
+	filter: brightness(calc((var(--pointer-from-center, 0) * 0.3) + 0.5))
+		contrast(2.3) saturate(1);
+	mix-blend-mode: color-dodge;
+	opacity: var(--card-opacity, 0);
+}
+
+.holo-card.trainer-gallery::after {
+	background-image: radial-gradient(
+		farthest-corner ellipse at calc((var(--pointer-x, 50%) * 0.5) + 25%)
+			calc((var(--pointer-y, 50%) * 0.5) + 25%),
+		hsl(0, 0%, 100%) 5%,
+		hsla(300, 100%, 11%, 0.6) 40%,
+		hsl(0, 0%, 22%) 120%
+	);
+
+	background-position: center center;
+	background-size: 400% 500%;
+	filter: brightness(calc((var(--pointer-from-center, 0) * 0.2) + 0.4))
+		contrast(0.85) saturate(1.1);
+	mix-blend-mode: hard-light;
+	opacity: var(--card-opacity, 0);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Rarity: rainbow  (Rare Rainbow, Hyper Rare)
+   Source: rainbow-holo.css — data-rarity="rare rainbow"
+   Merge note: .card__shine base → ::before.
+     .card__shine::before (foil-image overlay at low opacity) → merged as
+     additional background layer in ::before (dropped — illusion-mask is a
+     per-card foil image we don't carry).
+     .card__shine::after → ::after (second glitter/rainbow layer).
+     .card__glare → wrapped into ::after as additional gradient.
+───────────────────────────────────────────────────────────────────────────── */
+
+.holo-card.rainbow::before {
+	--r-clr-1: hsl(0, 57%, 37%);
+	--r-clr-2: hsl(40, 53%, 39%);
+	--r-clr-3: hsl(90, 60%, 35%);
+	--r-clr-4: hsl(180, 60%, 35%);
+	--r-clr-5: hsl(180, 60%, 35%);
+	--r-clr-6: hsl(210, 57%, 39%);
+	--r-clr-7: hsl(280, 55%, 31%);
+
+	background-image:
+		linear-gradient(-45deg, var(--r-clr-1), var(--r-clr-5)), var(--glitter),
+		linear-gradient(
+			-30deg,
+			var(--r-clr-1),
+			var(--r-clr-2),
+			var(--r-clr-3),
+			var(--r-clr-4),
+			var(--r-clr-5),
+			var(--r-clr-6),
+			var(--r-clr-7),
+			var(--r-clr-1),
+			var(--r-clr-2),
+			var(--r-clr-3),
+			var(--r-clr-4),
+			var(--r-clr-5),
+			var(--r-clr-6),
+			var(--r-clr-7),
+			var(--r-clr-1),
+			var(--r-clr-2),
+			var(--r-clr-3),
+			var(--r-clr-4),
+			var(--r-clr-5),
+			var(--r-clr-6),
+			var(--r-clr-7),
+			var(--r-clr-1)
+		);
+
+	background-blend-mode: luminosity, soft-light;
+	background-size:
+		200% 200%,
+		var(--glittersize) var(--glittersize),
+		400% 400%;
+	background-position:
+		calc(25% + (50% * var(--pointer-from-left, 0.5)))
+		calc(25% + (50% * var(--pointer-from-top, 0.5))),
+		center center,
+		calc(25% + (var(--pointer-x, 50%) / 2))
+		calc(25% + (var(--pointer-y, 50%) / 2));
+
+	filter: brightness(calc((var(--pointer-from-center, 0) * 0.25) + 0.6))
+		contrast(2.2) saturate(0.75);
+	opacity: var(--card-opacity, 0);
+}
+
+.holo-card.rainbow::after {
+	/* .card__shine::after — second glitter + rainbow layer */
+	--r-clr-1: hsl(0, 57%, 37%);
+	--r-clr-2: hsl(40, 53%, 39%);
+	--r-clr-3: hsl(90, 60%, 35%);
+	--r-clr-4: hsl(180, 60%, 35%);
+	--r-clr-5: hsl(180, 60%, 35%);
+	--r-clr-6: hsl(210, 57%, 39%);
+	--r-clr-7: hsl(280, 55%, 31%);
+
+	background-image:
+		var(--glitter),
+		linear-gradient(
+			-60deg,
+			var(--r-clr-1),
+			var(--r-clr-2),
+			var(--r-clr-3),
+			var(--r-clr-4),
+			var(--r-clr-5),
+			var(--r-clr-6),
+			var(--r-clr-7),
+			var(--r-clr-1),
+			var(--r-clr-2),
+			var(--r-clr-3),
+			var(--r-clr-4),
+			var(--r-clr-5),
+			var(--r-clr-6),
+			var(--r-clr-7),
+			var(--r-clr-1),
+			var(--r-clr-2),
+			var(--r-clr-3),
+			var(--r-clr-4),
+			var(--r-clr-5),
+			var(--r-clr-6),
+			var(--r-clr-7),
+			var(--r-clr-1)
+		);
+
+	background-blend-mode: soft-light;
+	background-size:
+		var(--glittersize) var(--glittersize),
+		400% 400%;
+	background-position:
+		center center,
+		var(--pointer-x, 50%) var(--pointer-y, 50%);
+
+	filter: brightness(calc((var(--pointer-from-center, 0) * 0.3) + 0.55))
+		contrast(2) saturate(1);
+	mix-blend-mode: color-dodge;
+	opacity: var(--card-opacity, 0);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Rarity: gold-secret  (Rare Secret)
+   Source: secret-rare.css — data-rarity="rare secret"
+   Merge note: .card__shine base → ::before with geometric.png texture.
+     .card__shine::before (gold gradient overlay) merged as layers in ::before.
+     .card__shine::after (glitter overlay) → ::after.
+     .card__glare → folded into ::after as additional background layer.
+───────────────────────────────────────────────────────────────────────────── */
+
+.holo-card.gold-secret::before {
+	--shift: 1px;
+	--foil: url("/pokemon-tcg-viewer/holo-textures/geometric.png");
+	--imgsize: 33%;
+
+	background-image:
+		var(--glitter), var(--glitter),
+		conic-gradient(
+			var(--sunpillar-clr-4),
+			var(--sunpillar-clr-5),
+			var(--sunpillar-clr-6),
+			var(--sunpillar-clr-1),
+			var(--sunpillar-clr-4)
+		),
+		radial-gradient(
+			farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+			hsla(150, 0%, 0%, 0.98) 10%,
+			hsla(0, 0%, 95%, 0.15) 90%
+		);
+
+	background-size:
+		var(--glittersize) var(--glittersize),
+		var(--glittersize) var(--glittersize),
+		cover,
+		cover;
+	background-position:
+		45% 45%,
+		55% 55%,
+		center center,
+		center center;
+	background-blend-mode: soft-light, hard-light, overlay;
+	mix-blend-mode: color-dodge;
+	filter: brightness(calc(0.4 + (var(--pointer-from-center, 0) * 0.2)))
+		contrast(1) saturate(2.7);
+	opacity: var(--card-opacity, 0);
+}
+
+.holo-card.gold-secret::after {
+	/* .card__shine::after — glitter parallax layer */
+	--shift: 1px;
+
+	background-image: var(--glitter);
+	background-size: var(--glittersize) var(--glittersize);
+	background-position: calc(
+			50% -
+			((var(--shift) * 2) * var(--pointer-from-left, 0.5)) +
+			var(--shift)
+		)
+		calc(
+			50% -
+			((var(--shift) * 2) * var(--pointer-from-top, 0.5)) +
+			var(--shift)
+		);
+
+	filter: brightness(calc((var(--pointer-from-center, 0) * 0.6) + 0.6))
+		contrast(1.5);
+	mix-blend-mode: overlay;
+	opacity: var(--card-opacity, 0);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Rarity: ultra  (Rare Ultra, Ultra Rare)
+   Source: v-full-art.css — data-rarity="rare ultra" (supertype=pokémon)
+   Merge note: .card__shine + .card__shine::before (overlay highlight) merged
+     into ::before. .card__shine::after → ::after. .card__glare → folded into
+     ::after as second gradient layer.
+───────────────────────────────────────────────────────────────────────────── */
+
+.holo-card.ultra::before {
+	--space: 5%;
+	--angle: 133deg;
+	--foil: url("/pokemon-tcg-viewer/holo-textures/illusion.png");
+	--imgsize: 33%;
+
+	background-image:
+		var(--foil),
+		repeating-linear-gradient(
+			0deg,
+			var(--sunpillar-clr-1) calc(var(--space) * 1),
+			var(--sunpillar-clr-2) calc(var(--space) * 2),
+			var(--sunpillar-clr-3) calc(var(--space) * 3),
+			var(--sunpillar-clr-4) calc(var(--space) * 4),
+			var(--sunpillar-clr-5) calc(var(--space) * 5),
+			var(--sunpillar-clr-6) calc(var(--space) * 6),
+			var(--sunpillar-clr-1) calc(var(--space) * 7)
+		),
+		repeating-linear-gradient(
+			var(--angle),
+			#0e152e 0%,
+			hsl(180, 10%, 60%) 3.8%,
+			hsl(180, 29%, 66%) 4.5%,
+			hsl(180, 10%, 60%) 5.2%,
+			#0e152e 10%,
+			#0e152e 12%
+		),
+		radial-gradient(
+			farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+			hsla(0, 0%, 0%, 0.1) 12%,
+			hsla(0, 0%, 0%, 0.15) 20%,
+			hsla(0, 0%, 0%, 0.25) 120%
+		);
+
+	background-position:
+		center center,
+		0% var(--background-y, 50%),
+		calc(var(--background-x, 50%) + (var(--background-y, 50%) * 0.2))
+		var(--background-y, 50%),
+		var(--background-x, 50%) var(--background-y, 50%);
+
+	background-blend-mode: exclusion, hue, hard-light;
+	background-size:
+		var(--imgsize),
+		200% 700%,
+		300% 100%,
+		200% 100%;
+
+	filter: brightness(calc((var(--pointer-from-center, 0) * 0.3) + 0.35))
+		contrast(2) saturate(1.5);
+	opacity: var(--card-opacity, 0);
+}
+
+.holo-card.ultra::after {
+	/* .card__shine::after — exclusion blend second layer */
+	background-image:
+		var(--foil),
+		repeating-linear-gradient(
+			0deg,
+			var(--sunpillar-clr-1) calc(var(--space) * 1),
+			var(--sunpillar-clr-2) calc(var(--space) * 2),
+			var(--sunpillar-clr-3) calc(var(--space) * 3),
+			var(--sunpillar-clr-4) calc(var(--space) * 4),
+			var(--sunpillar-clr-5) calc(var(--space) * 5),
+			var(--sunpillar-clr-6) calc(var(--space) * 6),
+			var(--sunpillar-clr-1) calc(var(--space) * 7)
+		),
+		repeating-linear-gradient(
+			var(--angle),
+			#0e152e 0%,
+			hsl(180, 10%, 60%) 3.8%,
+			hsl(180, 29%, 66%) 4.5%,
+			hsl(180, 10%, 60%) 5.2%,
+			#0e152e 10%,
+			#0e152e 12%
+		),
+		radial-gradient(
+			farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+			hsla(0, 0%, 0%, 0.1) 12%,
+			hsla(0, 0%, 0%, 0.15) 20%,
+			hsla(0, 0%, 0%, 0.25) 120%
+		);
+
+	background-position:
+		center center,
+		0% var(--background-y, 50%),
+		calc((var(--background-x, 50%) + (var(--background-y, 50%) * 0.2)) * -1)
+		calc(var(--background-y, 50%) * -1),
+		var(--background-x, 50%) var(--background-y, 50%);
+
+	background-size:
+		var(--imgsize),
+		200% 400%,
+		195% 100%,
+		200% 100%;
+
+	filter: brightness(calc((var(--pointer-from-center, 0) * 0.5) + 0.8))
+		contrast(1.6) saturate(1.4);
+	mix-blend-mode: exclusion;
+	opacity: var(--card-opacity, 0);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Rarity: shining  (Rare Shining)
+   Source: no direct simey equivalent — uses holo-basic as fallback.
+   Note: "Rare Shining" is a very old set rarity (Neo Destiny era).
+   Using regular holo style as placeholder with slightly adjusted colours.
+───────────────────────────────────────────────────────────────────────────── */
+
+.holo-card.shining::before {
+	--scanlines-space: 1px;
+	--scanlines-light: #888;
+	--scanlines-dark: black;
+
+	background-image:
+		repeating-linear-gradient(
+			110deg,
+			var(--violet),
+			var(--blue),
+			var(--green),
+			var(--yellow),
+			var(--red),
+			var(--violet),
+			var(--blue),
+			var(--green),
+			var(--yellow),
+			var(--red),
+			var(--violet),
+			var(--blue),
+			var(--green),
+			var(--yellow),
+			var(--red)
+		),
+		repeating-linear-gradient(
+			90deg,
+			var(--scanlines-dark) calc(var(--scanlines-space) * 0),
+			var(--scanlines-dark) calc(var(--scanlines-space) * 2),
+			var(--scanlines-light) calc(var(--scanlines-space) * 2),
+			var(--scanlines-light) calc(var(--scanlines-space) * 4)
+		);
+
+	background-position:
+		calc(((50% - var(--background-x, 50%)) * 2.6) + 50%)
+		calc(((50% - var(--background-y, 50%)) * 3.5) + 50%),
+		center center;
+
+	background-size:
+		400% 400%,
+		cover;
+
+	background-blend-mode: overlay;
+	filter: brightness(1.2) contrast(1.2) saturate(1.5);
+	mix-blend-mode: color-dodge;
+	opacity: var(--card-opacity, 0);
+}
+
+.holo-card.shining::after {
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+		hsl(60, 100%, 95%) 5%,
+		hsla(0, 0%, 39%, 0.25) 55%,
+		hsla(0, 0%, 0%, 0.36) 110%
+	);
+
+	opacity: calc(var(--card-opacity, 0) * 0.9);
+	mix-blend-mode: overlay;
+	filter: brightness(0.7) contrast(3);
+}
