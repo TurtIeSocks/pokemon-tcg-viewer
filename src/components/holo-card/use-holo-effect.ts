@@ -42,7 +42,11 @@ export function useHoloEffect() {
 		// visually broken (e.g. inheriting NaN-derived gradients from CSS).
 		setVars(el, DEFAULT_POINTER, DEFAULT_POINTER);
 
+		// Inner null guards are required for TypeScript narrowing into the inner
+		// function scope, even though `el` is a const captured after a non-null
+		// outer check. Without these, `tsc -b` reports TS18047 / TS2345.
 		function onMove(e: PointerEvent) {
+			if (!el) return;
 			const rect = el.getBoundingClientRect();
 			if (rect.width === 0 || rect.height === 0) return;
 			const px = ((e.clientX - rect.left) / rect.width) * 100;
@@ -51,6 +55,7 @@ export function useHoloEffect() {
 		}
 
 		function onLeave() {
+			if (!el) return;
 			setVars(el, DEFAULT_POINTER, DEFAULT_POINTER);
 		}
 
