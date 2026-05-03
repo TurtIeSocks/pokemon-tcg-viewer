@@ -22,13 +22,14 @@ export async function getSets(): Promise<PokemonSet[]> {
 	return json.data;
 }
 
-export async function getCards(
-	setId: string,
+async function getCardsByQuery(
+	query: string,
 	page: number,
 	pageSize: number,
+	orderBy: string,
 ): Promise<{ cards: HoloCardData[]; totalCount: number }> {
 	const resp = await fetch(
-		`https://api.pokemontcg.io/v2/cards?select=id,name,number,images,rarity,subtypes,supertype,set&orderBy=number&q=set.id:${setId}&page=${page}&pageSize=${pageSize}`,
+		`https://api.pokemontcg.io/v2/cards?select=id,name,number,images,rarity,subtypes,supertype,set&orderBy=${orderBy}&q=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`,
 	);
 	if (!resp.ok) throw new Error("Unable to fetch cards");
 
@@ -41,4 +42,25 @@ export async function getCards(
 		cards: json.data.map(apiCardToProps),
 		totalCount: json.totalCount,
 	};
+}
+
+export function getCardsBySet(
+	setId: string,
+	page: number,
+	pageSize: number,
+): Promise<{ cards: HoloCardData[]; totalCount: number }> {
+	return getCardsByQuery(`set.id:${setId}`, page, pageSize, "number");
+}
+
+export function getCardsByPokedexNumber(
+	pokedexNumber: number,
+	page: number,
+	pageSize: number,
+): Promise<{ cards: HoloCardData[]; totalCount: number }> {
+	return getCardsByQuery(
+		`nationalPokedexNumbers:${pokedexNumber}`,
+		page,
+		pageSize,
+		"set.releaseDate,number",
+	);
 }
