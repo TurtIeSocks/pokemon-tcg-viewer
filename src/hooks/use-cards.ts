@@ -1,5 +1,5 @@
-import type { HoloCardData } from "pokemon-holo-cards";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { HoloCardData } from "../components/holo-card";
 
 interface CacheEntry {
 	cards: HoloCardData[];

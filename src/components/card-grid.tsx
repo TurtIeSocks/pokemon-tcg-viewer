@@ -1,6 +1,6 @@
-import { HoloCard, type HoloCardData } from "pokemon-holo-cards";
 import React from "react";
 import { type GridComponents, VirtuosoGrid } from "react-virtuoso";
+import { HoloCard, type HoloCardData } from "./holo-card";
 import "./card-grid.css";
 
 const GridList: NonNullable<GridComponents["List"]> = React.forwardRef(
@@ -49,12 +49,18 @@ export function CardGrid({ setId, cards, onEndReached }: CardGridProps) {
 			}}
 			increaseViewportBy={400}
 			components={gridComponents}
-			itemContent={(_, card) => {
-				// Strip `id` so HoloCard doesn't trigger its built-in per-card
-				// auto-fetch — we already have full data from the bulk request.
-				const { id: _id, ...rest } = card;
-				return <HoloCard {...rest} style={{ width: 300 }} />;
-			}}
+			itemContent={(_, card) => (
+				<HoloCard
+					imageUrl={card.imageUrl}
+					name={card.name}
+					rarity={card.rarity}
+					subtypes={card.subtypes}
+					supertype={card.supertype}
+					setId={card.setId}
+					cardNumber={card.cardNumber}
+					style={{ width: 300 }}
+				/>
+			)}
 		/>
 	);
 }
