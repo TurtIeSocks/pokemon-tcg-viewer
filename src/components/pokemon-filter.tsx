@@ -101,7 +101,9 @@ export function PokemonFilter({ value, onChange }: PokemonFilterProps) {
 				<input
 					type="text"
 					className="pokemon-filter-input"
-					placeholder={isLoading ? "Loading Pokémon…" : "Search by name (e.g. Pikachu)"}
+					placeholder={
+						isLoading ? "Loading Pokémon…" : "Search by name (e.g. Pikachu)"
+					}
 					value={query}
 					onChange={handleInput}
 					onFocus={(e) => {
@@ -127,13 +129,18 @@ export function PokemonFilter({ value, onChange }: PokemonFilterProps) {
 				)}
 			</div>
 			{showList && (
-				<ul
+				<div
 					id="pokemon-filter-list"
 					className="pokemon-filter-list"
 					role="listbox"
 				>
 					{matches.map((m) => (
-						<li key={m.index} role="option" aria-selected={value === m.index + 1}>
+						<div
+							key={m.index}
+							role="option"
+							aria-selected={value === m.index + 1}
+							tabIndex={-1}
+						>
 							<button
 								type="button"
 								className="pokemon-filter-option"
@@ -146,9 +153,9 @@ export function PokemonFilter({ value, onChange }: PokemonFilterProps) {
 									#{String(m.index + 1).padStart(4, "0")}
 								</span>
 							</button>
-						</li>
+						</div>
 					))}
-				</ul>
+				</div>
 			)}
 		</div>
 	);
