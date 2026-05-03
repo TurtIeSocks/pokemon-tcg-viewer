@@ -1,3 +1,5 @@
+import "./series-tabs.css";
+
 interface SeriesTabsProps {
 	series: string[];
 	selected: string | null;

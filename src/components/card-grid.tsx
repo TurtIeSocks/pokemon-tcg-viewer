@@ -1,6 +1,7 @@
 import { HoloCard, type HoloCardData } from "pokemon-holo-cards";
 import React from "react";
 import { type GridComponents, VirtuosoGrid } from "react-virtuoso";
+import "./card-grid.css";
 
 const GridList: NonNullable<GridComponents["List"]> = React.forwardRef(
 	({ children, className, style }, ref) => (

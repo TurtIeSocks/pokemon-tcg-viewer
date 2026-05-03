@@ -1,4 +1,5 @@
 import type { PokemonSet } from "../api";
+import "./header.css";
 
 interface HeaderProps {
 	currentSet: PokemonSet | undefined;

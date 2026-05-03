@@ -1,4 +1,5 @@
 import type { PokemonSet } from "../api";
+import "./set-tabs.css";
 
 interface SetTabsProps {
 	sets: PokemonSet[];

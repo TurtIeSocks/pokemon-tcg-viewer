@@ -1,9 +1,11 @@
 import { useCallback } from "react";
 import { getCardsByPokedexNumber } from "../api";
 import { CardGrid } from "../components/card-grid";
+import "../components/header.css";
 import { PokemonFilter } from "../components/pokemon-filter";
 import { type CardFetcher, useCards } from "../hooks/use-cards";
 import { useStore } from "../store";
+import "./pokemon-page.css";
 
 // useCards keys by string, but the conceptual key here is a pokédex number.
 // Stringifying at the boundary keeps the cache key human-readable in devtools.
