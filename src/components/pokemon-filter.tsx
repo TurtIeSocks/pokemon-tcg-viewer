@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePokemonList } from "../hooks/use-pokemon-list";
+import { displayName } from "../utils/display-name";
 import "./pokemon-filter.css";
 
 interface PokemonFilterProps {
@@ -8,13 +9,6 @@ interface PokemonFilterProps {
 }
 
 const MAX_RESULTS = 10;
-
-function displayName(name: string) {
-	return name
-		.split("-")
-		.map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-		.join(" ");
-}
 
 export function PokemonFilter({ value, onChange }: PokemonFilterProps) {
 	const list = usePokemonList();
