@@ -4,7 +4,7 @@ import { CardGrid } from "../components/card-grid";
 import "../components/header.css";
 import { PokemonFilter } from "../components/pokemon-filter";
 import { type CardFetcher, useCards } from "../hooks/use-cards";
-import { useStore } from "../store";
+import { usePokedexParam } from "../hooks/use-url-selection";
 import "./pokemon-page.css";
 
 // useCards keys by string, but the conceptual key here is a pokédex number.
@@ -13,8 +13,7 @@ const fetcher: CardFetcher = (key, page, pageSize) =>
 	getCardsByPokedexNumber(Number(key), page, pageSize);
 
 export function PokemonPage() {
-	const pokedexNumber = useStore((s) => s.selectedPokedexNumber);
-	const setPokedexNumber = useStore((s) => s.setSelectedPokedexNumber);
+	const [pokedexNumber, setPokedexNumber] = usePokedexParam();
 	const key = pokedexNumber === null ? null : String(pokedexNumber);
 	const { cards, loading, loadMore } = useCards(key, fetcher);
 
