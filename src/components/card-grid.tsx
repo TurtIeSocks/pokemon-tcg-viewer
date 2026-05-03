@@ -36,9 +36,15 @@ interface CardGridProps {
 	setId: string | null;
 	cards: HoloCardData[];
 	onEndReached: (setId: string) => void;
+	renderOverlay?: (card: HoloCardData) => React.ReactNode;
 }
 
-export function CardGrid({ setId, cards, onEndReached }: CardGridProps) {
+export function CardGrid({
+	setId,
+	cards,
+	onEndReached,
+	renderOverlay,
+}: CardGridProps) {
 	return (
 		<VirtuosoGrid
 			key={setId ?? "empty"}
@@ -58,6 +64,7 @@ export function CardGrid({ setId, cards, onEndReached }: CardGridProps) {
 					supertype={card.supertype}
 					setId={card.setId}
 					cardNumber={card.cardNumber}
+					hoverOverlay={renderOverlay?.(card)}
 					style={{ width: 300 }}
 				/>
 			)}
