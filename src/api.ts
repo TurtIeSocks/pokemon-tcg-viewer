@@ -1,4 +1,8 @@
 import type { HoloCardData } from "./components/holo-card";
+import {
+	buildFilterClauses,
+	type FilterClauses,
+} from "./utils/build-filter-clauses";
 
 interface PokemonApiCard {
 	id: string;
@@ -76,17 +80,24 @@ export function getCardsBySet(
 	setId: string,
 	page: number,
 	pageSize: number,
+	filters?: FilterClauses,
 ): Promise<{ cards: HoloCardData[]; totalCount: number }> {
-	return getCardsByQuery(`set.id:${setId}`, page, pageSize, "number");
+	return getCardsByQuery(
+		`set.id:${setId}${buildFilterClauses(filters ?? {})}`,
+		page,
+		pageSize,
+		"number",
+	);
 }
 
 export function getCardsByPokedexNumber(
 	pokedexNumber: number,
 	page: number,
 	pageSize: number,
+	filters?: FilterClauses,
 ): Promise<{ cards: HoloCardData[]; totalCount: number }> {
 	return getCardsByQuery(
-		`nationalPokedexNumbers:${pokedexNumber}`,
+		`nationalPokedexNumbers:${pokedexNumber}${buildFilterClauses(filters ?? {})}`,
 		page,
 		pageSize,
 		"set.releaseDate,number",
