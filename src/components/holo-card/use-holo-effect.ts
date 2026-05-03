@@ -43,7 +43,6 @@ export function useHoloEffect() {
 		setVars(el, DEFAULT_POINTER, DEFAULT_POINTER);
 
 		function onMove(e: PointerEvent) {
-			if (!el) return;
 			const rect = el.getBoundingClientRect();
 			if (rect.width === 0 || rect.height === 0) return;
 			const px = ((e.clientX - rect.left) / rect.width) * 100;
@@ -52,7 +51,6 @@ export function useHoloEffect() {
 		}
 
 		function onLeave() {
-			if (!el) return;
 			setVars(el, DEFAULT_POINTER, DEFAULT_POINTER);
 		}
 
