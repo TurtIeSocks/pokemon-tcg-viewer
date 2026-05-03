@@ -2,7 +2,7 @@
 
 A browser-based viewer for the Pokémon Trading Card Game catalog, with interactive holographic card rendering.
 
-Live demo available [here](https://github.com/TurtIeSocks/pokemon-tcg-viewer).
+Live demo available [here](https://turtiesocks.github.io/pokemon-tcg-viewer/).
 
 ## Features
 
