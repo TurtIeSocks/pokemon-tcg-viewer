@@ -1,0 +1,73 @@
+/*
+ * Base styles for <HoloCard />. Defines the 3D frame, pointer-driven
+ * custom properties (with safe defaults), and size variants. Per-rarity
+ * foil decoration lives in rarity-styles.css.
+ */
+
+.holo-card {
+	/* Pointer-driven properties. Defaults so static (server-rendered or
+	   pre-effect-mount) state still looks reasonable. Overwritten by
+	   useHoloEffect on mount. */
+	--pointer-x: 50;
+	--pointer-y: 50;
+	--pointer-from-center: 0;
+	--rotate-x: 0deg;
+	--rotate-y: 0deg;
+
+	position: relative;
+	display: block;
+	width: 100%;
+	aspect-ratio: 245 / 342; /* standard Pokémon card aspect */
+	border-radius: 4.55% / 3.5%;
+	background: #111;
+	overflow: hidden;
+	transform-style: preserve-3d;
+	transform: perspective(800px) rotateX(var(--rotate-x))
+		rotateY(var(--rotate-y));
+	transition: transform 0.15s ease-out;
+	cursor: pointer;
+	user-select: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.holo-card.size-grid {
+	max-width: 300px;
+}
+
+.holo-card.size-focus {
+	max-width: 600px;
+}
+
+.holo-card-image {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+	pointer-events: none;
+	z-index: 1;
+}
+
+.holo-card-overlay {
+	position: absolute;
+	inset: 0;
+	z-index: 3;
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity 0.15s ease-out;
+	display: flex;
+	align-items: flex-start;
+	justify-content: flex-end;
+	padding: 0.5rem;
+}
+
+.holo-card:hover .holo-card-overlay,
+.holo-card:focus-within .holo-card-overlay {
+	opacity: 1;
+}
+
+/* Re-enable pointer events on overlay children (buttons, links). */
+.holo-card-overlay > * {
+	pointer-events: auto;
+}
