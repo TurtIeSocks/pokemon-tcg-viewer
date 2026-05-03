@@ -22,13 +22,23 @@ export function PokemonFilter({ value, onChange }: PokemonFilterProps) {
 	const [isOpen, setIsOpen] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
 
+	// Tracks the last `value` we've reflected into `query`. If the next prop
+	// change matches this, we know we already handled it (e.g. handleInput
+	// triggered the value→null transition itself) and skip the sync — otherwise
+	// we'd clobber a character the user just typed. Starts as `undefined` so
+	// the very first sync (post-hydration / post-list-load) still runs.
+	const syncedValueRef = useRef<number | null | undefined>(undefined);
+
 	// Mirror the parent's selection back into the input so reloads / direct
 	// `onChange` calls outside this component stay in sync.
 	useEffect(() => {
+		if (value === syncedValueRef.current) return;
 		if (value !== null && list.length >= value) {
 			setQuery(displayName(list[value - 1].name));
+			syncedValueRef.current = value;
 		} else if (value === null) {
 			setQuery("");
+			syncedValueRef.current = value;
 		}
 	}, [value, list]);
 
@@ -69,7 +79,12 @@ export function PokemonFilter({ value, onChange }: PokemonFilterProps) {
 		setQuery(e.target.value);
 		setIsOpen(true);
 		// Clear stale results as soon as the user starts editing.
-		if (value !== null) onChange(null);
+		if (value !== null) {
+			// Pre-record the null we're about to push so the sync effect treats
+			// this as already-handled and doesn't overwrite the typed character.
+			syncedValueRef.current = null;
+			onChange(null);
+		}
 	}
 
 	function clear() {
