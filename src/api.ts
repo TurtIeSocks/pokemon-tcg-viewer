@@ -92,3 +92,26 @@ export function getCardsByPokedexNumber(
 		"set.releaseDate,number",
 	);
 }
+
+async function getStringList(endpoint: string): Promise<string[]> {
+	const resp = await fetch(`https://api.pokemontcg.io/v2/${endpoint}`);
+	if (!resp.ok) throw new Error(`Unable to fetch ${endpoint}`);
+	const json = (await resp.json()) as { data: string[] };
+	return json.data;
+}
+
+export function getTypes(): Promise<string[]> {
+	return getStringList("types");
+}
+
+export function getSubtypes(): Promise<string[]> {
+	return getStringList("subtypes");
+}
+
+export function getSupertypes(): Promise<string[]> {
+	return getStringList("supertypes");
+}
+
+export function getRarities(): Promise<string[]> {
+	return getStringList("rarities");
+}
