@@ -7,6 +7,7 @@ interface PokemonApiCard {
 	subtypes?: string[];
 	rarity?: string;
 	number: string;
+	nationalPokedexNumbers?: number[];
 	set: { id: string; name: string; series: string };
 	images: { small: string; large: string };
 }
@@ -20,7 +21,9 @@ function apiCardToProps(card: PokemonApiCard): HoloCardData {
 		subtypes: card.subtypes,
 		supertype: card.supertype,
 		setId: card.set.id,
+		setName: card.set.name,
 		cardNumber: card.number,
+		nationalPokedexNumbers: card.nationalPokedexNumbers,
 	};
 }
 
@@ -54,7 +57,7 @@ async function getCardsByQuery(
 	orderBy: string,
 ): Promise<{ cards: HoloCardData[]; totalCount: number }> {
 	const resp = await fetch(
-		`https://api.pokemontcg.io/v2/cards?select=id,name,number,images,rarity,subtypes,supertype,set&orderBy=${orderBy}&q=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`,
+		`https://api.pokemontcg.io/v2/cards?select=id,name,number,images,rarity,subtypes,supertype,set,nationalPokedexNumbers&orderBy=${orderBy}&q=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`,
 	);
 	if (!resp.ok) throw new Error("Unable to fetch cards");
 
