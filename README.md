@@ -2,7 +2,7 @@
 
 A browser-based viewer for the Pokémon Trading Card Game catalog, with interactive holographic card rendering.
 
-Built on top of the public [pokemontcg.io](https://pokemontcg.io) API and the [`pokemon-holo-cards`](https://www.npmjs.com/package/pokemon-holo-cards) library for the foil/holo effect.
+Live demo available [here](https://github.com/TurtIeSocks/pokemon-tcg-viewer).
 
 ## Features
 
