@@ -19,10 +19,13 @@ describe("<HoloCard />", () => {
 		warnSpy.mockRestore();
 	});
 
-	test("renders the card image with name as alt text", () => {
-		render(<HoloCard {...baseProps} />);
-		const img = screen.getByAltText("Charizard") as HTMLImageElement;
+	test("renders the card image and labels the button by name", () => {
+		const { container } = render(<HoloCard {...baseProps} />);
+		const img = container.querySelector(".holo-card-image") as HTMLImageElement;
 		expect(img.src).toBe("https://example.invalid/charizard.png");
+		expect(img.alt).toBe("");
+		const button = screen.getByRole("button", { name: "Charizard" });
+		expect(button).toBeDefined();
 	});
 
 	test("applies known rarity class without warning", () => {
@@ -63,7 +66,8 @@ describe("<HoloCard />", () => {
 				hoverOverlay={<button type="button">Action</button>}
 			/>,
 		);
-		expect(screen.getByText("Action")).toBeDefined();
+		const action = screen.getByText("Action");
+		expect(action.closest(".holo-card-overlay")).not.toBeNull();
 	});
 
 	test("applies size variant class", () => {

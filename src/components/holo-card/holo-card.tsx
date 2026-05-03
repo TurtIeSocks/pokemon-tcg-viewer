@@ -8,6 +8,7 @@ export interface HoloCardProps {
 	imageUrl: string;
 	name: string;
 	rarity?: string;
+	// Forwarded from API but not yet consumed; reserved for Task 7+ rarity heuristics.
 	subtypes?: string[];
 	supertype?: string;
 	setId?: string;
@@ -53,12 +54,12 @@ export function HoloCard({
 			className={classes}
 			style={style}
 			role="button"
-			tabIndex={onClick ? 0 : -1}
+			tabIndex={onClick || hoverOverlay ? 0 : -1}
 			onClick={onClick}
 			onKeyDown={handleKeyDown}
 			aria-label={name}
 		>
-			<img className="holo-card-image" src={imageUrl} alt={name} />
+			<img className="holo-card-image" src={imageUrl} alt="" />
 			<div className="holo-card-overlay">{hoverOverlay}</div>
 		</div>
 	);
