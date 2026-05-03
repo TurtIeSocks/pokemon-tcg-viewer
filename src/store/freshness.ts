@@ -46,7 +46,10 @@ const POKEMON_LIST_TTL_MS = 30 * DAY_MS;
  * in the background. The cache is only "blocking" on the very first load,
  * when there's nothing to show yet.
  */
-export function shouldRefetch({ lastFetchedAt, kind }: FreshnessInput): boolean {
+export function shouldRefetch({
+	lastFetchedAt,
+	kind,
+}: FreshnessInput): boolean {
 	if (lastFetchedAt === null) return true;
 	const age = Date.now() - lastFetchedAt;
 	const ttl = kind === "sets" ? SETS_TTL_MS : POKEMON_LIST_TTL_MS;

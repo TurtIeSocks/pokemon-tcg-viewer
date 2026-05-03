@@ -18,10 +18,7 @@ export function PokemonPage() {
 	const key = pokedexNumber === null ? null : String(pokedexNumber);
 	const { cards, loading, loadMore } = useCards(key, fetcher);
 
-	const handleEndReached = useCallback(
-		(k: string) => loadMore(k),
-		[loadMore],
-	);
+	const handleEndReached = useCallback((k: string) => loadMore(k), [loadMore]);
 
 	return (
 		<>
