@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
-import { usePokedexParam, useSetIdParam } from "./use-url-selection";
+import {
+	useFilterParam,
+	usePokedexParam,
+	useSetIdParam,
+} from "./use-url-selection";
 
 function SetIdProbe() {
 	const [setId, setSetId] = useSetIdParam();
@@ -104,5 +108,52 @@ describe("usePokedexParam", () => {
 		renderInRouter(<PokedexProbe />, "/?dex=25");
 		fireEvent.click(screen.getByText("clear"));
 		expect(screen.getByTestId("value").textContent).toBe("null");
+	});
+});
+
+function FilterProbe({ name }: { name: string }) {
+	const [values, setValues] = useFilterParam(name);
+	return (
+		<>
+			<span data-testid="value">{values.join(",") || "empty"}</span>
+			<button type="button" onClick={() => setValues(["fire"])}>
+				set-one
+			</button>
+			<button type="button" onClick={() => setValues(["fire", "water"])}>
+				set-two
+			</button>
+			<button type="button" onClick={() => setValues([])}>
+				clear
+			</button>
+		</>
+	);
+}
+
+describe("useFilterParam", () => {
+	test("reads existing CSV values from URL", () => {
+		renderInRouter(<FilterProbe name="types" />, "/?types=fire,water");
+		expect(screen.getByTestId("value").textContent).toBe("fire,water");
+	});
+
+	test("returns empty array when param is absent", () => {
+		renderInRouter(<FilterProbe name="types" />, "/");
+		expect(screen.getByTestId("value").textContent).toBe("empty");
+	});
+
+	test("setValues writes comma-separated to URL", () => {
+		renderInRouter(<FilterProbe name="types" />, "/");
+		fireEvent.click(screen.getByText("set-two"));
+		expect(screen.getByTestId("value").textContent).toBe("fire,water");
+	});
+
+	test("setValues with empty array clears the param", () => {
+		renderInRouter(<FilterProbe name="types" />, "/?types=fire,water");
+		fireEvent.click(screen.getByText("clear"));
+		expect(screen.getByTestId("value").textContent).toBe("empty");
+	});
+
+	test("filters out empty CSV components (e.g. trailing comma)", () => {
+		renderInRouter(<FilterProbe name="types" />, "/?types=fire,,water,");
+		expect(screen.getByTestId("value").textContent).toBe("fire,water");
 	});
 });

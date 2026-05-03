@@ -45,3 +45,24 @@ export function usePokedexParam(): [number | null, SetDex] {
 	};
 	return [dex, setDex];
 }
+
+type SetFilter = (vals: string[], opts?: UpdateOptions) => void;
+
+/**
+ * Generic multi-value URL search-param hook for filter dimensions.
+ * Stores values comma-separated under `name`. Empty array clears the
+ * param. Empty CSV components (e.g. from a stray trailing comma) are
+ * filtered out on read.
+ */
+export function useFilterParam(name: string): [string[], SetFilter] {
+	const [params, setParams] = useSearchParams();
+	const raw = params.get(name);
+	const values = raw ? raw.split(",").filter(Boolean) : [];
+	const setValues: SetFilter = (vals, opts) => {
+		const next = new URLSearchParams(params);
+		if (vals.length === 0) next.delete(name);
+		else next.set(name, vals.join(","));
+		setParams(next, opts?.replace ? { replace: true } : undefined);
+	};
+	return [values, setValues];
+}
