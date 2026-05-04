@@ -2,27 +2,57 @@ import { useEffect, useMemo } from "react";
 import { getCardsBySet } from "../api";
 import { CardGrid } from "../components/card-grid";
 import { CrossLinkOverlay } from "../components/cross-link-overlay";
+import { FilterChipRow } from "../components/filter-chip-row";
 import { Header } from "../components/header";
 import type { HoloCardData } from "../components/holo-card";
 import { SeriesTabs } from "../components/series-tabs";
 import { SetTabs } from "../components/set-tabs";
-import { useCards } from "../hooks/use-cards";
+import { type CardFetcher, useCards } from "../hooks/use-cards";
+import { useFilterValues } from "../hooks/use-filter-values";
 import { usePokemonList } from "../hooks/use-pokemon-list";
 import { useSets } from "../hooks/use-sets";
-import { useSetIdParam } from "../hooks/use-url-selection";
+import { useFilterParam, useSetIdParam } from "../hooks/use-url-selection";
 import { pokemonNameByDex } from "../utils/pokemon-name";
 
 export function SetsPage() {
 	const sets = useSets();
 	const pokemonList = usePokemonList();
+	const filterValues = useFilterValues();
 	const [selectedSetId, setSelectedSetId] = useSetIdParam();
-	const { cards, loading, loadMore } = useCards(selectedSetId, getCardsBySet);
+	const [types] = useFilterParam("types");
+	const [rarity] = useFilterParam("rarity");
+	const [supertype] = useFilterParam("supertype");
+	const [subtypes] = useFilterParam("subtypes");
+
+	// Stable signature of the filter state so cache keys vary when filters
+	// change. Each toggle yields a different string → fresh useCards entry,
+	// while toggling back returns the cached results.
+	const filterSig = `${types.join(",")}|${rarity.join(",")}|${supertype.join(",")}|${subtypes.join(",")}`;
+	const cacheKey = selectedSetId
+		? filterSig === "|||"
+			? selectedSetId
+			: `${selectedSetId}|${filterSig}`
+		: null;
+
+	const fetcher: CardFetcher = useMemo(
+		() => (_key, page, pageSize) => {
+			if (!selectedSetId) {
+				return Promise.resolve({ cards: [], totalCount: 0 });
+			}
+			return getCardsBySet(selectedSetId, page, pageSize, {
+				types,
+				rarity,
+				supertype,
+				subtypes,
+			});
+		},
+		[selectedSetId, types, rarity, supertype, subtypes],
+	);
+
+	const { cards, loading, loadMore } = useCards(cacheKey, fetcher);
 
 	useEffect(() => {
 		if (sets.length === 0) return;
-		// If nothing is selected yet, or the URL setId points to a set that no
-		// longer exists (e.g. removed from the API), fall back to the newest
-		// set. Use replace:true so this default doesn't litter back history.
 		const exists = selectedSetId && sets.some((s) => s.id === selectedSetId);
 		if (!exists) {
 			setSelectedSetId(sets[0].id, { replace: true });
@@ -80,8 +110,14 @@ export function SetsPage() {
 				seriesLabel={selectedSeries}
 				onSelect={setSelectedSetId}
 			/>
+			<FilterChipRow
+				types={filterValues.types}
+				rarities={filterValues.rarities}
+				supertypes={filterValues.supertypes}
+				subtypes={filterValues.subtypes}
+			/>
 			<CardGrid
-				setId={selectedSetId}
+				setId={cacheKey}
 				cards={cards}
 				onEndReached={loadMore}
 				renderOverlay={renderOverlay}
