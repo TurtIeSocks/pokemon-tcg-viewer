@@ -5,6 +5,7 @@ import {
 	useFilterParam,
 	usePokedexParam,
 	useSetIdParam,
+	useViewModeParam,
 } from "./use-url-selection";
 
 function SetIdProbe() {
@@ -170,5 +171,49 @@ describe("useFilterParam", () => {
 	test("returns empty array for only-commas value (?types=,,,)", () => {
 		renderInRouter(<FilterProbe name="types" />, "/?types=,,,");
 		expect(screen.getByTestId("value").textContent).toBe("empty");
+	});
+});
+
+function ViewModeProbe() {
+	const [mode, setMode] = useViewModeParam();
+	return (
+		<>
+			<span data-testid="value">{mode}</span>
+			<button type="button" onClick={() => setMode("timeline")}>
+				set-timeline
+			</button>
+			<button type="button" onClick={() => setMode("grid")}>
+				set-grid
+			</button>
+		</>
+	);
+}
+
+describe("useViewModeParam", () => {
+	test("defaults to 'grid' when param is absent", () => {
+		renderInRouter(<ViewModeProbe />, "/");
+		expect(screen.getByTestId("value").textContent).toBe("grid");
+	});
+
+	test("returns 'timeline' when param is 'timeline'", () => {
+		renderInRouter(<ViewModeProbe />, "/?view=timeline");
+		expect(screen.getByTestId("value").textContent).toBe("timeline");
+	});
+
+	test("returns 'grid' for any unknown value (e.g. typo)", () => {
+		renderInRouter(<ViewModeProbe />, "/?view=galery");
+		expect(screen.getByTestId("value").textContent).toBe("grid");
+	});
+
+	test("setting 'timeline' writes the param", () => {
+		renderInRouter(<ViewModeProbe />, "/");
+		fireEvent.click(screen.getByText("set-timeline"));
+		expect(screen.getByTestId("value").textContent).toBe("timeline");
+	});
+
+	test("setting 'grid' deletes the param", () => {
+		renderInRouter(<ViewModeProbe />, "/?view=timeline");
+		fireEvent.click(screen.getByText("set-grid"));
+		expect(screen.getByTestId("value").textContent).toBe("grid");
 	});
 });

@@ -70,3 +70,24 @@ export function useFilterParam(name: string): [string[], SetFilter] {
 	};
 	return [values, setValues];
 }
+
+export type ViewMode = "grid" | "timeline";
+type SetView = (mode: ViewMode, opts?: UpdateOptions) => void;
+
+/**
+ * URL-backed view-mode toggle. Default is "grid" (param omitted from URL);
+ * setting "timeline" serializes `view=timeline`. Unknown values (typos,
+ * legacy URLs) collapse to the default.
+ */
+export function useViewModeParam(): [ViewMode, SetView] {
+	const [params, setParams] = useSearchParams();
+	const raw = params.get("view");
+	const mode: ViewMode = raw === "timeline" ? "timeline" : "grid";
+	const setMode: SetView = (next, opts) => {
+		const np = new URLSearchParams(params);
+		if (next === "timeline") np.set("view", "timeline");
+		else np.delete("view");
+		setParams(np, opts?.replace ? { replace: true } : undefined);
+	};
+	return [mode, setMode];
+}
