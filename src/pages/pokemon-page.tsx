@@ -6,9 +6,15 @@ import { FilterChipRow } from "../components/filter-chip-row";
 import "../components/header.css";
 import type { HoloCardData } from "../components/holo-card";
 import { PokemonFilter } from "../components/pokemon-filter";
+import { PokemonTimeline } from "../components/pokemon-timeline";
 import { type CardFetcher, useCards } from "../hooks/use-cards";
 import { useFilterValues } from "../hooks/use-filter-values";
-import { useFilterParam, usePokedexParam } from "../hooks/use-url-selection";
+import {
+	useFilterParam,
+	usePokedexParam,
+	useViewModeParam,
+	type ViewMode,
+} from "../hooks/use-url-selection";
 import "./pokemon-page.css";
 
 function renderOverlay(card: HoloCardData) {
@@ -19,9 +25,41 @@ function renderOverlay(card: HoloCardData) {
 	);
 }
 
+interface ViewModeToggleProps {
+	value: ViewMode;
+	onChange: (next: ViewMode) => void;
+	disabled: boolean;
+}
+
+function ViewModeToggle({ value, onChange, disabled }: ViewModeToggleProps) {
+	return (
+		<fieldset className="view-mode-toggle" aria-label="View mode">
+			<button
+				type="button"
+				className={`view-mode-toggle-button${value === "grid" ? " active" : ""}`}
+				onClick={() => onChange("grid")}
+				disabled={disabled}
+				aria-pressed={value === "grid"}
+			>
+				Grid
+			</button>
+			<button
+				type="button"
+				className={`view-mode-toggle-button${value === "timeline" ? " active" : ""}`}
+				onClick={() => onChange("timeline")}
+				disabled={disabled}
+				aria-pressed={value === "timeline"}
+			>
+				Timeline
+			</button>
+		</fieldset>
+	);
+}
+
 export function PokemonPage() {
 	const filterValues = useFilterValues();
 	const [pokedexNumber, setPokedexNumber] = usePokedexParam();
+	const [view, setView] = useViewModeParam();
 	const [types] = useFilterParam("types");
 	const [rarity] = useFilterParam("rarity");
 	const [supertype] = useFilterParam("supertype");
@@ -50,7 +88,7 @@ export function PokemonPage() {
 		[pokedexNumber, types, rarity, supertype, subtypes],
 	);
 
-	const { cards, loading, loadMore } = useCards(cacheKey, fetcher);
+	const { cards, loading, loadMore, hasMore } = useCards(cacheKey, fetcher);
 
 	return (
 		<>
@@ -65,6 +103,11 @@ export function PokemonPage() {
 								: `National Pokédex #${pokedexNumber} · ${cards.length} cards loaded`}
 						</div>
 					</div>
+					<ViewModeToggle
+						value={view}
+						onChange={setView}
+						disabled={pokedexNumber === null}
+					/>
 				</div>
 			</header>
 			<PokemonFilter value={pokedexNumber} onChange={setPokedexNumber} />
@@ -74,12 +117,24 @@ export function PokemonPage() {
 				supertypes={filterValues.supertypes}
 				subtypes={filterValues.subtypes}
 			/>
-			<CardGrid
-				setId={cacheKey}
-				cards={cards}
-				onEndReached={loadMore}
-				renderOverlay={renderOverlay}
-			/>
+			{view === "grid" ? (
+				<CardGrid
+					setId={cacheKey}
+					cards={cards}
+					onEndReached={loadMore}
+					renderOverlay={renderOverlay}
+				/>
+			) : (
+				<PokemonTimeline
+					cards={cards}
+					loading={loading}
+					hasMore={hasMore}
+					onLoadMore={() => {
+						if (cacheKey) loadMore(cacheKey);
+					}}
+					renderOverlay={renderOverlay}
+				/>
+			)}
 			{loading && <div className="loading-pill">Loading…</div>}
 		</>
 	);
