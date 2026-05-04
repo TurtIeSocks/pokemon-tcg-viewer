@@ -56,7 +56,11 @@ type SetFilter = (vals: string[], opts?: UpdateOptions) => void;
  */
 export function useFilterParam(name: string): [string[], SetFilter] {
 	const [params, setParams] = useSearchParams();
-	const raw = params.get(name);
+	// Use getAll() to handle duplicate keys (e.g. hand-crafted URLs with
+	// `?types=fire&types=water`). Single-key URLs still work because
+	// getAll returns a 1-element array we then split as CSV.
+	const all = params.getAll(name);
+	const raw = all.length > 1 ? all.join(",") : (all[0] ?? null);
 	const values = raw ? raw.split(",").filter(Boolean) : [];
 	const setValues: SetFilter = (vals, opts) => {
 		const next = new URLSearchParams(params);

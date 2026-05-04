@@ -156,4 +156,19 @@ describe("useFilterParam", () => {
 		renderInRouter(<FilterProbe name="types" />, "/?types=fire,,water,");
 		expect(screen.getByTestId("value").textContent).toBe("fire,water");
 	});
+
+	test("merges duplicate-key params into the value array", () => {
+		renderInRouter(<FilterProbe name="types" />, "/?types=fire&types=water");
+		expect(screen.getByTestId("value").textContent).toBe("fire,water");
+	});
+
+	test("returns empty array for empty value (?types=)", () => {
+		renderInRouter(<FilterProbe name="types" />, "/?types=");
+		expect(screen.getByTestId("value").textContent).toBe("empty");
+	});
+
+	test("returns empty array for only-commas value (?types=,,,)", () => {
+		renderInRouter(<FilterProbe name="types" />, "/?types=,,,");
+		expect(screen.getByTestId("value").textContent).toBe("empty");
+	});
 });
