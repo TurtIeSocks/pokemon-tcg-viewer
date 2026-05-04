@@ -1,0 +1,119 @@
+/*
+ * Persistent filter chip row rendered between the existing tabs and the
+ * card grid on both pages. One chip per dimension, plus a "Clear filters"
+ * affordance when any dimension is active.
+ */
+
+.filter-chip-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	align-items: center;
+	padding: 0.5rem 1rem;
+}
+
+.filter-chip-container {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+}
+
+.filter-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	padding: 0.3rem 0.75rem;
+	border: 1px solid rgba(255, 255, 255, 0.15);
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.05);
+	color: inherit;
+	font-size: 0.85rem;
+	cursor: pointer;
+	transition:
+		background 0.12s ease-out,
+		border-color 0.12s ease-out;
+}
+
+.filter-chip:hover:not(:disabled),
+.filter-chip:focus-visible {
+	background: rgba(255, 255, 255, 0.1);
+	border-color: rgba(255, 255, 255, 0.25);
+	outline: none;
+}
+
+.filter-chip:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.filter-chip.active {
+	background: rgba(120, 100, 255, 0.18);
+	border-color: rgba(120, 100, 255, 0.5);
+}
+
+.filter-chip-clear {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.25rem;
+	height: 1.25rem;
+	border: 1px solid rgba(255, 255, 255, 0.15);
+	border-radius: 50%;
+	font-size: 0.75rem;
+	cursor: pointer;
+	background: rgba(255, 255, 255, 0.05);
+	color: inherit;
+}
+
+.filter-chip-clear:hover {
+	background: rgba(255, 255, 255, 0.15);
+}
+
+.filter-chip-popover {
+	position: absolute;
+	top: calc(100% + 0.25rem);
+	left: 0;
+	z-index: 10;
+	min-width: 12rem;
+	max-height: 400px;
+	overflow-y: auto;
+	padding: 0.5rem;
+	background: #1a1a1f;
+	border: 1px solid rgba(255, 255, 255, 0.15);
+	border-radius: 8px;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.filter-chip-option {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.35rem 0.5rem;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 0.85rem;
+}
+
+.filter-chip-option:hover {
+	background: rgba(255, 255, 255, 0.08);
+}
+
+.filter-chip-option input[type="checkbox"] {
+	cursor: pointer;
+}
+
+.filter-chip-row-clear-all {
+	margin-left: auto;
+	padding: 0.3rem 0.6rem;
+	background: transparent;
+	border: none;
+	color: rgba(255, 255, 255, 0.6);
+	font-size: 0.85rem;
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+.filter-chip-row-clear-all:hover {
+	color: rgba(255, 255, 255, 0.9);
+}
