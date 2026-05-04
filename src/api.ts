@@ -12,7 +12,7 @@ interface PokemonApiCard {
 	rarity?: string;
 	number: string;
 	nationalPokedexNumbers?: number[];
-	set: { id: string; name: string; series: string };
+	set: { id: string; name: string; series: string; releaseDate?: string };
 	images: { small: string; large: string };
 }
 
@@ -26,6 +26,8 @@ function apiCardToProps(card: PokemonApiCard): HoloCardData {
 		supertype: card.supertype,
 		setId: card.set.id,
 		setName: card.set.name,
+		setSeries: card.set.series,
+		setReleaseDate: card.set.releaseDate,
 		cardNumber: card.number,
 		nationalPokedexNumbers: card.nationalPokedexNumbers,
 	};

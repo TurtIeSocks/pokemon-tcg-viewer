@@ -11,6 +11,7 @@ const fixture: HoloCardData = {
 	name: "Pikachu V",
 	setId: "swsh4",
 	setName: "Vivid Voltage",
+	setSeries: "Sword & Shield",
 	cardNumber: "43",
 };
 

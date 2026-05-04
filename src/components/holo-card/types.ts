@@ -12,6 +12,8 @@ export interface HoloCardData {
 	supertype?: string;
 	setId: string;
 	setName: string;
+	setSeries: string;
+	setReleaseDate?: string;
 	cardNumber: string;
 	nationalPokedexNumbers?: number[];
 }
