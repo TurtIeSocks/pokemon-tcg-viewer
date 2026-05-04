@@ -83,11 +83,11 @@ export function useViewModeParam(): [ViewMode, SetView] {
 	const [params, setParams] = useSearchParams();
 	const raw = params.get("view");
 	const mode: ViewMode = raw === "timeline" ? "timeline" : "grid";
-	const setMode: SetView = (next, opts) => {
-		const np = new URLSearchParams(params);
-		if (next === "timeline") np.set("view", "timeline");
-		else np.delete("view");
-		setParams(np, opts?.replace ? { replace: true } : undefined);
+	const setMode: SetView = (mode, opts) => {
+		const next = new URLSearchParams(params);
+		if (mode === "timeline") next.set("view", "timeline");
+		else next.delete("view");
+		setParams(next, opts?.replace ? { replace: true } : undefined);
 	};
 	return [mode, setMode];
 }
