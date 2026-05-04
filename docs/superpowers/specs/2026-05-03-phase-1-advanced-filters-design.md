@@ -1,7 +1,7 @@
 # Phase 1 / #5 — Advanced Filters
 
 **Date:** 2026-05-03
-**Status:** Approved (design)
+**Status:** Implemented
 **Roadmap phase:** 1 of 5 (second feature; depends on Phase 1 #4's URL-state foundation)
 
 ## Context
