@@ -1,0 +1,131 @@
+.card-page {
+	max-width: 1100px;
+	margin: 0 auto;
+	padding: 1rem;
+}
+
+.card-page-header {
+	margin-bottom: 1rem;
+}
+
+.card-page-back {
+	display: inline-block;
+	margin-bottom: 0.5rem;
+	color: rgba(255, 255, 255, 0.7);
+	text-decoration: none;
+	background: none;
+	border: none;
+	padding: 0;
+	cursor: pointer;
+	font: inherit;
+}
+
+.card-page-back:hover {
+	color: rgba(255, 255, 255, 0.95);
+}
+
+.card-page-header h1 {
+	margin: 0;
+	font-size: 1.75rem;
+}
+
+.card-page-caption {
+	margin: 0.25rem 0 0;
+	color: rgba(255, 255, 255, 0.6);
+	font-size: 0.9rem;
+}
+
+.card-page-grid {
+	display: grid;
+	grid-template-columns: minmax(0, 400px) 1fr;
+	gap: 2rem;
+	align-items: start;
+}
+
+@media (max-width: 720px) {
+	.card-page-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.card-page-image {
+	max-width: 400px;
+}
+
+.card-page-meta section {
+	margin-bottom: 1.25rem;
+}
+
+.card-page-meta h2 {
+	margin: 0 0 0.5rem;
+	font-size: 0.85rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: rgba(255, 255, 255, 0.5);
+}
+
+.card-page-stats {
+	font-size: 1.1rem;
+}
+
+.card-page-attack,
+.card-page-ability {
+	margin-bottom: 0.85rem;
+}
+
+.card-page-attack h3,
+.card-page-ability h3 {
+	margin: 0 0 0.25rem;
+	font-size: 1rem;
+}
+
+.card-page-damage {
+	color: rgba(255, 200, 100, 0.95);
+	font-weight: 600;
+}
+
+.card-page-attack-cost {
+	margin: 0;
+	color: rgba(255, 255, 255, 0.6);
+	font-size: 0.85rem;
+}
+
+.card-page-ability-type {
+	display: inline-block;
+	margin-left: 0.5rem;
+	padding: 0.1rem 0.4rem;
+	background: rgba(120, 100, 255, 0.18);
+	border-radius: 4px;
+	font-size: 0.75rem;
+	color: rgba(200, 190, 255, 0.95);
+	text-transform: uppercase;
+}
+
+.card-page-defense p,
+.card-page-rules p {
+	margin: 0.25rem 0;
+}
+
+.card-page-flavor em {
+	color: rgba(255, 255, 255, 0.7);
+}
+
+.card-page-artist {
+	margin: 0.25rem 0 0;
+	color: rgba(255, 255, 255, 0.5);
+	font-size: 0.85rem;
+}
+
+.card-page-price-line {
+	margin: 0.25rem 0;
+	font-size: 0.9rem;
+}
+
+.card-page-external {
+	color: rgba(120, 180, 255, 0.95);
+	text-decoration: none;
+}
+
+.card-page-external:hover {
+	text-decoration: underline;
+}
