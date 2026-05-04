@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router";
 import { type GridComponents, VirtuosoGrid } from "react-virtuoso";
 import { HoloCard, type HoloCardData } from "./holo-card";
 import "./card-grid.css";
@@ -45,6 +46,7 @@ export function CardGrid({
 	onEndReached,
 	renderOverlay,
 }: CardGridProps) {
+	const navigate = useNavigate();
 	return (
 		<VirtuosoGrid
 			key={setId ?? "empty"}
@@ -65,6 +67,7 @@ export function CardGrid({
 					setId={card.setId}
 					cardNumber={card.cardNumber}
 					hoverOverlay={renderOverlay?.(card)}
+					onClick={() => navigate(`/card/${card.id}`)}
 					style={{ width: 300 }}
 				/>
 			)}
