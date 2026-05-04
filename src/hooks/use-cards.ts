@@ -21,6 +21,7 @@ interface UseCardsResult {
 	cards: HoloCardData[];
 	loading: boolean;
 	loadMore: (key: string) => void;
+	hasMore: boolean;
 }
 
 // Generic paginated card loader, keyed by an arbitrary string (set id, pokédex
@@ -107,6 +108,8 @@ export function useCards(
 	}, [selectedKey, loadMore]);
 
 	const cards = selectedKey ? (cache[selectedKey]?.cards ?? []) : [];
+	const entry = selectedKey ? cache[selectedKey] : undefined;
+	const hasMore = !!entry && entry.cards.length < entry.totalCount;
 
-	return { cards, loading, loadMore };
+	return { cards, loading, loadMore, hasMore };
 }
