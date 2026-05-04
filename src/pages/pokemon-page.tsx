@@ -1,18 +1,15 @@
-import { useCallback } from "react";
+import { useMemo } from "react";
 import { getCardsByPokedexNumber } from "../api";
 import { CardGrid } from "../components/card-grid";
 import { CrossLinkOverlay } from "../components/cross-link-overlay";
-import type { HoloCardData } from "../components/holo-card";
+import { FilterChipRow } from "../components/filter-chip-row";
 import "../components/header.css";
+import type { HoloCardData } from "../components/holo-card";
 import { PokemonFilter } from "../components/pokemon-filter";
 import { type CardFetcher, useCards } from "../hooks/use-cards";
-import { usePokedexParam } from "../hooks/use-url-selection";
+import { useFilterValues } from "../hooks/use-filter-values";
+import { useFilterParam, usePokedexParam } from "../hooks/use-url-selection";
 import "./pokemon-page.css";
-
-// useCards keys by string, but the conceptual key here is a pokédex number.
-// Stringifying at the boundary keeps the cache key human-readable in devtools.
-const fetcher: CardFetcher = (key, page, pageSize) =>
-	getCardsByPokedexNumber(Number(key), page, pageSize);
 
 function renderOverlay(card: HoloCardData) {
 	return (
@@ -23,11 +20,37 @@ function renderOverlay(card: HoloCardData) {
 }
 
 export function PokemonPage() {
+	const filterValues = useFilterValues();
 	const [pokedexNumber, setPokedexNumber] = usePokedexParam();
-	const key = pokedexNumber === null ? null : String(pokedexNumber);
-	const { cards, loading, loadMore } = useCards(key, fetcher);
+	const [types] = useFilterParam("types");
+	const [rarity] = useFilterParam("rarity");
+	const [supertype] = useFilterParam("supertype");
+	const [subtypes] = useFilterParam("subtypes");
 
-	const handleEndReached = useCallback((k: string) => loadMore(k), [loadMore]);
+	const filterSig = `${types.join(",")}|${rarity.join(",")}|${supertype.join(",")}|${subtypes.join(",")}`;
+	const baseKey = pokedexNumber === null ? null : String(pokedexNumber);
+	const cacheKey = baseKey
+		? filterSig === "|||"
+			? baseKey
+			: `${baseKey}|${filterSig}`
+		: null;
+
+	const fetcher: CardFetcher = useMemo(
+		() => (_key, page, pageSize) => {
+			if (pokedexNumber === null) {
+				return Promise.resolve({ cards: [], totalCount: 0 });
+			}
+			return getCardsByPokedexNumber(pokedexNumber, page, pageSize, {
+				types,
+				rarity,
+				supertype,
+				subtypes,
+			});
+		},
+		[pokedexNumber, types, rarity, supertype, subtypes],
+	);
+
+	const { cards, loading, loadMore } = useCards(cacheKey, fetcher);
 
 	return (
 		<>
@@ -45,10 +68,16 @@ export function PokemonPage() {
 				</div>
 			</header>
 			<PokemonFilter value={pokedexNumber} onChange={setPokedexNumber} />
+			<FilterChipRow
+				types={filterValues.types}
+				rarities={filterValues.rarities}
+				supertypes={filterValues.supertypes}
+				subtypes={filterValues.subtypes}
+			/>
 			<CardGrid
-				setId={key}
+				setId={cacheKey}
 				cards={cards}
-				onEndReached={handleEndReached}
+				onEndReached={loadMore}
 				renderOverlay={renderOverlay}
 			/>
 			{loading && <div className="loading-pill">Loading…</div>}
