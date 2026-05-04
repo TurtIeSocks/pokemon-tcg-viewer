@@ -32,6 +32,9 @@ interface ViewModeToggleProps {
 }
 
 function ViewModeToggle({ value, onChange, disabled }: ViewModeToggleProps) {
+	// fieldset+aria-label is used (over div+role="group") to satisfy Biome's
+	// useSemanticElements rule. The CSS below resets fieldset's default border,
+	// padding, margin, and min-inline-size to make it look like a pill group.
 	return (
 		<fieldset className="view-mode-toggle" aria-label="View mode">
 			<button
