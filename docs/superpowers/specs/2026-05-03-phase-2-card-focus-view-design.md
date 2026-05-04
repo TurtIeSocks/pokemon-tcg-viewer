@@ -1,7 +1,7 @@
 # Phase 2 / #2a — `/card/:id` Focus View
 
 **Date:** 2026-05-03
-**Status:** Approved (design)
+**Status:** Implemented
 **Roadmap phase:** 2 of 5 (first feature; the originally-paired #2b OG preview prerendering is deferred indefinitely while the project lives on GitHub Pages)
 
 ## Context
