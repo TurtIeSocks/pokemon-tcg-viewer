@@ -1,11 +1,10 @@
-import { NavLink, Route, Routes } from "react-router";
+import { NavLink, Outlet, ScrollRestoration } from "react-router";
 import "./app.css";
-import { PokemonPage } from "./pages/pokemon-page";
-import { SetsPage } from "./pages/sets-page";
 
-export default function App() {
+export function RootLayout() {
 	return (
 		<div className="app">
+			<ScrollRestoration />
 			<nav className="primary-nav" aria-label="Filter mode">
 				<NavLink
 					to="/"
@@ -25,10 +24,7 @@ export default function App() {
 					By Pokémon
 				</NavLink>
 			</nav>
-			<Routes>
-				<Route path="/" element={<SetsPage />} />
-				<Route path="/pokemon" element={<PokemonPage />} />
-			</Routes>
+			<Outlet />
 		</div>
 	);
 }

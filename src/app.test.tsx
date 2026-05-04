@@ -1,24 +1,25 @@
 import { expect, test } from "bun:test";
-import { render } from "@testing-library/react";
-import { MemoryRouter } from "react-router";
-import App from "./app";
+import { render, screen, waitFor } from "@testing-library/react";
+import { createMemoryRouter, RouterProvider } from "react-router";
+import { RootLayout } from "./root-layout";
 
-test("App mounts without throwing", () => {
-	expect(() =>
-		render(
-			<MemoryRouter>
-				<App />
-			</MemoryRouter>,
-		),
-	).not.toThrow();
+function makeRouter() {
+	return createMemoryRouter([
+		{
+			path: "/",
+			element: <RootLayout />,
+		},
+	]);
+}
+
+test("RootLayout mounts without throwing", () => {
+	expect(() => render(<RouterProvider router={makeRouter()} />)).not.toThrow();
 });
 
-test("App renders the primary nav", () => {
-	const { getByText } = render(
-		<MemoryRouter>
-			<App />
-		</MemoryRouter>,
-	);
-	expect(getByText("By Set")).toBeDefined();
-	expect(getByText("By Pokémon")).toBeDefined();
+test("RootLayout renders the primary nav", async () => {
+	render(<RouterProvider router={makeRouter()} />);
+	await waitFor(() => {
+		expect(screen.getByText("By Set")).toBeDefined();
+	});
+	expect(screen.getByText("By Pokémon")).toBeDefined();
 });
