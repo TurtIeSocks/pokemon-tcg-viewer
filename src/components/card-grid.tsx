@@ -67,7 +67,10 @@ export function CardGrid({
 					setId={card.setId}
 					cardNumber={card.cardNumber}
 					hoverOverlay={renderOverlay?.(card)}
-					onClick={() => navigate(`/card/${card.id}`)}
+					onClick={(e) => {
+						if (e.defaultPrevented) return;
+						navigate(`/card/${card.id}`);
+					}}
 					style={{ width: 300 }}
 				/>
 			)}
