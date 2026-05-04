@@ -1,7 +1,7 @@
 # Phase 2 / #8 — Pokémon Lineage Timeline View
 
 **Date:** 2026-05-03
-**Status:** Approved (design)
+**Status:** Implemented
 **Roadmap phase:** 2 of 5 (second feature in the phase; depends on Phase 2 #2a's `/card/:id` route for click-through, and on Phase 1 #4–#5's filter and URL state)
 
 ## Context
