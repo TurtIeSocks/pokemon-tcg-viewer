@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import type { FocusCardData } from "../api";
 import { CardPage } from "./card-page";
@@ -161,5 +161,30 @@ describe("<CardPage />", () => {
 		await waitFor(() =>
 			expect(screen.getByRole("button", { name: /back/i })).toBeDefined(),
 		);
+	});
+
+	test("clicking Back navigates home when there is no history (direct visit)", async () => {
+		const router = createMemoryRouter(
+			[
+				{
+					path: "/",
+					element: <div>Home</div>,
+				},
+				{
+					path: "/card/:id",
+					element: <CardPage />,
+					loader: () => POKEMON_FIXTURE,
+				},
+			],
+			{ initialEntries: [`/card/${POKEMON_FIXTURE.id}`] },
+		);
+		const { findByRole, findByText } = render(
+			<RouterProvider router={router} />,
+		);
+		// Wait for the loader to resolve and the Back button to appear
+		const backButton = await findByRole("button", { name: /back/i });
+		fireEvent.click(backButton);
+		// After clicking back, we should land on home (since /card/:id was the first entry).
+		return findByText("Home");
 	});
 });

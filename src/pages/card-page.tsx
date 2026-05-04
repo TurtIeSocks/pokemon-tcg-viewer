@@ -1,4 +1,4 @@
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData, useLocation, useNavigate } from "react-router";
 import type { FocusCardData } from "../api";
 import { CrossLinkOverlay } from "../components/cross-link-overlay";
 import { HoloCard } from "../components/holo-card";
@@ -52,6 +52,8 @@ export function CardPage() {
 	const card = useLoaderData() as FocusCardData;
 	const pokemonList = usePokemonList();
 	const navigate = useNavigate();
+	const location = useLocation();
+	const isFirstEntry = location.key === "default";
 	const isPokemon = card.supertype === "Pokémon";
 	const priceLines = buildPriceLines(card);
 
@@ -71,7 +73,7 @@ export function CardPage() {
 				<button
 					type="button"
 					className="card-page-back"
-					onClick={() => navigate(-1)}
+					onClick={() => (isFirstEntry ? navigate("/") : navigate(-1))}
 				>
 					← Back
 				</button>
