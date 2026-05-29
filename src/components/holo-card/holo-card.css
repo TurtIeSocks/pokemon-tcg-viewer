@@ -7,12 +7,15 @@
 .holo-card {
 	/* Pointer-driven properties. Defaults so static (server-rendered or
 	   pre-effect-mount) state still looks reasonable. Overwritten by
-	   useHoloEffect on mount. */
-	--pointer-x: 50;
-	--pointer-y: 50;
+	   useHoloEffect on mount. --pointer-x/y MUST carry % units — they are
+	   consumed as <position> inside the foil gradients; a unitless value is
+	   invalid-at-computed-value-time and drops the whole background layer. */
+	--pointer-x: 50%;
+	--pointer-y: 50%;
 	--pointer-from-center: 0;
 	--rotate-x: 0deg;
 	--rotate-y: 0deg;
+	--card-opacity: 0;
 
 	position: relative;
 	display: block;

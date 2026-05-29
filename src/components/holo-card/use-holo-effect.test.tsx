@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { afterEach, beforeEach, expect, test } from "bun:test";
 import { render } from "@testing-library/react";
 import { useHoloEffect } from "./use-holo-effect";
 
@@ -7,36 +7,68 @@ function Probe() {
 	return <div ref={ref} data-testid="card" />;
 }
 
-test("hook attaches default custom properties on mount", () => {
+const RECT = {
+	left: 0,
+	top: 0,
+	width: 100,
+	height: 100,
+	right: 100,
+	bottom: 100,
+	x: 0,
+	y: 0,
+	toJSON: () => ({}),
+} as DOMRect;
+
+// The hook smooths pointer motion through a requestAnimationFrame lerp loop.
+// Replace rAF with a manual queue so a test can drain frames synchronously and
+// observe the converged (settled) state deterministically.
+let rafQueue: FrameRequestCallback[] = [];
+let realRaf: typeof requestAnimationFrame;
+let realCancel: typeof cancelAnimationFrame;
+
+beforeEach(() => {
+	rafQueue = [];
+	realRaf = globalThis.requestAnimationFrame;
+	realCancel = globalThis.cancelAnimationFrame;
+	globalThis.requestAnimationFrame = ((cb: FrameRequestCallback) => {
+		rafQueue.push(cb);
+		return rafQueue.length;
+	}) as typeof requestAnimationFrame;
+	globalThis.cancelAnimationFrame = (() => {}) as typeof cancelAnimationFrame;
+});
+
+afterEach(() => {
+	globalThis.requestAnimationFrame = realRaf;
+	globalThis.cancelAnimationFrame = realCancel;
+});
+
+function flush(maxFrames = 5000) {
+	let i = 0;
+	while (rafQueue.length && i++ < maxFrames) {
+		const cb = rafQueue.shift();
+		if (!cb) break;
+		cb(0);
+	}
+}
+
+test("hook writes centered, hidden state on mount (no animation needed)", () => {
 	const { getByTestId } = render(<Probe />);
 	const el = getByTestId("card") as HTMLElement;
-	expect(el.style.getPropertyValue("--pointer-x")).toBe("50");
-	expect(el.style.getPropertyValue("--pointer-y")).toBe("50");
+	expect(el.style.getPropertyValue("--pointer-x")).toBe("50%");
+	expect(el.style.getPropertyValue("--pointer-y")).toBe("50%");
 	expect(el.style.getPropertyValue("--rotate-x")).toBe("0deg");
 	expect(el.style.getPropertyValue("--rotate-y")).toBe("0deg");
 	expect(el.style.getPropertyValue("--background-x")).toBe("50%");
 	expect(el.style.getPropertyValue("--background-y")).toBe("50%");
-	expect(el.style.getPropertyValue("--pointer-from-left")).toBe("0.5");
-	expect(el.style.getPropertyValue("--pointer-from-top")).toBe("0.5");
+	expect(el.style.getPropertyValue("--card-opacity")).toBe("0");
+	// Mount must not require a frame to look correct.
+	expect(rafQueue.length).toBe(0);
 });
 
-test("pointermove updates all custom properties from rect-relative position", () => {
+test("pointermove eases toward the pointer and fades the foil in", () => {
 	const { getByTestId } = render(<Probe />);
 	const el = getByTestId("card") as HTMLElement;
-
-	// Stub getBoundingClientRect: 100x100 element at origin.
-	el.getBoundingClientRect = () =>
-		({
-			left: 0,
-			top: 0,
-			width: 100,
-			height: 100,
-			right: 100,
-			bottom: 100,
-			x: 0,
-			y: 0,
-			toJSON: () => ({}),
-		}) as DOMRect;
+	el.getBoundingClientRect = () => RECT;
 
 	el.dispatchEvent(
 		new PointerEvent("pointermove", {
@@ -45,42 +77,23 @@ test("pointermove updates all custom properties from rect-relative position", ()
 			bubbles: true,
 		}),
 	);
+	flush();
 
-	expect(el.style.getPropertyValue("--pointer-x")).toBe("75");
-	expect(el.style.getPropertyValue("--pointer-y")).toBe("75");
-
-	const fromCenter = Number.parseFloat(
-		el.style.getPropertyValue("--pointer-from-center"),
-	);
-	expect(fromCenter).toBeCloseTo(Math.SQRT1_2, 6);
-
-	const rotateX = Number.parseFloat(el.style.getPropertyValue("--rotate-x"));
-	expect(rotateX).toBeCloseTo(-7.142857142857143, 6);
-
-	const rotateY = Number.parseFloat(el.style.getPropertyValue("--rotate-y"));
-	expect(rotateY).toBeCloseTo(7.142857142857143, 6);
-
-	expect(el.style.getPropertyValue("--background-x")).toBe("37.5%");
-	expect(el.style.getPropertyValue("--background-y")).toBe("37.5%");
-	expect(el.style.getPropertyValue("--pointer-from-left")).toBe("0.75");
-	expect(el.style.getPropertyValue("--pointer-from-top")).toBe("0.75");
+	expect(el.style.getPropertyValue("--pointer-x")).toBe("75%");
+	expect(el.style.getPropertyValue("--pointer-y")).toBe("75%");
+	// simey's narrow background band + facing-the-cursor tilt.
+	expect(el.style.getPropertyValue("--background-x")).toBe("56.5%");
+	expect(el.style.getPropertyValue("--background-y")).toBe("58.5%");
+	expect(el.style.getPropertyValue("--rotate-x")).toBe("7.143deg");
+	expect(el.style.getPropertyValue("--rotate-y")).toBe("-7.143deg");
+	// Opacity is interaction-driven (reaches 1), NOT distance-from-center.
+	expect(el.style.getPropertyValue("--card-opacity")).toBe("1");
 });
 
-test("pointerleave resets pointer position to center", () => {
+test("pointerleave eases back to the centered, hidden state", () => {
 	const { getByTestId } = render(<Probe />);
 	const el = getByTestId("card") as HTMLElement;
-	el.getBoundingClientRect = () =>
-		({
-			left: 0,
-			top: 0,
-			width: 100,
-			height: 100,
-			right: 100,
-			bottom: 100,
-			x: 0,
-			y: 0,
-			toJSON: () => ({}),
-		}) as DOMRect;
+	el.getBoundingClientRect = () => RECT;
 
 	el.dispatchEvent(
 		new PointerEvent("pointermove", {
@@ -89,19 +102,20 @@ test("pointerleave resets pointer position to center", () => {
 			bubbles: true,
 		}),
 	);
+	flush();
 	el.dispatchEvent(new PointerEvent("pointerleave", { bubbles: true }));
+	flush();
 
-	expect(el.style.getPropertyValue("--pointer-x")).toBe("50");
-	expect(el.style.getPropertyValue("--pointer-y")).toBe("50");
+	expect(el.style.getPropertyValue("--pointer-x")).toBe("50%");
+	expect(el.style.getPropertyValue("--pointer-y")).toBe("50%");
 	expect(el.style.getPropertyValue("--rotate-x")).toBe("0deg");
 	expect(el.style.getPropertyValue("--rotate-y")).toBe("0deg");
 	expect(el.style.getPropertyValue("--background-x")).toBe("50%");
 	expect(el.style.getPropertyValue("--background-y")).toBe("50%");
-	expect(el.style.getPropertyValue("--pointer-from-left")).toBe("0.5");
-	expect(el.style.getPropertyValue("--pointer-from-top")).toBe("0.5");
+	expect(el.style.getPropertyValue("--card-opacity")).toBe("0");
 });
 
-test("pointer events do not trigger re-renders (no-setState invariant)", () => {
+test("pointer interaction never triggers a React re-render", () => {
 	let renderCount = 0;
 	function CountingProbe() {
 		renderCount++;
@@ -110,19 +124,9 @@ test("pointer events do not trigger re-renders (no-setState invariant)", () => {
 	}
 	const { getByTestId } = render(<CountingProbe />);
 	const el = getByTestId("card") as HTMLElement;
-	el.getBoundingClientRect = () =>
-		({
-			left: 0,
-			top: 0,
-			width: 100,
-			height: 100,
-			right: 100,
-			bottom: 100,
-			x: 0,
-			y: 0,
-			toJSON: () => ({}),
-		}) as DOMRect;
+	el.getBoundingClientRect = () => RECT;
 	const baseline = renderCount;
+
 	el.dispatchEvent(
 		new PointerEvent("pointermove", {
 			clientX: 25,
@@ -138,5 +142,7 @@ test("pointer events do not trigger re-renders (no-setState invariant)", () => {
 		}),
 	);
 	el.dispatchEvent(new PointerEvent("pointerleave", { bubbles: true }));
+	flush();
+
 	expect(renderCount).toBe(baseline);
 });

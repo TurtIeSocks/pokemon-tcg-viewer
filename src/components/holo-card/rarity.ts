@@ -38,7 +38,12 @@ const RARITY_CLASS = {
 	"Illustration Rare": "trainer-gallery",
 	"Special Illustration Rare": "trainer-gallery",
 	"Ultra Rare": "ultra",
-	"Double Rare": "holo-basic",
+	// Double Rare (SV ex) is a full-card sheen, NOT a classic art-window holo —
+	// holo-basic would clip it to the centre. Use the full-card sunpillar (holo-v).
+	"Double Rare": "holo-v",
+	// SV Shiny Vault — sparkly full-art; closest procedural is the glitter rainbow.
+	"Shiny Rare": "rainbow",
+	"Shiny Ultra Rare": "rainbow",
 	Promo: "holo-basic",
 	LEGEND: "holo-basic",
 	"Classic Collection": "holo-basic",

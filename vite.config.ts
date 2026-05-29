@@ -8,6 +8,9 @@ const THIRTY_DAYS = 30 * 24 * 60 * 60;
 
 export default defineConfig({
 	base: "/pokemon-tcg-viewer/",
+	server: {
+		port: 6201,
+	},
 	plugins: [
 		react(),
 		babel({ presets: [reactCompilerPreset()] }),

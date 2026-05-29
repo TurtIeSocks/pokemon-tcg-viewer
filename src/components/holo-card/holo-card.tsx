@@ -1,7 +1,8 @@
 import type React from "react";
 import "./holo-card.css";
 import "./rarity-styles.css";
-import { getRarityClass } from "./rarity";
+import { getHoloClass, variantsToHolo } from "./holo-style";
+import { useFoilAssets } from "./use-foil-assets";
 import { useHoloEffect } from "./use-holo-effect";
 import { useTiltEffect } from "./use-tilt-effect";
 
@@ -9,13 +10,19 @@ export interface HoloCardProps {
 	imageUrl: string;
 	name: string;
 	rarity?: string;
-	// Forwarded from API but not yet consumed; reserved for Task 7+ rarity heuristics.
+	// Drive holo style + per-card CDN foil/mask resolution (see useFoilAssets).
 	subtypes?: string[];
 	supertype?: string;
 	setId?: string;
+	/** pokemontcg.io set.series — drives era-aware holo style (e.g. cosmos). */
+	series?: string;
+	/** TCGplayer price-variant keys — distinguishes holo vs non-holo printings. */
+	variants?: string[];
 	cardNumber?: string;
 	owned?: boolean;
 	tilt?: boolean;
+	/** Debug: hold the foil statically lit (no hover needed). Dev tooling only. */
+	forceFoil?: boolean;
 
 	onClick?: (e: React.MouseEvent | React.KeyboardEvent) => void;
 	hoverOverlay?: React.ReactNode;
@@ -29,22 +36,47 @@ export function HoloCard({
 	imageUrl,
 	name,
 	rarity,
+	subtypes,
+	supertype,
+	setId,
+	series,
+	variants,
+	cardNumber,
 	owned = false,
 	tilt = false,
+	forceFoil = false,
 	onClick,
 	hoverOverlay,
 	size = "grid",
 	className,
 	style,
 }: HoloCardProps) {
-	const { ref } = useHoloEffect();
+	const { ref } = useHoloEffect(forceFoil);
 	useTiltEffect({ ref, enabled: tilt });
-	const rarityClass = getRarityClass(rarity);
+	const rarityClass = getHoloClass(
+		rarity,
+		series,
+		variantsToHolo(variants),
+		setId,
+	);
+	// Real per-card CDN foil + mask (modern sets); 404 → procedural fallback.
+	const foil = useFoilAssets(setId, cardNumber, rarity, subtypes);
+
+	// Mirror simey/pokemon-cards-css: the foil-confinement clip-paths in
+	// rarity-styles.css key off data-rarity + data-subtypes + data-supertype
+	// (e.g. [data-rarity="rare holo"][data-subtypes^="stage"]). Lowercased to
+	// match the attribute-selector values 1:1.
+	const dataAttrs: Record<string, string> = {};
+	if (rarity) dataAttrs["data-rarity"] = rarity.toLowerCase();
+	if (supertype) dataAttrs["data-supertype"] = supertype.toLowerCase();
+	if (subtypes?.length)
+		dataAttrs["data-subtypes"] = subtypes.join(" ").toLowerCase();
 
 	const classes = [
 		"holo-card",
 		`size-${size}`,
 		rarityClass,
+		foil.masked ? "masked" : null,
 		owned ? "holo-card--owned" : null,
 		className,
 	]
@@ -64,12 +96,13 @@ export function HoloCard({
 		<div
 			ref={ref}
 			className={classes}
-			style={style}
+			style={{ ...foil.vars, ...style }}
 			role="button"
 			tabIndex={onClick || hoverOverlay ? 0 : -1}
 			onClick={onClick}
 			onKeyDown={handleKeyDown}
 			aria-label={name}
+			{...dataAttrs}
 		>
 			<img className="holo-card-image" src={imageUrl} alt="" />
 			<div className="holo-card-overlay">{hoverOverlay}</div>

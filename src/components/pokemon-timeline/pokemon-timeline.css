@@ -5,6 +5,13 @@
  */
 
 .pokemon-timeline {
+	/* .app is a fixed-height (100vh) flex column with overflow:hidden, so each
+	   view must own its scroll — the grid view's virtuoso scroller does the same.
+	   min-height:0 lets this flex child shrink below content height and scroll
+	   instead of overflowing (and being clipped) like the rest of the page. */
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
 	padding: 0 1rem 2rem;
 }
 

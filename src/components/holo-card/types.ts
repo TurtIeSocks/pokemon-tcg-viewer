@@ -16,4 +16,11 @@ export interface HoloCardData {
 	setReleaseDate?: string;
 	cardNumber: string;
 	nationalPokedexNumbers?: number[];
+	/**
+	 * TCGplayer price-variant keys (e.g. ["normal"], ["holofoil"],
+	 * ["normal","reverseHolofoil"]). The API has no "is holo" flag; these encode
+	 * the actual printing. Drives the holo/non-holo split (see variantsToHolo).
+	 * Undefined when the card has no TCGplayer data.
+	 */
+	variants?: string[];
 }
