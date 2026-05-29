@@ -1,19 +1,41 @@
 import { create, type StateCreator } from "zustand";
 import { persist } from "zustand/middleware";
+import type { PokemonListEntry, PokemonSet } from "../api";
+import type { HoloCardData } from "../components/holo-card";
 import { type ApiCacheSlice, createApiCacheSlice } from "./api-cache-slice";
+import type { OwnedCard } from "./collection-slice";
 import {
 	type CollectionSlice,
 	createCollectionSlice,
 } from "./collection-slice";
+import { createIdbStorage } from "./idb-storage";
 import { createPackCardsSlice, type PackCardsSlice } from "./pack-cards-slice";
 
 type AppStore = ApiCacheSlice & CollectionSlice & PackCardsSlice;
 
-// Bump if the persisted shape changes in a non-additive way and you want to
-// drop old data instead of writing a migration. Phase 1 #5 only ADDS fields,
-// so was kept at 2. Phase 3 #1 adds `owned: {}` via the additive migration
-// below; bumped to 3. Phase 4b adds packCards/packCardsFetchedAt; bumped to 4.
-const STORAGE_VERSION = 4;
+// The persisted subset returned by partialize — matches what IDB stores.
+interface PersistedStore {
+	sets: PokemonSet[] | null;
+	setsFetchedAt: number | null;
+	pokemonList: PokemonListEntry[] | null;
+	pokemonListFetchedAt: number | null;
+	types: string[] | null;
+	typesFetchedAt: number | null;
+	rarities: string[] | null;
+	raritiesFetchedAt: number | null;
+	supertypes: string[] | null;
+	supertypesFetchedAt: number | null;
+	subtypes: string[] | null;
+	subtypesFetchedAt: number | null;
+	owned: Record<string, OwnedCard>;
+	packCards: Record<string, HoloCardData[]>;
+	packCardsFetchedAt: Record<string, number>;
+}
+
+// Phase 5: substrate moves from localStorage to IndexedDB. The data shape
+// is unchanged, so the v4→v5 migration is a no-op. The IDB adapter handles
+// the one-time copy from localStorage on first v5 read.
+const STORAGE_VERSION = 5;
 
 const composed: StateCreator<AppStore> = (set, get, store) => ({
 	...createApiCacheSlice(set, get, store),
@@ -25,7 +47,7 @@ export const useStore = create<AppStore>()(
 	persist(composed, {
 		name: "pokemon-tcg-viewer",
 		version: STORAGE_VERSION,
-		// Mirror cache data + collection to localStorage. Loading flags stay in memory.
+		storage: createIdbStorage<PersistedStore>(),
 		partialize: (state) => ({
 			sets: state.sets,
 			setsFetchedAt: state.setsFetchedAt,
@@ -43,18 +65,12 @@ export const useStore = create<AppStore>()(
 			packCards: state.packCards,
 			packCardsFetchedAt: state.packCardsFetchedAt,
 		}),
-		// Chained additive migrations:
-		// v2→v3: adds `owned: {}`
-		// v3→v4: adds `packCards: {}` + `packCardsFetchedAt: {}`
-		// v2 users flow through both branches.
 		migrate: (persisted, version) => {
 			let next = persisted as Partial<AppStore>;
-			if (version < 3) {
-				next = { ...next, owned: {} };
-			}
-			if (version < 4) {
+			if (version < 3) next = { ...next, owned: {} };
+			if (version < 4)
 				next = { ...next, packCards: {}, packCardsFetchedAt: {} };
-			}
+			// v4 → v5: substrate-only change; no field migration needed.
 			return next as AppStore;
 		},
 	}),
