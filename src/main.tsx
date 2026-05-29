@@ -4,6 +4,7 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import { CardErrorPage } from "./pages/card-error-page";
 import { cardLoader } from "./pages/card-loader";
 import { CardPage } from "./pages/card-page";
+import { CollectionPage } from "./pages/collection-page";
 import { PokemonPage } from "./pages/pokemon-page";
 import { SetsPage } from "./pages/sets-page";
 import { RootLayout } from "./root-layout";
@@ -15,6 +16,7 @@ const router = createBrowserRouter(
 			element: <RootLayout />,
 			children: [
 				{ index: true, element: <SetsPage /> },
+				{ path: "collection", element: <CollectionPage /> },
 				{ path: "pokemon", element: <PokemonPage /> },
 				{
 					path: "card/:id",

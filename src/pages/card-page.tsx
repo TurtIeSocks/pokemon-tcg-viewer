@@ -1,10 +1,29 @@
 import { useLoaderData, useLocation, useNavigate } from "react-router";
 import type { FocusCardData } from "../api";
 import { CrossLinkOverlay } from "../components/cross-link-overlay";
+import type { HoloCardData } from "../components/holo-card";
 import { HoloCard } from "../components/holo-card";
 import { usePokemonList } from "../hooks/use-pokemon-list";
+import { useStore } from "../store";
 import { pokemonNameByDex } from "../utils/pokemon-name";
 import "./card-page.css";
+
+function toHoloCardData(card: FocusCardData): HoloCardData {
+	return {
+		id: card.id,
+		imageUrl: card.imageUrl,
+		name: card.name,
+		rarity: card.rarity,
+		subtypes: card.subtypes,
+		supertype: card.supertype,
+		setId: card.setId,
+		setName: card.setName,
+		setSeries: "",
+		setReleaseDate: card.setReleaseDate,
+		cardNumber: card.cardNumber,
+		nationalPokedexNumbers: card.nationalPokedexNumbers,
+	};
+}
 
 interface PriceLine {
 	source: "TCGPlayer" | "Cardmarket";
@@ -53,6 +72,9 @@ export function CardPage() {
 	const pokemonList = usePokemonList();
 	const navigate = useNavigate();
 	const location = useLocation();
+	const owned = useStore((s) => !!s.owned[card.id]);
+	const add = useStore((s) => s.addToCollection);
+	const remove = useStore((s) => s.removeFromCollection);
 	const isFirstEntry = location.key === "default";
 	const isPokemon = card.supertype === "Pokémon";
 	const priceLines = buildPriceLines(card);
@@ -78,6 +100,17 @@ export function CardPage() {
 					← Back
 				</button>
 				<h1>{card.name}</h1>
+				<button
+					type="button"
+					className={`card-page-collection-button${owned ? " owned" : ""}`}
+					aria-pressed={owned}
+					onClick={() => {
+						if (owned) remove(card.id);
+						else add(toHoloCardData(card));
+					}}
+				>
+					{owned ? "✓ In your collection — Remove" : "+ Add to collection"}
+				</button>
 				<p className="card-page-caption">
 					{card.setName} · {card.cardNumber}
 					{card.rarity ? ` · ${card.rarity}` : ""}

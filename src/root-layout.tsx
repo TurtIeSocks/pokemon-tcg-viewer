@@ -23,6 +23,14 @@ export function RootLayout() {
 				>
 					By Pokémon
 				</NavLink>
+				<NavLink
+					to="/collection"
+					className={({ isActive }) =>
+						isActive ? "primary-nav-link active" : "primary-nav-link"
+					}
+				>
+					Collection
+				</NavLink>
 			</nav>
 			<Outlet />
 		</div>

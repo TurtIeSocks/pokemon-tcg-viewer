@@ -129,3 +129,31 @@
 .card-page-external:hover {
 	text-decoration: underline;
 }
+
+.card-page-collection-button {
+	padding: 0.65rem 1.5rem;
+	margin-top: 0.75rem;
+	background: rgba(120, 100, 255, 0.18);
+	border: 1px solid rgba(120, 100, 255, 0.5);
+	border-radius: 8px;
+	color: inherit;
+	font-size: 0.95rem;
+	cursor: pointer;
+	transition: background 0.12s ease-out;
+}
+
+.card-page-collection-button:hover,
+.card-page-collection-button:focus-visible {
+	background: rgba(120, 100, 255, 0.3);
+	outline: none;
+}
+
+.card-page-collection-button.owned {
+	background: rgba(80, 200, 120, 0.18);
+	border-color: rgba(80, 200, 120, 0.6);
+}
+
+.card-page-collection-button.owned:hover,
+.card-page-collection-button.owned:focus-visible {
+	background: rgba(80, 200, 120, 0.3);
+}
