@@ -1,0 +1,62 @@
+.booster-pack {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	width: min(340px, 80vw);
+	aspect-ratio: 2 / 3;
+	margin: 3rem auto;
+	padding: 1.5rem 1rem;
+	background: linear-gradient(140deg, #4c1d95 0%, #a21caf 60%, #4c1d95 100%);
+	border: 2px solid rgba(255, 255, 255, 0.18);
+	border-radius: 1.25rem;
+	box-shadow:
+		0 10px 30px rgba(0, 0, 0, 0.45),
+		inset 0 1px 0 rgba(255, 255, 255, 0.2);
+	color: #fff;
+	cursor: pointer;
+	transition:
+		transform 0.32s ease-out,
+		opacity 0.32s ease-out;
+}
+
+.booster-pack:hover,
+.booster-pack:focus-visible {
+	transform: translateY(-4px) scale(1.01);
+	outline: none;
+}
+
+.booster-pack.ripped {
+	transform: scale(0.92) rotateX(8deg);
+	opacity: 0;
+	pointer-events: none;
+}
+
+.booster-pack-logo {
+	width: 80%;
+	max-height: 50%;
+	object-fit: contain;
+	filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+}
+
+.booster-pack-symbol {
+	width: 3rem;
+	height: 3rem;
+	object-fit: contain;
+}
+
+.booster-pack-label {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.25rem;
+	font-size: 0.95rem;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.booster-pack-label strong {
+	font-size: 1.15rem;
+	font-weight: 700;
+}
