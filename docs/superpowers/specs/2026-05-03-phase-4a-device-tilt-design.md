@@ -1,7 +1,7 @@
 # Phase 4 / #6 — Device Tilt for HoloCard (Phase 4a)
 
 **Date:** 2026-05-03
-**Status:** Approved (design)
+**Status:** Implemented
 **Roadmap phase:** 4 of 5 (split from "Phase 4 = #6 + #3"). 4b = #3 pack opening, separate spec.
 
 ## Context
