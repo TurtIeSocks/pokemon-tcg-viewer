@@ -71,3 +71,29 @@
 .holo-card-overlay > * {
 	pointer-events: auto;
 }
+
+/* Phase 3 #1 — owned indicator: subtle outer glow + corner ✓. */
+.holo-card--owned {
+	box-shadow:
+		0 0 0 2px rgba(80, 200, 120, 0.6),
+		0 0 20px rgba(80, 200, 120, 0.3);
+}
+
+.holo-card-owned-badge {
+	position: absolute;
+	top: 0.4rem;
+	right: 0.4rem;
+	z-index: 3;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.5rem;
+	height: 1.5rem;
+	background: rgba(80, 200, 120, 0.95);
+	color: #fff;
+	border-radius: 50%;
+	font-size: 0.9rem;
+	font-weight: 700;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+	pointer-events: none;
+}

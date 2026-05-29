@@ -13,6 +13,7 @@ export interface HoloCardProps {
 	supertype?: string;
 	setId?: string;
 	cardNumber?: string;
+	owned?: boolean;
 
 	onClick?: (e: React.MouseEvent | React.KeyboardEvent) => void;
 	hoverOverlay?: React.ReactNode;
@@ -26,6 +27,7 @@ export function HoloCard({
 	imageUrl,
 	name,
 	rarity,
+	owned = false,
 	onClick,
 	hoverOverlay,
 	size = "grid",
@@ -35,7 +37,13 @@ export function HoloCard({
 	const { ref } = useHoloEffect();
 	const rarityClass = getRarityClass(rarity);
 
-	const classes = ["holo-card", `size-${size}`, rarityClass, className]
+	const classes = [
+		"holo-card",
+		`size-${size}`,
+		rarityClass,
+		owned ? "holo-card--owned" : null,
+		className,
+	]
 		.filter(Boolean)
 		.join(" ");
 
@@ -61,6 +69,15 @@ export function HoloCard({
 		>
 			<img className="holo-card-image" src={imageUrl} alt="" />
 			<div className="holo-card-overlay">{hoverOverlay}</div>
+			{owned && (
+				<span
+					className="holo-card-owned-badge"
+					role="img"
+					aria-label="In your collection"
+				>
+					✓
+				</span>
+			)}
 		</div>
 	);
 }
