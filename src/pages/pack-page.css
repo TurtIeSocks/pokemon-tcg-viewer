@@ -1,3 +1,15 @@
+/*
+ * Scroll region for everything below the fixed header. `.app` is a 100vh
+ * flex column with overflow:hidden, so the scroll must live on a flex child.
+ * min-height:0 lets this child shrink below its content height — without it,
+ * flex items default to min-height:auto and overflow-y:auto never engages.
+ */
+.pack-body {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+}
+
 .pack-reveal-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));

@@ -74,54 +74,56 @@ export function PackPage() {
 					</div>
 				</div>
 			</header>
-			{!pack ? (
-				<BoosterPack set={set} ripped={ripped} onRip={onRip} />
-			) : (
-				<>
-					<div className="pack-reveal-grid">
-						{pack.map((card) => (
-							<HoloCard
-								key={card.id}
-								imageUrl={card.imageUrl}
-								name={card.name}
-								rarity={card.rarity}
-								subtypes={card.subtypes}
-								supertype={card.supertype}
-								setId={card.setId}
-								cardNumber={card.cardNumber}
-								owned={!!ownedMap[card.id]}
-								size="focus"
-								hoverOverlay={
-									<>
-										<CrossLinkOverlay
-											links={[
-												{
-													label: `Go to ${set.name}`,
-													to: `/?setId=${set.id}`,
-												},
-											]}
-										/>
-										<CollectionToggle card={card} />
-									</>
-								}
-								onClick={(e) => {
-									if (e.defaultPrevented) return;
-									navigate(`/card/${card.id}`);
-								}}
-							/>
-						))}
-					</div>
-					<div className="pack-reroll">
-						<button
-							type="button"
-							className="pack-reroll-button"
-							onClick={onReroll}
-						>
-							Open another pack
-						</button>
-					</div>
-				</>
-			)}
+			<div className="pack-body">
+				{!pack ? (
+					<BoosterPack set={set} ripped={ripped} onRip={onRip} />
+				) : (
+					<>
+						<div className="pack-reveal-grid">
+							{pack.map((card) => (
+								<HoloCard
+									key={card.id}
+									imageUrl={card.imageUrl}
+									name={card.name}
+									rarity={card.rarity}
+									subtypes={card.subtypes}
+									supertype={card.supertype}
+									setId={card.setId}
+									cardNumber={card.cardNumber}
+									owned={!!ownedMap[card.id]}
+									size="focus"
+									hoverOverlay={
+										<>
+											<CrossLinkOverlay
+												links={[
+													{
+														label: `Go to ${set.name}`,
+														to: `/?setId=${set.id}`,
+													},
+												]}
+											/>
+											<CollectionToggle card={card} />
+										</>
+									}
+									onClick={(e) => {
+										if (e.defaultPrevented) return;
+										navigate(`/card/${card.id}`);
+									}}
+								/>
+							))}
+						</div>
+						<div className="pack-reroll">
+							<button
+								type="button"
+								className="pack-reroll-button"
+								onClick={onReroll}
+							>
+								Open another pack
+							</button>
+						</div>
+					</>
+				)}
+			</div>
 		</>
 	);
 }
