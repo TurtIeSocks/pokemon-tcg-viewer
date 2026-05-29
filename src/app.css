@@ -34,11 +34,16 @@ body,
 
 .primary-nav {
 	display: flex;
-	gap: 0.25rem;
+	gap: 0.6rem;
 	padding: 0.5rem 1.5rem;
 	background: #07070f;
 	border-bottom: 1px solid #1f1f2e;
 	flex-shrink: 0;
+	align-items: center;
+}
+
+.primary-nav-spacer {
+	flex: 1;
 }
 
 .primary-nav-link {
