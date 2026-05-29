@@ -5,18 +5,20 @@ import {
 	type CollectionSlice,
 	createCollectionSlice,
 } from "./collection-slice";
+import { createPackCardsSlice, type PackCardsSlice } from "./pack-cards-slice";
 
-type AppStore = ApiCacheSlice & CollectionSlice;
+type AppStore = ApiCacheSlice & CollectionSlice & PackCardsSlice;
 
 // Bump if the persisted shape changes in a non-additive way and you want to
 // drop old data instead of writing a migration. Phase 1 #5 only ADDS fields,
 // so was kept at 2. Phase 3 #1 adds `owned: {}` via the additive migration
-// below; bumped to 3.
-const STORAGE_VERSION = 3;
+// below; bumped to 3. Phase 4b adds packCards/packCardsFetchedAt; bumped to 4.
+const STORAGE_VERSION = 4;
 
 const composed: StateCreator<AppStore> = (set, get, store) => ({
 	...createApiCacheSlice(set, get, store),
 	...createCollectionSlice(set, get, store),
+	...createPackCardsSlice(set, get, store),
 });
 
 export const useStore = create<AppStore>()(
@@ -38,17 +40,22 @@ export const useStore = create<AppStore>()(
 			subtypes: state.subtypes,
 			subtypesFetchedAt: state.subtypesFetchedAt,
 			owned: state.owned,
+			packCards: state.packCards,
+			packCardsFetchedAt: state.packCardsFetchedAt,
 		}),
-		// Pre-Phase-3 persisted state has no `owned` key. Add it without
-		// dropping the api-cache data so users don't lose their snapshot.
+		// Chained additive migrations:
+		// v2→v3: adds `owned: {}`
+		// v3→v4: adds `packCards: {}` + `packCardsFetchedAt: {}`
+		// v2 users flow through both branches.
 		migrate: (persisted, version) => {
+			let next = persisted as Partial<AppStore>;
 			if (version < 3) {
-				return {
-					...(persisted as Partial<AppStore>),
-					owned: {},
-				} as AppStore;
+				next = { ...next, owned: {} };
 			}
-			return persisted as AppStore;
+			if (version < 4) {
+				next = { ...next, packCards: {}, packCardsFetchedAt: {} };
+			}
+			return next as AppStore;
 		},
 	}),
 );

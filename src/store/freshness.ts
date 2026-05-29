@@ -27,7 +27,7 @@ export interface FreshnessInput {
 	/** ms since epoch when the cache entry was last fetched, or null if never. */
 	lastFetchedAt: number | null;
 	/** Which cache is being checked. Lets you pick a different TTL per kind. */
-	kind: "sets" | "pokemonList" | "filterValues";
+	kind: "sets" | "pokemonList" | "filterValues" | "packCards";
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -41,6 +41,10 @@ const POKEMON_LIST_TTL_MS = 30 * DAY_MS;
 // Filter dimensions (types, rarities, supertypes, subtypes) change with new
 // TCG sets — same cadence as the sets list itself.
 const FILTER_VALUES_TTL_MS = 7 * DAY_MS;
+
+// Pack card lists change only when a set is corrected; weekly revalidation
+// matches the sets-list cadence.
+const PACK_CARDS_TTL_MS = 7 * DAY_MS;
 
 /**
  * Return `true` if the cached data should be re-fetched from the network.
@@ -61,6 +65,8 @@ export function shouldRefetch({
 			? SETS_TTL_MS
 			: kind === "pokemonList"
 				? POKEMON_LIST_TTL_MS
-				: FILTER_VALUES_TTL_MS;
+				: kind === "packCards"
+					? PACK_CARDS_TTL_MS
+					: FILTER_VALUES_TTL_MS;
 	return age > ttl;
 }
