@@ -1,7 +1,7 @@
 # Phase 4 / #3 — Pack Opening (Phase 4b)
 
 **Date:** 2026-05-03
-**Status:** Approved (design)
+**Status:** Implemented
 **Roadmap phase:** 4 of 5 (sibling to 4a tilt). Last feature in Phase 4.
 
 ## Context
