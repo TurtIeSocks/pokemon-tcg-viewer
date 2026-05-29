@@ -1,5 +1,6 @@
 import { afterEach } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
+import "fake-indexeddb/auto";
 
 // Must register before @testing-library/react is imported so that RTL's
 // screen object sees a live document at module evaluation time.
