@@ -1,7 +1,7 @@
 # Phase 3 / #1 — Collection / Binder
 
 **Date:** 2026-05-03
-**Status:** Approved (design)
+**Status:** Implemented
 **Roadmap phase:** 3 of 5 (first feature in the phase; depends on Phase 0 HoloCard, Phase 1 #4/#5 URL state + filters, Phase 2 #2a focus view, Phase 2 #8 timeline view)
 
 ## Context
