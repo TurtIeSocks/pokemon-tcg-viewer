@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { getCardsBySet } from "../api";
 import { CardGrid } from "../components/card-grid";
+import { CollectionToggle } from "../components/collection-toggle";
 import { CrossLinkOverlay } from "../components/cross-link-overlay";
 import { FilterChipRow } from "../components/filter-chip-row";
 import { Header } from "../components/header";
@@ -88,12 +89,17 @@ export function SetsPage() {
 
 	function renderOverlay(card: HoloCardData) {
 		const dexNums = card.nationalPokedexNumbers ?? [];
-		if (dexNums.length === 0) return null;
+		if (dexNums.length === 0) return <CollectionToggle card={card} />;
 		const links = dexNums.map((n) => ({
 			label: `View all ${pokemonNameByDex(pokemonList, n) ?? `#${n}`}`,
 			to: `/pokemon?dex=${n}`,
 		}));
-		return <CrossLinkOverlay links={links} />;
+		return (
+			<>
+				<CrossLinkOverlay links={links} />
+				<CollectionToggle card={card} />
+			</>
+		);
 	}
 
 	return (

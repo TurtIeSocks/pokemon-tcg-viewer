@@ -1,5 +1,6 @@
 import type React from "react";
 import { useNavigate } from "react-router";
+import { useStore } from "../../store";
 import { HoloCard, type HoloCardData } from "../holo-card";
 import { groupCardsByEra } from "./group-cards-by-era";
 import "./pokemon-timeline.css";
@@ -20,6 +21,7 @@ export function PokemonTimeline({
 	renderOverlay,
 }: PokemonTimelineProps) {
 	const navigate = useNavigate();
+	const owned = useStore((s) => s.owned);
 
 	if (cards.length === 0) {
 		return (
@@ -57,6 +59,7 @@ export function PokemonTimeline({
 								supertype={card.supertype}
 								setId={card.setId}
 								cardNumber={card.cardNumber}
+								owned={!!owned[card.id]}
 								hoverOverlay={renderOverlay?.(card)}
 								onClick={(e) => {
 									if (e.defaultPrevented) return;

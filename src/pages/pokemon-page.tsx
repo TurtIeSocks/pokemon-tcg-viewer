@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { getCardsByPokedexNumber } from "../api";
 import { CardGrid } from "../components/card-grid";
+import { CollectionToggle } from "../components/collection-toggle";
 import { CrossLinkOverlay } from "../components/cross-link-overlay";
 import { FilterChipRow } from "../components/filter-chip-row";
 import "../components/header.css";
@@ -19,9 +20,14 @@ import "./pokemon-page.css";
 
 function renderOverlay(card: HoloCardData) {
 	return (
-		<CrossLinkOverlay
-			links={[{ label: `Go to ${card.setName}`, to: `/?setId=${card.setId}` }]}
-		/>
+		<>
+			<CrossLinkOverlay
+				links={[
+					{ label: `Go to ${card.setName}`, to: `/?setId=${card.setId}` },
+				]}
+			/>
+			<CollectionToggle card={card} />
+		</>
 	);
 }
 
