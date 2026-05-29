@@ -13,6 +13,7 @@ const POKEMON_FIXTURE: FocusCardData = {
 	supertype: "Pokémon",
 	setId: "swsh4",
 	setName: "Vivid Voltage",
+	setSeries: "Sword & Shield",
 	setLogo: "https://example.invalid/swsh4-logo.png",
 	cardNumber: "43",
 	nationalPokedexNumbers: [25],
@@ -61,6 +62,7 @@ const TRAINER_FIXTURE: FocusCardData = {
 	supertype: "Trainer",
 	setId: "swsh4",
 	setName: "Vivid Voltage",
+	setSeries: "Sword & Shield",
 	cardNumber: "145",
 	rules: [
 		"Switch 1 of your opponent's Benched Pokémon with their Active Pokémon.",
@@ -76,6 +78,7 @@ const PRICELESS_FIXTURE: FocusCardData = {
 	supertype: "Pokémon",
 	setId: "base1",
 	setName: "Base",
+	setSeries: "Base",
 	cardNumber: "1",
 	hp: "60",
 	types: ["Grass"],

@@ -139,6 +139,7 @@ export interface FocusCardData {
 	supertype: string;
 	setId: string;
 	setName: string;
+	setSeries: string;
 	cardNumber: string;
 	nationalPokedexNumbers?: number[];
 
@@ -226,6 +227,7 @@ function apiCardToFocusProps(card: PokemonApiFocusCard): FocusCardData {
 		supertype: card.supertype,
 		setId: card.set.id,
 		setName: card.set.name,
+		setSeries: card.set.series,
 		cardNumber: card.number,
 		nationalPokedexNumbers: card.nationalPokedexNumbers,
 		setLogo: card.set.images?.logo,

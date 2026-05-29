@@ -19,7 +19,7 @@ function toHoloCardData(card: FocusCardData): HoloCardData {
 		supertype: card.supertype,
 		setId: card.setId,
 		setName: card.setName,
-		setSeries: "",
+		setSeries: card.setSeries,
 		setReleaseDate: card.setReleaseDate,
 		cardNumber: card.cardNumber,
 		nationalPokedexNumbers: card.nationalPokedexNumbers,
