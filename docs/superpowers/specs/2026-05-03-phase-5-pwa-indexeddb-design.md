@@ -1,7 +1,7 @@
 # Phase 5 / #7 — PWA + IndexedDB
 
 **Date:** 2026-05-03
-**Status:** Approved (design)
+**Status:** Implemented
 **Roadmap phase:** 5 of 5 (final phase). Closes the roadmap.
 
 ## Context
