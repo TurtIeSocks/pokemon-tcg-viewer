@@ -5,7 +5,7 @@
 			"name": "vite",
 			"runtimeExecutable": "bun",
 			"runtimeArgs": ["run", "dev"],
-			"port": 5173
+			"port": 6201
 		},
 		{
 			"name": "preview",

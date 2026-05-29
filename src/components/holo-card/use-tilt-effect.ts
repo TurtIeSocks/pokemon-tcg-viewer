@@ -64,13 +64,16 @@ export function useTiltEffect({ ref, enabled }: UseTiltEffectOptions): void {
 				betaNeutral,
 				gammaNeutral,
 			});
-			setHoloVars(el, pointerX, pointerY);
+			// Opacity 1 while tilting so the foil stays lit (the pointer hook's
+			// rAF spring is desktop-only; device-orientation already streams
+			// smoothly, so tilt writes directly).
+			setHoloVars(el, pointerX, pointerY, 1);
 		}
 
 		window.addEventListener("deviceorientation", onOrient);
 		return () => {
 			window.removeEventListener("deviceorientation", onOrient);
-			if (el) setHoloVars(el, DEFAULT_POINTER, DEFAULT_POINTER);
+			if (el) setHoloVars(el, DEFAULT_POINTER, DEFAULT_POINTER, 0);
 		};
 	}, [ref, enabled]);
 }

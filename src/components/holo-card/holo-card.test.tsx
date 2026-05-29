@@ -70,6 +70,21 @@ describe("<HoloCard />", () => {
 		expect(action.closest(".holo-card-overlay")).not.toBeNull();
 	});
 
+	test("emits data-rarity / data-subtypes / data-supertype for foil clip targeting", () => {
+		const { container } = render(
+			<HoloCard
+				{...baseProps}
+				rarity="Rare Holo"
+				subtypes={["Stage 2"]}
+				supertype="Pokémon"
+			/>,
+		);
+		const root = container.querySelector(".holo-card") as HTMLElement;
+		expect(root.getAttribute("data-rarity")).toBe("rare holo");
+		expect(root.getAttribute("data-subtypes")).toBe("stage 2");
+		expect(root.getAttribute("data-supertype")).toBe("pokémon");
+	});
+
 	test("applies size variant class", () => {
 		const { container } = render(<HoloCard {...baseProps} size="focus" />);
 		const root = container.querySelector(".holo-card") as HTMLElement;

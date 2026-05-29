@@ -27,6 +27,7 @@ interface PokemonApiCard {
 	nationalPokedexNumbers?: number[];
 	set: { id: string; name: string; series: string; releaseDate?: string };
 	images: { small: string; large: string };
+	tcgplayer?: { prices?: Record<string, unknown> };
 }
 
 function apiCardToProps(card: PokemonApiCard): HoloCardData {
@@ -43,6 +44,10 @@ function apiCardToProps(card: PokemonApiCard): HoloCardData {
 		setReleaseDate: card.set.releaseDate,
 		cardNumber: card.number,
 		nationalPokedexNumbers: card.nationalPokedexNumbers,
+		// TCGplayer price-variant keys = the holo/non-holo printing signal.
+		variants: card.tcgplayer?.prices
+			? Object.keys(card.tcgplayer.prices)
+			: undefined,
 	};
 }
 
@@ -76,7 +81,7 @@ async function getCardsByQuery(
 	orderBy: string,
 ): Promise<{ cards: HoloCardData[]; totalCount: number }> {
 	const resp = await pokemontcgFetch(
-		`https://api.pokemontcg.io/v2/cards?select=id,name,number,images,rarity,subtypes,supertype,set,nationalPokedexNumbers&orderBy=${orderBy}&q=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`,
+		`https://api.pokemontcg.io/v2/cards?select=id,name,number,images,rarity,subtypes,supertype,set,nationalPokedexNumbers,tcgplayer&orderBy=${orderBy}&q=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`,
 	);
 	if (!resp.ok) throw new Error("Unable to fetch cards");
 

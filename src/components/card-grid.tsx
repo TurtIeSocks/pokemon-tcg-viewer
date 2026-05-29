@@ -67,6 +67,8 @@ export function CardGrid({
 					subtypes={card.subtypes}
 					supertype={card.supertype}
 					setId={card.setId}
+					series={card.setSeries}
+					variants={card.variants}
 					cardNumber={card.cardNumber}
 					owned={!!owned[card.id]}
 					hoverOverlay={renderOverlay?.(card)}

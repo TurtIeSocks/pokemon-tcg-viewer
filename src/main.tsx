@@ -5,6 +5,7 @@ import { CardErrorPage } from "./pages/card-error-page";
 import { cardLoader } from "./pages/card-loader";
 import { CardPage } from "./pages/card-page";
 import { CollectionPage } from "./pages/collection-page";
+import { HoloDebugPage } from "./pages/holo-debug-page";
 import { PackPage } from "./pages/pack-page";
 import { PokemonPage } from "./pages/pokemon-page";
 import { SetsPage } from "./pages/sets-page";
@@ -19,6 +20,9 @@ const router = createBrowserRouter(
 				{ index: true, element: <SetsPage /> },
 				{ path: "collection", element: <CollectionPage /> },
 				{ path: "pokemon", element: <PokemonPage /> },
+				...(import.meta.env.DEV
+					? [{ path: "holo-debug", element: <HoloDebugPage /> }]
+					: []),
 				{ path: "pack/:setId", element: <PackPage /> },
 				{
 					path: "card/:id",

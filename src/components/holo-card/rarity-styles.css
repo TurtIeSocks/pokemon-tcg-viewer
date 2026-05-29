@@ -55,7 +55,58 @@
 	--sunpillar-clr-5: var(--sunpillar-5);
 	--sunpillar-clr-6: var(--sunpillar-6);
 
-	--card-opacity: var(--pointer-from-center, 0);
+	/* Foil-confinement clip-paths — ported 1:1 from simey/pokemon-cards-css
+	   public/css/cards.css. These restrict the shine to a card's real holo
+	   region so the foil sits on the *correct part* of the card instead of
+	   washing over the whole face (border, name bar, text included):
+	     • --clip          artwork window only        (classic Rare Holo)
+	     • --clip-invert    everything BUT the window  (Reverse Holo)
+	     • --clip-stage     smaller window for Stage 1/2 layouts
+	     • --clip-trainer   trainer/supporter/item window
+	   Percentages are aspect-relative, so they map directly to our identical
+	   245/342 card box. */
+	--clip: inset(9.85% 8% 52.85% 8%);
+	--clip-invert: polygon(
+		0% 0%,
+		100% 0%,
+		100% 100%,
+		0% 100%,
+		0 47.15%,
+		91.5% 47.15%,
+		91.5% 9.85%,
+		8% 9.85%,
+		8% 47.15%,
+		0 50%
+	);
+	--clip-stage: polygon(
+		91.5% 9.85%,
+		57% 9.85%,
+		54% 12%,
+		17% 12%,
+		16% 14%,
+		12% 16%,
+		8% 16%,
+		8% 47.15%,
+		92% 47.15%
+	);
+	--clip-stage-invert: polygon(
+		0% 0%,
+		100% 0%,
+		100% 100%,
+		0% 100%,
+		0 47.15%,
+		91.5% 47.15%,
+		91.5% 9.85%,
+		57% 9.85%,
+		54% 12%,
+		17% 12%,
+		16% 14%,
+		12% 16%,
+		8% 16%,
+		8% 47.15%,
+		0 50%
+	);
+	--clip-trainer: inset(14.5% 8.5% 48.2% 8.5%);
 }
 
 /* Shared ::before / ::after setup for all foil rarities */
@@ -69,9 +120,150 @@
 	pointer-events: none;
 }
 
+/* Base shine blend — simey sets color-dodge on EVERY .card__shine (base.css), so
+   dark recipe layers (#0e152e etc.) lift the art instead of painting over it.
+   We'd missed this on holo-v / holo-vmax / holo-vstar / ultra / amazing, which
+   rendered source-over and DARKENED the card (blackened Mew's eyes on masked V).
+   Per-rarity ::before may still override (none currently do). */
+.holo-card::before {
+	mix-blend-mode: color-dodge;
+}
+
 .holo-card:not(.no-foil)::before,
 .holo-card:not(.no-foil)::after {
 	will-change: opacity, transform;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Foil placement — confine the shine (::before) to the holo region
+   ─────────────────────────────────────────────────────────────────────────────
+   simey clips the shine itself (regular-holo.css:39 / reverse-holo.css:118), not
+   just via the per-card mask. We replicate that no-mask path so the rainbow lands
+   on the artwork window (classic holo) or the border/text frame (reverse holo)
+   rather than the entire card face.
+
+   Keyed on data-rarity, NOT the broad .holo-basic class: members of holo-basic
+   that are full-bleed art (Double Rare ex, Promo ex, LEGEND, Classic Collection)
+   must keep their whole-card foil, so only genuine classic-layout rarities clip.
+   Stage/trainer subtype selectors mirror simey's regular-holo.css 1:1. */
+
+.holo-card:not(.masked)[data-rarity="rare holo"]::before,
+.holo-card:not(.masked)[data-rarity="rare holo ex"]::before {
+	clip-path: var(--clip);
+}
+
+.holo-card:not(
+	.masked
+)[data-rarity="rare holo"][data-subtypes^="stage"]::before {
+	clip-path: var(--clip-stage);
+}
+
+.holo-card:not(
+	.masked
+)[data-rarity="rare holo"][data-supertype="trainer"]::before,
+.holo-card:not(
+	.masked
+)[data-rarity="rare holo"][data-subtypes^="supporter"]::before,
+.holo-card:not(
+	.masked
+)[data-rarity="rare holo"][data-subtypes^="item"]::before {
+	clip-path: var(--clip-trainer);
+}
+
+.holo-card:not(.masked)[data-rarity$="reverse holo"]::before {
+	clip-path: var(--clip-invert);
+}
+
+.holo-card:not(
+	.masked
+)[data-rarity$="reverse holo"][data-subtypes^="stage"]::before {
+	clip-path: var(--clip-stage-invert);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Masked path — real per-card foil placement (modern CDN sets)
+   ─────────────────────────────────────────────────────────────────────────────
+   When useFoilAssets loads a card's actual scanned mask, .masked is added and
+   --mask/--foil are set inline. The mask IS the exact holographic region of that
+   specific card, so it supersedes the approximate clip-path windows above
+   (those are gated to :not(.masked)). simey base.css:321. */
+
+.holo-card.masked::before {
+	-webkit-mask-image: var(--mask);
+	mask-image: var(--mask);
+	-webkit-mask-size: cover;
+	mask-size: cover;
+	-webkit-mask-position: center center;
+	mask-position: center center;
+	-webkit-mask-repeat: no-repeat;
+	mask-repeat: no-repeat;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Rarity: holo-cosmos  (vintage galaxy holofoil — Base..pre-SWSH classic holos)
+   Source: cosmos-holo.css. The iconic starfield/galaxy sheen, NOT the rainbow
+   scanline. Routed by era via holo-style.ts (COSMOS_SERIES). Confined to the
+   artwork window with --clip. The 3-layer parallax of the original is flattened
+   to one galaxy layer + spectral sweep for our two-pseudo model.
+───────────────────────────────────────────────────────────────────────────── */
+
+.holo-card.holo-cosmos::before {
+	--space: 4%;
+	clip-path: var(--clip);
+
+	background-image:
+		url("/pokemon-tcg-viewer/holo-textures/cosmos-bottom.png"),
+		repeating-linear-gradient(
+			82deg,
+			hsl(53, 65%, 60%) calc(var(--space) * 1),
+			hsl(93, 56%, 50%) calc(var(--space) * 2),
+			hsl(176, 54%, 49%) calc(var(--space) * 3),
+			hsl(228, 59%, 55%) calc(var(--space) * 4),
+			hsl(283, 60%, 55%) calc(var(--space) * 5),
+			hsl(326, 59%, 51%) calc(var(--space) * 6),
+			hsl(326, 59%, 51%) calc(var(--space) * 7),
+			hsl(283, 60%, 55%) calc(var(--space) * 8),
+			hsl(228, 59%, 55%) calc(var(--space) * 9),
+			hsl(176, 54%, 49%) calc(var(--space) * 10),
+			hsl(93, 56%, 50%) calc(var(--space) * 11),
+			hsl(53, 65%, 60%) calc(var(--space) * 12)
+		),
+		radial-gradient(
+			farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+			hsla(180, 100%, 89%, 0.5) 5%,
+			hsla(180, 14%, 57%, 0.3) 40%,
+			hsl(0, 0%, 0%) 130%
+		);
+
+	background-blend-mode: color-burn, multiply;
+	background-position:
+		var(--cosmosbg, center center),
+		calc(10% + (var(--pointer-from-left, 0.5) * 80%))
+		calc(10% + (var(--pointer-from-top, 0.5) * 80%)),
+		center center;
+	background-size:
+		cover,
+		400% 900%,
+		cover;
+
+	filter: brightness(1) contrast(1) saturate(0.8);
+	mix-blend-mode: color-dodge;
+	opacity: var(--card-opacity, 0);
+}
+
+.holo-card.holo-cosmos::after {
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+		hsla(204, 100%, 95%, 0.8) 5%,
+		hsla(250, 15%, 20%, 1) 150%
+	);
+
+	filter: brightness(0.75) contrast(2) saturate(2);
+	mix-blend-mode: overlay;
+	opacity: calc(
+		var(--card-opacity, 0) *
+		(0.25 + var(--pointer-from-center, 0))
+	);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -204,7 +396,9 @@
 		var(--background-x, 50%) var(--background-y, 50%),
 		var(--background-x, 50%) var(--background-y, 50%);
 
-	filter: brightness(0.7) contrast(2) saturate(0.5);
+	/* simey v-regular .card__shine values verbatim — low saturate is key to the
+	   subtle look (was over-brightened). */
+	filter: brightness(0.8) contrast(2.95) saturate(0.65);
 	opacity: var(--card-opacity, 0);
 }
 
@@ -744,6 +938,9 @@
 
 	filter: brightness(calc((var(--pointer-from-center, 0) * 0.25) + 0.6))
 		contrast(2.2) saturate(0.75);
+	/* color-dodge: our ::before has no base blend (simey's .card__shine sets it
+	   globally); without it the deep rainbow opaquely covers the art. */
+	mix-blend-mode: color-dodge;
 	opacity: var(--card-opacity, 0);
 }
 
@@ -815,12 +1012,15 @@
 
 	background-image:
 		var(--glitter), var(--glitter),
+		/* Gold metallic sweep — a Rare Secret is a GOLD card, not a cool rainbow.
+		   (Was using sunpillar teal/blue/purple.) */
 		conic-gradient(
-			var(--sunpillar-clr-4),
-			var(--sunpillar-clr-5),
-			var(--sunpillar-clr-6),
-			var(--sunpillar-clr-1),
-			var(--sunpillar-clr-4)
+			hsl(45, 100%, 72%),
+			hsl(38, 95%, 56%),
+			hsl(52, 100%, 82%),
+			hsl(33, 85%, 48%),
+			hsl(48, 100%, 75%),
+			hsl(45, 100%, 72%)
 		),
 		radial-gradient(
 			farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
@@ -840,6 +1040,7 @@
 		center center;
 	background-blend-mode: soft-light, hard-light, overlay;
 	mix-blend-mode: color-dodge;
+	/* simey secret-rare .card__shine values (gold tint kept via the conic above). */
 	filter: brightness(calc(0.4 + (var(--pointer-from-center, 0) * 0.2)))
 		contrast(1) saturate(2.7);
 	opacity: var(--card-opacity, 0);
@@ -877,8 +1078,13 @@
 ───────────────────────────────────────────────────────────────────────────── */
 
 .holo-card.ultra {
-	--foil: url("/pokemon-tcg-viewer/holo-textures/illusion.png");
-	--imgsize: 33%;
+	/* No tiled illusion texture on the procedural (non-CDN) path: tiling it at 33%
+	   under an exclusion blend produced heavy moiré that swallowed the whole card.
+	   Masked cards override --foil inline with their real CDN foil, so the moiré
+	   only ever hit non-CDN ultras — drop it here and they fall back to a clean
+	   sunpillar sheen. */
+	--foil: none;
+	--imgsize: cover;
 }
 
 .holo-card.ultra::before {
@@ -927,8 +1133,9 @@
 		300% 100%,
 		200% 100%;
 
-	filter: brightness(calc((var(--pointer-from-center, 0) * 0.3) + 0.35))
-		contrast(2) saturate(1.5);
+	/* simey v-full-art .card__shine values. */
+	filter: brightness(calc((var(--pointer-from-center, 0) * 0.4) + 0.4))
+		contrast(1.4) saturate(2.25);
 	opacity: var(--card-opacity, 0);
 }
 
@@ -989,48 +1196,32 @@
 ───────────────────────────────────────────────────────────────────────────── */
 
 .holo-card.shining::before {
-	--scanlines-space: 1px;
-	--scanlines-light: #888;
-	--scanlines-dark: black;
-
+	/* Shining Pokémon read as a sparkly crystalline shine, not the regular-holo
+	   scanline placeholder — glitter sparkle + a smooth spectral sheen that
+	   drifts with the pointer. */
 	background-image:
-		repeating-linear-gradient(
-			110deg,
-			var(--violet),
-			var(--blue),
-			var(--green),
-			var(--yellow),
-			var(--red),
-			var(--violet),
-			var(--blue),
-			var(--green),
-			var(--yellow),
-			var(--red),
-			var(--violet),
-			var(--blue),
-			var(--green),
-			var(--yellow),
-			var(--red)
-		),
-		repeating-linear-gradient(
-			90deg,
-			var(--scanlines-dark) calc(var(--scanlines-space) * 0),
-			var(--scanlines-dark) calc(var(--scanlines-space) * 2),
-			var(--scanlines-light) calc(var(--scanlines-space) * 2),
-			var(--scanlines-light) calc(var(--scanlines-space) * 4)
+		var(--glitter),
+		linear-gradient(
+			115deg,
+			hsl(0, 100%, 66%),
+			hsl(48, 100%, 66%),
+			hsl(100, 90%, 62%),
+			hsl(175, 95%, 66%),
+			hsl(225, 100%, 70%),
+			hsl(285, 100%, 70%),
+			hsl(0, 100%, 66%)
 		);
 
-	background-position:
-		calc(((50% - var(--background-x, 50%)) * 2.6) + 50%)
-		calc(((50% - var(--background-y, 50%)) * 3.5) + 50%),
-		center center;
-
 	background-size:
-		400% 400%,
-		cover;
+		var(--glittersize) var(--glittersize),
+		300% 300%;
+	background-position:
+		center center,
+		calc(((50% - var(--background-x, 50%)) * 2.5) + 50%)
+		calc(((50% - var(--background-y, 50%)) * 2.5) + 50%);
 
-	background-blend-mode: overlay;
-	filter: brightness(1.2) contrast(1.2) saturate(1.5);
+	background-blend-mode: color-dodge;
+	filter: brightness(0.5) contrast(1.4) saturate(1.2);
 	mix-blend-mode: color-dodge;
 	opacity: var(--card-opacity, 0);
 }
@@ -1046,4 +1237,26 @@
 	opacity: calc(var(--card-opacity, 0) * 0.9);
 	mix-blend-mode: overlay;
 	filter: brightness(0.7) contrast(3);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Masked render — show the card's REAL scanned foil (the ground truth)
+   ─────────────────────────────────────────────────────────────────────────────
+   A masked card has its actual high-res foil scan (--foil, set inline by
+   useFoilAssets). That scan IS the authentic texture/shiny/galaxy/hue of the
+   exact card. Our per-rarity procedural recipes paint smooth gradients instead,
+   which read as "missing texture" / loud rainbow stripes / wrong colour. So for
+   masked cards we drop the procedural shine and paint the real foil, blended with
+   color-dodge (the scans are dark by design — color-dodge lifts only the bright
+   holo). Last in the file → wins on source order; mask-image applied above.
+   NOT a sunpillar sheen on top (that was the over-the-top version). */
+.holo-card.masked::before {
+	background-image: var(--foil, none);
+	background-size: cover;
+	background-position: center center;
+	background-repeat: no-repeat;
+	background-blend-mode: normal;
+	mix-blend-mode: color-dodge;
+	filter: brightness(1) contrast(1.05) saturate(1.08);
+	opacity: var(--card-opacity, 0);
 }
