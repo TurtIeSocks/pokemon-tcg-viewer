@@ -7,13 +7,13 @@ import "../components/header.css";
 import type { HoloCardData } from "../components/holo-card";
 import { PokemonFilter } from "../components/pokemon-filter";
 import { PokemonTimeline } from "../components/pokemon-timeline";
+import { ViewModeToggle } from "../components/view-mode-toggle";
 import { type CardFetcher, useCards } from "../hooks/use-cards";
 import { useFilterValues } from "../hooks/use-filter-values";
 import {
 	useFilterParam,
 	usePokedexParam,
 	useViewModeParam,
-	type ViewMode,
 } from "../hooks/use-url-selection";
 import "./pokemon-page.css";
 
@@ -22,40 +22,6 @@ function renderOverlay(card: HoloCardData) {
 		<CrossLinkOverlay
 			links={[{ label: `Go to ${card.setName}`, to: `/?setId=${card.setId}` }]}
 		/>
-	);
-}
-
-interface ViewModeToggleProps {
-	value: ViewMode;
-	onChange: (next: ViewMode) => void;
-	disabled: boolean;
-}
-
-function ViewModeToggle({ value, onChange, disabled }: ViewModeToggleProps) {
-	// fieldset+aria-label is used (over div+role="group") to satisfy Biome's
-	// useSemanticElements rule. The CSS below resets fieldset's default border,
-	// padding, margin, and min-inline-size to make it look like a pill group.
-	return (
-		<fieldset className="view-mode-toggle" aria-label="View mode">
-			<button
-				type="button"
-				className={`view-mode-toggle-button${value === "grid" ? " active" : ""}`}
-				onClick={() => onChange("grid")}
-				disabled={disabled}
-				aria-pressed={value === "grid"}
-			>
-				Grid
-			</button>
-			<button
-				type="button"
-				className={`view-mode-toggle-button${value === "timeline" ? " active" : ""}`}
-				onClick={() => onChange("timeline")}
-				disabled={disabled}
-				aria-pressed={value === "timeline"}
-			>
-				Timeline
-			</button>
-		</fieldset>
 	);
 }
 
