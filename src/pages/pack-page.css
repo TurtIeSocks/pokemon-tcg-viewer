@@ -1,0 +1,29 @@
+.pack-reveal-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 1.25rem;
+	padding: 1.5rem 1rem;
+}
+
+.pack-reroll {
+	display: flex;
+	justify-content: center;
+	padding: 1.5rem 1rem 3rem;
+}
+
+.pack-reroll-button {
+	padding: 0.85rem 2rem;
+	background: rgba(120, 100, 255, 0.2);
+	border: 1px solid rgba(120, 100, 255, 0.55);
+	border-radius: 0.6rem;
+	color: inherit;
+	font-size: 1rem;
+	cursor: pointer;
+	transition: background 0.12s ease-out;
+}
+
+.pack-reroll-button:hover,
+.pack-reroll-button:focus-visible {
+	background: rgba(120, 100, 255, 0.32);
+	outline: none;
+}
