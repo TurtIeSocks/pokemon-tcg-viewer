@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useLoaderData, useLocation, useNavigate } from "react-router";
 import type { FocusCardData } from "../api";
 import { CrossLinkOverlay } from "../components/cross-link-overlay";
@@ -67,6 +68,25 @@ function buildPriceLines(card: FocusCardData): PriceLine[] {
 	return lines;
 }
 
+async function requestTiltPermission(): Promise<boolean> {
+	if (typeof window === "undefined") return false;
+	const D = window.DeviceOrientationEvent as
+		| (typeof DeviceOrientationEvent & {
+				requestPermission?: () => Promise<"granted" | "denied">;
+		  })
+		| undefined;
+	if (!D) return false;
+	if (typeof D.requestPermission === "function") {
+		try {
+			const result = await D.requestPermission();
+			return result === "granted";
+		} catch {
+			return false;
+		}
+	}
+	return true;
+}
+
 export function CardPage() {
 	const card = useLoaderData() as FocusCardData;
 	const pokemonList = usePokemonList();
@@ -78,6 +98,19 @@ export function CardPage() {
 	const isFirstEntry = location.key === "default";
 	const isPokemon = card.supertype === "Pokémon";
 	const priceLines = buildPriceLines(card);
+	const [tiltEnabled, setTiltEnabled] = useState(false);
+	const tiltSupported =
+		typeof window !== "undefined" &&
+		typeof window.DeviceOrientationEvent !== "undefined";
+
+	const onTiltClick = async () => {
+		if (tiltEnabled) {
+			setTiltEnabled(false);
+			return;
+		}
+		const granted = await requestTiltPermission();
+		if (granted) setTiltEnabled(true);
+	};
 
 	const crossLinks: { label: string; to: string }[] = [];
 	for (const dex of card.nationalPokedexNumbers ?? []) {
@@ -111,6 +144,16 @@ export function CardPage() {
 				>
 					{owned ? "✓ In your collection — Remove" : "+ Add to collection"}
 				</button>
+				{tiltSupported && (
+					<button
+						type="button"
+						className={`card-page-tilt-button${tiltEnabled ? " active" : ""}`}
+						aria-pressed={tiltEnabled}
+						onClick={onTiltClick}
+					>
+						{tiltEnabled ? "Tilt: On" : "Tilt to shine"}
+					</button>
+				)}
 				<p className="card-page-caption">
 					{card.setName} · {card.cardNumber}
 					{card.rarity ? ` · ${card.rarity}` : ""}
@@ -128,6 +171,7 @@ export function CardPage() {
 						setId={card.setId}
 						cardNumber={card.cardNumber}
 						size="focus"
+						tilt={tiltEnabled}
 					/>
 				</div>
 
