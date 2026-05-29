@@ -3,6 +3,7 @@ import "./holo-card.css";
 import "./rarity-styles.css";
 import { getRarityClass } from "./rarity";
 import { useHoloEffect } from "./use-holo-effect";
+import { useTiltEffect } from "./use-tilt-effect";
 
 export interface HoloCardProps {
 	imageUrl: string;
@@ -14,6 +15,7 @@ export interface HoloCardProps {
 	setId?: string;
 	cardNumber?: string;
 	owned?: boolean;
+	tilt?: boolean;
 
 	onClick?: (e: React.MouseEvent | React.KeyboardEvent) => void;
 	hoverOverlay?: React.ReactNode;
@@ -28,6 +30,7 @@ export function HoloCard({
 	name,
 	rarity,
 	owned = false,
+	tilt = false,
 	onClick,
 	hoverOverlay,
 	size = "grid",
@@ -35,6 +38,7 @@ export function HoloCard({
 	style,
 }: HoloCardProps) {
 	const { ref } = useHoloEffect();
+	useTiltEffect({ ref, enabled: tilt });
 	const rarityClass = getRarityClass(rarity);
 
 	const classes = [
