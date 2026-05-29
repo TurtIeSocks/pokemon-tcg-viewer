@@ -4,6 +4,19 @@ import {
 	type FilterClauses,
 } from "./utils/build-filter-clauses";
 
+// pokemontcg.io free tier without a key is ~1000 req/day; with a key it
+// jumps to ~20k req/day. Supply via Vite env var `VITE_POKEMONTCG_API_KEY`
+// in a local `.env.local` (or repository secret for CI). Absent = anonymous.
+const POKEMONTCG_API_KEY = import.meta.env.VITE_POKEMONTCG_API_KEY as
+	| string
+	| undefined;
+
+function pokemontcgFetch(input: RequestInfo | URL, init?: RequestInit) {
+	const headers = new Headers(init?.headers);
+	if (POKEMONTCG_API_KEY) headers.set("X-Api-Key", POKEMONTCG_API_KEY);
+	return fetch(input, { ...init, headers });
+}
+
 interface PokemonApiCard {
 	id: string;
 	name: string;
@@ -48,7 +61,7 @@ export interface PokemonListEntry {
 }
 
 export async function getSets(): Promise<PokemonSet[]> {
-	const resp = await fetch(
+	const resp = await pokemontcgFetch(
 		"https://api.pokemontcg.io/v2/sets?orderBy=releaseDate&select=id,name,series,releaseDate,total,images&pageSize=250",
 	);
 	if (!resp.ok) throw new Error("Unable to fetch sets");
@@ -62,7 +75,7 @@ async function getCardsByQuery(
 	pageSize: number,
 	orderBy: string,
 ): Promise<{ cards: HoloCardData[]; totalCount: number }> {
-	const resp = await fetch(
+	const resp = await pokemontcgFetch(
 		`https://api.pokemontcg.io/v2/cards?select=id,name,number,images,rarity,subtypes,supertype,set,nationalPokedexNumbers&orderBy=${orderBy}&q=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`,
 	);
 	if (!resp.ok) throw new Error("Unable to fetch cards");
@@ -107,7 +120,9 @@ export function getCardsByPokedexNumber(
 }
 
 async function getStringList(endpoint: string): Promise<string[]> {
-	const resp = await fetch(`https://api.pokemontcg.io/v2/${endpoint}`);
+	const resp = await pokemontcgFetch(
+		`https://api.pokemontcg.io/v2/${endpoint}`,
+	);
 	if (!resp.ok) throw new Error(`Unable to fetch ${endpoint}`);
 	const json = (await resp.json()) as { data: string[] };
 	return json.data;
@@ -249,7 +264,9 @@ function apiCardToFocusProps(card: PokemonApiFocusCard): FocusCardData {
 }
 
 export async function getCardById(id: string): Promise<FocusCardData> {
-	const resp = await fetch(`https://api.pokemontcg.io/v2/cards/${id}`);
+	const resp = await pokemontcgFetch(
+		`https://api.pokemontcg.io/v2/cards/${id}`,
+	);
 	if (!resp.ok) {
 		if (resp.status === 404) {
 			throw new Response("Card not found", { status: 404 });
