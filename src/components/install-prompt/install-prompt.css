@@ -1,0 +1,19 @@
+.install-prompt-button {
+	padding: 0.4rem 0.85rem;
+	background: rgba(120, 100, 255, 0.22);
+	border: 1px solid rgba(120, 100, 255, 0.55);
+	border-radius: 999px;
+	color: inherit;
+	font-size: 0.8rem;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	cursor: pointer;
+	transition: background 0.12s ease-out;
+}
+
+.install-prompt-button:hover,
+.install-prompt-button:focus-visible {
+	background: rgba(120, 100, 255, 0.36);
+	outline: none;
+}
