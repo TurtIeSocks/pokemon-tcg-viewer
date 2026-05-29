@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import type { PokemonSet } from "../api";
 import "./header.css";
 
@@ -19,6 +20,9 @@ export function Header({ currentSet }: HeaderProps) {
 							{currentSet.total} cards
 						</div>
 					</div>
+					<Link className="rip-pack-link" to={`/pack/${currentSet.id}`}>
+						Rip pack
+					</Link>
 				</div>
 			)}
 		</header>

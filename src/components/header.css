@@ -40,3 +40,24 @@
 	color: #888;
 	margin-top: 0.125rem;
 }
+
+.rip-pack-link {
+	margin-left: auto;
+	padding: 0.55rem 1.1rem;
+	background: rgba(120, 100, 255, 0.22);
+	border: 1px solid rgba(120, 100, 255, 0.55);
+	border-radius: 999px;
+	color: inherit;
+	font-size: 0.9rem;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-decoration: none;
+	text-transform: uppercase;
+	transition: background 0.12s ease-out;
+}
+
+.rip-pack-link:hover,
+.rip-pack-link:focus-visible {
+	background: rgba(120, 100, 255, 0.36);
+	outline: none;
+}
