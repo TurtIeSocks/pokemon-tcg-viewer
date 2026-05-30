@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
-import type { FocusCardData } from "../api";
-import { useStore } from "../store";
-import { CardPage } from "./card-page";
+import type { FocusCardData } from "../../api";
+import { useStore } from "../../store";
+import { CardDialog } from "./card-dialog";
 
 const POKEMON_FIXTURE: FocusCardData = {
 	id: "swsh4-43",
@@ -90,7 +90,7 @@ function renderWithFixture(card: FocusCardData) {
 		[
 			{
 				path: "/card/:id",
-				element: <CardPage />,
+				element: <CardDialog />,
 				loader: () => card,
 			},
 		],
@@ -99,16 +99,18 @@ function renderWithFixture(card: FocusCardData) {
 	return render(<RouterProvider router={router} />);
 }
 
-describe("<CardPage />", () => {
+describe("<CardDialog />", () => {
 	afterEach(() => {
 		useStore.setState({ pokemonList: null });
 	});
 
 	test("renders Pokémon card with name, set, and HP", async () => {
 		renderWithFixture(POKEMON_FIXTURE);
-		await waitFor(() => expect(screen.getByText("Pikachu V")).toBeDefined());
+		await waitFor(() =>
+			expect(screen.getAllByText("Pikachu V").length).toBeGreaterThan(0),
+		);
 		expect(screen.getAllByText(/Vivid Voltage/).length).toBeGreaterThan(0);
-		expect(screen.getByText(/HP 190/)).toBeDefined();
+		expect(screen.getByText(/190/)).toBeDefined();
 	});
 
 	test("renders Pokémon card attacks", async () => {
@@ -129,7 +131,7 @@ describe("<CardPage />", () => {
 	test("renders Trainer card rules and no attacks", async () => {
 		renderWithFixture(TRAINER_FIXTURE);
 		await waitFor(() =>
-			expect(screen.getByText("Boss's Orders")).toBeDefined(),
+			expect(screen.getAllByText("Boss's Orders").length).toBeGreaterThan(0),
 		);
 		expect(
 			screen.getByText(/Switch 1 of your opponent's Benched Pokémon/),
@@ -140,7 +142,7 @@ describe("<CardPage />", () => {
 	test("omits pricing block when neither tcgplayer nor cardmarket present", async () => {
 		renderWithFixture(PRICELESS_FIXTURE);
 		await waitFor(() =>
-			expect(screen.getByText("Some Old Card")).toBeDefined(),
+			expect(screen.getAllByText("Some Old Card").length).toBeGreaterThan(0),
 		);
 		expect(screen.queryByText(/TCGPlayer/i)).toBeNull();
 		expect(screen.queryByText(/Cardmarket/i)).toBeNull();
@@ -166,39 +168,7 @@ describe("<CardPage />", () => {
 		renderWithFixture(POKEMON_FIXTURE);
 		await waitFor(() => {
 			const link = screen.getByRole("link", { name: /View all Pikachu/i });
-			expect(link.getAttribute("href")).toBe("/pokemon?q=Pikachu");
+			expect(link.getAttribute("href")).toBe("/?q=Pikachu");
 		});
-	});
-
-	test("renders Back button", async () => {
-		renderWithFixture(POKEMON_FIXTURE);
-		await waitFor(() =>
-			expect(screen.getByRole("button", { name: /back/i })).toBeDefined(),
-		);
-	});
-
-	test("clicking Back navigates home when there is no history (direct visit)", async () => {
-		const router = createMemoryRouter(
-			[
-				{
-					path: "/",
-					element: <div>Home</div>,
-				},
-				{
-					path: "/card/:id",
-					element: <CardPage />,
-					loader: () => POKEMON_FIXTURE,
-				},
-			],
-			{ initialEntries: [`/card/${POKEMON_FIXTURE.id}`] },
-		);
-		const { findByRole, findByText } = render(
-			<RouterProvider router={router} />,
-		);
-		// Wait for the loader to resolve and the Back button to appear
-		const backButton = await findByRole("button", { name: /back/i });
-		fireEvent.click(backButton);
-		// After clicking back, we should land on home (since /card/:id was the first entry).
-		return findByText("Home");
 	});
 });

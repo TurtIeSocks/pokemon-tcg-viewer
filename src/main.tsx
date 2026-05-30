@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
+import { CardDialog } from "./components/card-dialog/card-dialog";
 import { BrowsePage } from "./pages/browse-page";
 import { CardErrorPage } from "./pages/card-error-page";
 import { cardLoader } from "./pages/card-loader";
@@ -18,10 +19,9 @@ const router = createBrowserRouter(
 					element: <BrowsePage />,
 					children: [
 						{ index: true, element: null },
-						// card dialog — Phase 3 replaces element with <CardDialog/>
 						{
 							path: "card/:id",
-							element: null,
+							element: <CardDialog />,
 							loader: cardLoader,
 							errorElement: <CardErrorPage />,
 						},
