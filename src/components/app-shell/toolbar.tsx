@@ -1,4 +1,4 @@
-import { Menu, Package, Sparkles } from "lucide-react";
+import { Menu, Package } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,9 +38,19 @@ export function Toolbar() {
 						<SeriesSidebar />
 					</SheetContent>
 				</Sheet>
-				<Sparkles className="size-6 shrink-0 text-primary" />
-				<Link to="/" className="hidden text-lg font-bold sm:block">
-					Pokémon TCG Holo Playground
+				<Link
+					to="/"
+					aria-label="Pokémon TCG Holo Playground — home"
+					className="flex shrink-0 items-center gap-2"
+				>
+					<img
+						src={`${import.meta.env.BASE_URL}logo-64.png`}
+						alt=""
+						className="size-8 shrink-0"
+					/>
+					<span className="hidden text-lg font-bold sm:block">
+						Pokémon TCG Holo Playground
+					</span>
 				</Link>
 				{currentSet && (
 					<div className="hidden min-w-0 items-center gap-2 border-l border-border pl-3 md:flex">
