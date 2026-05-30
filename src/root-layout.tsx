@@ -23,7 +23,7 @@ export function RootLayout() {
 						isActive ? "primary-nav-link active" : "primary-nav-link"
 					}
 				>
-					By Pokémon
+					Search
 				</NavLink>
 				<NavLink
 					to="/collection"
