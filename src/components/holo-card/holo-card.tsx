@@ -8,6 +8,8 @@ import { useTiltEffect } from "./use-tilt-effect";
 
 export interface HoloCardProps {
 	imageUrl: string;
+	/** Smaller image used for grid display; falls back to imageUrl. */
+	imageUrlSmall?: string;
 	name: string;
 	rarity?: string;
 	// Drive holo style + per-card CDN foil/mask resolution (see useFoilAssets).
@@ -34,6 +36,7 @@ export interface HoloCardProps {
 
 export function HoloCard({
 	imageUrl,
+	imageUrlSmall,
 	name,
 	rarity,
 	subtypes,
@@ -104,7 +107,14 @@ export function HoloCard({
 			aria-label={name}
 			{...dataAttrs}
 		>
-			<img className="holo-card-image" src={imageUrl} alt="" />
+			<img
+				className="holo-card-image"
+				src={size === "focus" ? imageUrl : (imageUrlSmall ?? imageUrl)}
+				alt=""
+				loading={size === "focus" ? "eager" : "lazy"}
+				decoding={size === "focus" ? "auto" : "async"}
+				fetchPriority={size === "focus" ? "high" : "auto"}
+			/>
 			<div className="holo-card-overlay">{hoverOverlay}</div>
 			{owned && (
 				<span

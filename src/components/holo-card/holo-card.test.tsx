@@ -96,4 +96,48 @@ describe("<HoloCard />", () => {
 		const root = container.querySelector(".holo-card") as HTMLElement;
 		expect(root.classList.contains("size-grid")).toBe(true);
 	});
+
+	test("grid size renders the small image lazily", () => {
+		const { container } = render(
+			<HoloCard
+				imageUrl="https://img/large.png"
+				imageUrlSmall="https://img/small.png"
+				name="Pikachu"
+				size="grid"
+			/>,
+		);
+		const img = container.querySelector(
+			"img.holo-card-image",
+		) as HTMLImageElement;
+		expect(img.getAttribute("src")).toBe("https://img/small.png");
+		expect(img.getAttribute("loading")).toBe("lazy");
+		expect(img.getAttribute("decoding")).toBe("async");
+	});
+
+	test("focus size renders the large image eagerly with high priority", () => {
+		const { container } = render(
+			<HoloCard
+				imageUrl="https://img/large.png"
+				imageUrlSmall="https://img/small.png"
+				name="Pikachu"
+				size="focus"
+			/>,
+		);
+		const img = container.querySelector(
+			"img.holo-card-image",
+		) as HTMLImageElement;
+		expect(img.getAttribute("src")).toBe("https://img/large.png");
+		expect(img.getAttribute("loading")).toBe("eager");
+		expect(img.getAttribute("fetchpriority")).toBe("high");
+	});
+
+	test("falls back to imageUrl when imageUrlSmall is absent", () => {
+		const { container } = render(
+			<HoloCard imageUrl="https://img/large.png" name="Pikachu" size="grid" />,
+		);
+		const img = container.querySelector(
+			"img.holo-card-image",
+		) as HTMLImageElement;
+		expect(img.getAttribute("src")).toBe("https://img/large.png");
+	});
 });
