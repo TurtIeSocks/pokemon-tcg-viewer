@@ -8,8 +8,11 @@ import { VitePWA } from "vite-plugin-pwa";
 const SEVEN_DAYS = 7 * 24 * 60 * 60;
 const THIRTY_DAYS = 30 * 24 * 60 * 60;
 
-export default defineConfig(({ command }) => ({
-	base: command === "build" ? "/pokemon-tcg-viewer/" : "/",
+export default defineConfig(({ command, isPreview }) => ({
+	// Built artifacts reference the subpath, so `vite preview` (command: "serve",
+	// isPreview: true) must serve from it too — otherwise assets 404 to the SPA
+	// fallback. Dev keeps "/" for clean local URLs.
+	base: command === "build" || isPreview ? "/pokemon-tcg-viewer/" : "/",
 	resolve: {
 		alias: {
 			"@": fileURLToPath(new URL("./src", import.meta.url)),
