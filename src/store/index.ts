@@ -77,8 +77,7 @@ export const useStore = create<AppStore>()(
 			if (version < 4)
 				next = { ...next, packCards: {}, packCardsFetchedAt: {} };
 			// v4 → v5: substrate-only change; no field migration needed.
-			if (version < 6)
-				next = { ...next, cardsCache: {}, cardsCacheOrder: [] };
+			if (version < 6) next = { ...next, cardsCache: {}, cardsCacheOrder: [] };
 			return next as AppStore;
 		},
 	}),

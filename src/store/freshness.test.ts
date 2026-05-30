@@ -9,7 +9,10 @@ test("cards: never-fetched is stale", () => {
 
 test("cards: fetched 1h ago is fresh", () => {
 	expect(
-		shouldRefetch({ lastFetchedAt: Date.now() - 60 * 60 * 1000, kind: "cards" }),
+		shouldRefetch({
+			lastFetchedAt: Date.now() - 60 * 60 * 1000,
+			kind: "cards",
+		}),
 	).toBe(false);
 });
 

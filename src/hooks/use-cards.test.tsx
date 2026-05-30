@@ -47,7 +47,10 @@ describe("useCards", () => {
 			},
 			cardsCacheOrder: ["base1"],
 		});
-		const fetcher: CardFetcher = mock(async () => ({ cards: [], totalCount: 0 }));
+		const fetcher: CardFetcher = mock(async () => ({
+			cards: [],
+			totalCount: 0,
+		}));
 		const { result } = renderHook(() => useCards("base1", fetcher));
 		await waitFor(() => expect(result.current.cards.length).toBe(1));
 		expect(fetcher).not.toHaveBeenCalled();

@@ -48,9 +48,7 @@ export const createCardsSlice: StateCreator<CardsSlice> = (set) => ({
 			} else if (page <= 1) {
 				// Fresh load or totalCount changed → reseed from page 1.
 				const seen = new Set<string>();
-				const deduped = cards.filter(
-					(c) => !seen.has(c.id) && seen.add(c.id),
-				);
+				const deduped = cards.filter((c) => !seen.has(c.id) && seen.add(c.id));
 				entry = { cards: deduped, page: 1, totalCount, fetchedAt };
 			} else {
 				const base = existing ?? {
