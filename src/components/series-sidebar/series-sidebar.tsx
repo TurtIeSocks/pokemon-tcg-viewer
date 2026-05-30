@@ -34,10 +34,11 @@ export function SeriesSidebar({ onAfterSelect }: SeriesSidebarProps) {
 					<Layers className="size-4" />
 					Series & Sets
 				</div>
-				{groups.map(({ series, sets: seriesSets }) => (
+				{groups.map(({ series, sets: seriesSets, year }) => (
 					<SeriesSidebarItem
 						key={series}
 						series={series}
+						year={year}
 						sets={seriesSets}
 						open={openSeries === series}
 						onOpenChange={(open) => setOpenSeries(open ? series : null)}

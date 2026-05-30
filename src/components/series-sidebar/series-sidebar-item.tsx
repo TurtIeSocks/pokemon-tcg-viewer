@@ -9,6 +9,7 @@ import type { PokemonSet } from "../../api";
 
 interface SeriesSidebarItemProps {
 	series: string;
+	year: number;
 	sets: PokemonSet[];
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -18,6 +19,7 @@ interface SeriesSidebarItemProps {
 
 export function SeriesSidebarItem({
 	series,
+	year,
 	sets,
 	open,
 	onOpenChange,
@@ -40,6 +42,9 @@ export function SeriesSidebarItem({
 					)}
 				/>
 				<span className="flex-1 truncate">{series}</span>
+				<span className="text-xs tabular-nums text-muted-foreground">
+					{year}
+				</span>
 				<span className="text-xs text-muted-foreground">{sets.length}</span>
 			</CollapsibleTrigger>
 			<CollapsibleContent className="ml-4 border-l border-border pl-3">
