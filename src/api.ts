@@ -105,9 +105,11 @@ export function getCardsBySet(
 	page: number,
 	pageSize: number,
 	filters?: FilterClauses,
+	name?: string,
 ): Promise<{ cards: HoloCardData[]; totalCount: number }> {
+	const nameClause = name ? ` name:"*${escapeLucene(name)}*"` : "";
 	return getCardsByQuery(
-		`set.id:${setId}${buildFilterClauses(filters ?? {})}`,
+		`set.id:${setId}${nameClause}${buildFilterClauses(filters ?? {})}`,
 		page,
 		pageSize,
 		"number",
