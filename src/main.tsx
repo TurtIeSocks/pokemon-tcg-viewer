@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { CardDialog } from "./components/card-dialog/card-dialog";
+import { PackDialog } from "./components/pack-dialog/pack-dialog";
 import { BrowsePage } from "./pages/browse-page";
 import { CardErrorPage } from "./pages/card-error-page";
 import { cardLoader } from "./pages/card-loader";
@@ -25,8 +26,7 @@ const router = createBrowserRouter(
 							loader: cardLoader,
 							errorElement: <CardErrorPage />,
 						},
-						// pack dialog — Phase 4 replaces element with <PackDialog/>
-						{ path: "pack/:setId", element: null },
+						{ path: "pack/:setId", element: <PackDialog /> },
 					],
 				},
 				{ path: "collection", element: <CollectionPage /> },

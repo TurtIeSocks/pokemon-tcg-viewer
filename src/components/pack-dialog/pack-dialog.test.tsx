@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
-import type { PokemonSet } from "../api";
-import type { HoloCardData } from "../components/holo-card";
-import { useStore } from "../store";
-import { PackPage } from "./pack-page";
+import type { PokemonSet } from "../../api";
+import { useStore } from "../../store";
+import type { HoloCardData } from "../holo-card";
+import { PackDialog } from "./pack-dialog";
 
 function cardFx(id: string, rarity?: string): HoloCardData {
 	return {
@@ -33,7 +33,7 @@ const base1: PokemonSet = {
 
 function renderRoute(setId: string) {
 	const router = createMemoryRouter(
-		[{ path: "/pack/:setId", element: <PackPage /> }],
+		[{ path: "/pack/:setId", element: <PackDialog /> }],
 		{ initialEntries: [`/pack/${setId}`] },
 	);
 	return render(<RouterProvider router={router} />);
@@ -56,7 +56,7 @@ afterEach(() => {
 	useStore.setState({ sets: null, packCards: {}, packCardsFetchedAt: {} });
 });
 
-describe("<PackPage />", () => {
+describe("<PackDialog />", () => {
 	test("renders the closed booster when no pack has been rolled yet", () => {
 		renderRoute("base1");
 		expect(
@@ -67,7 +67,7 @@ describe("<PackPage />", () => {
 	test("reveals 10 cards after clicking the booster", async () => {
 		renderRoute("base1");
 		fireEvent.click(screen.getByRole("button", { name: /open .* booster/i }));
-		// The pack page uses a setTimeout for the rip animation; wait it out.
+		// PackDialog uses a setTimeout for the rip animation; wait it out.
 		await new Promise((r) => setTimeout(r, 380));
 		const cards = await screen.findAllByRole("button");
 		// Includes the cards (10) + the "Open another pack" button.
