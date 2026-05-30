@@ -7,17 +7,14 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
-import { useSets } from "../../hooks/use-sets";
 import { useSetIdParam } from "../../hooks/use-url-selection";
 import { InstallPrompt } from "../install-prompt";
 import { OfflineIndicator } from "../offline-indicator";
 import { SeriesSidebar } from "../series-sidebar/series-sidebar";
 
 export function Toolbar() {
-	const sets = useSets();
 	const [selectedSetId] = useSetIdParam();
 	const navigate = useNavigate();
-	const currentSet = sets.find((s) => s.id === selectedSetId);
 
 	return (
 		<header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-3 border-b border-border bg-card/80 px-4 backdrop-blur">
@@ -52,23 +49,6 @@ export function Toolbar() {
 						Pokémon TCG Holo Playground
 					</span>
 				</Link>
-				{currentSet && (
-					<div className="hidden min-w-0 items-center gap-2 border-l border-border pl-3 md:flex">
-						<img
-							src={currentSet.images.logo}
-							alt=""
-							className="h-7 object-contain"
-						/>
-						<div className="min-w-0">
-							<div className="truncate text-sm font-medium">
-								{currentSet.name}
-							</div>
-							<div className="truncate text-xs text-muted-foreground">
-								{currentSet.series} · {currentSet.total} cards
-							</div>
-						</div>
-					</div>
-				)}
 			</div>
 			<div className="flex shrink-0 items-center gap-2">
 				<OfflineIndicator />
