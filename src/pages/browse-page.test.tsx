@@ -16,6 +16,15 @@ mock.module("../api", () => ({
 	getSubtypes: () => Promise.resolve([]),
 }));
 
+// Mock Home so we don't pull in its heavy deps (recents store, HoloCard, etc.)
+mock.module("./home", () => ({
+	Home: () => (
+		<div>
+			<p>Search a card above, or pick a set from the sidebar.</p>
+		</div>
+	),
+}));
+
 const fixtureSet: PokemonSet = {
 	id: "base1",
 	name: "Base Set",
@@ -44,10 +53,18 @@ afterEach(() => {
 });
 
 describe("<BrowsePage />", () => {
-	test("renders search bar for a set (setId param)", () => {
+	test("renders Home at / with empty store (no set, no query)", () => {
+		renderBrowsePage(["/"]);
+		// Home renders the empty-state hint text.
+		expect(screen.getByText(/Search a card above/)).toBeDefined();
+	});
+
+	test("renders set content header at /?setId=base1", () => {
 		useStore.setState({ sets: [fixtureSet], setsFetchedAt: Date.now() });
 		renderBrowsePage(["/?setId=base1"]);
-		// SearchBar is always rendered; its input has placeholder text.
+		// Set name appears in the content header.
+		expect(screen.getByText("Base Set")).toBeDefined();
+		// SearchBar input is present.
 		expect(screen.getByRole("textbox")).toBeDefined();
 	});
 
