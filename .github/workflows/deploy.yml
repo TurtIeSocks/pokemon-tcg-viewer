@@ -24,6 +24,10 @@ jobs:
           bun-version: latest
       - run: bun install --frozen-lockfile
       - run: bun run build
+        env:
+          # Cloudflare Worker proxy URL. Set as a repo Variable (Settings →
+          # Secrets and variables → Actions → Variables). Empty = direct API.
+          VITE_API_BASE: ${{ vars.VITE_API_BASE }}
       - run: cp dist/index.html dist/404.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

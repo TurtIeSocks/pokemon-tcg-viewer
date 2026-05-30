@@ -8,9 +8,13 @@ import { escapeLucene } from "./utils/escape-lucene";
 // Requests go through VITE_API_BASE (the Cloudflare Worker proxy) when set,
 // which injects the API key server-side and adds an edge cache. Falls back to
 // the public origin (anonymous rate limit) for local dev without the proxy.
-const API_BASE =
-	(import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, "") ??
-	"https://api.pokemontcg.io";
+// Note: an *empty* VITE_API_BASE (e.g. an unset CI variable that still injects
+// "") must fall back to the origin — otherwise paths go relative and 404 on the
+// Pages host. Hence the truthiness check rather than `?? default`.
+const RAW_API_BASE = import.meta.env.VITE_API_BASE as string | undefined;
+const API_BASE = RAW_API_BASE
+	? RAW_API_BASE.replace(/\/$/, "")
+	: "https://api.pokemontcg.io";
 
 function pokemontcgFetch(path: string, init?: RequestInit) {
 	return fetch(`${API_BASE}${path}`, init);
