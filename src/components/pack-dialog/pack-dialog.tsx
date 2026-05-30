@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -22,10 +22,19 @@ export function PackDialog() {
 
 	const [ripped, setRipped] = useState(false);
 	const [pack, setPack] = useState<HoloCardData[] | null>(null);
+	const ripTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	useEffect(() => {
 		if (setId) loadPackCards(setId);
 	}, [setId, loadPackCards]);
+
+	// Clear a pending rip reveal if the dialog unmounts mid-animation.
+	useEffect(
+		() => () => {
+			if (ripTimer.current) clearTimeout(ripTimer.current);
+		},
+		[],
+	);
 
 	const close = () => {
 		if (location.key === "default") navigate("/");
@@ -34,9 +43,14 @@ export function PackDialog() {
 	const onRip = () => {
 		if (!pool || pool.length === 0) return;
 		setRipped(true);
-		setTimeout(() => setPack(rollPack({ pool })), RIP_DURATION_MS);
+		if (ripTimer.current) clearTimeout(ripTimer.current);
+		ripTimer.current = setTimeout(
+			() => setPack(rollPack({ pool })),
+			RIP_DURATION_MS,
+		);
 	};
 	const onReroll = () => {
+		if (ripTimer.current) clearTimeout(ripTimer.current);
 		setRipped(false);
 		setPack(null);
 	};
