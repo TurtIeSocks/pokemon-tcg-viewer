@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import {
 	useFilterParam,
+	useNameQueryParam,
 	usePokedexParam,
 	useSetIdParam,
 	useViewModeParam,
@@ -215,5 +216,49 @@ describe("useViewModeParam", () => {
 		renderInRouter(<ViewModeProbe />, "/?view=timeline");
 		fireEvent.click(screen.getByText("set-grid"));
 		expect(screen.getByTestId("value").textContent).toBe("grid");
+	});
+});
+
+function NameQueryProbe() {
+	const [q, setQ] = useNameQueryParam();
+	return (
+		<>
+			<span data-testid="value">{q || "empty"}</span>
+			<button type="button" onClick={() => setQ("charizard")}>
+				set
+			</button>
+			<button type="button" onClick={() => setQ("")}>
+				clear
+			</button>
+		</>
+	);
+}
+
+describe("useNameQueryParam", () => {
+	test("reads existing q from URL", () => {
+		renderInRouter(<NameQueryProbe />, "/pokemon?q=charizard");
+		expect(screen.getByTestId("value").textContent).toBe("charizard");
+	});
+
+	test("returns empty string when q is absent", () => {
+		renderInRouter(<NameQueryProbe />, "/pokemon");
+		expect(screen.getByTestId("value").textContent).toBe("empty");
+	});
+
+	test("trims surrounding whitespace on read", () => {
+		renderInRouter(<NameQueryProbe />, "/pokemon?q=%20%20pika%20%20");
+		expect(screen.getByTestId("value").textContent).toBe("pika");
+	});
+
+	test("setQuery writes the param", () => {
+		renderInRouter(<NameQueryProbe />, "/pokemon");
+		fireEvent.click(screen.getByText("set"));
+		expect(screen.getByTestId("value").textContent).toBe("charizard");
+	});
+
+	test("setQuery('') clears the param", () => {
+		renderInRouter(<NameQueryProbe />, "/pokemon?q=charizard");
+		fireEvent.click(screen.getByText("clear"));
+		expect(screen.getByTestId("value").textContent).toBe("empty");
 	});
 });
