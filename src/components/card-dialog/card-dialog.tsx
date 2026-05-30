@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLoaderData, useLocation, useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type { FocusCardData } from "../../api";
 import { usePokemonList } from "../../hooks/use-pokemon-list";
 import { useStore } from "../../store";
+import { useRecentsStore } from "../../store/recents";
 import { getTypeColor } from "../../utils/card-colors";
 import { pokemonNameByDex } from "../../utils/pokemon-name";
 import { CrossLinkOverlay } from "../cross-link-overlay";
@@ -54,6 +55,10 @@ export function CardDialog() {
 	const owned = useStore((s) => !!s.owned[card.id]);
 	const add = useStore((s) => s.addToCollection);
 	const remove = useStore((s) => s.removeFromCollection);
+	const addRecentlyViewed = useRecentsStore((s) => s.addRecentlyViewed);
+	useEffect(() => {
+		addRecentlyViewed(toHoloCardData(card));
+	}, [card, addRecentlyViewed]);
 	const [tilt, setTilt] = useState(false);
 
 	const isPokemon = card.supertype === "Pokémon";
