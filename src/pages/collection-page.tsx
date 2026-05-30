@@ -1,4 +1,3 @@
-import "../components/header.css";
 import { CardGrid } from "../components/card-grid";
 import { CollectionToggle } from "../components/collection-toggle";
 import { CrossLinkOverlay } from "../components/cross-link-overlay";

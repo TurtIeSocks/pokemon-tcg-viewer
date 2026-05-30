@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getCardsByPokedexNumber } from "../api";
-import "../components/header.css";
 import { HoloCard, type HoloCardData } from "../components/holo-card";
 import {
 	buildFoilUrls,
