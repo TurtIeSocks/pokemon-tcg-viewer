@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { HoloCardData } from "../components/holo-card";
-
-interface CacheEntry {
-	cards: HoloCardData[];
-	page: number;
-	totalCount: number;
-}
+import { useStore } from "../store";
+import { shouldRefetch } from "../store/freshness";
 
 const PAGE_SIZE = 20;
 const FETCH_THROTTLE_MS = 500;
@@ -24,20 +20,22 @@ interface UseCardsResult {
 	hasMore: boolean;
 }
 
-// Generic paginated card loader, keyed by an arbitrary string (set id, pokédex
-// number, name, etc). Caller supplies the fetcher; this hook handles caching,
-// in-flight dedup, throttling, and resize-storm suppression.
+// Paginated card loader keyed by an arbitrary string (set id, pokédex number,
+// filtered variants of those). Pages are persisted in the Zustand store
+// (cards-slice) so revisits render instantly and revalidate in the background.
+// This hook owns the orchestration: in-flight dedup, throttling, resize-storm
+// suppression, and the stale-while-revalidate trigger.
 export function useCards(
 	selectedKey: string | null,
 	fetcher: CardFetcher,
 ): UseCardsResult {
-	const [cache, setCache] = useState<Record<string, CacheEntry>>({});
-	const [loading, setLoading] = useState(false);
+	const entry = useStore((s) =>
+		selectedKey ? s.cardsCache[selectedKey] : undefined,
+	);
+	const appendCardsPage = useStore((s) => s.appendCardsPage);
+	const touchCardsKey = useStore((s) => s.touchCardsKey);
 
-	const cacheRef = useRef(cache);
-	useEffect(() => {
-		cacheRef.current = cache;
-	}, [cache]);
+	const [loading, setLoading] = useState(false);
 
 	const fetcherRef = useRef(fetcher);
 	useEffect(() => {
@@ -56,59 +54,57 @@ export function useCards(
 		return () => window.removeEventListener("resize", onResize);
 	}, []);
 
-	const loadMore = useCallback(async (key: string) => {
-		if (inFlightRef.current.has(key)) return;
-		if (Date.now() < loadSuppressedUntilRef.current) return;
+	const fetchPage = useCallback(
+		async (key: string, page: number) => {
+			if (inFlightRef.current.has(key)) return;
+			inFlightRef.current.add(key);
+			lastFetchAtRef.current.set(key, Date.now());
+			setLoading(true);
+			try {
+				const { cards, totalCount } = await fetcherRef.current(
+					key,
+					page,
+					PAGE_SIZE,
+				);
+				appendCardsPage(key, cards, page, totalCount, Date.now());
+			} catch (e) {
+				console.error(e);
+			} finally {
+				inFlightRef.current.delete(key);
+				setLoading(false);
+			}
+		},
+		[appendCardsPage],
+	);
 
-		const lastFetchAt = lastFetchAtRef.current.get(key) ?? 0;
-		if (Date.now() - lastFetchAt < FETCH_THROTTLE_MS) return;
+	const loadMore = useCallback(
+		(key: string) => {
+			if (Date.now() < loadSuppressedUntilRef.current) return;
+			const last = lastFetchAtRef.current.get(key) ?? 0;
+			if (Date.now() - last < FETCH_THROTTLE_MS) return;
+			const cur = useStore.getState().cardsCache[key];
+			if (cur && cur.cards.length >= cur.totalCount) return;
+			const nextPage = (cur?.page ?? 0) + 1;
+			void fetchPage(key, nextPage);
+		},
+		[fetchPage],
+	);
 
-		const current = cacheRef.current[key];
-		if (current && current.cards.length >= current.totalCount) return;
-
-		const nextPage = (current?.page ?? 0) + 1;
-		inFlightRef.current.add(key);
-		lastFetchAtRef.current.set(key, Date.now());
-		setLoading(true);
-		try {
-			const { cards: fetched, totalCount } = await fetcherRef.current(
-				key,
-				nextPage,
-				PAGE_SIZE,
-			);
-			setCache((prev) => {
-				const existing = prev[key] ?? {
-					cards: [],
-					page: 0,
-					totalCount: 0,
-				};
-				const seen = new Set(existing.cards.map((c) => c.id));
-				const deduped = fetched.filter((c) => !seen.has(c.id));
-				return {
-					...prev,
-					[key]: {
-						cards: [...existing.cards, ...deduped],
-						page: nextPage,
-						totalCount,
-					},
-				};
-			});
-		} catch (e) {
-			console.error(e);
-		} finally {
-			inFlightRef.current.delete(key);
-			setLoading(false);
-		}
-	}, []);
-
+	// Initial load + stale-while-revalidate on key change.
 	useEffect(() => {
-		if (selectedKey && !cacheRef.current[selectedKey]) {
-			loadMore(selectedKey);
+		if (!selectedKey) return;
+		const cur = useStore.getState().cardsCache[selectedKey];
+		if (!cur) {
+			void fetchPage(selectedKey, 1);
+			return;
 		}
-	}, [selectedKey, loadMore]);
+		touchCardsKey(selectedKey);
+		if (shouldRefetch({ lastFetchedAt: cur.fetchedAt, kind: "cards" })) {
+			void fetchPage(selectedKey, 1);
+		}
+	}, [selectedKey, fetchPage, touchCardsKey]);
 
-	const cards = selectedKey ? (cache[selectedKey]?.cards ?? []) : [];
-	const entry = selectedKey ? cache[selectedKey] : undefined;
+	const cards = entry?.cards ?? [];
 	const hasMore = !!entry && entry.cards.length < entry.totalCount;
 
 	return { cards, loading, loadMore, hasMore };
