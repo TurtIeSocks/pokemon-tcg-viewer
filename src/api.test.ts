@@ -110,7 +110,7 @@ test("getCardsBySet maps images.small → imageUrlSmall and images.large → ima
 				}),
 				{ status: 200 },
 			),
-	) as typeof fetch;
+	) as unknown as typeof fetch;
 
 	const { cards } = await getCardsBySet("swsh4", 1, 20);
 	expect(cards[0].imageUrl).toBe("https://img/large.png");

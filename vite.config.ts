@@ -42,7 +42,7 @@ export default defineConfig({
 				runtimeCaching: [
 					{
 						urlPattern: /^https:\/\/api\.pokemontcg\.io\//,
-						handler: "CacheFirst",
+						handler: "StaleWhileRevalidate",
 						options: {
 							cacheName: "pokemontcg-api",
 							expiration: { maxEntries: 200, maxAgeSeconds: SEVEN_DAYS },
@@ -57,6 +57,11 @@ export default defineConfig({
 						},
 					},
 				],
+			},
+			devOptions: {
+				enabled: true,
+				type: "module",
+				navigateFallback: "index.html",
 			},
 		}),
 	],
