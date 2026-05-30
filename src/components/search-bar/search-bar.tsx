@@ -14,7 +14,7 @@ const DEBOUNCE_MS = 300;
 
 export function SearchBar() {
 	const [query, setQuery] = useNameQueryParam();
-	const [, setParams] = useSearchParams();
+	const [params, setParams] = useSearchParams();
 	const filterValues = useFilterValues();
 	const list = usePokemonList();
 
@@ -30,6 +30,12 @@ export function SearchBar() {
 			lastCommitted.current = query;
 		}
 	}, [query]);
+
+	useEffect(() => {
+		return () => {
+			if (timer.current) clearTimeout(timer.current);
+		};
+	}, []);
 
 	const commit = (next: string) => {
 		const trimmed = next.trim();
@@ -61,10 +67,11 @@ export function SearchBar() {
 	};
 
 	const clearAll = () => {
-		const next = new URLSearchParams();
+		const next = new URLSearchParams(params);
+		for (const key of ["types", "rarity", "supertype", "subtypes"]) {
+			next.delete(key);
+		}
 		setParams(next);
-		setText("");
-		lastCommitted.current = "";
 	};
 
 	return (
