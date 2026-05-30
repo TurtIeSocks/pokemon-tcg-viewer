@@ -46,6 +46,26 @@ export function usePokedexParam(): [number | null, SetDex] {
 	return [dex, setDex];
 }
 
+type SetNameQuery = (q: string, opts?: UpdateOptions) => void;
+
+/**
+ * URL-backed free-text search for the By-Name view. Reads/writes the `q`
+ * search param. Returns "" for a missing param; trims surrounding
+ * whitespace on read. Setting an empty/whitespace value removes the param.
+ */
+export function useNameQueryParam(): [string, SetNameQuery] {
+	const [params, setParams] = useSearchParams();
+	const q = (params.get("q") ?? "").trim();
+	const setQuery: SetNameQuery = (next, opts) => {
+		const trimmed = next.trim();
+		const nextParams = new URLSearchParams(params);
+		if (trimmed) nextParams.set("q", trimmed);
+		else nextParams.delete("q");
+		setParams(nextParams, opts?.replace ? { replace: true } : undefined);
+	};
+	return [q, setQuery];
+}
+
 type SetFilter = (vals: string[], opts?: UpdateOptions) => void;
 
 /**

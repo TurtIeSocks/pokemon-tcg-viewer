@@ -68,10 +68,18 @@ export function SetsPage() {
 	function renderOverlay(card: HoloCardData) {
 		const dexNums = card.nationalPokedexNumbers ?? [];
 		if (dexNums.length === 0) return <CollectionToggle card={card} />;
-		const links = dexNums.map((n) => ({
-			label: `View all ${pokemonNameByDex(pokemonList, n) ?? `#${n}`}`,
-			to: `/pokemon?dex=${n}`,
-		}));
+		const links = dexNums.flatMap((n) => {
+			// Skip until the species name resolves; a "#N" fallback would make
+			// a junk `?q=%23N` search.
+			const name = pokemonNameByDex(pokemonList, n);
+			if (!name) return [];
+			return [
+				{
+					label: `View all ${name}`,
+					to: `/pokemon?q=${encodeURIComponent(name)}`,
+				},
+			];
+		});
 		return (
 			<>
 				<CrossLinkOverlay links={links} />

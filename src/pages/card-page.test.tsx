@@ -1,7 +1,8 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, test } from "bun:test";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import type { FocusCardData } from "../api";
+import { useStore } from "../store";
 import { CardPage } from "./card-page";
 
 const POKEMON_FIXTURE: FocusCardData = {
@@ -99,6 +100,10 @@ function renderWithFixture(card: FocusCardData) {
 }
 
 describe("<CardPage />", () => {
+	afterEach(() => {
+		useStore.setState({ pokemonList: null });
+	});
+
 	test("renders Pokémon card with name, set, and HP", async () => {
 		renderWithFixture(POKEMON_FIXTURE);
 		await waitFor(() => expect(screen.getByText("Pikachu V")).toBeDefined());
@@ -151,11 +156,17 @@ describe("<CardPage />", () => {
 		});
 	});
 
-	test("renders cross-link to Pokémon view (per pokédex number)", async () => {
+	test("renders cross-link to By-Name search for the Pokémon", async () => {
+		// Seed the pokémon list so dex 25 resolves to a real species name.
+		const list = Array.from({ length: 25 }, (_, i) => ({
+			name: i === 24 ? "pikachu" : `mon-${i + 1}`,
+			url: "",
+		}));
+		useStore.setState({ pokemonList: list });
 		renderWithFixture(POKEMON_FIXTURE);
 		await waitFor(() => {
-			const dexLink = screen.getByRole("link", { name: /View all #25/i });
-			expect(dexLink.getAttribute("href")).toBe("/pokemon?dex=25");
+			const link = screen.getByRole("link", { name: /View all Pikachu/i });
+			expect(link.getAttribute("href")).toBe("/pokemon?q=Pikachu");
 		});
 	});
 

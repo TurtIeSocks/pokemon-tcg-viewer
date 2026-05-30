@@ -21,5 +21,5 @@ test("RootLayout renders the primary nav", async () => {
 	await waitFor(() => {
 		expect(screen.getByText("By Set")).toBeDefined();
 	});
-	expect(screen.getByText("By Pokémon")).toBeDefined();
+	expect(screen.getByText("Search")).toBeDefined();
 });

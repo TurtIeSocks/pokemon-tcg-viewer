@@ -114,8 +114,14 @@ export function CardPage() {
 
 	const crossLinks: { label: string; to: string }[] = [];
 	for (const dex of card.nationalPokedexNumbers ?? []) {
-		const name = pokemonNameByDex(pokemonList, dex) ?? `#${dex}`;
-		crossLinks.push({ label: `View all ${name}`, to: `/pokemon?dex=${dex}` });
+		// Only link once the species name resolves — a "#25" fallback would
+		// produce a junk `?q=%2325` search.
+		const name = pokemonNameByDex(pokemonList, dex);
+		if (!name) continue;
+		crossLinks.push({
+			label: `View all ${name}`,
+			to: `/pokemon?q=${encodeURIComponent(name)}`,
+		});
 	}
 	crossLinks.push({
 		label: `Go to ${card.setName}`,

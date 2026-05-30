@@ -34,7 +34,7 @@ function renderGridWithOverlay() {
 							cards={[fixture]}
 							onEndReached={() => {}}
 							renderOverlay={() => (
-								<Link to="/pokemon?dex=25" data-testid="overlay-link">
+								<Link to="/pokemon?q=pikachu" data-testid="overlay-link">
 									View all Pikachu
 								</Link>
 							)}
