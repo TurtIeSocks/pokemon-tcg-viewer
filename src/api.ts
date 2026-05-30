@@ -3,6 +3,7 @@ import {
 	buildFilterClauses,
 	type FilterClauses,
 } from "./utils/build-filter-clauses";
+import { escapeLucene } from "./utils/escape-lucene";
 
 // pokemontcg.io free tier without a key is ~1000 req/day; with a key it
 // jumps to ~20k req/day. Supply via Vite env var `VITE_POKEMONTCG_API_KEY`
@@ -118,6 +119,20 @@ export function getCardsByPokedexNumber(
 ): Promise<{ cards: HoloCardData[]; totalCount: number }> {
 	return getCardsByQuery(
 		`nationalPokedexNumbers:${pokedexNumber}${buildFilterClauses(filters ?? {})}`,
+		page,
+		pageSize,
+		"set.releaseDate,number",
+	);
+}
+
+export function getCardsByName(
+	name: string,
+	page: number,
+	pageSize: number,
+	filters?: FilterClauses,
+): Promise<{ cards: HoloCardData[]; totalCount: number }> {
+	return getCardsByQuery(
+		`name:"*${escapeLucene(name)}*"${buildFilterClauses(filters ?? {})}`,
 		page,
 		pageSize,
 		"set.releaseDate,number",
