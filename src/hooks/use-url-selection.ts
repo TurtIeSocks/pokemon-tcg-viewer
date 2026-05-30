@@ -91,6 +91,26 @@ export function useFilterParam(name: string): [string[], SetFilter] {
 	return [values, setValues];
 }
 
+export type SearchScope = "set" | "all";
+type SetScope = (scope: SearchScope, opts?: UpdateOptions) => void;
+
+/**
+ * URL-backed search scope. Default "set" (param omitted) means "search within
+ * the selected set"; "all" serializes `scope=all` for a global name search.
+ * Unknown values collapse to "set".
+ */
+export function useScopeParam(): [SearchScope, SetScope] {
+	const [params, setParams] = useSearchParams();
+	const scope: SearchScope = params.get("scope") === "all" ? "all" : "set";
+	const setScope: SetScope = (next, opts) => {
+		const p = new URLSearchParams(params);
+		if (next === "all") p.set("scope", "all");
+		else p.delete("scope");
+		setParams(p, opts?.replace ? { replace: true } : undefined);
+	};
+	return [scope, setScope];
+}
+
 export type ViewMode = "grid" | "timeline";
 type SetView = (mode: ViewMode, opts?: UpdateOptions) => void;
 
