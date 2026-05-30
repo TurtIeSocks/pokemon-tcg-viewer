@@ -90,12 +90,17 @@ export function SetsPage() {
 	function renderOverlay(card: HoloCardData) {
 		const dexNums = card.nationalPokedexNumbers ?? [];
 		if (dexNums.length === 0) return <CollectionToggle card={card} />;
-		const links = dexNums.map((n) => {
-			const name = pokemonNameByDex(pokemonList, n) ?? `#${n}`;
-			return {
-				label: `View all ${name}`,
-				to: `/pokemon?q=${encodeURIComponent(name)}`,
-			};
+		const links = dexNums.flatMap((n) => {
+			// Skip until the species name resolves; a "#N" fallback would make
+			// a junk `?q=%23N` search.
+			const name = pokemonNameByDex(pokemonList, n);
+			if (!name) return [];
+			return [
+				{
+					label: `View all ${name}`,
+					to: `/pokemon?q=${encodeURIComponent(name)}`,
+				},
+			];
 		});
 		return (
 			<>

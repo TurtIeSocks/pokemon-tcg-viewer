@@ -41,7 +41,10 @@ export function PokemonPage() {
 	const [subtypes] = useFilterParam("subtypes");
 
 	const filterSig = `${types.join(",")}|${rarity.join(",")}|${supertype.join(",")}|${subtypes.join(",")}`;
-	const baseKey = query === "" ? null : query;
+	// Encode the query so a literal "|" in user input can't collide with the
+	// filterSig delimiter below (which would alias two distinct searches to
+	// one cache entry).
+	const baseKey = query === "" ? null : `q:${encodeURIComponent(query)}`;
 	const cacheKey = baseKey
 		? filterSig === "|||"
 			? baseKey
