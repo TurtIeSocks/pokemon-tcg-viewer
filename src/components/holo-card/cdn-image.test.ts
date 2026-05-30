@@ -17,6 +17,8 @@ describe("cdnImage", () => {
 
 	test("adds dpr only when > 1", () => {
 		expect(cdnImage("https://img/x.png", { w: 300 })).not.toContain("dpr=");
-		expect(cdnImage("https://img/x.png", { w: 300, dpr: 2 })).toContain("dpr=2");
+		expect(cdnImage("https://img/x.png", { w: 300, dpr: 2 })).toContain(
+			"dpr=2",
+		);
 	});
 });

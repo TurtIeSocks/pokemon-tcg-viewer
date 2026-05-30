@@ -1,6 +1,7 @@
 import type React from "react";
 import "./holo-card.css";
 import "./rarity-styles.css";
+import { cdnImage } from "./cdn-image";
 import { getHoloClass, variantsToHolo } from "./holo-style";
 import { useFoilAssets } from "./use-foil-assets";
 import { useHoloEffect } from "./use-holo-effect";
@@ -112,14 +113,27 @@ export function HoloCard({
 			aria-label={name}
 			{...dataAttrs}
 		>
-			<img
-				className="holo-card-image"
-				src={size === "focus" ? imageUrl : (imageUrlSmall ?? imageUrl)}
-				alt=""
-				loading={size === "focus" ? "eager" : "lazy"}
-				decoding={size === "focus" ? "auto" : "async"}
-				fetchPriority={size === "focus" ? "high" : "auto"}
-			/>
+			{(() => {
+				const width = size === "focus" ? 734 : 300;
+				const fallbackSrc =
+					size === "focus" ? imageUrl : (imageUrlSmall ?? imageUrl);
+				return (
+					<picture>
+						<source
+							type="image/webp"
+							srcSet={`${cdnImage(imageUrl, { w: width })} 1x, ${cdnImage(imageUrl, { w: width, dpr: 2 })} 2x`}
+						/>
+						<img
+							className="holo-card-image"
+							src={fallbackSrc}
+							alt=""
+							loading={size === "focus" ? "eager" : "lazy"}
+							decoding={size === "focus" ? "auto" : "async"}
+							fetchPriority={size === "focus" ? "high" : "auto"}
+						/>
+					</picture>
+				);
+			})()}
 			<div className="holo-card-overlay">{hoverOverlay}</div>
 			{owned && (
 				<span

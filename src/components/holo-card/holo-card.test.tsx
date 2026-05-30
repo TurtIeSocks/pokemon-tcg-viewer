@@ -140,4 +140,40 @@ describe("<HoloCard />", () => {
 		) as HTMLImageElement;
 		expect(img.getAttribute("src")).toBe("https://img/large.png");
 	});
+
+	test("renders a WebP CDN source plus a direct fallback img (grid)", () => {
+		const { container } = render(
+			<HoloCard
+				imageUrl="https://images.pokemontcg.io/swsh4/43_hires.png"
+				imageUrlSmall="https://images.pokemontcg.io/swsh4/43.png"
+				name="Pikachu"
+				size="grid"
+			/>,
+		);
+		const source = container.querySelector("source") as HTMLSourceElement;
+		expect(source.getAttribute("type")).toBe("image/webp");
+		expect(source.getAttribute("srcset")).toContain("wsrv.nl");
+		expect(source.getAttribute("srcset")).toContain("2x");
+		// Fallback img keeps the small direct URL for grids.
+		const img = container.querySelector(
+			"img.holo-card-image",
+		) as HTMLImageElement;
+		expect(img.getAttribute("src")).toBe(
+			"https://images.pokemontcg.io/swsh4/43.png",
+		);
+	});
+
+	test("focus picture sources the large image", () => {
+		const { container } = render(
+			<HoloCard
+				imageUrl="https://images.pokemontcg.io/swsh4/43_hires.png"
+				name="Pikachu"
+				size="focus"
+			/>,
+		);
+		const source = container.querySelector("source") as HTMLSourceElement;
+		expect(source.getAttribute("srcset")).toContain(
+			encodeURIComponent("https://images.pokemontcg.io/swsh4/43_hires.png"),
+		);
+	});
 });
