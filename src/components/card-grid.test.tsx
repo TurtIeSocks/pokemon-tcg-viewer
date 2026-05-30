@@ -60,4 +60,43 @@ describe("<CardGrid />", () => {
 		expect(await screen.findByTestId("pokemon-page")).toBeDefined();
 		expect(screen.queryByTestId("card-page")).toBeNull();
 	});
+
+	test("renders the small image for grid cards", async () => {
+		const router = createMemoryRouter(
+			[
+				{
+					path: "/",
+					element: (
+						<VirtuosoGridMockContext.Provider
+							value={{
+								viewportHeight: 600,
+								viewportWidth: 800,
+								itemHeight: 400,
+								itemWidth: 300,
+							}}
+						>
+							<CardGrid
+								setId="swsh4"
+								cards={[
+									{
+										...fixture,
+										imageUrl: "https://img/large.png",
+										imageUrlSmall: "https://img/small.png",
+									},
+								]}
+								onEndReached={() => {}}
+							/>
+						</VirtuosoGridMockContext.Provider>
+					),
+				},
+			],
+			{ initialEntries: ["/"] },
+		);
+		const { container } = render(<RouterProvider router={router} />);
+		await screen.findByLabelText("Pikachu V");
+		const img = container.querySelector(
+			"img.holo-card-image",
+		) as HTMLImageElement;
+		expect(img.getAttribute("src")).toBe("https://img/small.png");
+	});
 });

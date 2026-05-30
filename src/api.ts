@@ -5,17 +5,19 @@ import {
 } from "./utils/build-filter-clauses";
 import { escapeLucene } from "./utils/escape-lucene";
 
-// pokemontcg.io free tier without a key is ~1000 req/day; with a key it
-// jumps to ~20k req/day. Supply via Vite env var `VITE_POKEMONTCG_API_KEY`
-// in a local `.env.local` (or repository secret for CI). Absent = anonymous.
-const POKEMONTCG_API_KEY = import.meta.env.VITE_POKEMONTCG_API_KEY as
-	| string
-	| undefined;
+// Requests go through VITE_API_BASE (the Cloudflare Worker proxy) when set,
+// which injects the API key server-side and adds an edge cache. Falls back to
+// the public origin (anonymous rate limit) for local dev without the proxy.
+// Note: an *empty* VITE_API_BASE (e.g. an unset CI variable that still injects
+// "") must fall back to the origin — otherwise paths go relative and 404 on the
+// Pages host. Hence the truthiness check rather than `?? default`.
+const RAW_API_BASE = import.meta.env.VITE_API_BASE as string | undefined;
+const API_BASE = RAW_API_BASE
+	? RAW_API_BASE.replace(/\/$/, "")
+	: "https://api.pokemontcg.io";
 
-function pokemontcgFetch(input: RequestInfo | URL, init?: RequestInit) {
-	const headers = new Headers(init?.headers);
-	if (POKEMONTCG_API_KEY) headers.set("X-Api-Key", POKEMONTCG_API_KEY);
-	return fetch(input, { ...init, headers });
+function pokemontcgFetch(path: string, init?: RequestInit) {
+	return fetch(`${API_BASE}${path}`, init);
 }
 
 interface PokemonApiCard {
@@ -35,6 +37,7 @@ function apiCardToProps(card: PokemonApiCard): HoloCardData {
 	return {
 		id: card.id,
 		imageUrl: card.images.large,
+		imageUrlSmall: card.images.small,
 		name: card.name,
 		rarity: card.rarity,
 		subtypes: card.subtypes,
@@ -68,7 +71,7 @@ export interface PokemonListEntry {
 
 export async function getSets(): Promise<PokemonSet[]> {
 	const resp = await pokemontcgFetch(
-		"https://api.pokemontcg.io/v2/sets?orderBy=releaseDate&select=id,name,series,releaseDate,total,images&pageSize=250",
+		"/v2/sets?orderBy=releaseDate&select=id,name,series,releaseDate,total,images&pageSize=250",
 	);
 	if (!resp.ok) throw new Error("Unable to fetch sets");
 	const json = (await resp.json()) as { data: PokemonSet[] };
@@ -82,7 +85,7 @@ async function getCardsByQuery(
 	orderBy: string,
 ): Promise<{ cards: HoloCardData[]; totalCount: number }> {
 	const resp = await pokemontcgFetch(
-		`https://api.pokemontcg.io/v2/cards?select=id,name,number,images,rarity,subtypes,supertype,set,nationalPokedexNumbers,tcgplayer&orderBy=${orderBy}&q=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`,
+		`/v2/cards?select=id,name,number,images,rarity,subtypes,supertype,set,nationalPokedexNumbers,tcgplayer&orderBy=${orderBy}&q=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`,
 	);
 	if (!resp.ok) throw new Error("Unable to fetch cards");
 
@@ -140,9 +143,7 @@ export function getCardsByName(
 }
 
 async function getStringList(endpoint: string): Promise<string[]> {
-	const resp = await pokemontcgFetch(
-		`https://api.pokemontcg.io/v2/${endpoint}`,
-	);
+	const resp = await pokemontcgFetch(`/v2/${endpoint}`);
 	if (!resp.ok) throw new Error(`Unable to fetch ${endpoint}`);
 	const json = (await resp.json()) as { data: string[] };
 	return json.data;
@@ -284,9 +285,7 @@ function apiCardToFocusProps(card: PokemonApiFocusCard): FocusCardData {
 }
 
 export async function getCardById(id: string): Promise<FocusCardData> {
-	const resp = await pokemontcgFetch(
-		`https://api.pokemontcg.io/v2/cards/${id}`,
-	);
+	const resp = await pokemontcgFetch(`/v2/cards/${id}`);
 	if (!resp.ok) {
 		if (resp.status === 404) {
 			throw new Response("Card not found", { status: 404 });

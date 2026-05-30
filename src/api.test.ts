@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { getCardsByName } from "./api";
+import { getCardsByName, getCardsBySet } from "./api";
 
 const realFetch = globalThis.fetch;
 let lastUrl = "";
@@ -78,4 +78,59 @@ describe("getCardsByName", () => {
 			imageUrl: "l.png",
 		});
 	});
+});
+
+afterEach(() => {
+	globalThis.fetch = realFetch;
+});
+
+test("getCardsBySet maps images.small → imageUrlSmall and images.large → imageUrl", async () => {
+	globalThis.fetch = mock(
+		async () =>
+			new Response(
+				JSON.stringify({
+					data: [
+						{
+							id: "swsh4-43",
+							name: "Pikachu V",
+							supertype: "Pokémon",
+							number: "43",
+							set: {
+								id: "swsh4",
+								name: "Vivid Voltage",
+								series: "Sword & Shield",
+							},
+							images: {
+								small: "https://img/small.png",
+								large: "https://img/large.png",
+							},
+						},
+					],
+					totalCount: 1,
+				}),
+				{ status: 200 },
+			),
+	) as unknown as typeof fetch;
+
+	const { cards } = await getCardsBySet("swsh4", 1, 20);
+	expect(cards[0].imageUrl).toBe("https://img/large.png");
+	expect(cards[0].imageUrlSmall).toBe("https://img/small.png");
+});
+
+test("getSets calls the v2 sets endpoint and sends no API key header", async () => {
+	const fetchMock = mock(
+		async () => new Response(JSON.stringify({ data: [] }), { status: 200 }),
+	);
+	globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+	const { getSets } = await import("./api");
+	await getSets();
+
+	const [calledUrl, init] = fetchMock.mock.calls[0] as unknown as [
+		string,
+		RequestInit,
+	];
+	expect(calledUrl).toContain("/v2/sets");
+	const headers = new Headers(init?.headers);
+	expect(headers.has("X-Api-Key")).toBe(false);
 });

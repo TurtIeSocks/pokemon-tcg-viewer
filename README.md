@@ -56,6 +56,29 @@ src/
 
 The site deploys to GitHub Pages via the workflow in `.github/workflows/`.
 
+## API proxy (Cloudflare Worker)
+
+The app calls the Pokémon TCG API through a Cloudflare Worker that adds an edge
+cache (stale-while-revalidate) and injects the API key server-side.
+
+### Deploy
+
+```bash
+cd worker
+bunx wrangler secret put POKEMONTCG_API_KEY   # paste your key
+bunx wrangler deploy --var ALLOW_ORIGIN:https://<user>.github.io
+```
+
+Then set `VITE_API_BASE` (see `.env.example`) to the deployed
+`https://pokemon-tcg-proxy.<subdomain>.workers.dev` URL and rebuild.
+
+### Security note — rotate the key
+
+Earlier builds inlined `VITE_POKEMONTCG_API_KEY` into the public JS bundle.
+After moving the key into the Worker secret, **rotate the old key** in the
+pokemontcg.io developer dashboard so the previously-exposed value is dead.
+The client no longer sends any API key.
+
 ## License
 
 See [LICENSE](LICENSE).

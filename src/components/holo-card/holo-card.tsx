@@ -1,6 +1,7 @@
 import type React from "react";
 import "./holo-card.css";
 import "./rarity-styles.css";
+import { cdnImage } from "./cdn-image";
 import { getHoloClass, variantsToHolo } from "./holo-style";
 import { useFoilAssets } from "./use-foil-assets";
 import { useHoloEffect } from "./use-holo-effect";
@@ -8,6 +9,8 @@ import { useTiltEffect } from "./use-tilt-effect";
 
 export interface HoloCardProps {
 	imageUrl: string;
+	/** Smaller image used for grid display; falls back to imageUrl. */
+	imageUrlSmall?: string;
 	name: string;
 	rarity?: string;
 	// Drive holo style + per-card CDN foil/mask resolution (see useFoilAssets).
@@ -25,6 +28,8 @@ export interface HoloCardProps {
 	forceFoil?: boolean;
 
 	onClick?: (e: React.MouseEvent | React.KeyboardEvent) => void;
+	/** Fired on hover/focus — used to warm the card-detail fetch + focus image. */
+	onPrefetch?: () => void;
 	hoverOverlay?: React.ReactNode;
 	size?: "grid" | "focus";
 
@@ -34,6 +39,7 @@ export interface HoloCardProps {
 
 export function HoloCard({
 	imageUrl,
+	imageUrlSmall,
 	name,
 	rarity,
 	subtypes,
@@ -46,6 +52,7 @@ export function HoloCard({
 	tilt = false,
 	forceFoil = false,
 	onClick,
+	onPrefetch,
 	hoverOverlay,
 	size = "grid",
 	className,
@@ -100,11 +107,33 @@ export function HoloCard({
 			role="button"
 			tabIndex={onClick || hoverOverlay ? 0 : -1}
 			onClick={onClick}
+			onPointerEnter={onPrefetch}
+			onFocus={onPrefetch}
 			onKeyDown={handleKeyDown}
 			aria-label={name}
 			{...dataAttrs}
 		>
-			<img className="holo-card-image" src={imageUrl} alt="" />
+			{(() => {
+				const width = size === "focus" ? 734 : 300;
+				const fallbackSrc =
+					size === "focus" ? imageUrl : (imageUrlSmall ?? imageUrl);
+				return (
+					<picture>
+						<source
+							type="image/webp"
+							srcSet={`${cdnImage(imageUrl, { w: width })} 1x, ${cdnImage(imageUrl, { w: width, dpr: 2 })} 2x`}
+						/>
+						<img
+							className="holo-card-image"
+							src={fallbackSrc}
+							alt=""
+							loading={size === "focus" ? "eager" : "lazy"}
+							decoding={size === "focus" ? "auto" : "async"}
+							fetchPriority={size === "focus" ? "high" : "auto"}
+						/>
+					</picture>
+				);
+			})()}
 			<div className="holo-card-overlay">{hoverOverlay}</div>
 			{owned && (
 				<span

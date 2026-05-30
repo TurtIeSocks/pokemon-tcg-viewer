@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import type { PokemonListEntry, PokemonSet } from "../api";
 import type { HoloCardData } from "../components/holo-card";
 import { type ApiCacheSlice, createApiCacheSlice } from "./api-cache-slice";
+import { type CardsSlice, createCardsSlice } from "./cards-slice";
 import type { OwnedCard } from "./collection-slice";
 import {
 	type CollectionSlice,
@@ -11,7 +12,7 @@ import {
 import { createIdbStorage } from "./idb-storage";
 import { createPackCardsSlice, type PackCardsSlice } from "./pack-cards-slice";
 
-type AppStore = ApiCacheSlice & CollectionSlice & PackCardsSlice;
+type AppStore = ApiCacheSlice & CollectionSlice & PackCardsSlice & CardsSlice;
 
 // The persisted subset returned by partialize — matches what IDB stores.
 interface PersistedStore {
@@ -30,17 +31,20 @@ interface PersistedStore {
 	owned: Record<string, OwnedCard>;
 	packCards: Record<string, HoloCardData[]>;
 	packCardsFetchedAt: Record<string, number>;
+	cardsCache: CardsSlice["cardsCache"];
+	cardsCacheOrder: string[];
 }
 
 // Phase 5: substrate moves from localStorage to IndexedDB. The data shape
 // is unchanged, so the v4→v5 migration is a no-op. The IDB adapter handles
 // the one-time copy from localStorage on first v5 read.
-const STORAGE_VERSION = 5;
+const STORAGE_VERSION = 6;
 
 const composed: StateCreator<AppStore> = (set, get, store) => ({
 	...createApiCacheSlice(set, get, store),
 	...createCollectionSlice(set, get, store),
 	...createPackCardsSlice(set, get, store),
+	...createCardsSlice(set, get, store),
 });
 
 export const useStore = create<AppStore>()(
@@ -64,6 +68,8 @@ export const useStore = create<AppStore>()(
 			owned: state.owned,
 			packCards: state.packCards,
 			packCardsFetchedAt: state.packCardsFetchedAt,
+			cardsCache: state.cardsCache,
+			cardsCacheOrder: state.cardsCacheOrder,
 		}),
 		migrate: (persisted, version) => {
 			let next = persisted as Partial<AppStore>;
@@ -71,6 +77,7 @@ export const useStore = create<AppStore>()(
 			if (version < 4)
 				next = { ...next, packCards: {}, packCardsFetchedAt: {} };
 			// v4 → v5: substrate-only change; no field migration needed.
+			if (version < 6) next = { ...next, cardsCache: {}, cardsCacheOrder: [] };
 			return next as AppStore;
 		},
 	}),

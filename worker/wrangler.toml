@@ -1,0 +1,10 @@
+name = "pokemon-tcg-proxy"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+# Set the browser origin allowed to call this proxy (your Pages URL):
+#   wrangler deploy --var ALLOW_ORIGIN:https://<user>.github.io
+# Set the API key as a secret (never commit it):
+#   wrangler secret put POKEMONTCG_API_KEY
+[vars]
+ALLOW_ORIGIN = "*"

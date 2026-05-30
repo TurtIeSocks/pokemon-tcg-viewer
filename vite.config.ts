@@ -41,8 +41,8 @@ export default defineConfig({
 				navigateFallback: "/pokemon-tcg-viewer/index.html",
 				runtimeCaching: [
 					{
-						urlPattern: /^https:\/\/api\.pokemontcg\.io\//,
-						handler: "CacheFirst",
+						urlPattern: ({ url }) => url.pathname.startsWith("/v2/"),
+						handler: "StaleWhileRevalidate",
 						options: {
 							cacheName: "pokemontcg-api",
 							expiration: { maxEntries: 200, maxAgeSeconds: SEVEN_DAYS },
@@ -56,7 +56,20 @@ export default defineConfig({
 							expiration: { maxEntries: 500, maxAgeSeconds: THIRTY_DAYS },
 						},
 					},
+					{
+						urlPattern: ({ url }) => url.hostname === "wsrv.nl",
+						handler: "CacheFirst",
+						options: {
+							cacheName: "wsrv-images",
+							expiration: { maxEntries: 500, maxAgeSeconds: THIRTY_DAYS },
+						},
+					},
 				],
+			},
+			devOptions: {
+				enabled: true,
+				type: "module",
+				navigateFallback: "index.html",
 			},
 		}),
 	],
