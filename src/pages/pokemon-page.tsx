@@ -1,19 +1,19 @@
 import { useMemo } from "react";
-import { getCardsByPokedexNumber } from "../api";
+import { getCardsByName } from "../api";
 import { CardGrid } from "../components/card-grid";
+import { CardSearch } from "../components/card-search";
 import { CollectionToggle } from "../components/collection-toggle";
 import { CrossLinkOverlay } from "../components/cross-link-overlay";
 import { FilterChipRow } from "../components/filter-chip-row";
 import "../components/header.css";
 import type { HoloCardData } from "../components/holo-card";
-import { PokemonFilter } from "../components/pokemon-filter";
 import { PokemonTimeline } from "../components/pokemon-timeline";
 import { ViewModeToggle } from "../components/view-mode-toggle";
 import { type CardFetcher, useCards } from "../hooks/use-cards";
 import { useFilterValues } from "../hooks/use-filter-values";
 import {
 	useFilterParam,
-	usePokedexParam,
+	useNameQueryParam,
 	useViewModeParam,
 } from "../hooks/use-url-selection";
 import "./pokemon-page.css";
@@ -33,7 +33,7 @@ function renderOverlay(card: HoloCardData) {
 
 export function PokemonPage() {
 	const filterValues = useFilterValues();
-	const [pokedexNumber, setPokedexNumber] = usePokedexParam();
+	const [query, setQuery] = useNameQueryParam();
 	const [view, setView] = useViewModeParam();
 	const [types] = useFilterParam("types");
 	const [rarity] = useFilterParam("rarity");
@@ -41,7 +41,7 @@ export function PokemonPage() {
 	const [subtypes] = useFilterParam("subtypes");
 
 	const filterSig = `${types.join(",")}|${rarity.join(",")}|${supertype.join(",")}|${subtypes.join(",")}`;
-	const baseKey = pokedexNumber === null ? null : String(pokedexNumber);
+	const baseKey = query === "" ? null : query;
 	const cacheKey = baseKey
 		? filterSig === "|||"
 			? baseKey
@@ -50,17 +50,17 @@ export function PokemonPage() {
 
 	const fetcher: CardFetcher = useMemo(
 		() => (_key, page, pageSize) => {
-			if (pokedexNumber === null) {
+			if (query === "") {
 				return Promise.resolve({ cards: [], totalCount: 0 });
 			}
-			return getCardsByPokedexNumber(pokedexNumber, page, pageSize, {
+			return getCardsByName(query, page, pageSize, {
 				types,
 				rarity,
 				supertype,
 				subtypes,
 			});
 		},
-		[pokedexNumber, types, rarity, supertype, subtypes],
+		[query, types, rarity, supertype, subtypes],
 	);
 
 	const { cards, loading, loadMore, hasMore } = useCards(cacheKey, fetcher);
@@ -71,21 +71,21 @@ export function PokemonPage() {
 				<h1>Pokémon TCG Holo Playground</h1>
 				<div className="set-meta">
 					<div>
-						<div className="set-name">Filter by Pokémon</div>
+						<div className="set-name">Search cards</div>
 						<div className="set-sub">
-							{pokedexNumber === null
-								? "Pick a Pokémon to see every holo card across every set"
-								: `National Pokédex #${pokedexNumber} · ${cards.length} cards loaded`}
+							{query === ""
+								? "Search any card by name — Pokémon, Trainer, or Energy"
+								: `"${query}" · ${cards.length} cards loaded`}
 						</div>
 					</div>
 					<ViewModeToggle
 						value={view}
 						onChange={setView}
-						disabled={pokedexNumber === null}
+						disabled={query === ""}
 					/>
 				</div>
 			</header>
-			<PokemonFilter value={pokedexNumber} onChange={setPokedexNumber} />
+			<CardSearch value={query} onChange={setQuery} />
 			<FilterChipRow
 				types={filterValues.types}
 				rarities={filterValues.rarities}
