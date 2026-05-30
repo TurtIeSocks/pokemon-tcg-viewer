@@ -1,4 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it, mock, test } from "bun:test";
+import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	mock,
+	test,
+} from "bun:test";
 import { getCardsByName, getCardsBySet } from "./api";
 
 const realFetch = globalThis.fetch;

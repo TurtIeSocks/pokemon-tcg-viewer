@@ -15,6 +15,7 @@ export function ScopeToggle() {
 			aria-label="Search scope"
 		>
 			{OPTIONS.map((o) => (
+				// biome-ignore lint/a11y/useSemanticElements: styled segmented control; native radio inputs would need bespoke restyling
 				<button
 					key={o.value}
 					type="button"

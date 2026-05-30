@@ -80,7 +80,6 @@ export function SearchInput({
 			<Input
 				value={text}
 				onChange={onInput}
-				// biome-ignore lint/a11y/noAutofocus: opt-in via prop, used only on the Home hero
 				autoFocus={autoFocus}
 				onFocus={() => setOpen(true)}
 				onBlur={() => setTimeout(() => setOpen(false), 120)}

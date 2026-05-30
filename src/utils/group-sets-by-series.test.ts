@@ -43,7 +43,11 @@ describe("groupSetsBySeries", () => {
 	});
 
 	it("exposes the earliest release year per series", () => {
-		const mk = (id: string, series: string, releaseDate: string): PokemonSet => ({
+		const mk = (
+			id: string,
+			series: string,
+			releaseDate: string,
+		): PokemonSet => ({
 			id,
 			name: id,
 			series,
