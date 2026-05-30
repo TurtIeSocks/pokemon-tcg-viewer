@@ -56,6 +56,14 @@ export default defineConfig({
 							expiration: { maxEntries: 500, maxAgeSeconds: THIRTY_DAYS },
 						},
 					},
+					{
+						urlPattern: ({ url }) => url.hostname === "wsrv.nl",
+						handler: "CacheFirst",
+						options: {
+							cacheName: "wsrv-images",
+							expiration: { maxEntries: 500, maxAgeSeconds: THIRTY_DAYS },
+						},
+					},
 				],
 			},
 			devOptions: {
