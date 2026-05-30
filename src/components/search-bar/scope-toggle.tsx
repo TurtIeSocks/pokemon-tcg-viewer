@@ -18,7 +18,8 @@ export function ScopeToggle() {
 				<button
 					key={o.value}
 					type="button"
-					aria-pressed={scope === o.value}
+					role="radio"
+					aria-checked={scope === o.value}
 					onClick={() => setScope(o.value)}
 					className={cn(
 						"rounded-md px-3 py-1 transition-colors",
