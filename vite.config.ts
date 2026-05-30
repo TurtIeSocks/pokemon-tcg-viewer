@@ -41,7 +41,7 @@ export default defineConfig({
 				navigateFallback: "/pokemon-tcg-viewer/index.html",
 				runtimeCaching: [
 					{
-						urlPattern: /^https:\/\/api\.pokemontcg\.io\//,
+						urlPattern: ({ url }) => url.pathname.startsWith("/v2/"),
 						handler: "StaleWhileRevalidate",
 						options: {
 							cacheName: "pokemontcg-api",
