@@ -40,7 +40,14 @@ export function CardSearch({
 			timerRef.current = null;
 		}
 	};
-	useEffect(() => clearTimer, []);
+	// Clear any pending debounce on unmount. References only the stable ref,
+	// so it needs no dependency on the per-render clearTimer helper.
+	useEffect(
+		() => () => {
+			if (timerRef.current) clearTimeout(timerRef.current);
+		},
+		[],
+	);
 
 	const commit = useCallback((next: string) => {
 		const trimmed = next.trim();
