@@ -6,13 +6,13 @@ import { CrossLinkOverlay } from "../components/cross-link-overlay";
 import { FilterChipRow } from "../components/filter-chip-row";
 import { Header } from "../components/header";
 import type { HoloCardData } from "../components/holo-card";
-import { SeriesTabs } from "../components/series-tabs";
-import { SetTabs } from "../components/set-tabs";
+import { SeriesMenu } from "../components/series-menu";
 import { type CardFetcher, useCards } from "../hooks/use-cards";
 import { useFilterValues } from "../hooks/use-filter-values";
 import { usePokemonList } from "../hooks/use-pokemon-list";
 import { useSets } from "../hooks/use-sets";
 import { useFilterParam, useSetIdParam } from "../hooks/use-url-selection";
+import { groupSetsBySeries } from "../utils/group-sets-by-series";
 import { pokemonNameByDex } from "../utils/pokemon-name";
 
 export function SetsPage() {
@@ -62,30 +62,8 @@ export function SetsPage() {
 
 	const currentSet = sets.find((s) => s.id === selectedSetId);
 
-	const distinctSeries = useMemo(() => {
-		const seen = new Set<string>();
-		const result: string[] = [];
-		for (const s of sets) {
-			if (!seen.has(s.series)) {
-				seen.add(s.series);
-				result.push(s.series);
-			}
-		}
-		return result;
-	}, [sets]);
-
+	const seriesGroups = useMemo(() => groupSetsBySeries(sets), [sets]);
 	const selectedSeries = currentSet?.series ?? null;
-	const setsInSeries = useMemo(
-		() =>
-			selectedSeries ? sets.filter((s) => s.series === selectedSeries) : [],
-		[sets, selectedSeries],
-	);
-
-	function selectSeries(series: string) {
-		if (series === selectedSeries) return;
-		const firstInSeries = sets.find((s) => s.series === series);
-		if (firstInSeries) setSelectedSetId(firstInSeries.id);
-	}
 
 	function renderOverlay(card: HoloCardData) {
 		const dexNums = card.nationalPokedexNumbers ?? [];
@@ -105,15 +83,10 @@ export function SetsPage() {
 	return (
 		<>
 			<Header currentSet={currentSet} />
-			<SeriesTabs
-				series={distinctSeries}
-				selected={selectedSeries}
-				onSelect={selectSeries}
-			/>
-			<SetTabs
-				sets={setsInSeries}
+			<SeriesMenu
+				groups={seriesGroups}
+				selectedSeries={selectedSeries}
 				selectedSetId={selectedSetId}
-				seriesLabel={selectedSeries}
 				onSelect={setSelectedSetId}
 			/>
 			<FilterChipRow
