@@ -1,5 +1,6 @@
 import type React from "react";
 import { useNavigate } from "react-router";
+import { warmCard } from "../../pages/card-prefetch";
 import { useStore } from "../../store";
 import { HoloCard, type HoloCardData } from "../holo-card";
 import { groupCardsByEra } from "./group-cards-by-era";
@@ -64,6 +65,7 @@ export function PokemonTimeline({
 								cardNumber={card.cardNumber}
 								owned={!!owned[card.id]}
 								hoverOverlay={renderOverlay?.(card)}
+								onPrefetch={() => warmCard(card)}
 								onClick={(e) => {
 									if (e.defaultPrevented) return;
 									navigate(`/card/${card.id}`);

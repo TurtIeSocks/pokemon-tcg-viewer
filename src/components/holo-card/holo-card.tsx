@@ -27,6 +27,8 @@ export interface HoloCardProps {
 	forceFoil?: boolean;
 
 	onClick?: (e: React.MouseEvent | React.KeyboardEvent) => void;
+	/** Fired on hover/focus — used to warm the card-detail fetch + focus image. */
+	onPrefetch?: () => void;
 	hoverOverlay?: React.ReactNode;
 	size?: "grid" | "focus";
 
@@ -49,6 +51,7 @@ export function HoloCard({
 	tilt = false,
 	forceFoil = false,
 	onClick,
+	onPrefetch,
 	hoverOverlay,
 	size = "grid",
 	className,
@@ -103,6 +106,8 @@ export function HoloCard({
 			role="button"
 			tabIndex={onClick || hoverOverlay ? 0 : -1}
 			onClick={onClick}
+			onPointerEnter={onPrefetch}
+			onFocus={onPrefetch}
 			onKeyDown={handleKeyDown}
 			aria-label={name}
 			{...dataAttrs}
