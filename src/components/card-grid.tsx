@@ -62,6 +62,7 @@ export function CardGrid({
 			itemContent={(_, card) => (
 				<HoloCard
 					imageUrl={card.imageUrl}
+					imageUrlSmall={card.imageUrlSmall}
 					name={card.name}
 					rarity={card.rarity}
 					subtypes={card.subtypes}

@@ -53,6 +53,7 @@ export function PokemonTimeline({
 							<HoloCard
 								key={card.id}
 								imageUrl={card.imageUrl}
+								imageUrlSmall={card.imageUrlSmall}
 								name={card.name}
 								rarity={card.rarity}
 								subtypes={card.subtypes}
