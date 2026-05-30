@@ -16,19 +16,19 @@ describe("<CrossLinkOverlay />", () => {
 	test("renders a single link with correct label and href", () => {
 		renderInRouter(
 			<CrossLinkOverlay
-				links={[{ label: "View all Pikachu", to: "/pokemon?dex=25" }]}
+				links={[{ label: "View all Pikachu", to: "/pokemon?q=pikachu" }]}
 			/>,
 		);
 		const link = screen.getByRole("link", { name: /pikachu/i });
-		expect(link.getAttribute("href")).toBe("/pokemon?dex=25");
+		expect(link.getAttribute("href")).toBe("/pokemon?q=pikachu");
 	});
 
 	test("renders multiple stacked links for multi-Pokémon cards", () => {
 		renderInRouter(
 			<CrossLinkOverlay
 				links={[
-					{ label: "View all Pikachu", to: "/pokemon?dex=25" },
-					{ label: "View all Zekrom", to: "/pokemon?dex=644" },
+					{ label: "View all Pikachu", to: "/pokemon?q=pikachu" },
+					{ label: "View all Zekrom", to: "/pokemon?q=zekrom" },
 				]}
 			/>,
 		);

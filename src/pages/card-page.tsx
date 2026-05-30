@@ -115,7 +115,10 @@ export function CardPage() {
 	const crossLinks: { label: string; to: string }[] = [];
 	for (const dex of card.nationalPokedexNumbers ?? []) {
 		const name = pokemonNameByDex(pokemonList, dex) ?? `#${dex}`;
-		crossLinks.push({ label: `View all ${name}`, to: `/pokemon?dex=${dex}` });
+		crossLinks.push({
+			label: `View all ${name}`,
+			to: `/pokemon?q=${encodeURIComponent(name)}`,
+		});
 	}
 	crossLinks.push({
 		label: `Go to ${card.setName}`,

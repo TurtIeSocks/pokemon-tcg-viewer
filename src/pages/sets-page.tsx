@@ -90,10 +90,13 @@ export function SetsPage() {
 	function renderOverlay(card: HoloCardData) {
 		const dexNums = card.nationalPokedexNumbers ?? [];
 		if (dexNums.length === 0) return <CollectionToggle card={card} />;
-		const links = dexNums.map((n) => ({
-			label: `View all ${pokemonNameByDex(pokemonList, n) ?? `#${n}`}`,
-			to: `/pokemon?dex=${n}`,
-		}));
+		const links = dexNums.map((n) => {
+			const name = pokemonNameByDex(pokemonList, n) ?? `#${n}`;
+			return {
+				label: `View all ${name}`,
+				to: `/pokemon?q=${encodeURIComponent(name)}`,
+			};
+		});
 		return (
 			<>
 				<CrossLinkOverlay links={links} />
