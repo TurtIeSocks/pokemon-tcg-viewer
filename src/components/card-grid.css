@@ -1,5 +1,8 @@
-.grid {
+/* VirtuosoGrid root acts as the scroll container; fills the flex-column
+   page region. Named to avoid colliding with Tailwind's `.grid` utility. */
+.virtuoso-grid {
 	flex: 1;
+	min-height: 0;
 	overflow-y: auto;
 }
 

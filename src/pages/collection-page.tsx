@@ -29,8 +29,8 @@ export function CollectionPage() {
 	const copies = entries.reduce((n, o) => n + o.count, 0);
 
 	return (
-		<div className="mx-auto max-w-7xl px-4 py-5">
-			<div className="mb-5 flex items-center justify-between gap-3">
+		<div className="mx-auto flex h-full w-full min-h-0 max-w-7xl flex-col px-4">
+			<div className="flex shrink-0 items-center justify-between gap-3 py-5">
 				<div>
 					<h1 className="text-2xl font-bold">Your Collection</h1>
 					<p className="text-sm text-muted-foreground">
@@ -57,13 +57,15 @@ export function CollectionPage() {
 					renderOverlay={renderOverlay}
 				/>
 			) : (
-				<PokemonTimeline
-					cards={cards}
-					loading={false}
-					hasMore={false}
-					onLoadMore={() => {}}
-					renderOverlay={renderOverlay}
-				/>
+				<div className="min-h-0 flex-1 overflow-y-auto">
+					<PokemonTimeline
+						cards={cards}
+						loading={false}
+						hasMore={false}
+						onLoadMore={() => {}}
+						renderOverlay={renderOverlay}
+					/>
+				</div>
 			)}
 		</div>
 	);

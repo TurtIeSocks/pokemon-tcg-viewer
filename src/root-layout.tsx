@@ -12,7 +12,9 @@ export function RootLayout() {
 				<aside className="hidden w-72 shrink-0 border-r border-border bg-sidebar lg:block">
 					<SeriesSidebar />
 				</aside>
-				<main className="min-w-0 flex-1 overflow-y-auto">
+				{/* Non-scrolling flex column; each page fills it and owns its own
+				    scroll (the virtual grid is a flex:1 internal scroller). */}
+				<main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
 					<Outlet />
 				</main>
 			</div>

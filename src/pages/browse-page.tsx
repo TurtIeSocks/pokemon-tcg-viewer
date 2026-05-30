@@ -108,25 +108,29 @@ export function BrowsePage() {
 	}
 
 	return (
-		<div className="mx-auto max-w-7xl space-y-5 px-4 py-5">
-			<SearchBar />
-			<div className="flex items-center justify-between gap-3">
-				<p className="text-sm text-muted-foreground">
-					{searching ? `Results for "${query}"` : "Browse set"} · {cards.length}{" "}
-					loaded
-				</p>
-				{searching && (
-					<ViewModeToggle value={view} onChange={setView} disabled={false} />
-				)}
+		<div className="mx-auto flex h-full w-full min-h-0 max-w-7xl flex-col px-4">
+			<div className="shrink-0 space-y-3 py-5">
+				<SearchBar />
+				<div className="flex items-center justify-between gap-3">
+					<p className="text-sm text-muted-foreground">
+						{searching ? `Results for "${query}"` : "Browse set"} ·{" "}
+						{cards.length} loaded
+					</p>
+					{searching && (
+						<ViewModeToggle value={view} onChange={setView} disabled={false} />
+					)}
+				</div>
 			</div>
 			{view === "timeline" && searching ? (
-				<PokemonTimeline
-					cards={cards}
-					loading={loading}
-					hasMore={hasMore}
-					onLoadMore={() => cacheKey && loadMore(cacheKey)}
-					renderOverlay={renderOverlay}
-				/>
+				<div className="min-h-0 flex-1 overflow-y-auto">
+					<PokemonTimeline
+						cards={cards}
+						loading={loading}
+						hasMore={hasMore}
+						onLoadMore={() => cacheKey && loadMore(cacheKey)}
+						renderOverlay={renderOverlay}
+					/>
+				</div>
 			) : (
 				<CardGrid
 					setId={cacheKey}
