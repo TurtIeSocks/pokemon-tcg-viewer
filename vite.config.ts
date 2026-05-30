@@ -1,4 +1,6 @@
+import { fileURLToPath } from "node:url";
 import babel from "@rolldown/plugin-babel";
+import tailwindcss from "@tailwindcss/vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
@@ -6,12 +8,18 @@ import { VitePWA } from "vite-plugin-pwa";
 const SEVEN_DAYS = 7 * 24 * 60 * 60;
 const THIRTY_DAYS = 30 * 24 * 60 * 60;
 
-export default defineConfig({
-	base: "/pokemon-tcg-viewer/",
+export default defineConfig(({ command }) => ({
+	base: command === "build" ? "/pokemon-tcg-viewer/" : "/",
+	resolve: {
+		alias: {
+			"@": fileURLToPath(new URL("./src", import.meta.url)),
+		},
+	},
 	server: {
 		port: 6201,
 	},
 	plugins: [
+		tailwindcss(),
 		react(),
 		babel({ presets: [reactCompilerPreset()] }),
 		VitePWA({
@@ -73,4 +81,4 @@ export default defineConfig({
 			},
 		}),
 	],
-});
+}));
