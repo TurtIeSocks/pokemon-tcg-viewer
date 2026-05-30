@@ -6,6 +6,8 @@
 export interface HoloCardData {
 	id: string;
 	imageUrl: string;
+	/** Smaller (~245px) image for grids; falls back to imageUrl when absent. */
+	imageUrlSmall?: string;
 	name: string;
 	rarity?: string;
 	subtypes?: string[];

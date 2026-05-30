@@ -35,6 +35,7 @@ function apiCardToProps(card: PokemonApiCard): HoloCardData {
 	return {
 		id: card.id,
 		imageUrl: card.images.large,
+		imageUrlSmall: card.images.small,
 		name: card.name,
 		rarity: card.rarity,
 		subtypes: card.subtypes,
