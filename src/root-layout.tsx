@@ -3,7 +3,7 @@ import { Outlet, ScrollRestoration } from "react-router";
 import "./app.css";
 import { Toolbar } from "./components/app-shell/toolbar";
 import { SeriesSidebar } from "./components/series-sidebar/series-sidebar";
-import { loadCorpus } from "./store/corpus/corpus-runtime";
+import { loadCorpus, useCorpusRuntime } from "./store/corpus/corpus-runtime";
 
 export function RootLayout() {
 	useEffect(() => {
@@ -14,6 +14,10 @@ export function RootLayout() {
 		if (ric) ric(start);
 		else setTimeout(start, 1500);
 	}, []);
+
+	// App-global indicator while the corpus loads (idle, on first visit). Hidden
+	// once the in-memory index is ready — search just becomes instant.
+	const preparing = useCorpusRuntime((s) => s.loading && s.index === null);
 
 	return (
 		<div className="flex h-screen flex-col overflow-hidden">
@@ -29,6 +33,14 @@ export function RootLayout() {
 					<Outlet />
 				</main>
 			</div>
+			{preparing && (
+				<div
+					role="status"
+					className="fixed bottom-4 right-4 z-50 rounded-full border border-border bg-card/90 px-3 py-1.5 text-xs text-muted-foreground shadow-lg backdrop-blur"
+				>
+					Preparing instant search…
+				</div>
+			)}
 		</div>
 	);
 }

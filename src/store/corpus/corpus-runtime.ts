@@ -14,12 +14,15 @@ import type { CorpusCard } from "./corpus-types";
 
 interface CorpusRuntimeState {
 	index: CorpusIndex | null;
+	/** True while loadCorpus is actively fetching/decompressing the corpus. */
+	loading: boolean;
 }
 
 // Non-persisted store — holds the ~20k-card index in memory only. Never put
 // this in the persisted useStore, which re-serializes on every change.
 export const useCorpusRuntime = create<CorpusRuntimeState>(() => ({
 	index: null,
+	loading: false,
 }));
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
@@ -36,7 +39,7 @@ async function setIndexFromGz(gz: ArrayBuffer): Promise<void> {
 	useCorpusRuntime.setState({ index: buildIndex(cards) });
 }
 
-let loading: Promise<void> | null = null;
+let inFlight: Promise<void> | null = null;
 
 /**
  * Load the corpus into memory: conditional GET /corpus, store on 200, reuse
@@ -45,8 +48,9 @@ let loading: Promise<void> | null = null;
  */
 export function loadCorpus(): Promise<void> {
 	if (useCorpusRuntime.getState().index) return Promise.resolve();
-	if (loading) return loading;
-	loading = (async () => {
+	if (inFlight) return inFlight;
+	useCorpusRuntime.setState({ loading: true });
+	inFlight = (async () => {
 		const meta = await readMeta();
 		const stored = await readGz();
 		const fresh = meta && Date.now() - meta.fetchedAt < ONE_DAY;
@@ -84,9 +88,10 @@ export function loadCorpus(): Promise<void> {
 			if (stored) await setIndexFromGz(stored);
 		}
 	})().finally(() => {
-		loading = null;
+		inFlight = null;
+		useCorpusRuntime.setState({ loading: false });
 	});
-	return loading;
+	return inFlight;
 }
 
 // Memoize the full sorted match list per (index, cacheKey). Keyed by the index

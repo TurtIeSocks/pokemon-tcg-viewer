@@ -29,7 +29,7 @@ const sample: CorpusCard[] = [
 
 beforeEach(async () => {
 	await clearCorpus();
-	useCorpusRuntime.setState({ index: null });
+	useCorpusRuntime.setState({ index: null, loading: false });
 });
 afterEach(() => {
 	globalThis.fetch = realFetch;
@@ -70,4 +70,16 @@ test("makeCorpusFetcher returns a paginated CardFetcher over the index", async (
 	const { cards, totalCount } = await fetcher("char", 1, 20);
 	expect(totalCount).toBe(1);
 	expect(cards[0].id).toBe("base1-4");
+});
+
+test("loadCorpus toggles the loading flag (true during, false after)", async () => {
+	globalThis.fetch = mock(
+		async () =>
+			new Response(gzipOf(sample), { status: 200, headers: { ETag: '"v1"' } }),
+	) as unknown as typeof fetch;
+	const p = loadCorpus();
+	expect(useCorpusRuntime.getState().loading).toBe(true);
+	await p;
+	expect(useCorpusRuntime.getState().loading).toBe(false);
+	expect(useCorpusRuntime.getState().index).not.toBeNull();
 });
