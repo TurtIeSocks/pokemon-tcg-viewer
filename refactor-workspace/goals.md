@@ -15,7 +15,7 @@ Captured from the brainstorm (2026-05-31). Open items flagged ⬜ — resolved i
 |---|---|
 | Crawl depth | Series + sets + **individual cards** all get real URLs + OG. |
 | Card render | On-demand (**SSR + cache**), *not* prerender-all-20k. "Render once, cache till TTL." |
-| ISR mechanism | No heavyweight ISR needed — **`Cache-Control: s-maxage + stale-while-revalidate`** on SSR routes, cached by CF edge + nginx. Card identity is static; live prices are a client island so never stale in cache. |
+| ISR mechanism | No heavyweight ISR needed — **`Cache-Control: s-maxage + stale-while-revalidate`**, cached by CF edge + nginx. Card identity is static; live prices are a client island so never stale in cache. **UPDATE (Plan 03):** the app does NOT emit these headers — react-start 1.168's route-level `headers` option doesn't forward to the SSR document response. So the **edge layer owns cache policy** (nginx `proxy_cache_valid` per path + CF Cache Rules, Plan 06), mirroring the TTL values in `src/server/cache-headers.ts`. Decouples TTL from app deploys. |
 | Series render | **Prerender** at build (~15, monthly). |
 | Sets render | **SSR + long SWR** (like cards). |
 | Hosting (v1) | **Self-host Node** (`.output`) on home server, behind existing **Cloudflare + nginx** (2-tier SWR cache). |
