@@ -11,6 +11,8 @@ import { useSetIdParam } from "../../hooks/use-url-selection";
 import { InstallPrompt } from "../install-prompt";
 import { OfflineIndicator } from "../offline-indicator";
 import { SeriesSidebar } from "../series-sidebar/series-sidebar";
+import { AboutDialog } from "./about-dialog";
+import { RepoLink } from "./repo-link";
 
 export function Toolbar() {
 	const [selectedSetId] = useSetIdParam();
@@ -64,6 +66,8 @@ export function Toolbar() {
 				<Button variant="outline" asChild>
 					<Link to="/collection">Collection</Link>
 				</Button>
+				<AboutDialog />
+				<RepoLink />
 			</div>
 		</header>
 	);
