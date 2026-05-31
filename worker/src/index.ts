@@ -88,7 +88,10 @@ export default {
 				headers: {
 					"Content-Type": "application/octet-stream",
 					ETag: `"${obj.etag}"`,
-					"Cache-Control": "public, s-maxage=604800",
+					// Edge revalidates hourly so a weekly rebuild is visible within ~1h
+					// (vs up to a week). Clients still get cheap 304s via the ETag.
+					"Cache-Control":
+						"public, s-maxage=3600, stale-while-revalidate=86400",
 				},
 			});
 			ctx.waitUntil(cache.put(cacheKey, res.clone()));

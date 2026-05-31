@@ -1,4 +1,4 @@
-import { createStore, del, get, set } from "idb-keyval";
+import { createStore, del, get, setMany } from "idb-keyval";
 
 // Dedicated IDB store — kept OUT of the persisted Zustand blob, which
 // re-serializes its whole state on every change. The corpus is written once
@@ -26,8 +26,15 @@ export async function writeCorpus(
 	gz: ArrayBuffer,
 	meta: CorpusMeta,
 ): Promise<void> {
-	await set("gz", gz, store);
-	await set("meta", meta, store);
+	// Atomic: one IDB transaction, so a crash can't leave gz without meta
+	// (which would force an unnecessary full re-download on the next load).
+	await setMany(
+		[
+			["gz", gz],
+			["meta", meta],
+		],
+		store,
+	);
 }
 
 export async function clearCorpus(): Promise<void> {

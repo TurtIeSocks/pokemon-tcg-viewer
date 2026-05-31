@@ -56,7 +56,9 @@ export function loadCorpus(): Promise<void> {
 		}
 		try {
 			const res = await fetch(`${apiBase()}/corpus`, {
-				headers: meta?.etag ? { "If-None-Match": meta.etag } : {},
+				// Only send If-None-Match when the cached body is actually present:
+				// a 304 with no stored blob would leave us with no corpus at all.
+				headers: meta?.etag && stored ? { "If-None-Match": meta.etag } : {},
 			});
 			if (res.status === 304 && stored) {
 				await writeCorpus(stored, {
