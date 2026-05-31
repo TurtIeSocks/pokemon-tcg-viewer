@@ -16,6 +16,11 @@ const API_BASE = RAW_API_BASE
 	? RAW_API_BASE.replace(/\/$/, "")
 	: "https://api.pokemontcg.io";
 
+/** The proxy/API base URL used for all requests (worker proxy or public origin). */
+export function apiBase(): string {
+	return API_BASE;
+}
+
 function pokemontcgFetch(path: string, init?: RequestInit) {
 	return fetch(`${API_BASE}${path}`, init);
 }

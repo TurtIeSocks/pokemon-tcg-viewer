@@ -38,6 +38,22 @@ const env = {
 	ALLOW_ORIGIN: "https://x.github.io",
 };
 
+function envWithCorpus(obj: { body: string; etag: string } | null) {
+	return {
+		...env,
+		CORPUS: {
+			get: async (key: string) => {
+				if (key !== "corpus/latest.json.gz" || !obj) return null;
+				return {
+					body: obj.body,
+					etag: obj.etag,
+					writeHttpMetadata: (_h: Headers) => {},
+				};
+			},
+		},
+	} as unknown as typeof env;
+}
+
 beforeEach(() => {
 	pending = [];
 	installFakeCaches();
@@ -98,6 +114,37 @@ describe("worker", () => {
 			ctx,
 		);
 		expect(res.status).toBe(404);
+	});
+
+	test("/corpus serves the R2 blob with an ETag and CORS", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus"),
+			envWithCorpus({ body: "GZBYTES", etag: "abc123" }),
+			ctx,
+		);
+		expect(res.status).toBe(200);
+		expect(res.headers.get("ETag")).toBe('"abc123"');
+		expect(res.headers.get("Content-Type")).toBe("application/octet-stream");
+		expect(res.headers.get("Access-Control-Allow-Origin")).toBe("https://x.github.io");
+		expect(await res.text()).toBe("GZBYTES");
+	});
+
+	test("/corpus returns 304 when If-None-Match matches", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus", { headers: { "If-None-Match": '"abc123"' } }),
+			envWithCorpus({ body: "GZBYTES", etag: "abc123" }),
+			ctx,
+		);
+		expect(res.status).toBe(304);
+	});
+
+	test("/corpus returns 503 when the blob is absent", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus"),
+			envWithCorpus(null),
+			ctx,
+		);
+		expect(res.status).toBe(503);
 	});
 
 	test("serves cached response on a hit and revalidates in the background", async () => {

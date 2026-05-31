@@ -8,3 +8,9 @@ compatibility_date = "2024-11-01"
 #   wrangler secret put POKEMONTCG_API_KEY
 [vars]
 ALLOW_ORIGIN = "*"
+
+# R2 bucket holding the prebuilt card corpus blob (corpus/latest.json.gz),
+# uploaded by the build-corpus GitHub Action. Served by the /corpus route.
+[[r2_buckets]]
+binding = "CORPUS"
+bucket_name = "pokemon-tcg-corpus"

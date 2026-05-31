@@ -1,9 +1,20 @@
+import { useEffect } from "react";
 import { Outlet, ScrollRestoration } from "react-router";
 import "./app.css";
 import { Toolbar } from "./components/app-shell/toolbar";
 import { SeriesSidebar } from "./components/series-sidebar/series-sidebar";
+import { loadCorpus } from "./store/corpus/corpus-runtime";
 
 export function RootLayout() {
+	useEffect(() => {
+		const start = () => void loadCorpus();
+		const ric = (
+			window as unknown as { requestIdleCallback?: (cb: () => void) => void }
+		).requestIdleCallback;
+		if (ric) ric(start);
+		else setTimeout(start, 1500);
+	}, []);
+
 	return (
 		<div className="flex h-screen flex-col overflow-hidden">
 			<ScrollRestoration />
