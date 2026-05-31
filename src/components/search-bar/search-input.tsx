@@ -96,7 +96,7 @@ export function SearchInput({
 				}}
 				placeholder={placeholder}
 				aria-label="Search cards by name"
-				className="h-11 pl-10 pr-10"
+				className="h-11 bg-card pl-10 pr-10 shadow-sm"
 			/>
 			{text && (
 				<Button
