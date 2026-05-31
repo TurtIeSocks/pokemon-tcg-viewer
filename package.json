@@ -12,7 +12,7 @@
 		"format": "biome check --write --unsafe",
 		"preview": "vite preview",
 		"typecheck:worker": "tsc -p worker/tsconfig.json",
-		"deploy:worker": "cd worker && wrangler deploy"
+		"deploy:worker": "cd worker && bunx wrangler deploy"
 	},
 	"dependencies": {
 		"@tailwindcss/vite": "^4.3.0",
