@@ -55,8 +55,7 @@ function RecentsInner() {
 									subtypes={card.subtypes}
 									supertype={card.supertype}
 									setId={card.setId}
-									setName={card.setName}
-									setSeries={card.setSeries}
+									series={card.setSeries}
 									variants={card.variants}
 									cardNumber={card.cardNumber}
 								/>

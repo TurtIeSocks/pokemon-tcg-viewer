@@ -1,8 +1,10 @@
 import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { CardModal } from "../../../components/islands/card-modal";
 import { fetchCardById } from "../../../server/card-data";
 import { resolveCardInSet } from "../../../server/card-resolve";
 import { findSet, getNavTreeFn } from "../../../server/nav-tree";
+import { useRecentsStore } from "../../../store/recents";
 
 export const Route = createFileRoute("/$series/$set/$card")({
 	loader: async ({ params }) => {
@@ -39,6 +41,22 @@ function CardPage() {
 	const { card } = Route.useLoaderData();
 	const params = Route.useParams();
 	const navigate = useNavigate();
+	const addRecentlyViewed = useRecentsStore((s) => s.addRecentlyViewed);
+	useEffect(() => {
+		addRecentlyViewed({
+			id: card.id,
+			imageUrl: card.imageUrl,
+			name: card.name,
+			rarity: card.rarity,
+			subtypes: card.subtypes,
+			supertype: card.supertype,
+			setId: card.setId,
+			setName: card.setName,
+			setSeries: card.setSeries,
+			cardNumber: card.cardNumber,
+			nationalPokedexNumbers: card.nationalPokedexNumbers,
+		});
+	}, [card, addRecentlyViewed]);
 	return (
 		<CardModal
 			card={card}
