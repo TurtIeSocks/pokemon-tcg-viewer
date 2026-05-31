@@ -30,7 +30,10 @@ export const Route = createFileRoute("/$series/$set/")({
 	head: ({ loaderData }) => ({
 		meta: [
 			{ title: `${loaderData?.set.name ?? "Set"} — Pokémon TCG cards` },
-			{ name: "description", content: `All ${loaderData?.cards.length ?? 0} cards in ${loaderData?.set.name ?? ""}.` },
+			{
+				name: "description",
+				content: `All ${loaderData?.cards.length ?? 0} cards in ${loaderData?.set.name ?? ""}.`,
+			},
 		],
 	}),
 	component: SetPage,
@@ -42,17 +45,32 @@ function SetPage() {
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-y-auto px-4 py-5">
 			<div className="mb-3 flex items-center gap-3">
 				<h1 className="text-xl font-bold">{set.name}</h1>
-				<span className="text-sm text-muted-foreground">{cards.length} cards</span>
+				<span className="text-sm text-muted-foreground">
+					{cards.length} cards
+				</span>
 			</div>
 			{/* Facets render as plain text chips for now; the interactive filter island is Plan 05. */}
 			<div className="mb-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
-				{facets.supertypes.map((s) => <span key={s} className="rounded bg-secondary px-2 py-1">{s}</span>)}
-				{facets.rarities.map((r) => <span key={r} className="rounded bg-secondary px-2 py-1">{r}</span>)}
+				{facets.supertypes.map((s) => (
+					<span key={s} className="rounded bg-secondary px-2 py-1">
+						{s}
+					</span>
+				))}
+				{facets.rarities.map((r) => (
+					<span key={r} className="rounded bg-secondary px-2 py-1">
+						{r}
+					</span>
+				))}
 			</div>
 			<ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 				{cards.map((card) => (
 					<li key={card.id} className="flex flex-col items-center gap-1">
-						<img src={card.imageUrlSmall} alt={card.name} loading="lazy" className="w-full rounded" />
+						<img
+							src={card.imageUrlSmall}
+							alt={card.name}
+							loading="lazy"
+							className="w-full rounded"
+						/>
 						<span className="text-center text-xs">{card.name}</span>
 					</li>
 				))}

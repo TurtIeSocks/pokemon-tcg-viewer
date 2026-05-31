@@ -15,7 +15,11 @@ interface SidebarNavProps {
  * APIs — safe to server-render. The collapsible-animation island is Plan 05;
  * here every series is expanded so all set links are in the crawlable HTML.
  */
-export function SidebarNav({ tree, activeSeriesSlug, activeSetSlug }: SidebarNavProps) {
+export function SidebarNav({
+	tree,
+	activeSeriesSlug,
+	activeSetSlug,
+}: SidebarNavProps) {
 	return (
 		<nav className="flex flex-col gap-0.5 p-3">
 			<Link
@@ -39,8 +43,12 @@ export function SidebarNav({ tree, activeSeriesSlug, activeSetSlug }: SidebarNav
 						)}
 					>
 						<span className="flex-1 truncate">{series.name}</span>
-						<span className="text-xs tabular-nums text-muted-foreground">{series.year}</span>
-						<span className="text-xs text-muted-foreground">{series.sets.length}</span>
+						<span className="text-xs tabular-nums text-muted-foreground">
+							{series.year}
+						</span>
+						<span className="text-xs text-muted-foreground">
+							{series.sets.length}
+						</span>
 					</Link>
 					<div className="ml-4 border-l border-border pl-3">
 						{series.sets.map((set) => (
@@ -56,7 +64,11 @@ export function SidebarNav({ tree, activeSeriesSlug, activeSetSlug }: SidebarNav
 										: "text-muted-foreground",
 								)}
 							>
-								<img src={set.symbol} alt="" className="max-h-5 max-w-5 object-contain" />
+								<img
+									src={set.symbol}
+									alt=""
+									className="max-h-5 max-w-5 object-contain"
+								/>
 								<span className="flex-1 truncate">{set.name}</span>
 								<span className="text-xs opacity-70">{set.total}</span>
 							</Link>

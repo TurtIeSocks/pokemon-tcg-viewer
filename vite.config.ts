@@ -12,7 +12,20 @@ export default defineConfig({
 	},
 	plugins: [
 		tailwindcss(),
-		tanstackStart({ srcDirectory: "src" }),
+		tanstackStart({
+			srcDirectory: "src",
+			prerender: {
+				enabled: true,
+				crawlLinks: true,
+				// Prerender only the home + single-segment series pages. Sets/cards
+				// stay SSR + SWR (rendered on demand, cached at the edge/nginx).
+				filter: ({ path }) => {
+					const segments = path.split("/").filter(Boolean);
+					return segments.length <= 1;
+				},
+				failOnError: false,
+			},
+		}),
 		viteReact(),
 		nitro(),
 	],

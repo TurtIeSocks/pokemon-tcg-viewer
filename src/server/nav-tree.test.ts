@@ -1,11 +1,32 @@
 import { describe, expect, test } from "bun:test";
-import { deriveNavTree, findSeries, findSet } from "./nav-tree";
 import type { PokemonSet } from "./card-mappers";
+import { deriveNavTree, findSeries, findSet } from "./nav-tree";
 
 const sets: PokemonSet[] = [
-	{ id: "swsh9", name: "Brilliant Stars", series: "Sword & Shield", releaseDate: "2022/02/25", total: 172, images: { symbol: "sym1", logo: "logo1" } },
-	{ id: "swsh1", name: "Sword & Shield", series: "Sword & Shield", releaseDate: "2020/02/07", total: 202, images: { symbol: "sym2", logo: "logo2" } },
-	{ id: "base1", name: "Base", series: "Base", releaseDate: "1999/01/09", total: 102, images: { symbol: "sym3", logo: "logo3" } },
+	{
+		id: "swsh9",
+		name: "Brilliant Stars",
+		series: "Sword & Shield",
+		releaseDate: "2022/02/25",
+		total: 172,
+		images: { symbol: "sym1", logo: "logo1" },
+	},
+	{
+		id: "swsh1",
+		name: "Sword & Shield",
+		series: "Sword & Shield",
+		releaseDate: "2020/02/07",
+		total: 202,
+		images: { symbol: "sym2", logo: "logo2" },
+	},
+	{
+		id: "base1",
+		name: "Base",
+		series: "Base",
+		releaseDate: "1999/01/09",
+		total: 102,
+		images: { symbol: "sym3", logo: "logo3" },
+	},
 ];
 
 describe("deriveNavTree", () => {

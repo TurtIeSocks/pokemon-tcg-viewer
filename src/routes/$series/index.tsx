@@ -1,6 +1,6 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { findSeries, getNavTreeFn } from "../../server/nav-tree";
 import { SetTile } from "../../components/shell/set-tile";
+import { findSeries, getNavTreeFn } from "../../server/nav-tree";
 
 export const Route = createFileRoute("/$series/")({
 	loader: async ({ params }) => {
@@ -14,7 +14,10 @@ export const Route = createFileRoute("/$series/")({
 	head: ({ loaderData }) => ({
 		meta: [
 			{ title: `${loaderData?.name ?? "Series"} — Pokémon TCG sets` },
-			{ name: "description", content: `Browse every ${loaderData?.name ?? ""} set.` },
+			{
+				name: "description",
+				content: `Browse every ${loaderData?.name ?? ""} set.`,
+			},
 		],
 	}),
 	component: SeriesPage,

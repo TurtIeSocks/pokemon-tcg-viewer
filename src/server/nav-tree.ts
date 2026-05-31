@@ -36,7 +36,12 @@ export function deriveNavTree(sets: PokemonSet[]): NavTree {
 		const seriesSlug = slugify(set.series);
 		let series = bySlug.get(seriesSlug);
 		if (!series) {
-			series = { name: set.series, slug: seriesSlug, year: Number(set.releaseDate.slice(0, 4)) || 9999, sets: [] };
+			series = {
+				name: set.series,
+				slug: seriesSlug,
+				year: Number(set.releaseDate.slice(0, 4)) || 9999,
+				sets: [],
+			};
 			bySlug.set(seriesSlug, series);
 			order.push(series);
 		}
@@ -56,7 +61,10 @@ export function deriveNavTree(sets: PokemonSet[]): NavTree {
 	return order;
 }
 
-export function findSeries(tree: NavTree, seriesSlug: string): NavSeries | undefined {
+export function findSeries(
+	tree: NavTree,
+	seriesSlug: string,
+): NavSeries | undefined {
 	return tree.find((s) => s.slug === seriesSlug);
 }
 export function findSet(
