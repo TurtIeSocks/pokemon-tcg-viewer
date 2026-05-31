@@ -1,4 +1,5 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { ClientOnly, createFileRoute, Link, notFound, Outlet } from "@tanstack/react-router";
+import { SetGridIsland } from "../../../components/islands/set-grid-island";
 import type { HoloCardData } from "../../../components/holo-card";
 import { fetchCards } from "../../../server/card-data";
 import { buildSetCardSlugs } from "../../../server/card-resolve";
@@ -49,7 +50,7 @@ function SetPage() {
 	const { set, cards, facets } = Route.useLoaderData();
 	const params = Route.useParams();
 	return (
-		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-y-auto px-4 py-5">
+		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
 			<div className="mb-3 flex items-center gap-3">
 				<h1 className="text-xl font-bold">{set.name}</h1>
 				<span className="text-sm text-muted-foreground">
@@ -69,29 +70,32 @@ function SetPage() {
 					</span>
 				))}
 			</div>
-			<ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-				{cards.map((card) => (
-					<li key={card.id}>
-						<Link
-							to="/$series/$set/$card"
-							params={{
-								series: params.series,
-								set: params.set,
-								card: card.slug,
-							}}
-							className="flex flex-col items-center gap-1"
-						>
-							<img
-								src={card.imageUrlSmall}
-								alt={card.name}
-								loading="lazy"
-								className="w-full rounded"
-							/>
-							<span className="text-center text-xs">{card.name}</span>
-						</Link>
-					</li>
-				))}
-			</ul>
+			<div className="min-h-0 flex-1">
+				<ClientOnly
+					fallback={
+						<ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+							{cards.map((card) => (
+								<li key={card.id} className="flex flex-col items-center gap-1">
+									<Link
+										to="/$series/$set/$card"
+										params={{
+											series: params.series,
+											set: params.set,
+											card: card.slug,
+										}}
+									>
+										<img src={card.imageUrlSmall} alt={card.name} loading="lazy" className="w-full rounded" />
+										<span className="text-center text-xs">{card.name}</span>
+									</Link>
+								</li>
+							))}
+						</ul>
+					}
+				>
+					<SetGridIsland series={params.series} set={params.set} cards={cards} />
+				</ClientOnly>
+			</div>
+			<Outlet />
 		</div>
 	);
 }
