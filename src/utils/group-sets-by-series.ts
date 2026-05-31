@@ -1,4 +1,4 @@
-import type { PokemonSet } from "../api";
+import type { PokemonSet } from "../server/card-mappers";
 
 export interface SeriesGroup {
 	series: string;

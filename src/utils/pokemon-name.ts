@@ -1,4 +1,4 @@
-import type { PokemonListEntry } from "../api";
+import type { PokemonListEntry } from "../server/card-mappers";
 import { displayName } from "./display-name";
 
 /**

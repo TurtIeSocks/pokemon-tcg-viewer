@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import type { PokemonSet } from "../api";
+import type { PokemonSet } from "../server/card-mappers";
 import { groupSetsBySeries } from "./group-sets-by-series";
 
 function makeSet(id: string, series: string): PokemonSet {

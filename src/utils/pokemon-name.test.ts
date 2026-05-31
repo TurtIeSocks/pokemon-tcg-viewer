@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { PokemonListEntry } from "../api";
+import type { PokemonListEntry } from "../server/card-mappers";
 import { pokemonNameByDex } from "./pokemon-name";
 
 const list: PokemonListEntry[] = [
