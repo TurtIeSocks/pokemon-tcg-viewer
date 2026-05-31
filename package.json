@@ -15,11 +15,19 @@
 		"deploy:worker": "cd worker && wrangler deploy"
 	},
 	"dependencies": {
+		"@tailwindcss/vite": "^4.3.0",
+		"class-variance-authority": "^0.7.1",
+		"clsx": "^2.1.1",
+		"cmdk": "^1.1.1",
 		"idb-keyval": "^6.2.4",
+		"lucide-react": "^1.17.0",
+		"radix-ui": "^1.4.3",
 		"react": "^19.2.5",
 		"react-dom": "^19.2.5",
 		"react-router": "^7.14.2",
 		"react-virtuoso": "^4.18.6",
+		"tailwind-merge": "^3.6.0",
+		"tailwindcss": "^4.3.0",
 		"vite-plugin-pwa": "^1.3.0",
 		"zustand": "^5.0.12"
 	},
@@ -42,6 +50,7 @@
 		"globals": "^17.5.0",
 		"happy-dom": "^20.9.0",
 		"sharp": "^0.34.5",
+		"tw-animate-css": "^1.4.0",
 		"typescript": "~6.0.2",
 		"vite": "^8.0.10"
 	}

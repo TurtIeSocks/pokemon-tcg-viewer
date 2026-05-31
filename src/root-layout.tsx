@@ -1,43 +1,23 @@
-import { NavLink, Outlet, ScrollRestoration } from "react-router";
+import { Outlet, ScrollRestoration } from "react-router";
 import "./app.css";
-import { InstallPrompt } from "./components/install-prompt";
-import { OfflineIndicator } from "./components/offline-indicator";
+import { Toolbar } from "./components/app-shell/toolbar";
+import { SeriesSidebar } from "./components/series-sidebar/series-sidebar";
 
 export function RootLayout() {
 	return (
-		<div className="app">
+		<div className="flex h-screen flex-col overflow-hidden">
 			<ScrollRestoration />
-			<nav className="primary-nav" aria-label="Filter mode">
-				<NavLink
-					to="/"
-					end
-					className={({ isActive }) =>
-						isActive ? "primary-nav-link active" : "primary-nav-link"
-					}
-				>
-					By Set
-				</NavLink>
-				<NavLink
-					to="/pokemon"
-					className={({ isActive }) =>
-						isActive ? "primary-nav-link active" : "primary-nav-link"
-					}
-				>
-					Search
-				</NavLink>
-				<NavLink
-					to="/collection"
-					className={({ isActive }) =>
-						isActive ? "primary-nav-link active" : "primary-nav-link"
-					}
-				>
-					Collection
-				</NavLink>
-				<div className="primary-nav-spacer" />
-				<OfflineIndicator />
-				<InstallPrompt />
-			</nav>
-			<Outlet />
+			<Toolbar />
+			<div className="flex min-h-0 flex-1">
+				<aside className="hidden w-72 shrink-0 border-r border-border bg-sidebar lg:block">
+					<SeriesSidebar />
+				</aside>
+				{/* Non-scrolling flex column; each page fills it and owns its own
+				    scroll (the virtual grid is a flex:1 internal scroller). */}
+				<main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+					<Outlet />
+				</main>
+			</div>
 		</div>
 	);
 }

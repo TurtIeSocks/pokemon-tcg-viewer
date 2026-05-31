@@ -16,10 +16,10 @@ test("RootLayout mounts without throwing", () => {
 	expect(() => render(<RouterProvider router={makeRouter()} />)).not.toThrow();
 });
 
-test("RootLayout renders the primary nav", async () => {
+test("RootLayout renders the toolbar", async () => {
 	render(<RouterProvider router={makeRouter()} />);
 	await waitFor(() => {
-		expect(screen.getByText("By Set")).toBeDefined();
+		expect(screen.getByText("Collection")).toBeDefined();
 	});
-	expect(screen.getByText("Search")).toBeDefined();
+	expect(screen.getByText("Pokémon TCG Holo Playground")).toBeDefined();
 });

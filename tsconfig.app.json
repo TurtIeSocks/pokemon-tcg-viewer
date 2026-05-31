@@ -15,6 +15,9 @@
 		"noEmit": true,
 		"jsx": "react-jsx",
 
+		/* Path alias (paths resolve relative to this file; no baseUrl needed in TS 6) */
+		"paths": { "@/*": ["./src/*"] },
+
 		/* Linting */
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,

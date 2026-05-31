@@ -1,4 +1,12 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	mock,
+	test,
+} from "bun:test";
 import { getCardsByName, getCardsBySet } from "./api";
 
 const realFetch = globalThis.fetch;
@@ -115,6 +123,37 @@ test("getCardsBySet maps images.small → imageUrlSmall and images.large → ima
 	const { cards } = await getCardsBySet("swsh4", 1, 20);
 	expect(cards[0].imageUrl).toBe("https://img/large.png");
 	expect(cards[0].imageUrlSmall).toBe("https://img/small.png");
+});
+
+describe("getCardsBySet with name (set-scoped search)", () => {
+	const realFetch = globalThis.fetch;
+	let lastUrl = "";
+	beforeEach(() => {
+		lastUrl = "";
+		globalThis.fetch = (async (url: string | URL) => {
+			lastUrl = String(url);
+			return new Response(JSON.stringify({ data: [], totalCount: 0 }), {
+				status: 200,
+			});
+		}) as typeof fetch;
+	});
+	afterEach(() => {
+		globalThis.fetch = realFetch;
+	});
+
+	it("scopes a name query to the set", async () => {
+		await getCardsBySet("base1", 1, 20, {}, "pikachu");
+		const decoded = decodeURIComponent(lastUrl);
+		expect(decoded).toContain("set.id:base1");
+		expect(decoded).toContain('name:"*pikachu*"');
+	});
+
+	it("omits the name clause when no name is given", async () => {
+		await getCardsBySet("base1", 1, 20);
+		const decoded = decodeURIComponent(lastUrl);
+		expect(decoded).toContain("set.id:base1");
+		expect(decoded).not.toContain("name:");
+	});
 });
 
 test("getSets calls the v2 sets endpoint and sends no API key header", async () => {

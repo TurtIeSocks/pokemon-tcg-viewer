@@ -1,6 +1,5 @@
 import { useStore } from "../../store";
 import type { HoloCardData } from "../holo-card";
-import "./collection-toggle.css";
 
 interface CollectionToggleProps {
 	card: HoloCardData;
@@ -18,7 +17,17 @@ export function CollectionToggle({ card }: CollectionToggleProps) {
 	return (
 		<button
 			type="button"
-			className={`collection-toggle${owned ? " owned" : ""}`}
+			className={[
+				"inline-flex items-center justify-center",
+				"w-8 h-8 rounded-full",
+				"text-base font-bold text-white",
+				"border cursor-pointer",
+				"transition-[background,transform] duration-[120ms] ease-out",
+				"hover:scale-[1.08] focus-visible:scale-[1.08] focus-visible:outline-none",
+				owned
+					? "bg-[rgba(80,200,120,0.92)] border-[rgba(80,200,120,1)] hover:bg-[rgba(60,180,100,1)] focus-visible:bg-[rgba(60,180,100,1)]"
+					: "bg-[rgba(0,0,0,0.6)] border-[rgba(255,255,255,0.3)] hover:bg-[rgba(0,0,0,0.85)] focus-visible:bg-[rgba(0,0,0,0.85)]",
+			].join(" ")}
 			aria-label={label}
 			aria-pressed={owned}
 			onClick={(e) => {

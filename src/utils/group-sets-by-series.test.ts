@@ -41,4 +41,26 @@ describe("groupSetsBySeries", () => {
 		expect(groups[0].sets.map((s) => s.id)).toEqual(["a", "a2"]);
 		expect(groups[1].sets.map((s) => s.id)).toEqual(["b"]);
 	});
+
+	it("exposes the earliest release year per series", () => {
+		const mk = (
+			id: string,
+			series: string,
+			releaseDate: string,
+		): PokemonSet => ({
+			id,
+			name: id,
+			series,
+			releaseDate,
+			total: 1,
+			images: { symbol: "", logo: "" },
+		});
+		const groups = groupSetsBySeries([
+			mk("a", "Base", "2000/04/24"),
+			mk("b", "Base", "1999/01/09"),
+			mk("c", "Neo", "2000/12/16"),
+		]);
+		expect(groups.find((g) => g.series === "Base")?.year).toBe(1999);
+		expect(groups.find((g) => g.series === "Neo")?.year).toBe(2000);
+	});
 });

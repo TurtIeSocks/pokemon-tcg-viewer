@@ -3,6 +3,8 @@ import type { PokemonSet } from "../api";
 export interface SeriesGroup {
 	series: string;
 	sets: PokemonSet[];
+	/** Earliest release year among the series' sets (YYYY from releaseDate). */
+	year: number;
 }
 
 /**
@@ -14,13 +16,15 @@ export function groupSetsBySeries(sets: PokemonSet[]): SeriesGroup[] {
 	const groups: SeriesGroup[] = [];
 	const index = new Map<string, SeriesGroup>();
 	for (const set of sets) {
+		const year = Number(set.releaseDate.slice(0, 4));
 		let group = index.get(set.series);
 		if (!group) {
-			group = { series: set.series, sets: [] };
+			group = { series: set.series, sets: [], year };
 			index.set(set.series, group);
 			groups.push(group);
 		}
 		group.sets.push(set);
+		if (Number.isFinite(year) && year < group.year) group.year = year;
 	}
 	return groups;
 }

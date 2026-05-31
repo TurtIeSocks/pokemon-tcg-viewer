@@ -53,7 +53,7 @@ export function CardGrid({
 	return (
 		<VirtuosoGrid
 			key={setId ?? "empty"}
-			className="grid"
+			className="virtuoso-grid"
 			data={cards}
 			endReached={() => {
 				if (setId) onEndReached(setId);

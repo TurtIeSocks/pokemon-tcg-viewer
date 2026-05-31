@@ -5,6 +5,7 @@ import {
 	useFilterParam,
 	useNameQueryParam,
 	usePokedexParam,
+	useScopeParam,
 	useSetIdParam,
 	useViewModeParam,
 } from "./use-url-selection";
@@ -216,6 +217,28 @@ describe("useViewModeParam", () => {
 		renderInRouter(<ViewModeProbe />, "/?view=timeline");
 		fireEvent.click(screen.getByText("set-grid"));
 		expect(screen.getByTestId("value").textContent).toBe("grid");
+	});
+});
+
+function ScopeProbe() {
+	const [scope] = useScopeParam();
+	return <span data-testid="value">{scope}</span>;
+}
+
+describe("useScopeParam", () => {
+	test("defaults to 'set' when param is absent", () => {
+		renderInRouter(<ScopeProbe />, "/?setId=base1");
+		expect(screen.getByTestId("value").textContent).toBe("set");
+	});
+
+	test("reads 'all' when scope=all", () => {
+		renderInRouter(<ScopeProbe />, "/?setId=base1&scope=all");
+		expect(screen.getByTestId("value").textContent).toBe("all");
+	});
+
+	test("treats unknown values as 'set'", () => {
+		renderInRouter(<ScopeProbe />, "/?scope=bogus");
+		expect(screen.getByTestId("value").textContent).toBe("set");
 	});
 });
 

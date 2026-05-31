@@ -1,4 +1,3 @@
-import "../components/header.css";
 import { CardGrid } from "../components/card-grid";
 import { CollectionToggle } from "../components/collection-toggle";
 import { CrossLinkOverlay } from "../components/cross-link-overlay";
@@ -7,7 +6,6 @@ import { PokemonTimeline } from "../components/pokemon-timeline";
 import { ViewModeToggle } from "../components/view-mode-toggle";
 import { useViewModeParam } from "../hooks/use-url-selection";
 import { useStore } from "../store";
-import "./collection-page.css";
 
 function renderOverlay(card: HoloCardData) {
 	return (
@@ -31,27 +29,24 @@ export function CollectionPage() {
 	const copies = entries.reduce((n, o) => n + o.count, 0);
 
 	return (
-		<>
-			<header className="header">
-				<h1>Pokémon TCG Holo Playground</h1>
-				<div className="set-meta">
-					<div>
-						<div className="set-name">Your Collection</div>
-						<div className="set-sub">
-							{unique === 0
-								? "No cards yet — tap + on any card to add it"
-								: `${copies} copies · ${unique} unique`}
-						</div>
-					</div>
-					<ViewModeToggle
-						value={view}
-						onChange={setView}
-						disabled={unique === 0}
-					/>
+		<div className="mx-auto flex h-full w-full min-h-0 max-w-7xl flex-col px-4">
+			<div className="flex shrink-0 items-center justify-between gap-3 py-5">
+				<div>
+					<h1 className="text-2xl font-bold">Your Collection</h1>
+					<p className="text-sm text-muted-foreground">
+						{unique === 0
+							? "No cards yet — tap + on any card to add it"
+							: `${copies} copies · ${unique} unique`}
+					</p>
 				</div>
-			</header>
+				<ViewModeToggle
+					value={view}
+					onChange={setView}
+					disabled={unique === 0}
+				/>
+			</div>
 			{unique === 0 ? (
-				<div className="collection-empty">
+				<div className="py-12 text-center text-muted-foreground">
 					<p>Your binder is empty. Add cards from any view.</p>
 				</div>
 			) : view === "grid" ? (
@@ -62,14 +57,16 @@ export function CollectionPage() {
 					renderOverlay={renderOverlay}
 				/>
 			) : (
-				<PokemonTimeline
-					cards={cards}
-					loading={false}
-					hasMore={false}
-					onLoadMore={() => {}}
-					renderOverlay={renderOverlay}
-				/>
+				<div className="min-h-0 flex-1 overflow-y-auto">
+					<PokemonTimeline
+						cards={cards}
+						loading={false}
+						hasMore={false}
+						onLoadMore={() => {}}
+						renderOverlay={renderOverlay}
+					/>
+				</div>
 			)}
-		</>
+		</div>
 	);
 }
