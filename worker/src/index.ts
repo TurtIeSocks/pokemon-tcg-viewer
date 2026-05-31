@@ -2,6 +2,7 @@ export interface Env {
 	POKEMONTCG_API_KEY: string;
 	/** Allowed browser origin for CORS; defaults to "*". */
 	ALLOW_ORIGIN?: string;
+	CORPUS: R2Bucket;
 }
 
 const ORIGIN = "https://api.pokemontcg.io";
@@ -12,6 +13,19 @@ function corsHeaders(env: Env): Record<string, string> {
 		"Access-Control-Allow-Methods": "GET,OPTIONS",
 		"Access-Control-Allow-Headers": "Content-Type",
 	};
+}
+
+// Apply CORS and honor conditional GET (If-None-Match) for the corpus blob.
+function serveCorpus(res: Response, request: Request, env: Env): Response {
+	const inm = request.headers.get("If-None-Match");
+	const etag = res.headers.get("ETag");
+	if (inm && etag && inm === etag) {
+		return new Response(null, {
+			status: 304,
+			headers: { ...corsHeaders(env), ETag: etag },
+		});
+	}
+	return withCors(res, env);
 }
 
 function withCors(res: Response, env: Env): Response {
@@ -56,6 +70,31 @@ export default {
 		}
 
 		const url = new URL(request.url);
+
+		if (url.pathname === "/corpus") {
+			const cache = (caches as unknown as { default: Cache }).default;
+			const cacheKey = new Request(url.toString(), { method: "GET" });
+			const cached = await cache.match(cacheKey);
+			if (cached) return serveCorpus(cached, request, env);
+
+			const obj = await env.CORPUS.get("corpus/latest.json.gz");
+			if (!obj) {
+				return new Response("Corpus not built yet", {
+					status: 503,
+					headers: corsHeaders(env),
+				});
+			}
+			const res = new Response(obj.body, {
+				headers: {
+					"Content-Type": "application/octet-stream",
+					ETag: `"${obj.etag}"`,
+					"Cache-Control": "public, s-maxage=604800",
+				},
+			});
+			ctx.waitUntil(cache.put(cacheKey, res.clone()));
+			return serveCorpus(res, request, env);
+		}
+
 		if (!url.pathname.startsWith("/v2/")) {
 			return new Response("Not Found", {
 				status: 404,
