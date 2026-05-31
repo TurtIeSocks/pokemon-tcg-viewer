@@ -14,10 +14,15 @@ import { useSets } from "../hooks/use-sets";
 import {
 	useFilterParam,
 	useNameQueryParam,
+	usePokedexParam,
 	useScopeParam,
 	useSetIdParam,
 	useViewModeParam,
 } from "../hooks/use-url-selection";
+import {
+	makeCorpusFetcher,
+	useCorpusRuntime,
+} from "../store/corpus/corpus-runtime";
 import { pokemonNameByDex } from "../utils/pokemon-name";
 import { Home } from "./home";
 
@@ -32,6 +37,9 @@ export function BrowsePage() {
 	const [rarity] = useFilterParam("rarity");
 	const [supertype] = useFilterParam("supertype");
 	const [subtypes] = useFilterParam("subtypes");
+
+	const [dexNumber] = usePokedexParam();
+	const corpusReady = useCorpusRuntime((s) => s.index !== null);
 
 	const searching = query !== "";
 	const showHome = !selectedSetId && !searching;
@@ -52,7 +60,7 @@ export function BrowsePage() {
 			: `${baseKey}|${filterSig}`
 		: null;
 
-	const fetcher: CardFetcher = useMemo(
+	const apiFetcher: CardFetcher = useMemo(
 		() => (_key, page, pageSize) => {
 			const filters = { types, rarity, supertype, subtypes };
 			if (searching) {
@@ -77,6 +85,29 @@ export function BrowsePage() {
 			subtypes,
 		],
 	);
+
+	const corpusFetcher = useMemo(
+		() =>
+			makeCorpusFetcher({
+				query: searching ? query : undefined,
+				setId: setScoped || !searching ? selectedSetId : null,
+				dexNumber: !searching ? dexNumber : null,
+				filters: { types, rarity, supertype, subtypes },
+				relevance: searching && !setScoped,
+			}),
+		[
+			searching,
+			setScoped,
+			selectedSetId,
+			dexNumber,
+			query,
+			types,
+			rarity,
+			supertype,
+			subtypes,
+		],
+	);
+	const fetcher = corpusReady ? corpusFetcher : apiFetcher;
 
 	const { cards, loading, loadMore, hasMore } = useCards(cacheKey, fetcher);
 	const currentSet = sets.find((s) => s.id === selectedSetId);

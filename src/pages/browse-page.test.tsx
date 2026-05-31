@@ -3,6 +3,8 @@ import { render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import type { PokemonSet } from "../api";
 import { useStore } from "../store";
+import { buildIndex } from "../store/corpus/corpus-engine";
+import { useCorpusRuntime } from "../store/corpus/corpus-runtime";
 import { BrowsePage } from "./browse-page";
 
 // Mock API calls so no real network requests fire in tests.
@@ -49,7 +51,14 @@ function renderBrowsePage(initialEntries: string[]) {
 }
 
 afterEach(() => {
-	useStore.setState({ sets: null, setsLoading: false, setsFetchedAt: null });
+	useStore.setState({
+		sets: null,
+		setsLoading: false,
+		setsFetchedAt: null,
+		cardsCache: {},
+		cardsCacheOrder: [],
+	});
+	useCorpusRuntime.setState({ index: null });
 });
 
 describe("<BrowsePage />", () => {
@@ -74,5 +83,26 @@ describe("<BrowsePage />", () => {
 		expect(screen.getByRole("textbox")).toBeDefined();
 		// Result count label reflects the query.
 		expect(screen.getByText(/Results for "pikachu"/)).toBeDefined();
+	});
+
+	test("set browse renders from the in-memory corpus when ready", async () => {
+		useStore.setState({ sets: [fixtureSet], setsFetchedAt: Date.now() });
+		useCorpusRuntime.setState({
+			index: buildIndex([
+				{
+					id: "base1-4",
+					name: "Charizard",
+					imageUrl: "a",
+					imageUrlSmall: "b",
+					supertype: "Pokémon",
+					setId: "base1",
+					number: "4",
+				},
+			]),
+		});
+		renderBrowsePage(["/?setId=base1"]);
+		// The mocked api fetcher returns 0 cards; only the corpus path yields 1.
+		// The corpus fetcher resolves async, so use findByText to await the re-render.
+		expect(await screen.findByText(/· 1 loaded/)).toBeDefined();
 	});
 });
