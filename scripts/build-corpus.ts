@@ -53,7 +53,16 @@ function isRetryable(status: number): boolean {
 export async function fetchPage(
 	apiKey: string,
 	page: number,
-	opts: { retries?: number; baseMs?: number } = {},
+	opts: {
+		retries?: number;
+		baseMs?: number;
+		onRetry?: (
+			page: number,
+			attempt: number,
+			reason: string,
+			waitMs: number,
+		) => void;
+	} = {},
 ): Promise<{ data: ApiCard[]; totalCount: number }> {
 	const retries = opts.retries ?? 4;
 	const baseMs = opts.baseMs ?? 1000;
@@ -61,7 +70,9 @@ export async function fetchPage(
 	let lastErr = "";
 	for (let attempt = 0; attempt <= retries; attempt++) {
 		if (attempt > 0) {
-			await new Promise((r) => setTimeout(r, baseMs * 2 ** (attempt - 1)));
+			const waitMs = baseMs * 2 ** (attempt - 1);
+			opts.onRetry?.(page, attempt, lastErr, waitMs);
+			await new Promise((r) => setTimeout(r, waitMs));
 		}
 		try {
 			const res = await fetch(url, { headers: { "X-Api-Key": apiKey } });
@@ -83,19 +94,35 @@ export async function fetchPage(
 }
 
 export async function buildCorpus(apiKey: string): Promise<CorpusCard[]> {
-	const first = await fetchPage(apiKey, 1);
+	const onRetry = (
+		page: number,
+		attempt: number,
+		reason: string,
+		waitMs: number,
+	) =>
+		console.warn(
+			`  ↳ page ${page}: ${reason} — retry ${attempt} in ${waitMs}ms`,
+		);
+
+	const first = await fetchPage(apiKey, 1, { onRetry });
 	const total = first.totalCount;
 	const pages = Math.ceil(total / PAGE_SIZE);
+	console.log(
+		`Crawling ${total} cards across ${pages} pages (pageSize ${PAGE_SIZE})…`,
+	);
 	const cards: CorpusCard[] = first.data.map(trimCard);
+	console.log(`  page 1/${pages} ✓ — ${cards.length} cards so far`);
 	for (let p = 2; p <= pages; p++) {
 		// Be gentle with the rate-limited origin between pages.
 		await new Promise((r) => setTimeout(r, 250));
-		const { data } = await fetchPage(apiKey, p);
+		const { data } = await fetchPage(apiKey, p, { onRetry });
 		for (const c of data) cards.push(trimCard(c));
+		console.log(`  page ${p}/${pages} ✓ — ${cards.length} cards so far`);
 	}
 	if (cards.length < total * 0.95) {
 		throw new Error(`crawl incomplete: got ${cards.length} of ${total}`);
 	}
+	console.log(`Crawl complete: ${cards.length} cards.`);
 	return cards;
 }
 
@@ -104,8 +131,14 @@ if (import.meta.main) {
 	const apiKey = process.env.POKEMONTCG_API_KEY;
 	if (!apiKey) throw new Error("POKEMONTCG_API_KEY not set");
 	const outfile = process.argv[2] ?? "corpus.json.gz";
+	const startedAt = Date.now();
 	const cards = await buildCorpus(apiKey);
+	console.log("Gzipping…");
 	const gz = gzipSync(Buffer.from(JSON.stringify(cards)));
 	await Bun.write(outfile, gz);
-	console.log(`wrote ${cards.length} cards → ${outfile} (${gz.length} bytes)`);
+	const mb = (gz.length / 1024 / 1024).toFixed(2);
+	const secs = ((Date.now() - startedAt) / 1000).toFixed(1);
+	console.log(
+		`Wrote ${cards.length} cards → ${outfile} (${mb} MB gzipped) in ${secs}s`,
+	);
 }
