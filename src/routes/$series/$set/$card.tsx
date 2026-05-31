@@ -1,5 +1,5 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
-import { CardDetail } from "../../../components/card/card-detail";
+import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
+import { CardModal } from "../../../components/islands/card-modal";
 import { fetchCardById } from "../../../server/card-data";
 import { resolveCardInSet } from "../../../server/card-resolve";
 import { findSet, getNavTreeFn } from "../../../server/nav-tree";
@@ -37,9 +37,17 @@ export const Route = createFileRoute("/$series/$set/$card")({
 
 function CardPage() {
 	const { card } = Route.useLoaderData();
+	const params = Route.useParams();
+	const navigate = useNavigate();
 	return (
-		<div className="h-full overflow-y-auto">
-			<CardDetail card={card} />
-		</div>
+		<CardModal
+			card={card}
+			onClose={() =>
+				navigate({
+					to: "/$series/$set",
+					params: { series: params.series, set: params.set },
+				})
+			}
+		/>
 	);
 }
