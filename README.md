@@ -14,8 +14,8 @@ Live demo available [here](https://turtiesocks.github.io/pokemon-tcg-viewer/).
 ## Stack
 
 * React 19 (with the React Compiler) + TypeScript
-* Vite 8 for dev/build
-* React Router 7
+* TanStack Start (SSR) + TanStack Router — Nitro Node server
+* Vite 8 (via the TanStack Start plugin)
 * Zustand for state
 * React Virtuoso for grid virtualization
 * Biome for lint/format

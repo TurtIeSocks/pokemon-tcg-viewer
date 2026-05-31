@@ -13,7 +13,7 @@ export default defineConfig({
 	plugins: [
 		tailwindcss(),
 		tanstackStart({ srcDirectory: "src" }),
-		viteReact({ babel: { plugins: ["babel-plugin-react-compiler"] } }),
+		viteReact(),
 		nitro(),
 	],
 });
