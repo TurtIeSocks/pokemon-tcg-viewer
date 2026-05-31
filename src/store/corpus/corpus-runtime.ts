@@ -1,7 +1,12 @@
 import { create } from "zustand";
-import { apiBase } from "../../api";
 import type { HoloCardData } from "../../components/holo-card";
-import type { CardFetcher } from "../../hooks/use-cards";
+import { apiBase } from "../../lib/api-base-client";
+
+export type CardFetcher = (
+	key: string,
+	page: number,
+	pageSize: number,
+) => Promise<{ cards: HoloCardData[]; totalCount: number }>;
 import { useStore } from "../index";
 import {
 	buildIndex,
