@@ -7,7 +7,12 @@ import type { FocusCardData } from "../../server/card-mappers";
 export function CardDetail({ card }: { card: FocusCardData }) {
 	return (
 		<article className="mx-auto grid max-w-4xl gap-6 p-4 md:grid-cols-[auto_1fr]">
-			<img src={card.imageUrl} alt={card.name} width={320} className="w-full max-w-[320px] rounded-xl" />
+			<img
+				src={card.imageUrl}
+				alt={card.name}
+				width={320}
+				className="w-full max-w-[320px] rounded-xl"
+			/>
 			<div className="min-w-0 space-y-3">
 				<h1 className="text-2xl font-bold">{card.name}</h1>
 				<p className="text-sm text-muted-foreground">
@@ -24,12 +29,18 @@ export function CardDetail({ card }: { card: FocusCardData }) {
 							<div key={a.name} className="text-sm">
 								<span className="font-medium">{a.name}</span>
 								{a.damage ? ` — ${a.damage}` : ""}
-								{a.text ? <p className="text-muted-foreground">{a.text}</p> : null}
+								{a.text ? (
+									<p className="text-muted-foreground">{a.text}</p>
+								) : null}
 							</div>
 						))}
 					</div>
 				)}
-				{card.flavorText && <p className="text-sm italic text-muted-foreground">{card.flavorText}</p>}
+				{card.flavorText && (
+					<p className="text-sm italic text-muted-foreground">
+						{card.flavorText}
+					</p>
+				)}
 			</div>
 		</article>
 	);

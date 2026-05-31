@@ -27,7 +27,10 @@ export const Route = createFileRoute("/$series/$set/")({
 		// TODO(Plan 05): setResponseHeaders Cache-Control via server fn — import protection
 		// blocks @tanstack/react-start/server from client-bundled route files.
 		const slugs = buildSetCardSlugs(all);
-		const cards = all.map((c) => ({ ...c, slug: slugs.slugById.get(c.id) ?? c.id }));
+		const cards = all.map((c) => ({
+			...c,
+			slug: slugs.slugById.get(c.id) ?? c.id,
+		}));
 		return { set, cards, facets: deriveFacets(all) };
 	},
 	head: ({ loaderData }) => ({
@@ -71,10 +74,19 @@ function SetPage() {
 					<li key={card.id}>
 						<Link
 							to="/$series/$set/$card"
-							params={{ series: params.series, set: params.set, card: card.slug }}
+							params={{
+								series: params.series,
+								set: params.set,
+								card: card.slug,
+							}}
 							className="flex flex-col items-center gap-1"
 						>
-							<img src={card.imageUrlSmall} alt={card.name} loading="lazy" className="w-full rounded" />
+							<img
+								src={card.imageUrlSmall}
+								alt={card.name}
+								loading="lazy"
+								className="w-full rounded"
+							/>
 							<span className="text-center text-xs">{card.name}</span>
 						</Link>
 					</li>

@@ -158,7 +158,9 @@ export const getCardsByNameFn = createServerFn({ method: "GET" })
 
 export const getCardsByPokedexFn = createServerFn({ method: "GET" })
 	.inputValidator((i: { dex: number; page: number; pageSize: number }) => i)
-	.handler(({ data }) => fetchCardsByPokedex(data.dex, data.page, data.pageSize));
+	.handler(({ data }) =>
+		fetchCardsByPokedex(data.dex, data.page, data.pageSize),
+	);
 
 export const getPokemonListFn = createServerFn({ method: "GET" }).handler(() =>
 	getPokemonListCached(),

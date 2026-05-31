@@ -23,7 +23,10 @@ export function buildSetCardSlugs(cards: HoloCardData[]): SetCardSlugs {
 }
 
 // Fetch + slug a whole set, memoized per set id for the process lifetime.
-const setCache = new Map<string, Promise<{ cards: HoloCardData[]; slugs: SetCardSlugs }>>();
+const setCache = new Map<
+	string,
+	Promise<{ cards: HoloCardData[]; slugs: SetCardSlugs }>
+>();
 
 async function loadSet(setId: string) {
 	const all: HoloCardData[] = [];
@@ -49,11 +52,17 @@ function getSet(setId: string) {
 }
 
 /** Resolve a card slug within a set to its card id (or undefined). */
-export async function resolveCardInSet(setId: string, cardSlug: string): Promise<string | undefined> {
+export async function resolveCardInSet(
+	setId: string,
+	cardSlug: string,
+): Promise<string | undefined> {
 	return (await getSet(setId)).slugs.idBySlug.get(cardSlug);
 }
 
 /** Canonical card slug for a card id within its set (or undefined). */
-export async function cardSlugForId(setId: string, cardId: string): Promise<string | undefined> {
+export async function cardSlugForId(
+	setId: string,
+	cardId: string,
+): Promise<string | undefined> {
 	return (await getSet(setId)).slugs.slugById.get(cardId);
 }

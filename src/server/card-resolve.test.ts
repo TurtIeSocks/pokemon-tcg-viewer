@@ -2,9 +2,17 @@ import { describe, expect, test } from "bun:test";
 import type { HoloCardData } from "../components/holo-card";
 import { buildSetCardSlugs } from "./card-resolve";
 
-const c = (over: Partial<HoloCardData> & Pick<HoloCardData, "id" | "name" | "cardNumber">): HoloCardData => ({
-	imageUrl: "l", imageUrlSmall: "s", supertype: "Pokémon",
-	setId: "swsh9", setName: "Brilliant Stars", setSeries: "Sword & Shield", ...over,
+const c = (
+	over: Partial<HoloCardData> &
+		Pick<HoloCardData, "id" | "name" | "cardNumber">,
+): HoloCardData => ({
+	imageUrl: "l",
+	imageUrlSmall: "s",
+	supertype: "Pokémon",
+	setId: "swsh9",
+	setName: "Brilliant Stars",
+	setSeries: "Sword & Shield",
+	...over,
 });
 
 describe("buildSetCardSlugs", () => {
