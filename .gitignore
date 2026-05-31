@@ -30,3 +30,4 @@ dev-dist
 
 # Local holo QA reference screenshots (ours-vs-simey comparison shots)
 /dev/
+.superpowers/
