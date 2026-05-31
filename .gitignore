@@ -36,3 +36,6 @@ dev-dist
 src/routeTree.gen.ts
 .output
 .nitro
+
+# Claude scheduled-task lock (local runtime junk)
+.claude/scheduled_tasks.lock
