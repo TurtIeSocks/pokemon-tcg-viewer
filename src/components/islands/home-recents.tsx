@@ -1,6 +1,6 @@
 import { ClientOnly, Link } from "@tanstack/react-router";
-import { HoloCardIsland } from "./holo-card-island";
 import { useRecentsStore } from "../../store/recents";
+import { HoloCardIsland } from "./holo-card-island";
 
 function RecentsInner() {
 	const recentSearches = useRecentsStore((s) => s.recentSearches);
@@ -46,7 +46,13 @@ function RecentsInner() {
 					</h2>
 					<div className="flex gap-3 overflow-x-auto pb-2">
 						{recentlyViewed.map((card) => (
-							<Link key={card.id} to="/search" search={{ q: card.name }} style={{ width: 96 }} className="shrink-0">
+							<Link
+								key={card.id}
+								to="/search"
+								search={{ q: card.name }}
+								style={{ width: 96 }}
+								className="shrink-0"
+							>
 								<HoloCardIsland
 									imageUrl={card.imageUrl}
 									imageUrlSmall={card.imageUrlSmall}

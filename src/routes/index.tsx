@@ -36,7 +36,11 @@ export function HomeHero() {
 				</p>
 
 				{/* Native GET form: works without JS, TanStack intercepts when hydrated. */}
-				<form action="/search" method="get" className="relative mt-5 w-full max-w-md">
+				<form
+					action="/search"
+					method="get"
+					className="relative mt-5 w-full max-w-md"
+				>
 					<input
 						type="search"
 						name="q"
@@ -68,7 +72,10 @@ export function HomeHero() {
 export const Route = createFileRoute("/")({
 	head: () => ({
 		meta: [
-			{ title: "Pokémon TCG Holo Playground — browse & admire holographic cards" },
+			{
+				title:
+					"Pokémon TCG Holo Playground — browse & admire holographic cards",
+			},
 			{
 				name: "description",
 				content:
