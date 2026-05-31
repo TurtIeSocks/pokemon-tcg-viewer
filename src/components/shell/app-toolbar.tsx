@@ -16,9 +16,8 @@ export function AppToolbar() {
 				</span>
 			</Link>
 			<div className="flex shrink-0 items-center gap-2">
-				{/* /collection is a legacy SPA route; use plain <a> until Plan 05 adds the TS route */}
 				<Button variant="outline" asChild>
-					<a href="/collection">Collection</a>
+					<Link to="/collection">Collection</Link>
 				</Button>
 			</div>
 		</header>
