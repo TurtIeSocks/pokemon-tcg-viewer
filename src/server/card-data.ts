@@ -41,7 +41,7 @@ interface CardPage {
 	totalCount: number;
 }
 
-async function fetchCards(
+export async function fetchCards(
 	query: string,
 	page: number,
 	pageSize: number,
