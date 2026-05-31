@@ -11,6 +11,7 @@ import {
 	type FocusCardData,
 	type PokemonApiCard,
 	type PokemonApiFocusCard,
+	type PokemonListEntry,
 	type PokemonSet,
 } from "./card-mappers";
 
@@ -36,7 +37,7 @@ export async function fetchAllSets(): Promise<PokemonSet[]> {
 	return json.data;
 }
 
-interface CardPage {
+export interface CardPage {
 	cards: HoloCardData[];
 	totalCount: number;
 }
@@ -93,3 +94,72 @@ export const getCardByIdFn = createServerFn({ method: "GET" })
 		const json = (await resp.json()) as { data: PokemonApiFocusCard };
 		return apiCardToFocusProps(json.data);
 	});
+
+/** Raw card-by-id fetch (safe to call from loaders, avoids RPC-stub hop). */
+export async function fetchCardById(id: string): Promise<FocusCardData> {
+	const resp = await fetch(`${apiBase()}/v2/cards/${id}`);
+	if (!resp.ok) {
+		if (resp.status === 404)
+			throw new Response("Card not found", { status: 404 });
+		throw new Error(`Failed to fetch card ${id}: ${resp.status}`);
+	}
+	const json = (await resp.json()) as { data: PokemonApiFocusCard };
+	return apiCardToFocusProps(json.data);
+}
+
+const POKEMON_LIST_LIMIT = 1025;
+
+export function fetchCardsByName(
+	name: string,
+	page: number,
+	pageSize: number,
+): Promise<CardPage> {
+	return fetchCards(
+		`name:"*${escapeLucene(name)}*"`,
+		page,
+		pageSize,
+		"set.releaseDate,number",
+	);
+}
+
+export function fetchCardsByPokedex(
+	dex: number,
+	page: number,
+	pageSize: number,
+): Promise<CardPage> {
+	return fetchCards(
+		`nationalPokedexNumbers:${dex}`,
+		page,
+		pageSize,
+		"set.releaseDate,number",
+	);
+}
+
+/** Raw species-list fetch (PokéAPI). Not a server fn — safe to call in loaders. */
+export async function fetchPokemonList(): Promise<PokemonListEntry[]> {
+	const resp = await fetch(
+		`https://pokeapi.co/api/v2/pokemon?limit=${POKEMON_LIST_LIMIT}`,
+	);
+	if (!resp.ok) throw new Error("Unable to fetch Pokémon list");
+	const json = (await resp.json()) as { results: PokemonListEntry[] };
+	return json.results;
+}
+
+let pokemonListCache: PokemonListEntry[] | null = null;
+export async function getPokemonListCached(): Promise<PokemonListEntry[]> {
+	if (!pokemonListCache) pokemonListCache = await fetchPokemonList();
+	return pokemonListCache;
+}
+
+// createServerFn wrappers (for any future client-side calls; loaders use the raw fns above).
+export const getCardsByNameFn = createServerFn({ method: "GET" })
+	.inputValidator((i: { name: string; page: number; pageSize: number }) => i)
+	.handler(({ data }) => fetchCardsByName(data.name, data.page, data.pageSize));
+
+export const getCardsByPokedexFn = createServerFn({ method: "GET" })
+	.inputValidator((i: { dex: number; page: number; pageSize: number }) => i)
+	.handler(({ data }) => fetchCardsByPokedex(data.dex, data.page, data.pageSize));
+
+export const getPokemonListFn = createServerFn({ method: "GET" }).handler(() =>
+	getPokemonListCached(),
+);
