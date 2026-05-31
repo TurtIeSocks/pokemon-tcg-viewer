@@ -7,6 +7,7 @@ export type CardFetcher = (
 	page: number,
 	pageSize: number,
 ) => Promise<{ cards: HoloCardData[]; totalCount: number }>;
+
 import { useStore } from "../index";
 import {
 	buildIndex,

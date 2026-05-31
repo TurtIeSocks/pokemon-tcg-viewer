@@ -7,7 +7,7 @@ import {
 	createCollectionSlice,
 } from "./collection-slice";
 import { createIdbStorage } from "./idb-storage";
-import { type SetsSlice, createSetsSlice } from "./sets-slice";
+import { createSetsSlice, type SetsSlice } from "./sets-slice";
 
 type AppStore = SetsSlice & CollectionSlice & CardsSlice;
 
@@ -50,7 +50,8 @@ export const useStore = create<AppStore>()(
 				next = {
 					sets: null,
 					setsFetchedAt: null,
-					owned: ((next as { owned?: Record<string, OwnedCard> }).owned ?? {}) as Record<string, OwnedCard>,
+					owned: ((next as { owned?: Record<string, OwnedCard> }).owned ??
+						{}) as Record<string, OwnedCard>,
 					cardsCache: {},
 					cardsCacheOrder: [],
 				} as unknown as Partial<AppStore>;

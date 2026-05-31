@@ -1,5 +1,5 @@
-import type { PokemonSet } from "../../server/card-mappers";
 import type { HoloCardData } from "../../components/holo-card";
+import type { PokemonSet } from "../../server/card-mappers";
 import type { FilterClauses } from "../../utils/build-filter-clauses";
 import type { CorpusCard } from "./corpus-types";
 import { matchName, type NameMatch, normalize } from "./fuzzy";
