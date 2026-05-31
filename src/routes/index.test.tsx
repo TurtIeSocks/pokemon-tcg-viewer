@@ -1,11 +1,17 @@
-import { expect, test } from "bun:test";
 import { render, screen } from "@testing-library/react";
-import { HomePlaceholder } from "./index";
+import { expect, test } from "bun:test";
+import { createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
+import { HomeHero } from "./index";
 
-test("HomePlaceholder renders the scaffold heading", () => {
-	render(<HomePlaceholder />);
-	expect(screen.getByRole("heading", { level: 1 }).textContent).toContain(
-		"Holo Playground",
-	);
-	expect(screen.getByText("SSR scaffold is live.")).toBeDefined();
+async function renderInRouter(ui: React.ReactNode) {
+	const rootRoute = createRootRoute({ component: () => <>{ui}</> });
+	const router = createRouter({ routeTree: rootRoute });
+	await router.load();
+	return render(<RouterProvider router={router} />);
+}
+
+test("HomeHero renders the title and a search input", async () => {
+	await renderInRouter(<HomeHero />);
+	expect(screen.getByRole("heading", { level: 1 }).textContent).toContain("Holo Playground");
+	expect(screen.getByRole("searchbox", { name: /search cards/i })).toBeDefined();
 });
