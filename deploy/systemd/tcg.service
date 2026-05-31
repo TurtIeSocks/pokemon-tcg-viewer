@@ -1,0 +1,26 @@
+# systemd unit for the Pokémon TCG viewer (TanStack Start / Nitro Node output).
+# Install: sudo cp deploy/systemd/tcg.service /etc/systemd/system/tcg.service
+#          sudo systemctl daemon-reload && sudo systemctl enable --now tcg
+[Unit]
+Description=Pokemon TCG Viewer (TanStack Start)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/www/tcg
+ExecStart=/usr/bin/node .output/server/index.mjs
+# PORT must match the nginx upstream (127.0.0.1:3000).
+Environment=PORT=3000 NODE_ENV=production
+# Secrets + runtime config (API_BASE=...). Keep chmod 600, owned by `deploy`.
+EnvironmentFile=/etc/tcg/env
+Restart=always
+RestartSec=2
+User=deploy
+# Hardening (optional, sane defaults):
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/www/tcg
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
