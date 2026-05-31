@@ -54,10 +54,15 @@ export function BrowsePage() {
 		: selectedSetId
 			? selectedSetId
 			: null;
+	// Tag the cache key by data source. When the corpus finishes loading
+	// mid-session, `corpusReady` flips and every key changes — so useCards
+	// (which only re-fetches on key change) re-fetches via the corpus fetcher,
+	// and API-sourced entries never shadow the corpus for an already-seen key.
+	const source = corpusReady ? "c" : "a";
 	const cacheKey = baseKey
 		? filterSig === "|||"
-			? baseKey
-			: `${baseKey}|${filterSig}`
+			? `${source}:${baseKey}`
+			: `${source}:${baseKey}|${filterSig}`
 		: null;
 
 	const apiFetcher: CardFetcher = useMemo(
