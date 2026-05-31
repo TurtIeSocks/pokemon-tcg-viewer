@@ -1,6 +1,7 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import type { HoloCardData } from "../../../components/holo-card";
 import { fetchCards } from "../../../server/card-data";
+import { buildSetCardSlugs } from "../../../server/card-resolve";
 import { findSet, getNavTreeFn } from "../../../server/nav-tree";
 import { deriveFacets } from "../../../server/set-facets";
 
@@ -25,7 +26,9 @@ export const Route = createFileRoute("/$series/$set/")({
 		}
 		// TODO(Plan 05): setResponseHeaders Cache-Control via server fn — import protection
 		// blocks @tanstack/react-start/server from client-bundled route files.
-		return { set, cards: all, facets: deriveFacets(all) };
+		const slugs = buildSetCardSlugs(all);
+		const cards = all.map((c) => ({ ...c, slug: slugs.slugById.get(c.id) ?? c.id }));
+		return { set, cards, facets: deriveFacets(all) };
 	},
 	head: ({ loaderData }) => ({
 		meta: [
@@ -41,6 +44,7 @@ export const Route = createFileRoute("/$series/$set/")({
 
 function SetPage() {
 	const { set, cards, facets } = Route.useLoaderData();
+	const params = Route.useParams();
 	return (
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-y-auto px-4 py-5">
 			<div className="mb-3 flex items-center gap-3">
@@ -64,14 +68,15 @@ function SetPage() {
 			</div>
 			<ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 				{cards.map((card) => (
-					<li key={card.id} className="flex flex-col items-center gap-1">
-						<img
-							src={card.imageUrlSmall}
-							alt={card.name}
-							loading="lazy"
-							className="w-full rounded"
-						/>
-						<span className="text-center text-xs">{card.name}</span>
+					<li key={card.id}>
+						<Link
+							to="/$series/$set/$card"
+							params={{ series: params.series, set: params.set, card: card.slug }}
+							className="flex flex-col items-center gap-1"
+						>
+							<img src={card.imageUrlSmall} alt={card.name} loading="lazy" className="w-full rounded" />
+							<span className="text-center text-xs">{card.name}</span>
+						</Link>
 					</li>
 				))}
 			</ul>
