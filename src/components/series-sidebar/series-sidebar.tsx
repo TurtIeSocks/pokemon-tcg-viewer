@@ -1,8 +1,13 @@
-import { Layers } from "lucide-react";
+import { Home as HomeIcon, Layers } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 import { useSets } from "../../hooks/use-sets";
-import { useSetIdParam } from "../../hooks/use-url-selection";
+import {
+	useNameQueryParam,
+	useSetIdParam,
+} from "../../hooks/use-url-selection";
 import { groupSetsBySeries } from "../../utils/group-sets-by-series";
 import { SeriesSidebarItem } from "./series-sidebar-item";
 
@@ -14,6 +19,8 @@ interface SeriesSidebarProps {
 export function SeriesSidebar({ onAfterSelect }: SeriesSidebarProps) {
 	const sets = useSets();
 	const [selectedSetId, setSelectedSetId] = useSetIdParam();
+	const [query] = useNameQueryParam();
+	const isHome = !selectedSetId && query === "";
 	const groups = useMemo(() => groupSetsBySeries(sets), [sets]);
 
 	const selectedSeries = useMemo(
@@ -30,7 +37,20 @@ export function SeriesSidebar({ onAfterSelect }: SeriesSidebarProps) {
 	return (
 		<ScrollArea className="h-full">
 			<div className="flex flex-col gap-0.5 p-3">
-				<div className="flex items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+				<Link
+					to="/"
+					onClick={() => onAfterSelect?.()}
+					className={cn(
+						"flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+						isHome
+							? "bg-primary text-primary-foreground"
+							: "text-foreground hover:bg-secondary",
+					)}
+				>
+					<HomeIcon className="size-4 shrink-0" />
+					Home
+				</Link>
+				<div className="mt-2 flex items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
 					<Layers className="size-4" />
 					Series & Sets
 				</div>
