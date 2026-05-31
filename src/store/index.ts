@@ -1,6 +1,6 @@
 import { create, type StateCreator } from "zustand";
 import { persist } from "zustand/middleware";
-import type { PokemonListEntry, PokemonSet } from "../api";
+import type { PokemonListEntry, PokemonSet } from "../server/card-mappers";
 import type { HoloCardData } from "../components/holo-card";
 import { type ApiCacheSlice, createApiCacheSlice } from "./api-cache-slice";
 import { type CardsSlice, createCardsSlice } from "./cards-slice";

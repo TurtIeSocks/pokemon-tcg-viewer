@@ -1,4 +1,4 @@
-import type { PokemonSet } from "../../api";
+import type { PokemonSet } from "../../server/card-mappers";
 import type { HoloCardData } from "../../components/holo-card";
 import type { FilterClauses } from "../../utils/build-filter-clauses";
 import type { CorpusCard } from "./corpus-types";
