@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { CorpusSearchIsland } from "../components/islands/corpus-search-island";
 import { fetchCardsByName } from "../server/card-data";
 
 export const Route = createFileRoute("/search")({
@@ -40,22 +41,7 @@ function SearchPage() {
 					</span>
 				) : null}
 			</h1>
-			<ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-				{cards.map((card) => (
-					<li key={card.id} className="flex flex-col items-center gap-1">
-						<img
-							src={card.imageUrlSmall}
-							alt={card.name}
-							loading="lazy"
-							className="w-full rounded"
-						/>
-						<span className="text-center text-xs">{card.name}</span>
-						<span className="text-center text-[10px] text-muted-foreground">
-							{card.setName}
-						</span>
-					</li>
-				))}
-			</ul>
+			<CorpusSearchIsland query={q} ssrCards={cards} />
 		</div>
 	);
 }
