@@ -11,6 +11,7 @@ export interface HoloCardData {
 	name: string;
 	rarity?: string;
 	subtypes?: string[];
+	types?: string[];
 	supertype?: string;
 	setId: string;
 	setName: string;

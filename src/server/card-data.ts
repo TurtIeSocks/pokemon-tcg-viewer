@@ -34,7 +34,7 @@ async function fetchCards(
 	pageSize: number,
 	orderBy: string,
 ): Promise<CardPage> {
-	const url = `${apiBase()}/v2/cards?select=id,name,number,images,rarity,subtypes,supertype,set,nationalPokedexNumbers,tcgplayer&orderBy=${orderBy}&q=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`;
+	const url = `${apiBase()}/v2/cards?select=id,name,number,images,rarity,subtypes,supertype,types,set,nationalPokedexNumbers,tcgplayer&orderBy=${orderBy}&q=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`;
 	const resp = await fetch(url);
 	if (!resp.ok) throw new Error(`Unable to fetch cards: ${resp.status}`);
 	const json = (await resp.json()) as {

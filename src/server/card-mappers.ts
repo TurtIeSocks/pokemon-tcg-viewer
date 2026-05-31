@@ -5,6 +5,7 @@ export interface PokemonApiCard {
 	name: string;
 	supertype: string;
 	subtypes?: string[];
+	types?: string[];
 	rarity?: string;
 	number: string;
 	nationalPokedexNumbers?: number[];
@@ -21,6 +22,7 @@ export function apiCardToProps(card: PokemonApiCard): HoloCardData {
 		name: card.name,
 		rarity: card.rarity,
 		subtypes: card.subtypes,
+		types: card.types,
 		supertype: card.supertype,
 		setId: card.set.id,
 		setName: card.set.name,
