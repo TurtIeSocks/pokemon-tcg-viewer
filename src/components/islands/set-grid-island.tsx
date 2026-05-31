@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { VirtuosoGrid } from "react-virtuoso";
-import type { HoloCardData } from "../holo-card";
 import { CollectionToggle } from "../collection-toggle";
+import type { HoloCardData } from "../holo-card";
 import { HoloCardIsland } from "./holo-card-island";
 
 export interface GridCard extends HoloCardData {

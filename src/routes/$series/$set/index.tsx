@@ -1,6 +1,12 @@
-import { ClientOnly, createFileRoute, Link, notFound, Outlet } from "@tanstack/react-router";
-import { SetGridIsland } from "../../../components/islands/set-grid-island";
+import {
+	ClientOnly,
+	createFileRoute,
+	Link,
+	notFound,
+	Outlet,
+} from "@tanstack/react-router";
 import type { HoloCardData } from "../../../components/holo-card";
+import { SetGridIsland } from "../../../components/islands/set-grid-island";
 import { fetchCards } from "../../../server/card-data";
 import { buildSetCardSlugs } from "../../../server/card-resolve";
 import { findSet, getNavTreeFn } from "../../../server/nav-tree";
@@ -84,7 +90,12 @@ function SetPage() {
 											card: card.slug,
 										}}
 									>
-										<img src={card.imageUrlSmall} alt={card.name} loading="lazy" className="w-full rounded" />
+										<img
+											src={card.imageUrlSmall}
+											alt={card.name}
+											loading="lazy"
+											className="w-full rounded"
+										/>
 										<span className="text-center text-xs">{card.name}</span>
 									</Link>
 								</li>
@@ -92,7 +103,11 @@ function SetPage() {
 						</ul>
 					}
 				>
-					<SetGridIsland series={params.series} set={params.set} cards={cards} />
+					<SetGridIsland
+						series={params.series}
+						set={params.set}
+						cards={cards}
+					/>
 				</ClientOnly>
 			</div>
 			<Outlet />

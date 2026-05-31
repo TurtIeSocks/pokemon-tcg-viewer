@@ -9,7 +9,13 @@ import { HoloCard } from "../holo-card";
  * crawlable fallback; the interactive HoloCard upgrades on the client. Closing
  * navigates back to the set grid (passed by the route).
  */
-export function CardModal({ card, onClose }: { card: FocusCardData; onClose: () => void }) {
+export function CardModal({
+	card,
+	onClose,
+}: {
+	card: FocusCardData;
+	onClose: () => void;
+}) {
 	return (
 		<Dialog open onOpenChange={(o) => !o && onClose()}>
 			<DialogContent className="max-w-3xl">

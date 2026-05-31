@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
 import { expect, test } from "bun:test";
+import { render, screen } from "@testing-library/react";
 import { HoloCardIsland } from "./holo-card-island";
 
 test("HoloCardIsland renders an accessible image fallback", () => {

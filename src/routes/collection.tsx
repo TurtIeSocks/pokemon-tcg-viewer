@@ -1,7 +1,7 @@
 import { ClientOnly, createFileRoute } from "@tanstack/react-router";
-import { useStore } from "../store";
-import { HoloCardIsland } from "../components/islands/holo-card-island";
 import { CollectionToggle } from "../components/collection-toggle";
+import { HoloCardIsland } from "../components/islands/holo-card-island";
+import { useStore } from "../store";
 
 export const Route = createFileRoute("/collection")({
 	head: () => ({ meta: [{ title: "Your Collection — Pokémon TCG" }] }),
