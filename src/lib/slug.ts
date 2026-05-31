@@ -77,7 +77,8 @@ export function buildSlugIndex(
 		if (!loc) continue; // card whose set isn't in the sets list — skip
 		let cardSlug = cardSlugFor(card);
 		const key = (s: string) => `${loc.seriesSlug}/${loc.setSlug}/${s}`;
-		if (idx.cardIdBySlug.has(key(cardSlug))) cardSlug = `${cardSlug}-${card.id}`;
+		if (idx.cardIdBySlug.has(key(cardSlug)))
+			cardSlug = `${cardSlug}-${card.id}`;
 		idx.cardIdBySlug.set(key(cardSlug), card.id);
 		idx.cardSlugById.set(card.id, cardSlug);
 	}

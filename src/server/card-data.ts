@@ -1,23 +1,26 @@
 import { createServerFn } from "@tanstack/react-start";
-import {
-	type FilterClauses,
-	buildFilterClauses,
-} from "../utils/build-filter-clauses";
-import { escapeLucene } from "../utils/escape-lucene";
 import type { HoloCardData } from "../components/holo-card";
 import {
+	buildFilterClauses,
+	type FilterClauses,
+} from "../utils/build-filter-clauses";
+import { escapeLucene } from "../utils/escape-lucene";
+import {
+	apiCardToFocusProps,
+	apiCardToProps,
 	type FocusCardData,
 	type PokemonApiCard,
 	type PokemonApiFocusCard,
 	type PokemonSet,
-	apiCardToFocusProps,
-	apiCardToProps,
 } from "./card-mappers";
 
 // v1: the CF Worker (injects the pokemontcg.io key). Absorb later by pointing
 // at the origin and adding the key here. Server-only — never in the client bundle.
 function apiBase(): string {
-	return (process.env.API_BASE ?? "https://api.pokemontcg.io").replace(/\/$/, "");
+	return (process.env.API_BASE ?? "https://api.pokemontcg.io").replace(
+		/\/$/,
+		"",
+	);
 }
 
 interface CardPage {
@@ -34,7 +37,10 @@ async function fetchCards(
 	const url = `${apiBase()}/v2/cards?select=id,name,number,images,rarity,subtypes,supertype,set,nationalPokedexNumbers,tcgplayer&orderBy=${orderBy}&q=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`;
 	const resp = await fetch(url);
 	if (!resp.ok) throw new Error(`Unable to fetch cards: ${resp.status}`);
-	const json = (await resp.json()) as { data: PokemonApiCard[]; totalCount: number };
+	const json = (await resp.json()) as {
+		data: PokemonApiCard[];
+		totalCount: number;
+	};
 	return { cards: json.data.map(apiCardToProps), totalCount: json.totalCount };
 }
 
@@ -74,7 +80,8 @@ export const getCardByIdFn = createServerFn({ method: "GET" })
 	.handler(async ({ data: id }): Promise<FocusCardData> => {
 		const resp = await fetch(`${apiBase()}/v2/cards/${id}`);
 		if (!resp.ok) {
-			if (resp.status === 404) throw new Response("Card not found", { status: 404 });
+			if (resp.status === 404)
+				throw new Response("Card not found", { status: 404 });
 			throw new Error(`Failed to fetch card ${id}: ${resp.status}`);
 		}
 		const json = (await resp.json()) as { data: PokemonApiFocusCard };

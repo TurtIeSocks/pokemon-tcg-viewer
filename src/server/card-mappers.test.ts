@@ -1,11 +1,14 @@
 import { describe, expect, test } from "bun:test";
-import { apiCardToProps, apiCardToFocusProps } from "./card-mappers";
+import { apiCardToFocusProps, apiCardToProps } from "./card-mappers";
 
 describe("apiCardToProps", () => {
 	test("maps prices keys to variants", () => {
 		const out = apiCardToProps({
-			id: "swsh9-154", name: "Charizard VSTAR", supertype: "Pokémon",
-			number: "154", set: { id: "swsh9", name: "Brilliant Stars", series: "Sword & Shield" },
+			id: "swsh9-154",
+			name: "Charizard VSTAR",
+			supertype: "Pokémon",
+			number: "154",
+			set: { id: "swsh9", name: "Brilliant Stars", series: "Sword & Shield" },
 			images: { small: "s.png", large: "l.png" },
 			tcgplayer: { prices: { holofoil: {}, reverseHolofoil: {} } },
 		});
@@ -15,7 +18,10 @@ describe("apiCardToProps", () => {
 	});
 	test("variants is undefined when no prices", () => {
 		const out = apiCardToProps({
-			id: "base1-4", name: "Charizard", supertype: "Pokémon", number: "4",
+			id: "base1-4",
+			name: "Charizard",
+			supertype: "Pokémon",
+			number: "4",
 			set: { id: "base1", name: "Base", series: "Base" },
 			images: { small: "s", large: "l" },
 		});
@@ -26,8 +32,16 @@ describe("apiCardToProps", () => {
 describe("apiCardToFocusProps", () => {
 	test("carries attacks and tcgplayer through", () => {
 		const out = apiCardToFocusProps({
-			id: "swsh9-154", name: "Charizard VSTAR", supertype: "Pokémon", number: "154",
-			set: { id: "swsh9", name: "Brilliant Stars", series: "Sword & Shield", images: { logo: "logo.png" } },
+			id: "swsh9-154",
+			name: "Charizard VSTAR",
+			supertype: "Pokémon",
+			number: "154",
+			set: {
+				id: "swsh9",
+				name: "Brilliant Stars",
+				series: "Sword & Shield",
+				images: { logo: "logo.png" },
+			},
 			images: { small: "s", large: "l" },
 			attacks: [{ name: "Star Blaze", damage: "320" }],
 		});
