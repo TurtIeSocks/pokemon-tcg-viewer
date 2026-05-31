@@ -21,6 +21,13 @@ afterEach(async () => {
 	localStorage.removeItem(LEGACY_LOCALSTORAGE_KEY);
 });
 
+test("createIdbStorage returns a storage with the PersistStorage shape", () => {
+	const s = createIdbStorage();
+	expect(typeof s.getItem).toBe("function");
+	expect(typeof s.setItem).toBe("function");
+	expect(typeof s.removeItem).toBe("function");
+});
+
 describe("createIdbStorage", () => {
 	test("getItem returns null when IDB is empty and no legacy data exists", async () => {
 		const storage = createIdbStorage<Sample["state"]>();
