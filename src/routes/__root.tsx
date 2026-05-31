@@ -3,9 +3,13 @@ import {
 	HeadContent,
 	Outlet,
 	Scripts,
+	useRouterState,
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import appCss from "../app.css?url";
+import { AppToolbar } from "../components/shell/app-toolbar";
+import { SidebarNav } from "../components/shell/sidebar-nav";
+import { getNavTreeFn } from "../server/nav-tree";
 
 export const Route = createRootRoute({
 	head: () => ({
@@ -16,13 +20,36 @@ export const Route = createRootRoute({
 		],
 		links: [{ rel: "stylesheet", href: appCss }],
 	}),
+	loader: () => getNavTreeFn(),
 	component: RootComponent,
 });
 
 function RootComponent() {
+	const tree = Route.useLoaderData();
+	// Active slugs from the current path: /{series}/{set}/...
+	const segments = useRouterState({
+		select: (s) => s.location.pathname.split("/").filter(Boolean),
+	});
+	const activeSeriesSlug = segments[0] ?? null;
+	const activeSetSlug = segments[1] ?? null;
+
 	return (
 		<RootDocument>
-			<Outlet />
+			<div className="flex h-screen flex-col overflow-hidden">
+				<AppToolbar />
+				<div className="flex min-h-0 flex-1">
+					<aside className="hidden w-72 shrink-0 overflow-y-auto border-r border-border bg-sidebar lg:block">
+						<SidebarNav
+							tree={tree}
+							activeSeriesSlug={activeSeriesSlug}
+							activeSetSlug={activeSetSlug}
+						/>
+					</aside>
+					<main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+						<Outlet />
+					</main>
+				</div>
+			</div>
 		</RootDocument>
 	);
 }

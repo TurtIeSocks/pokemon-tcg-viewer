@@ -16,11 +16,24 @@ import {
 
 // v1: the CF Worker (injects the pokemontcg.io key). Absorb later by pointing
 // at the origin and adding the key here. Server-only — never in the client bundle.
-function apiBase(): string {
+export function apiBase(): string {
 	return (process.env.API_BASE ?? "https://api.pokemontcg.io").replace(
 		/\/$/,
 		"",
 	);
+}
+
+/**
+ * Raw async fetch of all sets — NOT a server function. Safe to call from
+ * within another server function handler (avoids the cross-fn RPC hop).
+ */
+export async function fetchAllSets(): Promise<PokemonSet[]> {
+	const resp = await fetch(
+		`${apiBase()}/v2/sets?orderBy=releaseDate&select=id,name,series,releaseDate,total,images&pageSize=250`,
+	);
+	if (!resp.ok) throw new Error("Unable to fetch sets");
+	const json = (await resp.json()) as { data: PokemonSet[] };
+	return json.data;
 }
 
 interface CardPage {
@@ -45,14 +58,7 @@ async function fetchCards(
 }
 
 export const getSetsFn = createServerFn({ method: "GET" }).handler(
-	async (): Promise<PokemonSet[]> => {
-		const resp = await fetch(
-			`${apiBase()}/v2/sets?orderBy=releaseDate&select=id,name,series,releaseDate,total,images&pageSize=250`,
-		);
-		if (!resp.ok) throw new Error("Unable to fetch sets");
-		const json = (await resp.json()) as { data: PokemonSet[] };
-		return json.data;
-	},
+	(): Promise<PokemonSet[]> => fetchAllSets(),
 );
 
 export interface SetCardsInput {

@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { buildSlugIndex, slugify } from "../lib/slug";
-import { getSetsFn } from "./card-data";
+import { fetchAllSets } from "./card-data";
 import type { PokemonSet } from "./card-mappers";
 
 export interface NavSet {
@@ -73,7 +73,7 @@ let cached: NavTree | null = null;
 export const getNavTreeFn = createServerFn({ method: "GET" }).handler(
 	async (): Promise<NavTree> => {
 		if (cached) return cached;
-		const sets = await getSetsFn();
+		const sets = await fetchAllSets();
 		cached = deriveNavTree(sets);
 		return cached;
 	},
