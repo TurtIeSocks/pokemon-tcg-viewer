@@ -5,6 +5,7 @@ import {
 } from "@tanstack/react-router";
 import { CardGridIsland } from "../components/islands/card-grid-island";
 import { SearchControls } from "../components/islands/search-controls";
+import { ViewModeToggle } from "../components/islands/view-mode-toggle";
 import {
 	LIST_SEARCH_DEFAULTS,
 	listSearchToUrl,
@@ -51,14 +52,15 @@ function SearchPage() {
 
 	return (
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
-			<h1 className="mb-3 text-xl font-bold">
-				{q ? `Results for "${q}"` : "Search"}
-				{q ? (
-					<span className="ml-2 text-sm text-muted-foreground">
-						{total} cards
-					</span>
-				) : null}
-			</h1>
+			<div className="mb-3 flex items-center gap-3">
+				<h1 className="text-xl font-bold">
+					{q ? `Results for "${q}"` : "Search"}
+				</h1>
+				{q ? <span className="text-sm text-muted-foreground">{total} cards</span> : null}
+				<div className="ml-auto">
+					<ViewModeToggle value={search.view} disabled={!q} onChange={(view) => onChange({ view })} />
+				</div>
+			</div>
 			<div className="mb-4 shrink-0">
 				<SearchControls
 					value={search}
