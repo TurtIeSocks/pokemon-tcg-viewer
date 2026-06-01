@@ -1,17 +1,27 @@
 import { describe, expect, test } from "bun:test";
-import { buildPriceLines } from "./price-lines";
 import type { FocusCardData } from "../server/card-mappers";
+import { buildPriceLines } from "./price-lines";
 
 const base: FocusCardData = {
-	id: "x", imageUrl: "l", name: "n", supertype: "Pokémon",
-	setId: "swsh9", setName: "BS", setSeries: "S&S", cardNumber: "1",
+	id: "x",
+	imageUrl: "l",
+	name: "n",
+	supertype: "Pokémon",
+	setId: "swsh9",
+	setName: "BS",
+	setSeries: "S&S",
+	cardNumber: "1",
 };
 
 describe("buildPriceLines", () => {
 	test("TCGPlayer market price line", () => {
 		const lines = buildPriceLines({
 			...base,
-			tcgplayer: { url: "http://tcg", updatedAt: "2024", prices: { holofoil: { market: 12.5 } } },
+			tcgplayer: {
+				url: "http://tcg",
+				updatedAt: "2024",
+				prices: { holofoil: { market: 12.5 } },
+			},
 		});
 		expect(lines).toHaveLength(1);
 		expect(lines[0].source).toBe("TCGPlayer");
@@ -20,7 +30,11 @@ describe("buildPriceLines", () => {
 	test("Cardmarket avg line", () => {
 		const lines = buildPriceLines({
 			...base,
-			cardmarket: { url: "http://cm", updatedAt: "2024", prices: { averageSellPrice: 9.4 } },
+			cardmarket: {
+				url: "http://cm",
+				updatedAt: "2024",
+				prices: { averageSellPrice: 9.4 },
+			},
 		});
 		expect(lines[0].source).toBe("Cardmarket");
 		expect(lines[0].priceLabel).toBe("€9.40 avg");

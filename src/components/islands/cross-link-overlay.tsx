@@ -19,7 +19,9 @@ export function CrossLinkOverlay({ links }: CrossLinkOverlayProps) {
 					{...cl.link}
 					className="inline-flex items-center gap-[0.4rem] text-white no-underline px-[0.4rem] py-1 rounded transition-[background] duration-[120ms] ease-out hover:bg-[rgba(255,255,255,0.12)] focus-visible:bg-[rgba(255,255,255,0.12)] focus-visible:outline-none"
 				>
-					<span className="text-[0.9em] opacity-80" aria-hidden="true">→</span>
+					<span className="text-[0.9em] opacity-80" aria-hidden="true">
+						→
+					</span>
 					{cl.label}
 				</Link>
 			))}

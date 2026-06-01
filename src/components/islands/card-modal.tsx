@@ -1,13 +1,13 @@
 import { ClientOnly } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { useStore } from "../../store";
 import type { FocusCardData } from "../../server/card-mappers";
+import { useStore } from "../../store";
 import { CardMeta } from "../card/card-detail";
 import { toHoloCardData } from "../card/to-holo";
 import { HoloCard } from "../holo-card";
 import { CardPrices } from "./card-prices";
-import { CrossLinkOverlay, type CrossLink } from "./cross-link-overlay";
+import { type CrossLink, CrossLinkOverlay } from "./cross-link-overlay";
 
 export function CardModal({
 	card,
@@ -26,7 +26,15 @@ export function CardModal({
 				<div className="grid gap-6 md:grid-cols-2">
 					<div className="flex flex-col items-center gap-3">
 						<div className="w-full max-w-[320px]">
-							<ClientOnly fallback={<img src={card.imageUrl} alt={card.name} className="w-full rounded-xl" />}>
+							<ClientOnly
+								fallback={
+									<img
+										src={card.imageUrl}
+										alt={card.name}
+										className="w-full rounded-xl"
+									/>
+								}
+							>
 								<HoloCard
 									imageUrl={card.imageUrl}
 									name={card.name}
@@ -53,7 +61,11 @@ export function CardModal({
 	);
 }
 
-function CollectionButton({ card }: { card: ReturnType<typeof toHoloCardData> }) {
+function CollectionButton({
+	card,
+}: {
+	card: ReturnType<typeof toHoloCardData>;
+}) {
 	const owned = useStore((s) => !!s.owned[card.id]);
 	const add = useStore((s) => s.addToCollection);
 	const remove = useStore((s) => s.removeFromCollection);

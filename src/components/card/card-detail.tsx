@@ -1,5 +1,5 @@
-import { getTypeColor } from "../../utils/card-colors";
 import type { FocusCardData } from "../../server/card-mappers";
+import { getTypeColor } from "../../utils/card-colors";
 
 export function CardMeta({ card }: { card: FocusCardData }) {
 	const isPokemon = card.supertype === "Pokémon";
@@ -24,7 +24,11 @@ export function CardMeta({ card }: { card: FocusCardData }) {
 			{card.types?.length ? (
 				<div className="flex flex-wrap gap-2">
 					{card.types.map((t) => (
-						<span key={t} className="rounded-full px-3 py-1 text-sm font-medium text-white" style={{ backgroundColor: getTypeColor(t) }}>
+						<span
+							key={t}
+							className="rounded-full px-3 py-1 text-sm font-medium text-white"
+							style={{ backgroundColor: getTypeColor(t) }}
+						>
 							{t}
 						</span>
 					))}
@@ -33,10 +37,15 @@ export function CardMeta({ card }: { card: FocusCardData }) {
 
 			{card.abilities?.length ? (
 				<section>
-					<h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Abilities</h2>
+					<h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+						Abilities
+					</h2>
 					{card.abilities.map((a) => (
 						<div key={a.name} className="mb-2 rounded-lg bg-secondary p-3">
-							<div className="font-medium">{a.name} <span className="text-xs text-muted-foreground">{a.type}</span></div>
+							<div className="font-medium">
+								{a.name}{" "}
+								<span className="text-xs text-muted-foreground">{a.type}</span>
+							</div>
 							<p className="mt-1 text-sm text-muted-foreground">{a.text}</p>
 						</div>
 					))}
@@ -45,42 +54,73 @@ export function CardMeta({ card }: { card: FocusCardData }) {
 
 			{card.attacks?.length ? (
 				<section>
-					<h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Attacks</h2>
+					<h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+						Attacks
+					</h2>
 					{card.attacks.map((atk) => (
 						<div key={atk.name} className="mb-2 rounded-lg bg-secondary p-3">
 							<div className="flex items-center justify-between">
 								<span className="font-medium">{atk.name}</span>
-								{atk.damage && <span className="font-bold text-primary">{atk.damage}</span>}
+								{atk.damage && (
+									<span className="font-bold text-primary">{atk.damage}</span>
+								)}
 							</div>
-							{atk.cost?.length ? <p className="mt-1 text-xs text-muted-foreground">Cost: {atk.cost.join(", ")}</p> : null}
-							{atk.text && <p className="mt-1 text-sm text-muted-foreground">{atk.text}</p>}
+							{atk.cost?.length ? (
+								<p className="mt-1 text-xs text-muted-foreground">
+									Cost: {atk.cost.join(", ")}
+								</p>
+							) : null}
+							{atk.text && (
+								<p className="mt-1 text-sm text-muted-foreground">{atk.text}</p>
+							)}
 						</div>
 					))}
 				</section>
 			) : null}
 
-			{isPokemon && (card.weaknesses?.length || card.resistances?.length || card.retreatCost?.length) ? (
+			{isPokemon &&
+			(card.weaknesses?.length ||
+				card.resistances?.length ||
+				card.retreatCost?.length) ? (
 				<section className="space-y-1 text-sm text-muted-foreground">
-					{card.weaknesses?.length ? <p>Weakness: {card.weaknesses.map((w) => `${w.type} ${w.value}`).join(", ")}</p> : null}
-					{card.resistances?.length ? <p>Resistance: {card.resistances.map((r) => `${r.type} ${r.value}`).join(", ")}</p> : null}
-					{card.retreatCost?.length ? <p>Retreat: {card.retreatCost.length}</p> : null}
+					{card.weaknesses?.length ? (
+						<p>
+							Weakness:{" "}
+							{card.weaknesses.map((w) => `${w.type} ${w.value}`).join(", ")}
+						</p>
+					) : null}
+					{card.resistances?.length ? (
+						<p>
+							Resistance:{" "}
+							{card.resistances.map((r) => `${r.type} ${r.value}`).join(", ")}
+						</p>
+					) : null}
+					{card.retreatCost?.length ? (
+						<p>Retreat: {card.retreatCost.length}</p>
+					) : null}
 				</section>
 			) : null}
 
 			{card.rules?.length ? (
 				<section className="space-y-1">
-					{card.rules.map((r) => <p key={r} className="text-sm text-muted-foreground">{r}</p>)}
+					{card.rules.map((r) => (
+						<p key={r} className="text-sm text-muted-foreground">
+							{r}
+						</p>
+					))}
 				</section>
 			) : null}
 
 			<div className="border-t border-border pt-3 text-sm">
 				<p className="font-medium">{card.setName}</p>
 				<p className="text-muted-foreground">
-					{card.setSeries} · #{card.cardNumber}{card.rarity ? ` · ${card.rarity}` : ""}
+					{card.setSeries} · #{card.cardNumber}
+					{card.rarity ? ` · ${card.rarity}` : ""}
 				</p>
 				{(card.flavorText || card.artist) && (
 					<p className="mt-2 italic text-muted-foreground">
-						{card.flavorText}{card.artist ? ` — ${card.artist}` : ""}
+						{card.flavorText}
+						{card.artist ? ` — ${card.artist}` : ""}
 					</p>
 				)}
 			</div>

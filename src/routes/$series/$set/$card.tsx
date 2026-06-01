@@ -1,12 +1,12 @@
 import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import type { CrossLink } from "../../../components/islands/cross-link-overlay";
 import { CardModal } from "../../../components/islands/card-modal";
+import type { CrossLink } from "../../../components/islands/cross-link-overlay";
+import { LIST_SEARCH_DEFAULTS } from "../../../lib/list-search";
 import { fetchCardById, getPokemonListCached } from "../../../server/card-data";
 import { resolveCardInSet } from "../../../server/card-resolve";
 import { findSet, getNavTreeFn } from "../../../server/nav-tree";
 import { nameByDex } from "../../../server/pokemon-dex";
-import { LIST_SEARCH_DEFAULTS } from "../../../lib/list-search";
 import { useRecentsStore } from "../../../store/recents";
 
 export const Route = createFileRoute("/$series/$set/$card")({

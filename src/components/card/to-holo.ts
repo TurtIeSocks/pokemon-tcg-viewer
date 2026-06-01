@@ -1,5 +1,5 @@
-import type { HoloCardData } from "../holo-card";
 import type { FocusCardData } from "../../server/card-mappers";
+import type { HoloCardData } from "../holo-card";
 
 /** Project the focus-card detail down to the grid/holo card shape. */
 export function toHoloCardData(card: FocusCardData): HoloCardData {

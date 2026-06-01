@@ -18,7 +18,12 @@ function PriceLines({ card }: { card: FocusCardData }) {
 			{lines.map((l) => (
 				<p key={l.source}>
 					<strong>{l.source}</strong> · {l.priceLabel} ·{" "}
-					<a href={l.url} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+					<a
+						href={l.url}
+						target="_blank"
+						rel="noopener noreferrer"
+						className="text-primary underline"
+					>
 						open ↗
 					</a>
 				</p>
