@@ -4,7 +4,7 @@ import { CardModal } from "../../../components/islands/card-modal";
 import type { CrossLink } from "../../../components/islands/cross-link-overlay";
 import { LIST_SEARCH_DEFAULTS } from "../../../lib/list-search";
 import { getCardByIdFn, getPokemonListFn } from "../../../server/card-data";
-import { resolveCardInSet } from "../../../server/card-resolve";
+import { resolveCardInSetFn } from "../../../server/corpus-server";
 import { findSet, getNavTreeFn } from "../../../server/nav-tree";
 import { nameByDex } from "../../../server/pokemon-dex";
 import { useRecentsStore } from "../../../store/recents";
@@ -14,7 +14,9 @@ export const Route = createFileRoute("/$series/$set/$card")({
 		const tree = await getNavTreeFn();
 		const set = findSet(tree, params.series, params.set);
 		if (!set) throw notFound();
-		const cardId = await resolveCardInSet(set.id, params.card);
+		const cardId = await resolveCardInSetFn({
+			data: { setId: set.id, cardSlug: params.card },
+		});
 		if (!cardId) throw notFound();
 		const card = await getCardByIdFn({ data: cardId });
 

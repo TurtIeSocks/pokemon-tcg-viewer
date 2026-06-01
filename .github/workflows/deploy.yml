@@ -42,7 +42,10 @@ jobs:
         env:
           VITE_API_BASE: ${{ vars.VITE_API_BASE }}
           API_BASE: ${{ vars.VITE_API_BASE }}
-        run: bun run build
+        # build:check runs the client-bundle leak guard after the build — fails
+        # the deploy if any server-only code (node:zlib, process.env, server
+        # corpus loader) leaked into .output/public.
+        run: bun run build:check
 
       - name: Ship .output to the server tree
         # Same box as the runner, so a local rsync. --delete prunes stale files.

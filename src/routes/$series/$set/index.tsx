@@ -13,13 +13,13 @@ import { Button } from "@/components/ui/button";
 import { CardGridIsland } from "../../../components/islands/card-grid-island";
 import { PackDialog } from "../../../components/islands/pack-dialog";
 import { SearchControls } from "../../../components/islands/search-controls";
+import { buildSetCardSlugs } from "../../../lib/card-slugs";
 import {
 	LIST_SEARCH_DEFAULTS,
 	listSearchToUrl,
 	validateListSearch,
 } from "../../../lib/list-search";
-import { buildSetCardSlugs } from "../../../server/card-resolve";
-import { queryCorpusServer } from "../../../server/corpus-server";
+import { getSetCardsFn } from "../../../server/corpus-server";
 import { findSet, getNavTreeFn } from "../../../server/nav-tree";
 import { deriveFacets } from "../../../server/set-facets";
 
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/$series/$set/")({
 		const set = findSet(tree, params.series, params.set);
 		if (!set) throw notFound();
 
-		const all = await queryCorpusServer({ setId: set.id, relevance: false });
+		const all = await getSetCardsFn({ data: set.id });
 		const slugs = buildSetCardSlugs(all);
 		const cards = all.map((c) => ({
 			...c,
