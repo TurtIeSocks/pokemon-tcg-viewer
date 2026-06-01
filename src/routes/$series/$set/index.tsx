@@ -10,7 +10,6 @@ import {
 import { Package } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import type { HoloCardData } from "../../../components/holo-card";
 import { CardGridIsland } from "../../../components/islands/card-grid-island";
 import { PackDialog } from "../../../components/islands/pack-dialog";
 import { SearchControls } from "../../../components/islands/search-controls";
@@ -19,7 +18,7 @@ import {
 	listSearchToUrl,
 	validateListSearch,
 } from "../../../lib/list-search";
-import { fetchCards } from "../../../server/card-data";
+import { queryCorpusServer } from "../../../server/corpus-server";
 import { buildSetCardSlugs } from "../../../server/card-resolve";
 import { findSet, getNavTreeFn } from "../../../server/nav-tree";
 import { deriveFacets } from "../../../server/set-facets";
@@ -32,26 +31,9 @@ export const Route = createFileRoute("/$series/$set/")({
 		const set = findSet(tree, params.series, params.set);
 		if (!set) throw notFound();
 
-		// Fetch the whole set so facets are accurate and all cards are crawlable.
-		// Use fetchCards directly (not getCardsBySetFn) to avoid the RPC hop when
-		// called server-side from a route loader.
-		const all: HoloCardData[] = [];
-		let page = 1;
-		let total = Number.POSITIVE_INFINITY;
-		while (all.length < total && page <= 10) {
-			const res = await fetchCards(`set.id:${set.id}`, page, 250, "number");
-			all.push(...res.cards);
-			total = res.totalCount;
-			if (res.cards.length === 0) break;
-			page++;
-		}
-		// TODO(Plan 05): setResponseHeaders Cache-Control via server fn — import protection
-		// blocks @tanstack/react-start/server from client-bundled route files.
+		const all = await queryCorpusServer({ setId: set.id, relevance: false });
 		const slugs = buildSetCardSlugs(all);
-		const cards = all.map((c) => ({
-			...c,
-			slug: slugs.slugById.get(c.id) ?? c.id,
-		}));
+		const cards = all.map((c) => ({ ...c, slug: slugs.slugById.get(c.id) ?? c.id }));
 		return { set, cards, facets: deriveFacets(all) };
 	},
 	head: ({ loaderData }) => ({
