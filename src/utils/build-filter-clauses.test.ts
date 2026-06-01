@@ -7,8 +7,8 @@ describe("buildFilterClauses", () => {
 		expect(
 			buildFilterClauses({
 				types: [],
-				rarity: [],
-				supertype: [],
+				rarities: [],
+				supertypes: [],
 				subtypes: [],
 			}),
 		).toBe("");
@@ -28,14 +28,14 @@ describe("buildFilterClauses", () => {
 		expect(
 			buildFilterClauses({
 				types: ["fire"],
-				supertype: ["Pokémon"],
+				supertypes: ["Pokémon"],
 			}),
 		).toBe(" AND (types:fire) AND (supertype:Pokémon)");
 	});
 
 	test("quotes rarity values that contain spaces", () => {
 		expect(
-			buildFilterClauses({ rarity: ["Rare Holo", "Rare Holo VMAX"] }),
+			buildFilterClauses({ rarities: ["Rare Holo", "Rare Holo VMAX"] }),
 		).toBe(' AND (rarity:"Rare Holo" OR rarity:"Rare Holo VMAX")');
 	});
 
@@ -43,8 +43,8 @@ describe("buildFilterClauses", () => {
 		expect(
 			buildFilterClauses({
 				types: ["fire"],
-				rarity: ["Rare Holo VMAX"],
-				supertype: ["Pokémon"],
+				rarities: ["Rare Holo VMAX"],
+				supertypes: ["Pokémon"],
 				subtypes: ["VMAX"],
 			}),
 		).toBe(

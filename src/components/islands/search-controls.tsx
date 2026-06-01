@@ -6,18 +6,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import type { SetFacets } from "@/server/set-facets";
 import type { ListSearch } from "../../lib/card-query";
-
-export interface FacetOptions {
-	supertypes: string[];
-	subtypes: string[];
-	rarities: string[];
-	types: string[];
-}
 
 interface SearchControlsProps {
 	value: ListSearch;
-	options: FacetOptions;
+	options: SetFacets;
 	/** Whether to show the this-set / all-sets scope toggle. */
 	showScope: boolean;
 	onChange: (patch: Partial<ListSearch>) => void;
@@ -61,7 +55,6 @@ function FilterSelect({
 export function SearchControls({
 	value,
 	options,
-	// showScope,
 	onChange,
 }: SearchControlsProps) {
 	return (

@@ -36,8 +36,8 @@ const orUndef = (a: string[]): string[] | undefined =>
 export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 	const filters: FilterClauses = {
 		types: orUndef(s.types),
-		rarity: orUndef(s.rarity),
-		supertype: orUndef(s.supertype),
+		rarities: orUndef(s.rarity),
+		supertypes: orUndef(s.supertype),
 		subtypes: orUndef(s.subtypes),
 	};
 	const query = s.q.trim() || undefined;

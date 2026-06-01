@@ -17,6 +17,13 @@ export const LIST_SEARCH_DEFAULTS: ListSearch = {
 	view: "grid",
 };
 
+const VALID_SEARCH_PARAMS = [
+	"types",
+	"rarity",
+	"supertype",
+	"subtypes",
+] as const;
+
 const csv = (v: unknown): string[] => {
 	if (Array.isArray(v)) return (v as string[]).filter(Boolean);
 	if (typeof v !== "string" || !v) return [];
@@ -29,6 +36,7 @@ export function validateListSearch(
 ): ListSearch {
 	const scope: Scope = search.scope === "set" ? "set" : "all";
 	const view: ViewMode = search.view === "timeline" ? "timeline" : "grid";
+
 	return {
 		q: typeof search.q === "string" ? search.q : "",
 		types: csv(search.types),
@@ -46,11 +54,13 @@ export function listSearchToUrl(
 ): Record<string, string | undefined> {
 	const out: Record<string, string | undefined> = {};
 	if (s.q !== undefined) out.q = s.q || undefined;
-	for (const k of ["types", "rarity", "supertype", "subtypes"] as const) {
+	for (const k of VALID_SEARCH_PARAMS) {
 		if (s[k] !== undefined) out[k] = s[k]?.length ? s[k]?.join(",") : undefined;
 	}
 	if (s.scope !== undefined) out.scope = s.scope === "set" ? "set" : undefined;
 	if (s.view !== undefined)
 		out.view = s.view === "timeline" ? "timeline" : undefined;
+
+	console.log({ s, out })
 	return out;
 }

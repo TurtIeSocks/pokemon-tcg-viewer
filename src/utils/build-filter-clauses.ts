@@ -1,13 +1,11 @@
+import type { SetFacets } from "@/server/set-facets";
+
 /**
  * Filter values per dimension. All optional. Empty/missing arrays are
  * treated as "no filter for this dimension".
  */
-export interface FilterClauses {
-	types?: string[];
-	rarity?: string[];
-	supertype?: string[];
-	subtypes?: string[];
-}
+
+export type FilterClauses = Partial<SetFacets>;
 
 /**
  * Compose pokemontcg.io query clauses from a filter object. Returns a
@@ -26,14 +24,14 @@ export function buildFilterClauses(filters: FilterClauses): string {
 	if (filters.types?.length) {
 		clauses.push(`(${filters.types.map((t) => `types:${t}`).join(" OR ")})`);
 	}
-	if (filters.rarity?.length) {
+	if (filters.rarities?.length) {
 		clauses.push(
-			`(${filters.rarity.map((r) => `rarity:"${r}"`).join(" OR ")})`,
+			`(${filters.rarities.map((r) => `rarity:"${r}"`).join(" OR ")})`,
 		);
 	}
-	if (filters.supertype?.length) {
+	if (filters.supertypes?.length) {
 		clauses.push(
-			`(${filters.supertype.map((s) => `supertype:${s}`).join(" OR ")})`,
+			`(${filters.supertypes.map((s) => `supertype:${s}`).join(" OR ")})`,
 		);
 	}
 	if (filters.subtypes?.length) {
