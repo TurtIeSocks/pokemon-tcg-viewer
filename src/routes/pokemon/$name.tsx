@@ -12,10 +12,8 @@ import {
 	listSearchToUrl,
 	validateListSearch,
 } from "../../lib/list-search";
-import {
-	fetchCardsByPokedex,
-	getPokemonListCached,
-} from "../../server/card-data";
+import { getPokemonListCached } from "../../server/card-data";
+import { queryCorpusServer } from "../../server/corpus-server";
 import { dexByName } from "../../server/pokemon-dex";
 import { deriveFacets } from "../../server/set-facets";
 
@@ -33,12 +31,12 @@ export const Route = createFileRoute("/pokemon/$name")({
 		const list = await getPokemonListCached();
 		const dex = dexByName(list, params.name);
 		if (dex === null) throw notFound();
-		const res = await fetchCardsByPokedex(dex, 1, 60);
+		const all = await queryCorpusServer({ dexNumber: dex, setId: null, relevance: false });
 		return {
 			display: titleCase(params.name),
 			dex,
-			cards: res.cards,
-			total: res.totalCount,
+			cards: all.slice(0, 60),
+			total: all.length,
 		};
 	},
 	head: ({ loaderData }) => {

@@ -11,7 +11,7 @@ import {
 	listSearchToUrl,
 	validateListSearch,
 } from "../lib/list-search";
-import { fetchCardsByName } from "../server/card-data";
+import { queryCorpusServer } from "../server/corpus-server";
 import { deriveFacets } from "../server/set-facets";
 
 export const Route = createFileRoute("/search")({
@@ -21,8 +21,8 @@ export const Route = createFileRoute("/search")({
 	loader: async ({ deps }) => {
 		const q = deps.q.trim();
 		if (!q) return { q, cards: [], total: 0 };
-		const res = await fetchCardsByName(q, 1, 40);
-		return { q, cards: res.cards, total: res.totalCount };
+		const all = await queryCorpusServer({ query: q, setId: null, relevance: true });
+		return { q, cards: all.slice(0, 40), total: all.length };
 	},
 	head: ({ loaderData }) => ({
 		meta: [
