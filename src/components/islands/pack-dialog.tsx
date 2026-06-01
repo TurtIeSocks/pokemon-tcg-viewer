@@ -2,10 +2,10 @@ import { Link, type LinkProps } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { rollPack } from "../../utils/roll-pack";
 import { BoosterPack, type PackArt } from "../booster-pack/booster-pack";
 import { CollectionToggle } from "../collection-toggle";
 import { HoloCard, type HoloCardData } from "../holo-card";
-import { rollPack } from "../../utils/roll-pack";
 
 const RIP_DURATION_MS = 320;
 
@@ -17,7 +17,13 @@ interface PackDialogProps {
 	cardHref: (card: HoloCardData) => LinkProps;
 }
 
-export function PackDialog({ open, onOpenChange, art, pool, cardHref }: PackDialogProps) {
+export function PackDialog({
+	open,
+	onOpenChange,
+	art,
+	pool,
+	cardHref,
+}: PackDialogProps) {
 	const [ripped, setRipped] = useState(false);
 	const [pack, setPack] = useState<HoloCardData[] | null>(null);
 	const ripTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -32,13 +38,21 @@ export function PackDialog({ open, onOpenChange, art, pool, cardHref }: PackDial
 	}, [open]);
 
 	// Clear a pending rip if unmounted mid-animation.
-	useEffect(() => () => { if (ripTimer.current) clearTimeout(ripTimer.current); }, []);
+	useEffect(
+		() => () => {
+			if (ripTimer.current) clearTimeout(ripTimer.current);
+		},
+		[],
+	);
 
 	const onRip = () => {
 		if (pool.length === 0) return;
 		setRipped(true);
 		if (ripTimer.current) clearTimeout(ripTimer.current);
-		ripTimer.current = setTimeout(() => setPack(rollPack({ pool })), RIP_DURATION_MS);
+		ripTimer.current = setTimeout(
+			() => setPack(rollPack({ pool })),
+			RIP_DURATION_MS,
+		);
 	};
 	const onReroll = () => {
 		if (ripTimer.current) clearTimeout(ripTimer.current);

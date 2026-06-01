@@ -11,8 +11,8 @@ import { Package } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { HoloCardData } from "../../../components/holo-card";
-import { PackDialog } from "../../../components/islands/pack-dialog";
 import { CardGridIsland } from "../../../components/islands/card-grid-island";
+import { PackDialog } from "../../../components/islands/pack-dialog";
 import { SearchControls } from "../../../components/islands/search-controls";
 import {
 	LIST_SEARCH_DEFAULTS,
@@ -79,9 +79,16 @@ function SetPage() {
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
 			<div className="mb-3 flex items-center gap-3">
 				<h1 className="text-xl font-bold">{set.name}</h1>
-				<span className="text-sm text-muted-foreground">{cards.length} cards</span>
+				<span className="text-sm text-muted-foreground">
+					{cards.length} cards
+				</span>
 				<ClientOnly fallback={null}>
-					<Button variant="outline" size="sm" className="ml-auto" onClick={() => setPackOpen(true)}>
+					<Button
+						variant="outline"
+						size="sm"
+						className="ml-auto"
+						onClick={() => setPackOpen(true)}
+					>
 						<Package className="size-4 sm:mr-2" />
 						<span className="hidden sm:inline">Open Packs</span>
 					</Button>

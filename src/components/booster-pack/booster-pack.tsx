@@ -21,7 +21,10 @@ export function BoosterPack({ art, ripped, onRip }: BoosterPackProps) {
 			onClick={onRip}
 		>
 			<span className="booster-pack-foil" aria-hidden="true" />
-			<span className="booster-pack-crimp booster-pack-crimp--top" aria-hidden="true" />
+			<span
+				className="booster-pack-crimp booster-pack-crimp--top"
+				aria-hidden="true"
+			/>
 			<span className="booster-pack-tear" aria-hidden="true">
 				<span className="booster-pack-tear-label">Rip to open</span>
 			</span>
@@ -29,8 +32,16 @@ export function BoosterPack({ art, ripped, onRip }: BoosterPackProps) {
 				<img className="booster-pack-logo" src={art.logo} alt="" />
 				<strong className="booster-pack-name">{art.name}</strong>
 			</span>
-			<img className="booster-pack-symbol" src={art.symbol} alt="" aria-hidden="true" />
-			<span className="booster-pack-crimp booster-pack-crimp--bottom" aria-hidden="true" />
+			<img
+				className="booster-pack-symbol"
+				src={art.symbol}
+				alt=""
+				aria-hidden="true"
+			/>
+			<span
+				className="booster-pack-crimp booster-pack-crimp--bottom"
+				aria-hidden="true"
+			/>
 		</button>
 	);
 }
