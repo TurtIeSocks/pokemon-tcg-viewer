@@ -6,6 +6,7 @@ import {
 	type ListContext,
 	type ListSearch,
 } from "../../lib/card-query";
+import { useStore } from "../../store";
 import {
 	loadCorpus,
 	makeCorpusFetcher,
@@ -39,10 +40,18 @@ export function CardGridIsland({
 	seedTotal,
 	cardHref,
 }: CardGridIslandProps) {
-	const ready = useCorpusRuntime((s) => s.index !== null);
+	const corpusReady = useCorpusRuntime((s) => s.index !== null);
+	// Gate on sets too: the corpus hydrates cards from useStore.sets, and the
+	// per-query cache is keyed only by the corpus index — querying before sets
+	// arrive would cache cards with raw set IDs and no date sort until the next
+	// corpus reload. Both load on mount; sets is the smaller fetch so this rarely
+	// blocks. If sets fails, the grid stays on the correct SSR seed.
+	const setsReady = useStore((s) => s.sets !== null);
+	const ready = corpusReady && setsReady;
 	const [cards, setCards] = useState<HoloCardData[]>(seedCards);
 	const [total, setTotal] = useState(seedTotal);
 	const pageRef = useRef(1);
+	const loadingMoreRef = useRef(false);
 
 	// Stable key for the active query; changing it resets pagination.
 	const queryKey = useMemo(
@@ -56,29 +65,52 @@ export function CardGridIsland({
 		if (typeof process !== "undefined" && process.env.NODE_ENV === "test")
 			return;
 		void loadCorpus();
+		// The client corpus hydrates cards with set metadata (name, series for the
+		// holo era, release date for ordering) from useStore.sets. Load it too, or
+		// the live grid falls back to raw set IDs and loses date sorting. loadSets
+		// is freshness-gated + idempotent; the legacy SPA boot that called it was
+		// removed during the migration, orphaning the slice.
+		void useStore.getState().loadSets();
 	}, []);
 
 	// (Re)load page 1 from the corpus whenever the query or readiness changes.
+	// queryKey is the serialized identity of [search, context]; depending on the
+	// raw objects (fresh refs every parent render) would re-fire on every render.
+	// The `cancelled` guard drops a stale resolve when the query changes mid-flight
+	// so fast filter edits can't let an older result win (last-write race).
+	// biome-ignore lint/correctness/useExhaustiveDependencies: queryKey encodes search+context.
 	useEffect(() => {
 		if (!ready) return;
-		const q = buildCorpusQuery(search, context);
-		const fetcher = makeCorpusFetcher(q);
+		let cancelled = false;
+		const fetcher = makeCorpusFetcher(buildCorpusQuery(search, context));
 		pageRef.current = 1;
+		loadingMoreRef.current = false;
 		void fetcher(queryKey, 1, PAGE).then((r) => {
+			if (cancelled) return;
 			setCards(r.cards);
 			setTotal(r.totalCount);
 		});
-	}, [ready, queryKey, search, context]);
+		return () => {
+			cancelled = true;
+		};
+	}, [ready, queryKey]);
 
 	const loadMore = () => {
-		if (!ready) return;
+		// Virtuoso's endReached can fire repeatedly; the ref gate keeps a single
+		// page request in flight so pages aren't skipped or appended twice.
+		if (!ready || loadingMoreRef.current) return;
 		if (cards.length >= total) return;
+		loadingMoreRef.current = true;
 		const next = pageRef.current + 1;
-		pageRef.current = next;
 		const fetcher = makeCorpusFetcher(buildCorpusQuery(search, context));
-		void fetcher(queryKey, next, PAGE).then((r) =>
-			setCards((cur) => [...cur, ...r.cards]),
-		);
+		void fetcher(queryKey, next, PAGE)
+			.then((r) => {
+				pageRef.current = next;
+				setCards((cur) => [...cur, ...r.cards]);
+			})
+			.finally(() => {
+				loadingMoreRef.current = false;
+			});
 	};
 
 	const renderCard = (card: HoloCardData) => (

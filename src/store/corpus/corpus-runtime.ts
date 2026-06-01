@@ -1,13 +1,6 @@
 import { create } from "zustand";
 import type { HoloCardData } from "../../components/holo-card";
 import { apiBase } from "../../lib/api-base-client";
-
-export type CardFetcher = (
-	key: string,
-	page: number,
-	pageSize: number,
-) => Promise<{ cards: HoloCardData[]; totalCount: number }>;
-
 import { useStore } from "../index";
 import {
 	buildIndex,
@@ -17,6 +10,12 @@ import {
 } from "./corpus-engine";
 import { type CorpusMeta, readGz, readMeta, writeCorpus } from "./corpus-store";
 import type { CorpusCard } from "./corpus-types";
+
+export type CardFetcher = (
+	key: string,
+	page: number,
+	pageSize: number,
+) => Promise<{ cards: HoloCardData[]; totalCount: number }>;
 
 interface CorpusRuntimeState {
 	index: CorpusIndex | null;
