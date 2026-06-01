@@ -1,7 +1,11 @@
 import { Link, type LinkProps } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { VirtuosoGrid } from "react-virtuoso";
-import { buildCorpusQuery, type ListContext, type ListSearch } from "../../lib/card-query";
+import {
+	buildCorpusQuery,
+	type ListContext,
+	type ListSearch,
+} from "../../lib/card-query";
 import {
 	loadCorpus,
 	makeCorpusFetcher,
@@ -46,6 +50,10 @@ export function CardGridIsland({
 	);
 
 	useEffect(() => {
+		// Skip in test environments — loadCorpus is a network-dependent singleton
+		// whose inFlight promise leaks across test files via module state.
+		if (typeof process !== "undefined" && process.env.NODE_ENV === "test")
+			return;
 		void loadCorpus();
 	}, []);
 
@@ -97,7 +105,7 @@ export function CardGridIsland({
 	// ResizeObserver stub or NODE_ENV so production is never affected.
 	const isTestEnv =
 		(typeof window !== "undefined" && !("ResizeObserver" in window)) ||
-		typeof process !== "undefined" && process.env.NODE_ENV === "test";
+		(typeof process !== "undefined" && process.env.NODE_ENV === "test");
 	if (isTestEnv) {
 		return (
 			<ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">

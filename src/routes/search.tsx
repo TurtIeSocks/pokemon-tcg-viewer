@@ -1,9 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { CardGridIsland } from "../components/islands/card-grid-island";
 import { SearchControls } from "../components/islands/search-controls";
-import { deriveFacets } from "../server/set-facets";
-import { fetchCardsByName } from "../server/card-data";
 import { listSearchToUrl, validateListSearch } from "../lib/list-search";
+import { fetchCardsByName } from "../server/card-data";
+import { deriveFacets } from "../server/set-facets";
 
 export const Route = createFileRoute("/search")({
 	validateSearch: validateListSearch,
@@ -16,8 +16,15 @@ export const Route = createFileRoute("/search")({
 	},
 	head: ({ loaderData }) => ({
 		meta: [
-			{ title: loaderData?.q ? `"${loaderData.q}" — Pokémon TCG search` : "Search — Pokémon TCG" },
-			{ name: "description", content: `Search results for ${loaderData?.q ?? ""}.` },
+			{
+				title: loaderData?.q
+					? `"${loaderData.q}" — Pokémon TCG search`
+					: "Search — Pokémon TCG",
+			},
+			{
+				name: "description",
+				content: `Search results for ${loaderData?.q ?? ""}.`,
+			},
 		],
 	}),
 	component: SearchPage,
@@ -37,10 +44,19 @@ function SearchPage() {
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
 			<h1 className="mb-3 text-xl font-bold">
 				{q ? `Results for "${q}"` : "Search"}
-				{q ? <span className="ml-2 text-sm text-muted-foreground">{total} cards</span> : null}
+				{q ? (
+					<span className="ml-2 text-sm text-muted-foreground">
+						{total} cards
+					</span>
+				) : null}
 			</h1>
 			<div className="mb-4 shrink-0">
-				<SearchControls value={search} options={options} showScope={false} onChange={onChange} />
+				<SearchControls
+					value={search}
+					options={options}
+					showScope={false}
+					onChange={onChange}
+				/>
 			</div>
 			<div className="min-h-0 flex-1">
 				<CardGridIsland

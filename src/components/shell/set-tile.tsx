@@ -14,7 +14,14 @@ export function SetTile({
 		<Link
 			to="/$series/$set"
 			params={{ series: seriesSlug, set: set.slug }}
-			search={{ q: "", types: [], rarity: [], supertype: [], subtypes: [], scope: "all" }}
+			search={{
+				q: "",
+				types: [],
+				rarity: [],
+				supertype: [],
+				subtypes: [],
+				scope: "all",
+			}}
 			className="booster-pack"
 			aria-label={`Browse ${set.name}`}
 		>

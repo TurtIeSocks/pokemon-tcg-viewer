@@ -1,11 +1,24 @@
-import { render, screen } from "@testing-library/react";
 import { expect, test } from "bun:test";
-import { createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
-import { CardGridIsland } from "./card-grid-island";
+import {
+	createRootRoute,
+	createRouter,
+	RouterProvider,
+} from "@tanstack/react-router";
+import { render, screen } from "@testing-library/react";
 import type { GridCard } from "./card-grid-island";
+import { CardGridIsland } from "./card-grid-island";
 
 const seed: GridCard[] = [
-	{ id: "swsh9-1", name: "Exeggcute", imageUrl: "l1", imageUrlSmall: "s1", setId: "swsh9", setName: "BS", setSeries: "S&S", cardNumber: "1" },
+	{
+		id: "swsh9-1",
+		name: "Exeggcute",
+		imageUrl: "l1",
+		imageUrlSmall: "s1",
+		setId: "swsh9",
+		setName: "BS",
+		setSeries: "S&S",
+		cardNumber: "1",
+	},
 ];
 
 async function renderInRouter(ui: React.ReactNode) {
@@ -18,7 +31,14 @@ async function renderInRouter(ui: React.ReactNode) {
 test("CardGridIsland shows seeded SSR cards before the corpus is ready", async () => {
 	await renderInRouter(
 		<CardGridIsland
-			search={{ q: "", types: [], rarity: [], supertype: [], subtypes: [], scope: "all" }}
+			search={{
+				q: "",
+				types: [],
+				rarity: [],
+				supertype: [],
+				subtypes: [],
+				scope: "all",
+			}}
 			context={{ setId: "swsh9" }}
 			seedCards={seed}
 			seedTotal={1}
@@ -30,5 +50,7 @@ test("CardGridIsland shows seeded SSR cards before the corpus is ready", async (
 	// card name via aria-label on the wrapper div (role=button). Alt text on the
 	// internal <img> is intentionally "" (decorative — the aria-label carries the name).
 	// This proves the seed card is reachable; production uses Virtuoso (not weakened).
-	expect(await screen.findByRole("button", { name: "Exeggcute" })).toBeDefined();
+	expect(
+		await screen.findByRole("button", { name: "Exeggcute" }),
+	).toBeDefined();
 });

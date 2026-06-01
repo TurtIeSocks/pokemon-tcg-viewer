@@ -55,7 +55,14 @@ export function HomeHero() {
 						<Link
 							key={name}
 							to="/search"
-							search={{ q: name, types: [], rarity: [], supertype: [], subtypes: [], scope: "all" as const }}
+							search={{
+								q: name,
+								types: [],
+								rarity: [],
+								supertype: [],
+								subtypes: [],
+								scope: "all" as const,
+							}}
 							className="rounded-full border border-border bg-secondary px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-secondary/80"
 						>
 							{name}

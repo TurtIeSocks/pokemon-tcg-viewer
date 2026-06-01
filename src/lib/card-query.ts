@@ -19,7 +19,8 @@ export interface ListContext {
 	dexNumber?: number;
 }
 
-const orUndef = (a: string[]): string[] | undefined => (a.length ? a : undefined);
+const orUndef = (a: string[]): string[] | undefined =>
+	a.length ? a : undefined;
 
 /**
  * Map URL search params + page context to a CorpusQuery.

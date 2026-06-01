@@ -18,7 +18,9 @@ const csv = (v: unknown): string[] => {
 };
 
 /** Shared validateSearch for any card-list route. */
-export function validateListSearch(search: Record<string, unknown>): ListSearch {
+export function validateListSearch(
+	search: Record<string, unknown>,
+): ListSearch {
 	const scope: Scope = search.scope === "set" ? "set" : "all";
 	return {
 		q: typeof search.q === "string" ? search.q : "",
@@ -31,11 +33,13 @@ export function validateListSearch(search: Record<string, unknown>): ListSearch 
 }
 
 /** Serialize a ListSearch patch's array fields back to CSV for the URL. */
-export function listSearchToUrl(s: Partial<ListSearch>): Record<string, string | undefined> {
+export function listSearchToUrl(
+	s: Partial<ListSearch>,
+): Record<string, string | undefined> {
 	const out: Record<string, string | undefined> = {};
 	if (s.q !== undefined) out.q = s.q || undefined;
 	for (const k of ["types", "rarity", "supertype", "subtypes"] as const) {
-		if (s[k] !== undefined) out[k] = s[k]?.length ? s[k]!.join(",") : undefined;
+		if (s[k] !== undefined) out[k] = s[k]?.length ? s[k]?.join(",") : undefined;
 	}
 	if (s.scope !== undefined) out.scope = s.scope === "set" ? "set" : undefined;
 	return out;

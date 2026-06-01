@@ -1,3 +1,4 @@
+import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -5,7 +6,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import type { ListSearch, Scope } from "../../lib/card-query";
 
 export interface FacetOptions {
@@ -74,10 +74,30 @@ export function SearchControls({
 				onChange={(e) => onChange({ q: e.target.value })}
 			/>
 			<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-				<FilterSelect label="Card Type" value={value.supertype} options={options.supertypes} onChange={(v) => onChange({ supertype: v })} />
-				<FilterSelect label="Subtype" value={value.subtypes} options={options.subtypes} onChange={(v) => onChange({ subtypes: v })} />
-				<FilterSelect label="Rarity" value={value.rarity} options={options.rarities} onChange={(v) => onChange({ rarity: v })} />
-				<FilterSelect label="Energy Type" value={value.types} options={options.types} onChange={(v) => onChange({ types: v })} />
+				<FilterSelect
+					label="Card Type"
+					value={value.supertype}
+					options={options.supertypes}
+					onChange={(v) => onChange({ supertype: v })}
+				/>
+				<FilterSelect
+					label="Subtype"
+					value={value.subtypes}
+					options={options.subtypes}
+					onChange={(v) => onChange({ subtypes: v })}
+				/>
+				<FilterSelect
+					label="Rarity"
+					value={value.rarity}
+					options={options.rarities}
+					onChange={(v) => onChange({ rarity: v })}
+				/>
+				<FilterSelect
+					label="Energy Type"
+					value={value.types}
+					options={options.types}
+					onChange={(v) => onChange({ types: v })}
+				/>
 			</div>
 			{showScope && (
 				<div className="flex justify-end gap-1 text-xs">

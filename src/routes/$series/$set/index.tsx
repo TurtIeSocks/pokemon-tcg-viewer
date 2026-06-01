@@ -9,11 +9,11 @@ import {
 import type { HoloCardData } from "../../../components/holo-card";
 import { CardGridIsland } from "../../../components/islands/card-grid-island";
 import { SearchControls } from "../../../components/islands/search-controls";
+import { listSearchToUrl, validateListSearch } from "../../../lib/list-search";
 import { fetchCards } from "../../../server/card-data";
 import { buildSetCardSlugs } from "../../../server/card-resolve";
 import { findSet, getNavTreeFn } from "../../../server/nav-tree";
 import { deriveFacets } from "../../../server/set-facets";
-import { listSearchToUrl, validateListSearch } from "../../../lib/list-search";
 
 export const Route = createFileRoute("/$series/$set/")({
 	validateSearch: validateListSearch,
@@ -68,7 +68,9 @@ function SetPage() {
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
 			<div className="mb-3 flex items-center gap-3">
 				<h1 className="text-xl font-bold">{set.name}</h1>
-				<span className="text-sm text-muted-foreground">{cards.length} cards</span>
+				<span className="text-sm text-muted-foreground">
+					{cards.length} cards
+				</span>
 			</div>
 			<ClientOnly fallback={null}>
 				<div className="mb-4 shrink-0">
@@ -86,8 +88,20 @@ function SetPage() {
 						<ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 							{cards.map((card) => (
 								<li key={card.id} className="flex flex-col items-center gap-1">
-									<Link to="/$series/$set/$card" params={{ series: params.series, set: params.set, card: card.slug }}>
-										<img src={card.imageUrlSmall} alt={card.name} loading="lazy" className="w-full rounded" />
+									<Link
+										to="/$series/$set/$card"
+										params={{
+											series: params.series,
+											set: params.set,
+											card: card.slug,
+										}}
+									>
+										<img
+											src={card.imageUrlSmall}
+											alt={card.name}
+											loading="lazy"
+											className="w-full rounded"
+										/>
 										<span className="text-center text-xs">{card.name}</span>
 									</Link>
 								</li>
@@ -105,7 +119,7 @@ function SetPage() {
 							params: {
 								series: params.series,
 								set: params.set,
-								card: (cards.find((c) => c.id === card.id)?.slug) ?? card.id,
+								card: cards.find((c) => c.id === card.id)?.slug ?? card.id,
 							},
 						})}
 					/>

@@ -1,13 +1,13 @@
 import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
+import { CardGridIsland } from "../../components/islands/card-grid-island";
+import { SearchControls } from "../../components/islands/search-controls";
+import { listSearchToUrl, validateListSearch } from "../../lib/list-search";
 import {
 	fetchCardsByPokedex,
 	getPokemonListCached,
 } from "../../server/card-data";
 import { dexByName } from "../../server/pokemon-dex";
-import { CardGridIsland } from "../../components/islands/card-grid-island";
-import { SearchControls } from "../../components/islands/search-controls";
 import { deriveFacets } from "../../server/set-facets";
-import { listSearchToUrl, validateListSearch } from "../../lib/list-search";
 
 function titleCase(slug: string): string {
 	return slug
@@ -23,7 +23,12 @@ export const Route = createFileRoute("/pokemon/$name")({
 		const dex = dexByName(list, params.name);
 		if (dex === null) throw notFound();
 		const res = await fetchCardsByPokedex(dex, 1, 60);
-		return { display: titleCase(params.name), dex, cards: res.cards, total: res.totalCount };
+		return {
+			display: titleCase(params.name),
+			dex,
+			cards: res.cards,
+			total: res.totalCount,
+		};
 	},
 	head: ({ loaderData }) => {
 		const d = loaderData?.display ?? "Pokémon";
@@ -53,10 +58,18 @@ function PokemonPage() {
 	return (
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
 			<h1 className="mb-3 text-xl font-bold">
-				{display} <span className="ml-2 text-sm text-muted-foreground">{total} cards</span>
+				{display}{" "}
+				<span className="ml-2 text-sm text-muted-foreground">
+					{total} cards
+				</span>
 			</h1>
 			<div className="mb-4 shrink-0">
-				<SearchControls value={search} options={options} showScope={false} onChange={onChange} />
+				<SearchControls
+					value={search}
+					options={options}
+					showScope={false}
+					onChange={onChange}
+				/>
 			</div>
 			<div className="min-h-0 flex-1">
 				<CardGridIsland
@@ -64,7 +77,11 @@ function PokemonPage() {
 					context={{ dexNumber: dex }}
 					seedCards={cards}
 					seedTotal={total}
-					cardHref={() => ({ to: "/pokemon/$name", params: { name: params.name }, search })}
+					cardHref={() => ({
+						to: "/pokemon/$name",
+						params: { name: params.name },
+						search,
+					})}
 				/>
 			</div>
 		</div>
