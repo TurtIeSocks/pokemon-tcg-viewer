@@ -1,4 +1,5 @@
 import { createRouter } from "@tanstack/react-router";
+import { RouteError, RouteNotFound } from "./components/shell/route-status";
 import { routeTree } from "./routeTree.gen";
 
 export function getRouter() {
@@ -6,6 +7,14 @@ export function getRouter() {
 		routeTree,
 		scrollRestoration: true,
 		defaultPreload: "intent",
+		// Reuse a loader's data for 30s across navigations and for preload→click,
+		// so intent-preloading a link then clicking it doesn't re-run the loader
+		// (and its server-fn RPC). Card/set/nav data is effectively static.
+		defaultPreloadStaleTime: 30_000,
+		defaultStaleTime: 30_000,
+		// App-wide fallbacks for `throw notFound()` and loader/component errors.
+		defaultNotFoundComponent: RouteNotFound,
+		defaultErrorComponent: RouteError,
 	});
 }
 
