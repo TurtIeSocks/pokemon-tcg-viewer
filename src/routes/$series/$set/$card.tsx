@@ -64,6 +64,7 @@ function CardPage() {
 				navigate({
 					to: "/$series/$set",
 					params: { series: params.series, set: params.set },
+					search: { q: "", types: [], rarity: [], supertype: [], subtypes: [], scope: "all" },
 				})
 			}
 		/>

@@ -56,6 +56,7 @@ export function SidebarNav({
 								key={set.id}
 								to="/$series/$set"
 								params={{ series: series.slug, set: set.slug }}
+								search={{ q: "", types: [], rarity: [], supertype: [], subtypes: [], scope: "all" }}
 								aria-current={set.slug === activeSetSlug ? "page" : undefined}
 								className={cn(
 									"flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-secondary hover:text-foreground",

@@ -4,15 +4,19 @@ import {
 	Link,
 	notFound,
 	Outlet,
+	useNavigate,
 } from "@tanstack/react-router";
 import type { HoloCardData } from "../../../components/holo-card";
-import { SetGridIsland } from "../../../components/islands/set-grid-island";
+import { CardGridIsland } from "../../../components/islands/card-grid-island";
+import { SearchControls } from "../../../components/islands/search-controls";
 import { fetchCards } from "../../../server/card-data";
 import { buildSetCardSlugs } from "../../../server/card-resolve";
 import { findSet, getNavTreeFn } from "../../../server/nav-tree";
 import { deriveFacets } from "../../../server/set-facets";
+import { listSearchToUrl, validateListSearch } from "../../../lib/list-search";
 
 export const Route = createFileRoute("/$series/$set/")({
+	validateSearch: validateListSearch,
 	loader: async ({ params }) => {
 		const tree = await getNavTreeFn();
 		const set = findSet(tree, params.series, params.set);
@@ -55,47 +59,35 @@ export const Route = createFileRoute("/$series/$set/")({
 function SetPage() {
 	const { set, cards, facets } = Route.useLoaderData();
 	const params = Route.useParams();
+	const search = Route.useSearch();
+	const navigate = useNavigate({ from: Route.fullPath });
+	const onChange = (patch: Parameters<typeof listSearchToUrl>[0]) =>
+		navigate({ search: (prev) => ({ ...prev, ...listSearchToUrl(patch) }) });
+
 	return (
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
 			<div className="mb-3 flex items-center gap-3">
 				<h1 className="text-xl font-bold">{set.name}</h1>
-				<span className="text-sm text-muted-foreground">
-					{cards.length} cards
-				</span>
+				<span className="text-sm text-muted-foreground">{cards.length} cards</span>
 			</div>
-			{/* Facets render as plain text chips for now; the interactive filter island is Plan 05. */}
-			<div className="mb-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
-				{facets.supertypes.map((s) => (
-					<span key={s} className="rounded bg-secondary px-2 py-1">
-						{s}
-					</span>
-				))}
-				{facets.rarities.map((r) => (
-					<span key={r} className="rounded bg-secondary px-2 py-1">
-						{r}
-					</span>
-				))}
-			</div>
+			<ClientOnly fallback={null}>
+				<div className="mb-4 shrink-0">
+					<SearchControls
+						value={search}
+						options={facets}
+						showScope
+						onChange={onChange}
+					/>
+				</div>
+			</ClientOnly>
 			<div className="min-h-0 flex-1">
 				<ClientOnly
 					fallback={
 						<ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 							{cards.map((card) => (
 								<li key={card.id} className="flex flex-col items-center gap-1">
-									<Link
-										to="/$series/$set/$card"
-										params={{
-											series: params.series,
-											set: params.set,
-											card: card.slug,
-										}}
-									>
-										<img
-											src={card.imageUrlSmall}
-											alt={card.name}
-											loading="lazy"
-											className="w-full rounded"
-										/>
+									<Link to="/$series/$set/$card" params={{ series: params.series, set: params.set, card: card.slug }}>
+										<img src={card.imageUrlSmall} alt={card.name} loading="lazy" className="w-full rounded" />
 										<span className="text-center text-xs">{card.name}</span>
 									</Link>
 								</li>
@@ -103,10 +95,19 @@ function SetPage() {
 						</ul>
 					}
 				>
-					<SetGridIsland
-						series={params.series}
-						set={params.set}
-						cards={cards}
+					<CardGridIsland
+						search={search}
+						context={{ setId: set.id }}
+						seedCards={cards}
+						seedTotal={cards.length}
+						cardHref={(card) => ({
+							to: "/$series/$set/$card",
+							params: {
+								series: params.series,
+								set: params.set,
+								card: (cards.find((c) => c.id === card.id)?.slug) ?? card.id,
+							},
+						})}
 					/>
 				</ClientOnly>
 			</div>
