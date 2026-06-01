@@ -76,6 +76,26 @@ on the app server. (Future option: absorb the Worker on-box and move the key to
    - Repo → Settings → Secrets and variables → Actions → **Variables**: add
      `VITE_API_BASE` = the Worker URL.
 
+## Security: public repo + self-hosted runner
+
+GitHub discourages self-hosted runners on public repos because a fork can open a
+PR whose code runs on your machine. The mitigations here:
+
+1. **No PR triggers on the runner.** The deploy job triggers only on
+   `push:[main]` and `workflow_dispatch` — neither is reachable by a fork (forks
+   can't push to your `main`, and dispatch needs write access). **Never** add
+   `pull_request`/`pull_request_target` to a `[self-hosted, tcg]` job.
+2. **Repo-level runner**, not org-level — it serves only this repo.
+3. **`production` environment, branch rule = `main`.** The deploy job declares
+   `environment: production`; configure that environment (repo Settings →
+   Environments) to allow only the `main` branch. A dispatch from any other ref
+   is then blocked before the runner runs a step.
+4. **Fork-PR approval** (defense in depth): Settings → Actions → General → "Fork
+   pull request workflows from outside collaborators" → require approval for all
+   outside collaborators.
+5. **Least privilege**: the service + runner run as `deploy` (not root); the only
+   sudo grant is the single `systemctl restart tcg` line.
+
 ## Deploying
 
 Push to `main` (or run the **deploy** workflow manually). The runner builds,

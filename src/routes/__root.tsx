@@ -19,8 +19,31 @@ export const Route = createRootRoute({
 			{ charSet: "utf-8" },
 			{ name: "viewport", content: "width=device-width, initial-scale=1" },
 			{ title: "Pokémon TCG Holo Playground" },
+			{ name: "theme-color", content: "#0f0823" },
+			{ name: "apple-mobile-web-app-capable", content: "yes" },
+			{
+				name: "apple-mobile-web-app-status-bar-style",
+				content: "black-translucent",
+			},
+			{ property: "og:title", content: "Pokémon TCG Holo Playground" },
+			{
+				property: "og:description",
+				content:
+					"Browse the Pokémon TCG catalog with interactive holographic card effects.",
+			},
+			{ property: "og:type", content: "website" },
+			// og:url omitted: prod domain isn't committed (self-hosted; nginx
+			// server_name is a placeholder) and OG requires an absolute URL. The old
+			// GitHub Pages URL is dead. Add the canonical absolute URL here once known.
+			{ name: "twitter:card", content: "summary_large_image" },
 		],
-		links: [{ rel: "stylesheet", href: appCss }],
+		links: [
+			{ rel: "stylesheet", href: appCss },
+			{ rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+			{ rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32.png" },
+			{ rel: "icon", type: "image/png", sizes: "16x16", href: "/favicon-16.png" },
+			{ rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+		],
 	}),
 	loader: () => getNavTreeFn(),
 	component: RootComponent,

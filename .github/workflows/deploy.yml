@@ -5,6 +5,13 @@
 # Runs on a SELF-HOSTED runner installed on the home box (labels: self-hosted, tcg).
 # The runner dials out to GitHub (no inbound port needed behind home NAT).
 #
+# SECURITY (this is a PUBLIC repo): never add `pull_request` or
+# `pull_request_target` to a job that runs on [self-hosted, tcg]. A fork PR would
+# then execute attacker-controlled code on the home box. Self-hosted jobs may
+# trigger ONLY on push:[main], workflow_dispatch, or schedule — all of which
+# require repo write access. The `production` environment below additionally
+# pins execution to the main branch.
+#
 # One-time setup + the sudoers rule for the restart are documented in
 # deploy/DEPLOY.md.
 name: deploy
@@ -22,6 +29,13 @@ concurrency:
 jobs:
   deploy:
     runs-on: [self-hosted, tcg]
+    # The `production` environment carries a deployment-branch rule (main only),
+    # so a workflow_dispatch aimed at any other ref is blocked BEFORE the
+    # self-hosted runner executes a single step — a platform-enforced "main only"
+    # guarantee on top of the push trigger above. Configure once at:
+    #   repo Settings -> Environments -> New environment "production"
+    #   -> Deployment branches and tags -> Selected -> add rule: main
+    environment: production
     steps:
       - uses: actions/checkout@v4
 
