@@ -96,6 +96,7 @@ function CardPage() {
 						supertype: [],
 						subtypes: [],
 						scope: "all",
+						view: "grid",
 					},
 				})
 			}

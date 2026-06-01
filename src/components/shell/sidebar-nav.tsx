@@ -63,6 +63,7 @@ export function SidebarNav({
 									supertype: [],
 									subtypes: [],
 									scope: "all",
+									view: "grid",
 								}}
 								aria-current={set.slug === activeSetSlug ? "page" : undefined}
 								className={cn(

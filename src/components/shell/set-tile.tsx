@@ -21,6 +21,7 @@ export function SetTile({
 				supertype: [],
 				subtypes: [],
 				scope: "all",
+				view: "grid",
 			}}
 			className="booster-pack"
 			aria-label={`Browse ${set.name}`}

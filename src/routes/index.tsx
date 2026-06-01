@@ -62,6 +62,7 @@ export function HomeHero() {
 								supertype: [],
 								subtypes: [],
 								scope: "all" as const,
+								view: "grid" as const,
 							}}
 							className="rounded-full border border-border bg-secondary px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-secondary/80"
 						>

@@ -1,4 +1,4 @@
-import type { ListSearch, Scope } from "./card-query";
+import type { ListSearch, Scope, ViewMode } from "./card-query";
 
 /**
  * Default value for every list-search field. Paired with the TanStack
@@ -14,6 +14,7 @@ export const LIST_SEARCH_DEFAULTS: ListSearch = {
 	supertype: [],
 	subtypes: [],
 	scope: "all",
+	view: "grid",
 };
 
 const csv = (v: unknown): string[] => {
@@ -27,6 +28,7 @@ export function validateListSearch(
 	search: Record<string, unknown>,
 ): ListSearch {
 	const scope: Scope = search.scope === "set" ? "set" : "all";
+	const view: ViewMode = search.view === "timeline" ? "timeline" : "grid";
 	return {
 		q: typeof search.q === "string" ? search.q : "",
 		types: csv(search.types),
@@ -34,6 +36,7 @@ export function validateListSearch(
 		supertype: csv(search.supertype),
 		subtypes: csv(search.subtypes),
 		scope,
+		view,
 	};
 }
 
@@ -47,5 +50,6 @@ export function listSearchToUrl(
 		if (s[k] !== undefined) out[k] = s[k]?.length ? s[k]?.join(",") : undefined;
 	}
 	if (s.scope !== undefined) out.scope = s.scope === "set" ? "set" : undefined;
+	if (s.view !== undefined) out.view = s.view === "timeline" ? "timeline" : undefined;
 	return out;
 }

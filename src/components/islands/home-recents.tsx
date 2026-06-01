@@ -37,6 +37,7 @@ function RecentsInner() {
 									supertype: [],
 									subtypes: [],
 									scope: "all" as const,
+									view: "grid" as const,
 								}}
 								className="rounded-full bg-secondary px-3 py-1 text-sm text-foreground hover:bg-secondary/80"
 							>
@@ -63,6 +64,7 @@ function RecentsInner() {
 									supertype: prev.supertype ?? [],
 									subtypes: prev.subtypes ?? [],
 									scope: prev.scope ?? "all",
+									view: "grid" as const,
 								})}
 								style={{ width: 96 }}
 								className="shrink-0"
