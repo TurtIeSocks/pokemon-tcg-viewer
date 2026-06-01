@@ -17,11 +17,12 @@ export default defineConfig({
 			prerender: {
 				enabled: true,
 				crawlLinks: true,
-				// Prerender only the home + single-segment series pages. Sets/cards
-				// stay SSR + SWR (rendered on demand, cached at the edge/nginx).
 				filter: ({ path }) => {
 					const segments = path.split("/").filter(Boolean);
-					return segments.length <= 1;
+					// Prerender home (0), series (1), and set (2) pages. Card pages (3)
+					// stay SSR-on-demand. Search/collection are excluded below.
+					if (segments[0] === "search" || segments[0] === "collection" || segments[0] === "pokemon") return false;
+					return segments.length <= 2;
 				},
 				failOnError: true,
 			},
