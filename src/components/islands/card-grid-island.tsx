@@ -166,10 +166,10 @@ export function CardGridIsland({
 
 	return (
 		<VirtuosoGrid
-			style={{ height: "100%" }}
+			className="h-full"
 			totalCount={cards.length}
 			endReached={loadMore}
-			listClassName="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
+			listClassName="grid grid-cols-2 gap-3 m-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
 			itemContent={(index) => {
 				const card = cards[index];
 				return card ? renderCard(card) : null;
