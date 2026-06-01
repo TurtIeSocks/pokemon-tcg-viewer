@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { CardGridIsland } from "../components/islands/card-grid-island";
 import { SearchControls } from "../components/islands/search-controls";
 import { ViewModeToggle } from "../components/islands/view-mode-toggle";
+import { ListPageSkeleton } from "../components/shell/list-page-skeleton";
 import {
 	LIST_SEARCH_DEFAULTS,
 	listSearchToUrl,
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/search")({
 		const all = await searchCardsFn({ data: q });
 		return { q, cards: all.slice(0, 40), total: all.length };
 	},
+	pendingComponent: ListPageSkeleton,
 	head: ({ loaderData }) => ({
 		meta: [
 			{
@@ -86,6 +88,7 @@ function SearchPage() {
 			</div>
 			<div className="min-h-0 flex-1">
 				<CardGridIsland
+					key={q || "empty"}
 					search={search}
 					context={{}}
 					seedCards={cards}

@@ -7,6 +7,7 @@ import {
 import { CardGridIsland } from "../../components/islands/card-grid-island";
 import { SearchControls } from "../../components/islands/search-controls";
 import { ViewModeToggle } from "../../components/islands/view-mode-toggle";
+import { ListPageSkeleton } from "../../components/shell/list-page-skeleton";
 import {
 	LIST_SEARCH_DEFAULTS,
 	listSearchToUrl,
@@ -39,6 +40,7 @@ export const Route = createFileRoute("/pokemon/$name")({
 			total: all.length,
 		};
 	},
+	pendingComponent: ListPageSkeleton,
 	head: ({ loaderData }) => {
 		const d = loaderData?.display ?? "Pokémon";
 		return {
@@ -91,6 +93,7 @@ function PokemonPage() {
 			</div>
 			<div className="min-h-0 flex-1">
 				<CardGridIsland
+					key={dex}
 					search={search}
 					context={{ dexNumber: dex }}
 					seedCards={cards}

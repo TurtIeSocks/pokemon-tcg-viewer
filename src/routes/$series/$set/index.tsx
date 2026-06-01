@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { CardGridIsland } from "../../../components/islands/card-grid-island";
 import { PackDialog } from "../../../components/islands/pack-dialog";
 import { SearchControls } from "../../../components/islands/search-controls";
+import { ListPageSkeleton } from "../../../components/shell/list-page-skeleton";
 import { buildSetCardSlugs } from "../../../lib/card-slugs";
 import {
 	LIST_SEARCH_DEFAULTS,
@@ -39,6 +40,7 @@ export const Route = createFileRoute("/$series/$set/")({
 		}));
 		return { set, cards, facets: deriveFacets(all) };
 	},
+	pendingComponent: ListPageSkeleton,
 	head: ({ loaderData }) => ({
 		meta: [
 			{ title: `${loaderData?.set.name ?? "Set"} — Pokémon TCG cards` },
@@ -123,6 +125,7 @@ function SetPage() {
 					}
 				>
 					<CardGridIsland
+						key={set.id}
 						search={search}
 						context={{ setId: set.id }}
 						seedCards={cards}
