@@ -1,6 +1,5 @@
 import { create, type StateCreator } from "zustand";
 import { persist } from "zustand/middleware";
-import { type CardsSlice, createCardsSlice } from "./cards-slice";
 import type { OwnedCard } from "./collection-slice";
 import {
 	type CollectionSlice,
@@ -9,25 +8,23 @@ import {
 import { createIdbStorage } from "./idb-storage";
 import { createSetsSlice, type SetsSlice } from "./sets-slice";
 
-type AppStore = SetsSlice & CollectionSlice & CardsSlice;
+type AppStore = SetsSlice & CollectionSlice;
 
 // The persisted subset returned by partialize — matches what IDB stores.
 interface PersistedStore {
 	sets: SetsSlice["sets"];
 	setsFetchedAt: number | null;
 	owned: Record<string, OwnedCard>;
-	cardsCache: CardsSlice["cardsCache"];
-	cardsCacheOrder: string[];
 }
 
-// Phase 7: drop api-cache-slice (pokemonList, types, rarities, supertypes, subtypes)
-// and pack-cards-slice. Preserve owned (collection) across migration.
-const STORAGE_VERSION = 7;
+// v8: drop the cards-cache slice — the corpus runtime's in-memory query cache
+// (src/store/corpus) replaced it, leaving cardsCache/cardsCacheOrder orphaned.
+// Older blobs' stale keys are stripped on migrate; owned (collection) survives.
+const STORAGE_VERSION = 8;
 
 const composed: StateCreator<AppStore> = (set, get, store) => ({
 	...createSetsSlice(set, get, store),
 	...createCollectionSlice(set, get, store),
-	...createCardsSlice(set, get, store),
 });
 
 export const useStore = create<AppStore>()(
@@ -39,22 +36,23 @@ export const useStore = create<AppStore>()(
 			sets: state.sets,
 			setsFetchedAt: state.setsFetchedAt,
 			owned: state.owned,
-			cardsCache: state.cardsCache,
-			cardsCacheOrder: state.cardsCacheOrder,
 		}),
 		migrate: (persisted, version) => {
 			let next = persisted as Partial<AppStore>;
 			if (version < 3) next = { ...next, owned: {} };
-			if (version < 6) next = { ...next, cardsCache: {}, cardsCacheOrder: [] };
 			if (version < 7)
 				next = {
 					sets: null,
 					setsFetchedAt: null,
 					owned: ((next as { owned?: Record<string, OwnedCard> }).owned ??
 						{}) as Record<string, OwnedCard>,
-					cardsCache: {},
-					cardsCacheOrder: [],
 				} as unknown as Partial<AppStore>;
+			// v8 dropped cardsCache/cardsCacheOrder — strip them from older blobs.
+			if (version < 8) {
+				const n = next as Record<string, unknown>;
+				delete n.cardsCache;
+				delete n.cardsCacheOrder;
+			}
 			return next as AppStore;
 		},
 	}),

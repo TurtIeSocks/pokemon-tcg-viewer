@@ -3,6 +3,7 @@ import {
 	stripSearchParams,
 	useNavigate,
 } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { CardGridIsland } from "../components/islands/card-grid-island";
 import { SearchControls } from "../components/islands/search-controls";
 import { ViewModeToggle } from "../components/islands/view-mode-toggle";
@@ -13,6 +14,7 @@ import {
 } from "../lib/list-search";
 import { searchCardsFn } from "../server/corpus-server";
 import { deriveFacets } from "../server/set-facets";
+import { useRecentsStore } from "../store/recents";
 
 export const Route = createFileRoute("/search")({
 	validateSearch: validateListSearch,
@@ -44,6 +46,13 @@ function SearchPage() {
 	const { q, cards, total } = Route.useLoaderData();
 	const search = Route.useSearch();
 	const navigate = useNavigate({ from: Route.fullPath });
+	const addRecentSearch = useRecentsStore((s) => s.addRecentSearch);
+	// Record the active query so the home page's recent-searches list populates.
+	// addRecentSearch trims/dedupes/caps internally; the effect is client-only
+	// (skips SSR/prerender). The legacy search page did this pre-migration.
+	useEffect(() => {
+		addRecentSearch(q);
+	}, [q, addRecentSearch]);
 	const onChange = (patch: Parameters<typeof listSearchToUrl>[0]) =>
 		navigate({ search: (prev) => ({ ...prev, ...listSearchToUrl(patch) }) });
 

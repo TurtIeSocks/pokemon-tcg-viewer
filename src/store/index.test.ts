@@ -1,10 +1,9 @@
 import { expect, test } from "bun:test";
 import { useStore } from "./index";
 
-test("store exposes the cards-cache slice", () => {
+test("store composes the sets and collection slices", () => {
 	const s = useStore.getState();
-	expect(s.cardsCache).toBeDefined();
-	expect(s.cardsCacheOrder).toBeDefined();
-	expect(typeof s.appendCardsPage).toBe("function");
-	expect(typeof s.touchCardsKey).toBe("function");
+	expect(s.sets).toBeNull();
+	expect(typeof s.loadSets).toBe("function");
+	expect(s.owned).toBeDefined();
 });
