@@ -56,9 +56,15 @@ function SearchPage() {
 				<h1 className="text-xl font-bold">
 					{q ? `Results for "${q}"` : "Search"}
 				</h1>
-				{q ? <span className="text-sm text-muted-foreground">{total} cards</span> : null}
+				{q ? (
+					<span className="text-sm text-muted-foreground">{total} cards</span>
+				) : null}
 				<div className="ml-auto">
-					<ViewModeToggle value={search.view} disabled={!q} onChange={(view) => onChange({ view })} />
+					<ViewModeToggle
+						value={search.view}
+						disabled={!q}
+						onChange={(view) => onChange({ view })}
+					/>
 				</div>
 			</div>
 			<div className="mb-4 shrink-0">

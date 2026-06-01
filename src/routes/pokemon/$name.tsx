@@ -76,7 +76,11 @@ function PokemonPage() {
 					</span>
 				</h1>
 				<div className="ml-auto">
-					<ViewModeToggle value={search.view} disabled={false} onChange={(view) => onChange({ view })} />
+					<ViewModeToggle
+						value={search.view}
+						disabled={false}
+						onChange={(view) => onChange({ view })}
+					/>
 				</div>
 			</div>
 			<div className="mb-4 shrink-0">

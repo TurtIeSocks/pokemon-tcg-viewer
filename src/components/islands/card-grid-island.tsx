@@ -102,7 +102,11 @@ export function CardGridIsland({
 	if (search.view === "timeline") {
 		return (
 			<div className="h-full overflow-y-auto">
-				<PokemonTimeline cards={cards} cardHref={cardHref} onEndReached={cards.length < total ? loadMore : undefined} />
+				<PokemonTimeline
+					cards={cards}
+					cardHref={cardHref}
+					onEndReached={cards.length < total ? loadMore : undefined}
+				/>
 			</div>
 		);
 	}

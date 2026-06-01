@@ -11,7 +11,11 @@ interface PokemonTimelineProps {
 	onEndReached?: () => void;
 }
 
-export function PokemonTimeline({ cards, cardHref, onEndReached }: PokemonTimelineProps) {
+export function PokemonTimeline({
+	cards,
+	cardHref,
+	onEndReached,
+}: PokemonTimelineProps) {
 	const owned = useStore((s) => s.owned);
 
 	if (cards.length === 0) {
@@ -29,8 +33,14 @@ export function PokemonTimeline({ cards, cardHref, onEndReached }: PokemonTimeli
 				<section key={era.series} className="pokemon-timeline-era">
 					<header className="pokemon-timeline-era-header">
 						<h2 className="pokemon-timeline-era-name">{era.series}</h2>
-						{era.yearLabel && <span className="pokemon-timeline-era-years">{era.yearLabel}</span>}
-						<span className="pokemon-timeline-era-count">{era.count} {era.count === 1 ? "card" : "cards"}</span>
+						{era.yearLabel && (
+							<span className="pokemon-timeline-era-years">
+								{era.yearLabel}
+							</span>
+						)}
+						<span className="pokemon-timeline-era-count">
+							{era.count} {era.count === 1 ? "card" : "cards"}
+						</span>
 					</header>
 					<div className="pokemon-timeline-era-cards">
 						{era.cards.map((card) => (
@@ -57,7 +67,11 @@ export function PokemonTimeline({ cards, cardHref, onEndReached }: PokemonTimeli
 			))}
 			{onEndReached && (
 				<div className="pokemon-timeline-load-more">
-					<button type="button" className="pokemon-timeline-load-more-button" onClick={onEndReached}>
+					<button
+						type="button"
+						className="pokemon-timeline-load-more-button"
+						onClick={onEndReached}
+					>
 						Load more
 					</button>
 				</div>

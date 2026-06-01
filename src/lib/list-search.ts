@@ -50,6 +50,7 @@ export function listSearchToUrl(
 		if (s[k] !== undefined) out[k] = s[k]?.length ? s[k]?.join(",") : undefined;
 	}
 	if (s.scope !== undefined) out.scope = s.scope === "set" ? "set" : undefined;
-	if (s.view !== undefined) out.view = s.view === "timeline" ? "timeline" : undefined;
+	if (s.view !== undefined)
+		out.view = s.view === "timeline" ? "timeline" : undefined;
 	return out;
 }
