@@ -44,7 +44,15 @@ export const useRecentsStore = create<RecentsState>()(
 		}),
 		{
 			name: "ptcgv-recents",
-			storage: createJSONStorage(() => localStorage),
+			storage: createJSONStorage(() =>
+				typeof window === "undefined"
+					? {
+							getItem: () => null,
+							setItem: () => {},
+							removeItem: () => {},
+						}
+					: localStorage,
+			),
 			partialize: (s) => ({
 				recentSearches: s.recentSearches,
 				recentlyViewed: s.recentlyViewed,

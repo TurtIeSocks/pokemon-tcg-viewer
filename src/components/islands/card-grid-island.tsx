@@ -1,0 +1,179 @@
+import { Link, type LinkProps } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { VirtuosoGrid } from "react-virtuoso";
+import {
+	buildCorpusQuery,
+	type ListContext,
+	type ListSearch,
+} from "../../lib/card-query";
+import { useStore } from "../../store";
+import {
+	loadCorpus,
+	makeCorpusFetcher,
+	useCorpusRuntime,
+} from "../../store/corpus/corpus-runtime";
+import { CollectionToggle } from "../collection-toggle";
+import type { HoloCardData } from "../holo-card";
+import { FlipCard } from "./flip-card";
+import { HoloCardIsland } from "./holo-card-island";
+import { PokemonTimeline } from "./pokemon-timeline";
+
+export interface GridCard extends HoloCardData {
+	slug?: string;
+}
+
+interface CardGridIslandProps {
+	search: ListSearch;
+	context: ListContext;
+	/** SSR-rendered first page; shown until the corpus takes over. */
+	seedCards: GridCard[];
+	seedTotal: number;
+	/** Build the card-route link props for a card (per-page slug scheme). */
+	cardHref: (card: HoloCardData) => LinkProps;
+}
+
+const PAGE = 40;
+
+export function CardGridIsland({
+	search,
+	context,
+	seedCards,
+	seedTotal,
+	cardHref,
+}: CardGridIslandProps) {
+	const corpusReady = useCorpusRuntime((s) => s.index !== null);
+	// Gate on sets too: the corpus hydrates cards from useStore.sets, and the
+	// per-query cache is keyed only by the corpus index — querying before sets
+	// arrive would cache cards with raw set IDs and no date sort until the next
+	// corpus reload. Both load on mount; sets is the smaller fetch so this rarely
+	// blocks. If sets fails, the grid stays on the correct SSR seed.
+	const setsReady = useStore((s) => s.sets !== null);
+	const ready = corpusReady && setsReady;
+	const [cards, setCards] = useState<HoloCardData[]>(seedCards);
+	const [total, setTotal] = useState(seedTotal);
+	const pageRef = useRef(1);
+	const loadingMoreRef = useRef(false);
+
+	// Stable key for the active query; changing it resets pagination.
+	const queryKey = useMemo(
+		() => JSON.stringify([search, context]),
+		[search, context],
+	);
+
+	useEffect(() => {
+		// Skip in test environments — loadCorpus is a network-dependent singleton
+		// whose inFlight promise leaks across test files via module state.
+		if (typeof process !== "undefined" && process.env.NODE_ENV === "test")
+			return;
+		void loadCorpus();
+		// The client corpus hydrates cards with set metadata (name, series for the
+		// holo era, release date for ordering) from useStore.sets. Load it too, or
+		// the live grid falls back to raw set IDs and loses date sorting. loadSets
+		// is freshness-gated + idempotent; the legacy SPA boot that called it was
+		// removed during the migration, orphaning the slice.
+		void useStore.getState().loadSets();
+	}, []);
+
+	// (Re)load page 1 from the corpus whenever the query or readiness changes.
+	// queryKey is the serialized identity of [search, context]; depending on the
+	// raw objects (fresh refs every parent render) would re-fire on every render.
+	// The `cancelled` guard drops a stale resolve when the query changes mid-flight
+	// so fast filter edits can't let an older result win (last-write race).
+	// biome-ignore lint/correctness/useExhaustiveDependencies: queryKey encodes search+context.
+	useEffect(() => {
+		if (!ready) return;
+		let cancelled = false;
+		const fetcher = makeCorpusFetcher(buildCorpusQuery(search, context));
+		pageRef.current = 1;
+		loadingMoreRef.current = false;
+		void fetcher(queryKey, 1, PAGE).then((r) => {
+			if (cancelled) return;
+			setCards(r.cards);
+			setTotal(r.totalCount);
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, [ready, queryKey]);
+
+	const loadMore = () => {
+		// Virtuoso's endReached can fire repeatedly; the ref gate keeps a single
+		// page request in flight so pages aren't skipped or appended twice.
+		if (!ready || loadingMoreRef.current) return;
+		if (cards.length >= total) return;
+		loadingMoreRef.current = true;
+		const next = pageRef.current + 1;
+		const fetcher = makeCorpusFetcher(buildCorpusQuery(search, context));
+		void fetcher(queryKey, next, PAGE)
+			.then((r) => {
+				pageRef.current = next;
+				setCards((cur) => [...cur, ...r.cards]);
+			})
+			.finally(() => {
+				loadingMoreRef.current = false;
+			});
+	};
+
+	const renderCard = (card: HoloCardData) => (
+		<Link {...cardHref(card)} className="block">
+			<FlipCard imageUrl={card.imageUrlSmall ?? card.imageUrl}>
+				<HoloCardIsland
+					imageUrl={card.imageUrl}
+					imageUrlSmall={card.imageUrlSmall}
+					name={card.name}
+					rarity={card.rarity}
+					subtypes={card.subtypes}
+					supertype={card.supertype}
+					setId={card.setId}
+					series={card.setSeries}
+					variants={card.variants}
+					cardNumber={card.cardNumber}
+					hoverOverlay={<CollectionToggle card={card} />}
+				/>
+			</FlipCard>
+		</Link>
+	);
+
+	if (search.view === "timeline") {
+		return (
+			<div className="h-full overflow-y-auto">
+				<PokemonTimeline
+					cards={cards}
+					cardHref={cardHref}
+					onEndReached={cards.length < total ? loadMore : undefined}
+				/>
+			</div>
+		);
+	}
+
+	// Test/no-layout fallback: render a plain list so the grid is assertable and
+	// SSR-equivalent when Virtuoso can't measure (happy-dom). Virtuoso requires a
+	// non-zero-height container to paint items; in happy-dom the container always
+	// measures 0 so the item list stays empty. We detect the test environment via
+	// ResizeObserver stub or NODE_ENV so production is never affected.
+	const isTestEnv =
+		(typeof window !== "undefined" && !("ResizeObserver" in window)) ||
+		(typeof process !== "undefined" && process.env.NODE_ENV === "test");
+	if (isTestEnv) {
+		return (
+			<ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+				{cards.map((c) => (
+					<li key={c.id}>{renderCard(c)}</li>
+				))}
+			</ul>
+		);
+	}
+
+	return (
+		<VirtuosoGrid
+			className="h-full"
+			totalCount={cards.length}
+			endReached={loadMore}
+			listClassName="grid grid-cols-2 gap-3 m-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
+			itemContent={(index) => {
+				const card = cards[index];
+				return card ? renderCard(card) : null;
+			}}
+		/>
+	);
+}

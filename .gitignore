@@ -31,3 +31,11 @@ dev-dist
 # Local holo QA reference screenshots (ours-vs-simey comparison shots)
 /dev/
 .superpowers/
+
+# TanStack Start / Nitro
+src/routeTree.gen.ts
+.output
+.nitro
+
+# Claude scheduled-task lock (local runtime junk)
+.claude/scheduled_tasks.lock

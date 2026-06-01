@@ -58,7 +58,7 @@
 	overflow: hidden;
 	border-radius: inherit;
 	background-image:
-		url("/pokemon-tcg-viewer/holo-textures/glitter.png"),
+		url("/holo-textures/glitter.png"),
 		repeating-linear-gradient(
 			115deg,
 			hsla(330, 95%, 66%, 0.55) 0%,

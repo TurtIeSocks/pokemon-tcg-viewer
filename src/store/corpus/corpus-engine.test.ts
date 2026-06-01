@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { PokemonSet } from "../../api";
+import type { PokemonSet } from "../../server/card-mappers";
 import { buildIndex, queryCorpus } from "./corpus-engine";
 import type { CorpusCard } from "./corpus-types";
 

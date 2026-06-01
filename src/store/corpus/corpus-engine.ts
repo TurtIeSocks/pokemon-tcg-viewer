@@ -1,5 +1,5 @@
-import type { PokemonSet } from "../../api";
 import type { HoloCardData } from "../../components/holo-card";
+import type { PokemonSet } from "../../server/card-mappers";
 import type { FilterClauses } from "../../utils/build-filter-clauses";
 import type { CorpusCard } from "./corpus-types";
 import { matchName, type NameMatch, normalize } from "./fuzzy";
@@ -39,15 +39,16 @@ function intersects(a: string[] | undefined, sel: string[]): boolean {
 
 function passesFilters(card: CorpusCard, f: FilterClauses): boolean {
 	if (f.types?.length && !intersects(card.types, f.types)) return false;
-	if (f.rarity?.length && !(card.rarity && f.rarity.includes(card.rarity)))
+	if (f.rarities?.length && !(card.rarity && f.rarities.includes(card.rarity)))
 		return false;
 	if (
-		f.supertype?.length &&
-		!(card.supertype && f.supertype.includes(card.supertype))
+		f.supertypes?.length &&
+		!(card.supertype && f.supertypes.includes(card.supertype))
 	)
 		return false;
 	if (f.subtypes?.length && !intersects(card.subtypes, f.subtypes))
 		return false;
+
 	return true;
 }
 
@@ -63,6 +64,7 @@ function hydrate(
 		name: card.name,
 		rarity: card.rarity,
 		subtypes: card.subtypes,
+		types: card.types,
 		supertype: card.supertype,
 		setId: card.setId,
 		setName: set?.name ?? card.setId,

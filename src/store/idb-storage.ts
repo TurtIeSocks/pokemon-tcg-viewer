@@ -11,6 +11,16 @@ export const LEGACY_LOCALSTORAGE_KEY = "pokemon-tcg-viewer";
  * value to match the original localStorage format.
  */
 export function createIdbStorage<T>(): PersistStorage<T> {
+	// On the server there is no IndexedDB/localStorage. Return a no-op storage so
+	// importing the store during SSR can't crash; the client adapter rehydrates
+	// on mount.
+	if (typeof window === "undefined") {
+		return {
+			getItem: async () => null,
+			setItem: async () => {},
+			removeItem: async () => {},
+		};
+	}
 	return {
 		getItem: async (): Promise<StorageValue<T> | null> => {
 			const value = await get<string | undefined>(IDB_KEY);

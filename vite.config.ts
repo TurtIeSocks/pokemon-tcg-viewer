@@ -1,87 +1,33 @@
 import { fileURLToPath } from "node:url";
-import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
-import react, { reactCompilerPreset } from "@vitejs/plugin-react";
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import viteReact from "@vitejs/plugin-react";
+import { nitro } from "nitro/vite";
 import { defineConfig } from "vite";
-import { VitePWA } from "vite-plugin-pwa";
 
-const SEVEN_DAYS = 7 * 24 * 60 * 60;
-const THIRTY_DAYS = 30 * 24 * 60 * 60;
-
-export default defineConfig(({ command, isPreview }) => ({
-	// Built artifacts reference the subpath, so `vite preview` (command: "serve",
-	// isPreview: true) must serve from it too — otherwise assets 404 to the SPA
-	// fallback. Dev keeps "/" for clean local URLs.
-	base: command === "build" || isPreview ? "/pokemon-tcg-viewer/" : "/",
+export default defineConfig({
+	server: { port: 3000 },
 	resolve: {
-		alias: {
-			"@": fileURLToPath(new URL("./src", import.meta.url)),
-		},
-	},
-	server: {
-		port: 6201,
+		alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
 	},
 	plugins: [
 		tailwindcss(),
-		react(),
-		babel({ presets: [reactCompilerPreset()] }),
-		VitePWA({
-			registerType: "autoUpdate",
-			includeAssets: ["favicon.svg"],
-			manifest: {
-				name: "Pokémon TCG Holo Playground",
-				short_name: "Holo TCG",
-				description: "Interactive Pokémon TCG card viewer",
-				theme_color: "#0f0823",
-				background_color: "#0f0823",
-				display: "standalone",
-				start_url: "/pokemon-tcg-viewer/",
-				scope: "/pokemon-tcg-viewer/",
-				icons: [
-					{ src: "icon-192.png", sizes: "192x192", type: "image/png" },
-					{ src: "icon-512.png", sizes: "512x512", type: "image/png" },
-					{
-						src: "icon-512-maskable.png",
-						sizes: "512x512",
-						type: "image/png",
-						purpose: "maskable",
-					},
-				],
-			},
-			workbox: {
-				navigateFallback: "/pokemon-tcg-viewer/index.html",
-				runtimeCaching: [
-					{
-						urlPattern: ({ url }) => url.pathname.startsWith("/v2/"),
-						handler: "StaleWhileRevalidate",
-						options: {
-							cacheName: "pokemontcg-api",
-							expiration: { maxEntries: 200, maxAgeSeconds: SEVEN_DAYS },
-						},
-					},
-					{
-						urlPattern: /^https:\/\/images\.pokemontcg\.io\//,
-						handler: "CacheFirst",
-						options: {
-							cacheName: "pokemontcg-images",
-							expiration: { maxEntries: 500, maxAgeSeconds: THIRTY_DAYS },
-						},
-					},
-					{
-						urlPattern: ({ url }) => url.hostname === "wsrv.nl",
-						handler: "CacheFirst",
-						options: {
-							cacheName: "wsrv-images",
-							expiration: { maxEntries: 500, maxAgeSeconds: THIRTY_DAYS },
-						},
-					},
-				],
-			},
-			devOptions: {
+		tanstackStart({
+			srcDirectory: "src",
+			prerender: {
 				enabled: true,
-				type: "module",
-				navigateFallback: "index.html",
+				crawlLinks: true,
+				filter: ({ path }) => {
+					const segments = path.split("/").filter(Boolean);
+					// Prerender home (0), series (1), and set (2) pages. Card pages (3)
+					// stay SSR-on-demand. Search/collection are excluded below.
+					if (segments[0] === "search" || segments[0] === "collection" || segments[0] === "pokemon") return false;
+					return segments.length <= 2;
+				},
+				failOnError: true,
 			},
 		}),
+		viteReact(),
+		nitro(),
 	],
-}));
+});

@@ -1,45 +1,71 @@
-name: Deploy to GitHub Pages
+# Self-hosted deploy: build the TanStack Start app and ship the Nitro output to
+# the home server, then restart the systemd service. Replaces the old GitHub
+# Pages workflow (the app is now SSR, not a static SPA).
+#
+# Runs on a SELF-HOSTED runner installed on the home box (labels: self-hosted, tcg).
+# The runner dials out to GitHub (no inbound port needed behind home NAT).
+#
+# SECURITY (this is a PUBLIC repo): never add `pull_request` or
+# `pull_request_target` to a job that runs on [self-hosted, tcg]. A fork PR would
+# then execute attacker-controlled code on the home box. Self-hosted jobs may
+# trigger ONLY on push:[main], workflow_dispatch, or schedule — all of which
+# require repo write access. The `production` environment below additionally
+# pins execution to the main branch.
+#
+# One-time setup + the sudoers rule for the restart are documented in
+# deploy/DEPLOY.md.
+name: deploy
 
 on:
   push:
     branches: [main]
-  workflow_dispatch:
+  workflow_dispatch: {}
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
+# A newer push supersedes an in-flight deploy.
 concurrency:
-  group: pages
+  group: deploy
   cancel-in-progress: true
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  deploy:
+    runs-on: [self-hosted, tcg]
+    # The `production` environment carries a deployment-branch rule (main only),
+    # so a workflow_dispatch aimed at any other ref is blocked BEFORE the
+    # self-hosted runner executes a single step — a platform-enforced "main only"
+    # guarantee on top of the push trigger above. Configure once at:
+    #   repo Settings -> Environments -> New environment "production"
+    #   -> Deployment branches and tags -> Selected -> add rule: main
+    environment: production
     steps:
       - uses: actions/checkout@v4
+
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-      - run: bun install --frozen-lockfile
-      - run: bun run build
-        env:
-          # Cloudflare Worker proxy URL. Set as a repo Variable (Settings →
-          # Secrets and variables → Actions → Variables). Empty = direct API.
-          VITE_API_BASE: ${{ vars.VITE_API_BASE }}
-      - run: cp dist/index.html dist/404.html
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Install deps
+        run: bun install --frozen-lockfile
+
+      - name: Build (Vite + Nitro)
+        # VITE_API_BASE is baked into the client bundle at build time (the corpus
+        # fetch + any client API call go through the CF Worker). Set it as a repo
+        # variable: Settings -> Secrets and variables -> Actions -> Variables.
+        # VITE_API_BASE → client bundle (corpus fetch). API_BASE → server loaders +
+        # the server-side corpus fetch during prerender. Both = the CF Worker URL
+        # (repo Variable). Without API_BASE, prerender falls back to the public API.
+        env:
+          VITE_API_BASE: ${{ vars.VITE_API_BASE }}
+          API_BASE: ${{ vars.VITE_API_BASE }}
+        # build:check runs the client-bundle leak guard after the build — fails
+        # the deploy if any server-only code (node:zlib, process.env, server
+        # corpus loader) leaked into .output/public.
+        run: bun run build:check
+
+      - name: Ship .output to the server tree
+        # Same box as the runner, so a local rsync. --delete prunes stale files.
+        run: rsync -a --delete .output/ /var/www/tcg/.output/
+
+      - name: Restart the service
+        # Needs a sudoers rule allowing exactly this command for the runner user
+        # (see deploy/DEPLOY.md). nginx serves stale cache through the ~1s restart.
+        run: sudo systemctl restart tcg
