@@ -9,8 +9,12 @@ import {
 	queryCorpus,
 } from "../store/corpus/corpus-engine";
 import type { CorpusCard } from "../store/corpus/corpus-types";
-import { apiBase, fetchAllSets } from "./card-data";
+import { apiBase, fetchAllSets } from "./card-data-fetch";
 import type { PokemonSet } from "./card-mappers";
+import { boundedInt, nonEmptyString } from "./validate";
+
+// National Pokédex upper bound — matches the species-list fetch limit.
+const MAX_DEX = 1025;
 
 /** Gunzip + parse a gzipped CorpusCard[] blob (server-side; node:zlib). */
 export function decodeCorpusGz(gz: ArrayBuffer): CorpusCard[] {
@@ -74,19 +78,19 @@ export async function queryCorpusServer(
 
 /** All cards in a set, natural (number) order. */
 export const getSetCardsFn = createServerFn({ method: "GET" })
-	.inputValidator((setId: string) => setId)
+	.inputValidator((setId: unknown) => nonEmptyString(setId, "setId"))
 	.handler(({ data: setId }) => queryCorpusServer({ setId, relevance: false }));
 
 /** Global name search, relevance order. */
 export const searchCardsFn = createServerFn({ method: "GET" })
-	.inputValidator((query: string) => query)
+	.inputValidator((query: unknown) => nonEmptyString(query, "query"))
 	.handler(({ data: query }) =>
 		queryCorpusServer({ query, setId: null, relevance: true }),
 	);
 
 /** All cards for a national-dex number, across sets. */
 export const getDexCardsFn = createServerFn({ method: "GET" })
-	.inputValidator((dex: number) => dex)
+	.inputValidator((dex: unknown) => boundedInt(dex, "dex", 1, MAX_DEX))
 	.handler(({ data: dex }) =>
 		queryCorpusServer({ dexNumber: dex, setId: null, relevance: false }),
 	);
@@ -96,7 +100,13 @@ export const getDexCardsFn = createServerFn({ method: "GET" })
  * route loader never imports the raw resolver (which pulls node:zlib).
  */
 export const resolveCardInSetFn = createServerFn({ method: "GET" })
-	.inputValidator((input: { setId: string; cardSlug: string }) => input)
+	.inputValidator((input: unknown) => {
+		const o = (input ?? {}) as { setId?: unknown; cardSlug?: unknown };
+		return {
+			setId: nonEmptyString(o.setId, "setId"),
+			cardSlug: nonEmptyString(o.cardSlug, "cardSlug"),
+		};
+	})
 	.handler(async ({ data }) => {
 		const all = await queryCorpusServer({
 			setId: data.setId,

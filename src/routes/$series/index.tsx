@@ -7,8 +7,9 @@ export const Route = createFileRoute("/$series/")({
 		const tree = await getNavTreeFn();
 		const series = findSeries(tree, params.series);
 		if (!series) throw notFound();
-		// TODO(Plan 05): setResponseHeaders Cache-Control via server fn — import protection
-		// blocks @tanstack/react-start/server from client-bundled route files.
+		// Cache-Control is set inside getNavTreeFn's handler (server-only module),
+		// which this loader awaits — the route file stays free of the server-only
+		// header API that import-protection blocks from client-bundled routes.
 		return series;
 	},
 	head: ({ loaderData }) => ({
