@@ -1,12 +1,21 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+	createFileRoute,
+	stripSearchParams,
+	useNavigate,
+} from "@tanstack/react-router";
 import { CardGridIsland } from "../components/islands/card-grid-island";
 import { SearchControls } from "../components/islands/search-controls";
-import { listSearchToUrl, validateListSearch } from "../lib/list-search";
+import {
+	LIST_SEARCH_DEFAULTS,
+	listSearchToUrl,
+	validateListSearch,
+} from "../lib/list-search";
 import { fetchCardsByName } from "../server/card-data";
 import { deriveFacets } from "../server/set-facets";
 
 export const Route = createFileRoute("/search")({
 	validateSearch: validateListSearch,
+	search: { middlewares: [stripSearchParams(LIST_SEARCH_DEFAULTS)] },
 	loaderDeps: ({ search }) => ({ q: search.q }),
 	loader: async ({ deps }) => {
 		const q = deps.q.trim();

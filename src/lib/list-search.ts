@@ -1,19 +1,24 @@
 import type { ListSearch, Scope } from "./card-query";
 
+/**
+ * Default value for every list-search field. Paired with the TanStack
+ * `stripSearchParams(LIST_SEARCH_DEFAULTS)` middleware on each list route so
+ * default-valued params never appear in the URL — keeping the crawlable SEO
+ * URLs clean (no `?q=&types=[]&…`) while the validated object still has every
+ * field. The array identities are stable so the strip's deep-equal matches.
+ */
+export const LIST_SEARCH_DEFAULTS: ListSearch = {
+	q: "",
+	types: [],
+	rarity: [],
+	supertype: [],
+	subtypes: [],
+	scope: "all",
+};
+
 const csv = (v: unknown): string[] => {
 	if (Array.isArray(v)) return (v as string[]).filter(Boolean);
 	if (typeof v !== "string" || !v) return [];
-	// TanStack Router may serialize [] as the string "[]" — treat as empty.
-	if (v === "[]" || v === "%5B%5D") return [];
-	// JSON-serialized arrays (["fire","water"]) — try parse.
-	if (v.startsWith("[")) {
-		try {
-			const parsed = JSON.parse(v);
-			if (Array.isArray(parsed)) return (parsed as string[]).filter(Boolean);
-		} catch {
-			// fall through to CSV
-		}
-	}
 	return v.split(",").filter(Boolean);
 };
 

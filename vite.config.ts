@@ -23,7 +23,7 @@ export default defineConfig({
 					const segments = path.split("/").filter(Boolean);
 					return segments.length <= 1;
 				},
-				failOnError: false,
+				failOnError: true,
 			},
 		}),
 		viteReact(),

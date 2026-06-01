@@ -4,12 +4,17 @@ import {
 	Link,
 	notFound,
 	Outlet,
+	stripSearchParams,
 	useNavigate,
 } from "@tanstack/react-router";
 import type { HoloCardData } from "../../../components/holo-card";
 import { CardGridIsland } from "../../../components/islands/card-grid-island";
 import { SearchControls } from "../../../components/islands/search-controls";
-import { listSearchToUrl, validateListSearch } from "../../../lib/list-search";
+import {
+	LIST_SEARCH_DEFAULTS,
+	listSearchToUrl,
+	validateListSearch,
+} from "../../../lib/list-search";
 import { fetchCards } from "../../../server/card-data";
 import { buildSetCardSlugs } from "../../../server/card-resolve";
 import { findSet, getNavTreeFn } from "../../../server/nav-tree";
@@ -17,6 +22,7 @@ import { deriveFacets } from "../../../server/set-facets";
 
 export const Route = createFileRoute("/$series/$set/")({
 	validateSearch: validateListSearch,
+	search: { middlewares: [stripSearchParams(LIST_SEARCH_DEFAULTS)] },
 	loader: async ({ params }) => {
 		const tree = await getNavTreeFn();
 		const set = findSet(tree, params.series, params.set);

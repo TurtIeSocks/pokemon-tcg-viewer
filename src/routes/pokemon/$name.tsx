@@ -1,7 +1,16 @@
-import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
+import {
+	createFileRoute,
+	notFound,
+	stripSearchParams,
+	useNavigate,
+} from "@tanstack/react-router";
 import { CardGridIsland } from "../../components/islands/card-grid-island";
 import { SearchControls } from "../../components/islands/search-controls";
-import { listSearchToUrl, validateListSearch } from "../../lib/list-search";
+import {
+	LIST_SEARCH_DEFAULTS,
+	listSearchToUrl,
+	validateListSearch,
+} from "../../lib/list-search";
 import {
 	fetchCardsByPokedex,
 	getPokemonListCached,
@@ -18,6 +27,7 @@ function titleCase(slug: string): string {
 
 export const Route = createFileRoute("/pokemon/$name")({
 	validateSearch: validateListSearch,
+	search: { middlewares: [stripSearchParams(LIST_SEARCH_DEFAULTS)] },
 	loader: async ({ params }) => {
 		const list = await getPokemonListCached();
 		const dex = dexByName(list, params.name);
