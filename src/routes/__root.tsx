@@ -38,15 +38,27 @@ function RootComponent() {
 	return (
 		<RootDocument>
 			<div className="flex h-screen flex-col overflow-hidden">
-				<AppToolbar tree={tree} activeSeriesSlug={activeSeriesSlug} activeSetSlug={activeSetSlug} />
+				<AppToolbar
+					tree={tree}
+					activeSeriesSlug={activeSeriesSlug}
+					activeSetSlug={activeSetSlug}
+				/>
 				<div className="flex min-h-0 flex-1">
 					<aside className="hidden w-72 shrink-0 overflow-y-auto border-r border-border bg-sidebar lg:block">
 						<ClientOnly
 							fallback={
-								<SidebarNav tree={tree} activeSeriesSlug={activeSeriesSlug} activeSetSlug={activeSetSlug} />
+								<SidebarNav
+									tree={tree}
+									activeSeriesSlug={activeSeriesSlug}
+									activeSetSlug={activeSetSlug}
+								/>
 							}
 						>
-							<SidebarCollapsible tree={tree} activeSeriesSlug={activeSeriesSlug} activeSetSlug={activeSetSlug} />
+							<SidebarCollapsible
+								tree={tree}
+								activeSeriesSlug={activeSeriesSlug}
+								activeSetSlug={activeSetSlug}
+							/>
 						</ClientOnly>
 					</aside>
 					<main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
