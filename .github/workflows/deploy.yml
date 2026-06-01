@@ -36,8 +36,12 @@ jobs:
         # VITE_API_BASE is baked into the client bundle at build time (the corpus
         # fetch + any client API call go through the CF Worker). Set it as a repo
         # variable: Settings -> Secrets and variables -> Actions -> Variables.
+        # VITE_API_BASE → client bundle (corpus fetch). API_BASE → server loaders +
+        # the server-side corpus fetch during prerender. Both = the CF Worker URL
+        # (repo Variable). Without API_BASE, prerender falls back to the public API.
         env:
           VITE_API_BASE: ${{ vars.VITE_API_BASE }}
+          API_BASE: ${{ vars.VITE_API_BASE }}
         run: bun run build
 
       - name: Ship .output to the server tree
