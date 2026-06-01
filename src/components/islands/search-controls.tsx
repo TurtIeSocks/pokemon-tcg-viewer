@@ -12,9 +12,8 @@ import type { ListSearch } from "../../lib/card-query";
 interface SearchControlsProps {
 	value: ListSearch;
 	options: SetFacets;
-	/** Whether to show the this-set / all-sets scope toggle. */
-	showScope: boolean;
 	onChange: (patch: Partial<ListSearch>) => void;
+	placeholder?: string;
 }
 
 // A single-select that maps to a string[] param (one active value at a time —
@@ -56,14 +55,15 @@ export function SearchControls({
 	value,
 	options,
 	onChange,
+	placeholder = "Search cards by name",
 }: SearchControlsProps) {
 	return (
 		<div className="space-y-3">
 			<Input
 				type="search"
 				defaultValue={value.q}
-				placeholder="Search cards by name…"
-				aria-label="Search cards by name"
+				placeholder={`${placeholder}...`}
+				aria-label={placeholder}
 				onChange={(e) => onChange({ q: e.target.value })}
 			/>
 			<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -91,25 +91,6 @@ export function SearchControls({
 					options={options.types}
 					onChange={(v) => onChange({ types: v })}
 				/>
-				{/* {showScope && (
-					<div className="flex gap-1 text-xs">
-						{SCOPES.map((s) => (
-							<button
-								key={s}
-								type="button"
-								onClick={() => onChange({ scope: s })}
-								aria-pressed={value.scope === s}
-								className={
-									value.scope === s
-										? "rounded bg-primary px-2 py-1 text-primary-foreground"
-										: "rounded bg-secondary px-2 py-1 text-muted-foreground"
-								}
-							>
-								{s === "set" ? "This set" : "All sets"}
-							</button>
-						))}
-					</div>
-				)} */}
 			</div>
 		</div>
 	);

@@ -56,7 +56,6 @@ function RecentsInner() {
 									rarity: prev.rarity ?? [],
 									supertype: prev.supertype ?? [],
 									subtypes: prev.subtypes ?? [],
-									scope: prev.scope ?? "all",
 									view: "grid" as const,
 								})}
 								style={{ width: 96 }}

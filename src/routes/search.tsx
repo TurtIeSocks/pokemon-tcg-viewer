@@ -84,8 +84,8 @@ function SearchPage() {
 				<SearchControls
 					value={search}
 					options={options}
-					showScope={false}
 					onChange={onChange}
+					placeholder="Search all cards"
 				/>
 			</div>
 			<div className="min-h-0 flex-1">

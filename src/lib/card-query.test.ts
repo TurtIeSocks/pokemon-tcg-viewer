@@ -7,7 +7,6 @@ const empty: ListSearch = {
 	rarity: [],
 	supertype: [],
 	subtypes: [],
-	scope: "all",
 	view: "grid",
 };
 
@@ -24,22 +23,11 @@ describe("buildCorpusQuery", () => {
 		expect(q.setId).toBeNull();
 		expect(q.relevance).toBe(true);
 	});
-	test("set context + scope=set + query → set-scoped, no relevance", () => {
-		const q = buildCorpusQuery(
-			{ ...empty, q: "char", scope: "set" },
-			{ setId: "swsh9" },
-		);
+	test("set context + query → set-scoped within the set, no relevance", () => {
+		const q = buildCorpusQuery({ ...empty, q: "char" }, { setId: "swsh9" });
 		expect(q.setId).toBe("swsh9");
 		expect(q.query).toBe("char");
 		expect(q.relevance).toBe(false);
-	});
-	test("set context + scope=all + query → global search (ignore set)", () => {
-		const q = buildCorpusQuery(
-			{ ...empty, q: "char", scope: "all" },
-			{ setId: "swsh9" },
-		);
-		expect(q.setId).toBeNull();
-		expect(q.relevance).toBe(true);
 	});
 	test("dex context → dex-scoped natural order", () => {
 		const q = buildCorpusQuery(empty, { dexNumber: 6 });
@@ -53,8 +41,8 @@ describe("buildCorpusQuery", () => {
 		);
 		expect(q.filters).toEqual({
 			types: ["fire"],
-			rarity: ["Rare Holo"],
-			supertype: undefined,
+			rarities: ["Rare Holo"],
+			supertypes: undefined,
 			subtypes: undefined,
 		});
 	});

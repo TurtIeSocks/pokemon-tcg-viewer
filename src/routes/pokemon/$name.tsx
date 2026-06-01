@@ -89,7 +89,6 @@ function PokemonPage() {
 				<SearchControls
 					value={search}
 					options={options}
-					showScope={false}
 					onChange={onChange}
 				/>
 			</div>

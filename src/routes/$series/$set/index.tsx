@@ -94,8 +94,8 @@ function SetPage() {
 					<SearchControls
 						value={search}
 						options={facets}
-						showScope
 						onChange={onChange}
+						placeholder={`Search ${set.name} cards`}
 					/>
 				</div>
 			</ClientOnly>
