@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { gzipSync } from "node:zlib";
 import type { CorpusCard } from "../store/corpus/corpus-types";
-import { decodeCorpusGz } from "./corpus-server";
+import { decodeCorpusGz } from "./corpus-loader";
 
 const cards: CorpusCard[] = [
 	{

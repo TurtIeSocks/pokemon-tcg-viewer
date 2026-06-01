@@ -1,10 +1,10 @@
 import type { HoloCardData } from "../components/holo-card";
 import { buildSetCardSlugs, type SetCardSlugs } from "../lib/card-slugs";
-import { queryCorpusServer } from "./corpus-server";
+import { queryCorpusServer } from "./corpus-loader";
 
 // Re-export the pure slug builder for server-side callers' convenience. Client
 // code (route files) imports buildSetCardSlugs from ../lib/card-slugs DIRECTLY,
-// never from here — this module imports corpus-server (node:zlib + process.env),
+// never from here — this module imports corpus-loader (node:zlib + process.env),
 // so anything client-reachable that imports it leaks Node builtins into the
 // browser bundle. (Guarded by scripts/check-client-bundle.ts.)
 export { buildSetCardSlugs, type SetCardSlugs };
