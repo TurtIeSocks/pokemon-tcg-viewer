@@ -30,7 +30,7 @@ function RecentsInner() {
 							<Link
 								key={q}
 								to="/search"
-								search={{ q }}
+								search={{ q, types: [], rarity: [], supertype: [], subtypes: [], scope: "all" as const }}
 								className="rounded-full bg-secondary px-3 py-1 text-sm text-foreground hover:bg-secondary/80"
 							>
 								{q}
@@ -49,7 +49,7 @@ function RecentsInner() {
 							<Link
 								key={card.id}
 								to="/search"
-								search={{ q: card.name }}
+								search={(prev) => ({ q: card.name, types: prev.types ?? [], rarity: prev.rarity ?? [], supertype: prev.supertype ?? [], subtypes: prev.subtypes ?? [], scope: prev.scope ?? "all" })}
 								style={{ width: 96 }}
 								className="shrink-0"
 							>

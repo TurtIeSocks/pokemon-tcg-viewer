@@ -1,11 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { CorpusSearchIsland } from "../components/islands/corpus-search-island";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { CardGridIsland } from "../components/islands/card-grid-island";
+import { SearchControls } from "../components/islands/search-controls";
+import { deriveFacets } from "../server/set-facets";
 import { fetchCardsByName } from "../server/card-data";
+import { listSearchToUrl, validateListSearch } from "../lib/list-search";
 
 export const Route = createFileRoute("/search")({
-	validateSearch: (search: Record<string, unknown>): { q: string } => ({
-		q: typeof search.q === "string" ? search.q : "",
-	}),
+	validateSearch: validateListSearch,
 	loaderDeps: ({ search }) => ({ q: search.q }),
 	loader: async ({ deps }) => {
 		const q = deps.q.trim();
@@ -15,15 +16,8 @@ export const Route = createFileRoute("/search")({
 	},
 	head: ({ loaderData }) => ({
 		meta: [
-			{
-				title: loaderData?.q
-					? `"${loaderData.q}" — Pokémon TCG search`
-					: "Search — Pokémon TCG",
-			},
-			{
-				name: "description",
-				content: `Search results for ${loaderData?.q ?? ""}.`,
-			},
+			{ title: loaderData?.q ? `"${loaderData.q}" — Pokémon TCG search` : "Search — Pokémon TCG" },
+			{ name: "description", content: `Search results for ${loaderData?.q ?? ""}.` },
 		],
 	}),
 	component: SearchPage,
@@ -31,17 +25,32 @@ export const Route = createFileRoute("/search")({
 
 function SearchPage() {
 	const { q, cards, total } = Route.useLoaderData();
+	const search = Route.useSearch();
+	const navigate = useNavigate({ from: Route.fullPath });
+	const onChange = (patch: Parameters<typeof listSearchToUrl>[0]) =>
+		navigate({ search: (prev) => ({ ...prev, ...listSearchToUrl(patch) }) });
+
+	// Options derived from the SSR seed (corpus refines as the user filters live).
+	const options = deriveFacets(cards);
+
 	return (
-		<div className="mx-auto w-full max-w-7xl overflow-y-auto px-4 py-5">
+		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
 			<h1 className="mb-3 text-xl font-bold">
 				{q ? `Results for "${q}"` : "Search"}
-				{q ? (
-					<span className="ml-2 text-sm text-muted-foreground">
-						{total} cards
-					</span>
-				) : null}
+				{q ? <span className="ml-2 text-sm text-muted-foreground">{total} cards</span> : null}
 			</h1>
-			<CorpusSearchIsland query={q} ssrCards={cards} />
+			<div className="mb-4 shrink-0">
+				<SearchControls value={search} options={options} showScope={false} onChange={onChange} />
+			</div>
+			<div className="min-h-0 flex-1">
+				<CardGridIsland
+					search={search}
+					context={{}}
+					seedCards={cards}
+					seedTotal={total}
+					cardHref={() => ({ to: "/search", search })}
+				/>
+			</div>
 		</div>
 	);
 }

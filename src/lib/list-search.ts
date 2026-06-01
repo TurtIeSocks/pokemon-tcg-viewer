@@ -1,7 +1,21 @@
 import type { ListSearch, Scope } from "./card-query";
 
-const csv = (v: unknown): string[] =>
-	typeof v === "string" && v ? v.split(",").filter(Boolean) : Array.isArray(v) ? (v as string[]) : [];
+const csv = (v: unknown): string[] => {
+	if (Array.isArray(v)) return (v as string[]).filter(Boolean);
+	if (typeof v !== "string" || !v) return [];
+	// TanStack Router may serialize [] as the string "[]" — treat as empty.
+	if (v === "[]" || v === "%5B%5D") return [];
+	// JSON-serialized arrays (["fire","water"]) — try parse.
+	if (v.startsWith("[")) {
+		try {
+			const parsed = JSON.parse(v);
+			if (Array.isArray(parsed)) return (parsed as string[]).filter(Boolean);
+		} catch {
+			// fall through to CSV
+		}
+	}
+	return v.split(",").filter(Boolean);
+};
 
 /** Shared validateSearch for any card-list route. */
 export function validateListSearch(search: Record<string, unknown>): ListSearch {
