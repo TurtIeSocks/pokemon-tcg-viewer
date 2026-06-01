@@ -96,3 +96,12 @@
 		translate: 0 -12px;
 	}
 }
+
+/* Honor reduced-motion for the router's View Transitions crossfade. */
+@media (prefers-reduced-motion: reduce) {
+	::view-transition-group(*),
+	::view-transition-old(*),
+	::view-transition-new(*) {
+		animation: none !important;
+	}
+}

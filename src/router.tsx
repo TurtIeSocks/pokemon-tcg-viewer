@@ -12,12 +12,10 @@ export function getRouter() {
 		// (and its server-fn RPC). Card/set/nav data is effectively static.
 		defaultPreloadStaleTime: 30_000,
 		defaultStaleTime: 30_000,
-		// Show a route's pendingComponent quickly once a loader is actually running
-		// (so an old list doesn't linger on navigation), but hold it long enough to
-		// avoid a flash on near-instant loads. Cached revisits skip the loader
-		// entirely (defaultStaleTime), so no skeleton there.
-		defaultPendingMs: 150,
-		defaultPendingMinMs: 400,
+		// Crossfade navigations via the native View Transitions API (browsers that
+		// lack it just navigate instantly). Replaces the old card-back skeleton/flip:
+		// old grid fades to new grid, no jarring flash. Degrades gracefully.
+		defaultViewTransition: true,
 		// App-wide fallbacks for `throw notFound()` and loader/component errors.
 		defaultNotFoundComponent: RouteNotFound,
 		defaultErrorComponent: RouteError,

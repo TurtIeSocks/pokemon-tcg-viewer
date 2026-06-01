@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { CardGridIsland } from "../../../components/islands/card-grid-island";
 import { PackDialog } from "../../../components/islands/pack-dialog";
 import { SearchControls } from "../../../components/islands/search-controls";
-import { ListPageSkeleton } from "../../../components/shell/list-page-skeleton";
 import { buildSetCardSlugs } from "../../../lib/card-slugs";
 import {
 	LIST_SEARCH_DEFAULTS,
@@ -40,7 +39,6 @@ export const Route = createFileRoute("/$series/$set/")({
 		}));
 		return { set, cards, facets: deriveFacets(all) };
 	},
-	pendingComponent: ListPageSkeleton,
 	head: ({ loaderData }) => ({
 		meta: [
 			{ title: `${loaderData?.set.name ?? "Set"} — Pokémon TCG cards` },
@@ -59,7 +57,11 @@ function SetPage() {
 	const search = Route.useSearch();
 	const navigate = useNavigate({ from: Route.fullPath });
 	const onChange = (patch: Parameters<typeof listSearchToUrl>[0]) =>
-		navigate({ search: (prev) => ({ ...prev, ...listSearchToUrl(patch) }) });
+		navigate({
+			search: (prev) => ({ ...prev, ...listSearchToUrl(patch) }),
+			// In-page filter/view change: keep it instant, don't crossfade.
+			viewTransition: false,
+		});
 	const [packOpen, setPackOpen] = useState(false);
 	// id → per-page slug, built once. The grid/pack cardHref callbacks fire per
 	// card; a Map keeps them O(1) instead of a linear find over every card.

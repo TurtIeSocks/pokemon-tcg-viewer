@@ -7,7 +7,6 @@ import { useEffect } from "react";
 import { CardGridIsland } from "../components/islands/card-grid-island";
 import { SearchControls } from "../components/islands/search-controls";
 import { ViewModeToggle } from "../components/islands/view-mode-toggle";
-import { ListPageSkeleton } from "../components/shell/list-page-skeleton";
 import {
 	LIST_SEARCH_DEFAULTS,
 	listSearchToUrl,
@@ -27,7 +26,6 @@ export const Route = createFileRoute("/search")({
 		const all = await searchCardsFn({ data: q });
 		return { q, cards: all.slice(0, 40), total: all.length };
 	},
-	pendingComponent: ListPageSkeleton,
 	head: ({ loaderData }) => ({
 		meta: [
 			{
@@ -56,7 +54,11 @@ function SearchPage() {
 		addRecentSearch(q);
 	}, [q, addRecentSearch]);
 	const onChange = (patch: Parameters<typeof listSearchToUrl>[0]) =>
-		navigate({ search: (prev) => ({ ...prev, ...listSearchToUrl(patch) }) });
+		navigate({
+			search: (prev) => ({ ...prev, ...listSearchToUrl(patch) }),
+			// In-page filter/view change: keep it instant, don't crossfade.
+			viewTransition: false,
+		});
 
 	// Options derived from the SSR seed (corpus refines as the user filters live).
 	const options = deriveFacets(cards);

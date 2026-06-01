@@ -7,7 +7,6 @@ import {
 import { CardGridIsland } from "../../components/islands/card-grid-island";
 import { SearchControls } from "../../components/islands/search-controls";
 import { ViewModeToggle } from "../../components/islands/view-mode-toggle";
-import { ListPageSkeleton } from "../../components/shell/list-page-skeleton";
 import {
 	LIST_SEARCH_DEFAULTS,
 	listSearchToUrl,
@@ -40,7 +39,6 @@ export const Route = createFileRoute("/pokemon/$name")({
 			total: all.length,
 		};
 	},
-	pendingComponent: ListPageSkeleton,
 	head: ({ loaderData }) => {
 		const d = loaderData?.display ?? "Pokémon";
 		return {
@@ -63,7 +61,11 @@ function PokemonPage() {
 	const params = Route.useParams();
 	const navigate = useNavigate({ from: Route.fullPath });
 	const onChange = (patch: Parameters<typeof listSearchToUrl>[0]) =>
-		navigate({ search: (prev) => ({ ...prev, ...listSearchToUrl(patch) }) });
+		navigate({
+			search: (prev) => ({ ...prev, ...listSearchToUrl(patch) }),
+			// In-page filter/view change: keep it instant, don't crossfade.
+			viewTransition: false,
+		});
 	const options = deriveFacets(cards);
 
 	return (
