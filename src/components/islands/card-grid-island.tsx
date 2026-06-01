@@ -14,6 +14,7 @@ import {
 } from "../../store/corpus/corpus-runtime";
 import { CollectionToggle } from "../collection-toggle";
 import type { HoloCardData } from "../holo-card";
+import { FlipCard } from "./flip-card";
 import { HoloCardIsland } from "./holo-card-island";
 import { PokemonTimeline } from "./pokemon-timeline";
 
@@ -115,19 +116,21 @@ export function CardGridIsland({
 
 	const renderCard = (card: HoloCardData) => (
 		<Link {...cardHref(card)} className="block">
-			<HoloCardIsland
-				imageUrl={card.imageUrl}
-				imageUrlSmall={card.imageUrlSmall}
-				name={card.name}
-				rarity={card.rarity}
-				subtypes={card.subtypes}
-				supertype={card.supertype}
-				setId={card.setId}
-				series={card.setSeries}
-				variants={card.variants}
-				cardNumber={card.cardNumber}
-				hoverOverlay={<CollectionToggle card={card} />}
-			/>
+			<FlipCard imageUrl={card.imageUrlSmall ?? card.imageUrl}>
+				<HoloCardIsland
+					imageUrl={card.imageUrl}
+					imageUrlSmall={card.imageUrlSmall}
+					name={card.name}
+					rarity={card.rarity}
+					subtypes={card.subtypes}
+					supertype={card.supertype}
+					setId={card.setId}
+					series={card.setSeries}
+					variants={card.variants}
+					cardNumber={card.cardNumber}
+					hoverOverlay={<CollectionToggle card={card} />}
+				/>
+			</FlipCard>
 		</Link>
 	);
 
