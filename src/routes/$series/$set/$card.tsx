@@ -1,9 +1,12 @@
 import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import type { CrossLink } from "../../../components/islands/cross-link-overlay";
 import { CardModal } from "../../../components/islands/card-modal";
-import { fetchCardById } from "../../../server/card-data";
+import { fetchCardById, getPokemonListCached } from "../../../server/card-data";
 import { resolveCardInSet } from "../../../server/card-resolve";
 import { findSet, getNavTreeFn } from "../../../server/nav-tree";
+import { nameByDex } from "../../../server/pokemon-dex";
+import { LIST_SEARCH_DEFAULTS } from "../../../lib/list-search";
 import { useRecentsStore } from "../../../store/recents";
 
 export const Route = createFileRoute("/$series/$set/$card")({
@@ -14,7 +17,28 @@ export const Route = createFileRoute("/$series/$set/$card")({
 		const cardId = await resolveCardInSet(set.id, params.card);
 		if (!cardId) throw notFound();
 		const card = await fetchCardById(cardId);
-		return { card };
+
+		const list = await getPokemonListCached();
+		const crossLinks: CrossLink[] = [];
+		for (const dex of card.nationalPokedexNumbers ?? []) {
+			const name = nameByDex(list, dex);
+			if (name) {
+				crossLinks.push({
+					label: `View all ${name.replace(/-/g, " ")}`,
+					link: { to: "/pokemon/$name", params: { name } },
+				});
+			}
+		}
+		crossLinks.push({
+			label: `Go to ${card.setName}`,
+			link: {
+				to: "/$series/$set",
+				params: { series: params.series, set: params.set },
+				search: LIST_SEARCH_DEFAULTS,
+			},
+		});
+
+		return { card, crossLinks };
 	},
 	head: ({ loaderData }) => {
 		const card = loaderData?.card;
@@ -38,7 +62,7 @@ export const Route = createFileRoute("/$series/$set/$card")({
 });
 
 function CardPage() {
-	const { card } = Route.useLoaderData();
+	const { card, crossLinks } = Route.useLoaderData();
 	const params = Route.useParams();
 	const navigate = useNavigate();
 	const addRecentlyViewed = useRecentsStore((s) => s.addRecentlyViewed);
@@ -60,6 +84,7 @@ function CardPage() {
 	return (
 		<CardModal
 			card={card}
+			crossLinks={crossLinks}
 			onClose={() =>
 				navigate({
 					to: "/$series/$set",
