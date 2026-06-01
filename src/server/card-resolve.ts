@@ -1,6 +1,6 @@
 import type { HoloCardData } from "../components/holo-card";
 import { slugify } from "../lib/slug";
-import { fetchCards } from "./card-data";
+import { queryCorpusServer } from "./corpus-server";
 
 export interface SetCardSlugs {
 	idBySlug: Map<string, string>;
@@ -29,16 +29,7 @@ const setCache = new Map<
 >();
 
 async function loadSet(setId: string) {
-	const all: HoloCardData[] = [];
-	let page = 1;
-	let total = Number.POSITIVE_INFINITY;
-	while (all.length < total && page <= 10) {
-		const res = await fetchCards(`set.id:${setId}`, page, 250, "number");
-		all.push(...res.cards);
-		total = res.totalCount;
-		if (res.cards.length === 0) break;
-		page++;
-	}
+	const all = await queryCorpusServer({ setId, relevance: false });
 	return { cards: all, slugs: buildSetCardSlugs(all) };
 }
 

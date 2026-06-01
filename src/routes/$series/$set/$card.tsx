@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { CardModal } from "../../../components/islands/card-modal";
 import type { CrossLink } from "../../../components/islands/cross-link-overlay";
 import { LIST_SEARCH_DEFAULTS } from "../../../lib/list-search";
-import { fetchCardById, getPokemonListCached } from "../../../server/card-data";
+import { getCardByIdFn, getPokemonListFn } from "../../../server/card-data";
 import { resolveCardInSet } from "../../../server/card-resolve";
 import { findSet, getNavTreeFn } from "../../../server/nav-tree";
 import { nameByDex } from "../../../server/pokemon-dex";
@@ -16,9 +16,9 @@ export const Route = createFileRoute("/$series/$set/$card")({
 		if (!set) throw notFound();
 		const cardId = await resolveCardInSet(set.id, params.card);
 		if (!cardId) throw notFound();
-		const card = await fetchCardById(cardId);
+		const card = await getCardByIdFn({ data: cardId });
 
-		const list = await getPokemonListCached();
+		const list = await getPokemonListFn();
 		const crossLinks: CrossLink[] = [];
 		for (const dex of card.nationalPokedexNumbers ?? []) {
 			const name = nameByDex(list, dex);
