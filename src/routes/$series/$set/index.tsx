@@ -8,7 +8,7 @@ import {
 	useNavigate,
 } from "@tanstack/react-router";
 import { Package } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CardGridIsland } from "../../../components/islands/card-grid-island";
 import { PackDialog } from "../../../components/islands/pack-dialog";
@@ -59,6 +59,12 @@ function SetPage() {
 	const onChange = (patch: Parameters<typeof listSearchToUrl>[0]) =>
 		navigate({ search: (prev) => ({ ...prev, ...listSearchToUrl(patch) }) });
 	const [packOpen, setPackOpen] = useState(false);
+	// id → per-page slug, built once. The grid/pack cardHref callbacks fire per
+	// card; a Map keeps them O(1) instead of a linear find over every card.
+	const slugById = useMemo(
+		() => new Map(cards.map((c) => [c.id, c.slug])),
+		[cards],
+	);
 
 	return (
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
@@ -126,7 +132,7 @@ function SetPage() {
 							params: {
 								series: params.series,
 								set: params.set,
-								card: cards.find((c) => c.id === card.id)?.slug ?? card.id,
+								card: slugById.get(card.id) ?? card.id,
 							},
 						})}
 					/>
@@ -144,7 +150,7 @@ function SetPage() {
 						params: {
 							series: params.series,
 							set: params.set,
-							card: cards.find((c) => c.id === card.id)?.slug ?? card.id,
+							card: slugById.get(card.id) ?? card.id,
 						},
 					})}
 				/>

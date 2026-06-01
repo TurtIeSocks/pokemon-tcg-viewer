@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { HomeRecents } from "../components/islands/home-recents";
+import { LIST_SEARCH_DEFAULTS } from "../lib/list-search";
 
 const POPULAR = ["Pikachu", "Charizard", "Eevee", "Mewtwo", "Gengar"];
 
@@ -55,15 +56,7 @@ export function HomeHero() {
 						<Link
 							key={name}
 							to="/search"
-							search={{
-								q: name,
-								types: [],
-								rarity: [],
-								supertype: [],
-								subtypes: [],
-								scope: "all" as const,
-								view: "grid" as const,
-							}}
+							search={{ ...LIST_SEARCH_DEFAULTS, q: name }}
 							className="rounded-full border border-border bg-secondary px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-secondary/80"
 						>
 							{name}

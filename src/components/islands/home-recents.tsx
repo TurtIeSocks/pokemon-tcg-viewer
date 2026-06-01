@@ -1,4 +1,5 @@
 import { ClientOnly, Link } from "@tanstack/react-router";
+import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import { useRecentsStore } from "../../store/recents";
 import { HoloCardIsland } from "./holo-card-island";
 
@@ -30,15 +31,7 @@ function RecentsInner() {
 							<Link
 								key={q}
 								to="/search"
-								search={{
-									q,
-									types: [],
-									rarity: [],
-									supertype: [],
-									subtypes: [],
-									scope: "all" as const,
-									view: "grid" as const,
-								}}
+								search={{ ...LIST_SEARCH_DEFAULTS, q }}
 								className="rounded-full bg-secondary px-3 py-1 text-sm text-foreground hover:bg-secondary/80"
 							>
 								{q}

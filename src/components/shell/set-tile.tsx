@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import type { NavSet } from "../../lib/nav-tree";
 import "../booster-pack/booster-pack.css";
 
@@ -14,15 +15,7 @@ export function SetTile({
 		<Link
 			to="/$series/$set"
 			params={{ series: seriesSlug, set: set.slug }}
-			search={{
-				q: "",
-				types: [],
-				rarity: [],
-				supertype: [],
-				subtypes: [],
-				scope: "all",
-				view: "grid",
-			}}
+			search={LIST_SEARCH_DEFAULTS}
 			className="booster-pack"
 			aria-label={`Browse ${set.name}`}
 		>

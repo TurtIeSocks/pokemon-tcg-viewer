@@ -11,6 +11,12 @@ import { useRecentsStore } from "../../../store/recents";
 
 export const Route = createFileRoute("/$series/$set/$card")({
 	loader: async ({ params }) => {
+		// getPokemonListFn is independent of the tree→cardId→card chain, so kick it
+		// off up front and await it only when building cross-links — no waterfall.
+		const listPromise = getPokemonListFn();
+		// No-op handler so a notFound() bail before the await can't raise an
+		// unhandled rejection; the await below still surfaces a real failure.
+		listPromise.catch(() => {});
 		const tree = await getNavTreeFn();
 		const set = findSet(tree, params.series, params.set);
 		if (!set) throw notFound();
@@ -20,7 +26,7 @@ export const Route = createFileRoute("/$series/$set/$card")({
 		if (!cardId) throw notFound();
 		const card = await getCardByIdFn({ data: cardId });
 
-		const list = await getPokemonListFn();
+		const list = await listPromise;
 		const crossLinks: CrossLink[] = [];
 		for (const dex of card.nationalPokedexNumbers ?? []) {
 			const name = nameByDex(list, dex);
@@ -91,15 +97,7 @@ function CardPage() {
 				navigate({
 					to: "/$series/$set",
 					params: { series: params.series, set: params.set },
-					search: {
-						q: "",
-						types: [],
-						rarity: [],
-						supertype: [],
-						subtypes: [],
-						scope: "all",
-						view: "grid",
-					},
+					search: LIST_SEARCH_DEFAULTS,
 				})
 			}
 		/>
