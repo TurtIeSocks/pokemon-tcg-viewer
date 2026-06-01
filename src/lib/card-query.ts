@@ -1,7 +1,9 @@
 import type { CorpusQuery } from "../store/corpus/corpus-engine";
 import type { FilterClauses } from "../utils/build-filter-clauses";
 
-export type Scope = "set" | "all";
+export const SCOPES = ["set", "all"] as const;
+export type Scope = (typeof SCOPES)[number];
+
 export type ViewMode = "grid" | "timeline";
 
 /** Typed list-page search params (shared validateSearch shape). */

@@ -6,7 +6,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import type { ListSearch, Scope } from "../../lib/card-query";
+import type { ListSearch } from "../../lib/card-query";
 
 export interface FacetOptions {
 	supertypes: string[];
@@ -43,7 +43,7 @@ function FilterSelect({
 			value={value[0] ?? ALL}
 			onValueChange={(v) => onChange(v === ALL ? [] : [v])}
 		>
-			<SelectTrigger className="text-sm">
+			<SelectTrigger className="text-sm w-full">
 				<SelectValue placeholder={label} />
 			</SelectTrigger>
 			<SelectContent>
@@ -61,7 +61,7 @@ function FilterSelect({
 export function SearchControls({
 	value,
 	options,
-	showScope,
+	// showScope,
 	onChange,
 }: SearchControlsProps) {
 	return (
@@ -98,26 +98,26 @@ export function SearchControls({
 					options={options.types}
 					onChange={(v) => onChange({ types: v })}
 				/>
+				{/* {showScope && (
+					<div className="flex gap-1 text-xs">
+						{SCOPES.map((s) => (
+							<button
+								key={s}
+								type="button"
+								onClick={() => onChange({ scope: s })}
+								aria-pressed={value.scope === s}
+								className={
+									value.scope === s
+										? "rounded bg-primary px-2 py-1 text-primary-foreground"
+										: "rounded bg-secondary px-2 py-1 text-muted-foreground"
+								}
+							>
+								{s === "set" ? "This set" : "All sets"}
+							</button>
+						))}
+					</div>
+				)} */}
 			</div>
-			{showScope && (
-				<div className="flex justify-end gap-1 text-xs">
-					{(["set", "all"] as Scope[]).map((s) => (
-						<button
-							key={s}
-							type="button"
-							onClick={() => onChange({ scope: s })}
-							aria-pressed={value.scope === s}
-							className={
-								value.scope === s
-									? "rounded bg-primary px-2 py-1 text-primary-foreground"
-									: "rounded bg-secondary px-2 py-1 text-muted-foreground"
-							}
-						>
-							{s === "set" ? "This set" : "All sets"}
-						</button>
-					))}
-				</div>
-			)}
 		</div>
 	);
 }
