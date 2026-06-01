@@ -14,6 +14,7 @@ import {
 import { CollectionToggle } from "../collection-toggle";
 import type { HoloCardData } from "../holo-card";
 import { HoloCardIsland } from "./holo-card-island";
+import { PokemonTimeline } from "./pokemon-timeline";
 
 export interface GridCard extends HoloCardData {
 	slug?: string;
@@ -97,6 +98,14 @@ export function CardGridIsland({
 			/>
 		</Link>
 	);
+
+	if (search.view === "timeline") {
+		return (
+			<div className="h-full overflow-y-auto">
+				<PokemonTimeline cards={cards} cardHref={cardHref} onEndReached={cards.length < total ? loadMore : undefined} />
+			</div>
+		);
+	}
 
 	// Test/no-layout fallback: render a plain list so the grid is assertable and
 	// SSR-equivalent when Virtuoso can't measure (happy-dom). Virtuoso requires a
