@@ -14,7 +14,7 @@
  *   • simey's .card__shine::before / ::after sub-layers are merged into
  *     the ::before or dropped (Option A simplification) since CSS does not
  *     allow pseudo-element chaining (::before::before).
- *   • Texture URLs use /pokemon-tcg-viewer/holo-textures/ prefix (Task 8 populates them).
+ *   • Texture URLs use /holo-textures/ prefix (Task 8 populates them).
  *   • CSS custom properties (--pointer-x, --pointer-y, etc.) are written by
  *     useHoloEffect and match simey's variable names exactly.
  *   • no-foil class needs no rule — cards inherit base styles only.
@@ -27,8 +27,8 @@
 ───────────────────────────────────────────────────────────────────────────── */
 
 .holo-card {
-	--grain: url("/pokemon-tcg-viewer/holo-textures/grain.webp");
-	--glitter: url("/pokemon-tcg-viewer/holo-textures/glitter.png");
+	--grain: url("/holo-textures/grain.webp");
+	--glitter: url("/holo-textures/glitter.png");
 	--glittersize: 25%;
 
 	--space: 5%;
@@ -212,7 +212,7 @@
 	clip-path: var(--clip);
 
 	background-image:
-		url("/pokemon-tcg-viewer/holo-textures/cosmos-bottom.png"),
+		url("/holo-textures/cosmos-bottom.png"),
 		repeating-linear-gradient(
 			82deg,
 			hsl(53, 65%, 60%) calc(var(--space) * 1),
@@ -426,7 +426,7 @@
 .holo-card.holo-vmax::before {
 	--space: 6%;
 	--angle: 133deg;
-	--foil: url("/pokemon-tcg-viewer/holo-textures/vmaxbg.jpg");
+	--foil: url("/holo-textures/vmaxbg.jpg");
 	--imgsize: 60% 30%;
 
 	background-image:
@@ -499,7 +499,7 @@
 ───────────────────────────────────────────────────────────────────────────── */
 
 .holo-card.holo-vstar {
-	--foil: url("/pokemon-tcg-viewer/holo-textures/ancient.png");
+	--foil: url("/holo-textures/ancient.png");
 	--imgsize: 18% 15%;
 }
 
@@ -715,7 +715,7 @@
 
 .holo-card.radiant::before {
 	--barwidth: 1.2%;
-	--foil: url("/pokemon-tcg-viewer/holo-textures/trainerbg.png");
+	--foil: url("/holo-textures/trainerbg.png");
 	--imgsize: 25% auto;
 
 	background-image:
@@ -792,7 +792,7 @@
 .holo-card.radiant::after {
 	/* .card__shine::after — colour foil rainbow layer */
 	--space: 200px;
-	--foil: url("/pokemon-tcg-viewer/holo-textures/trainerbg.png");
+	--foil: url("/holo-textures/trainerbg.png");
 	--imgsize: 25% auto;
 
 	background-image:
@@ -1007,7 +1007,7 @@
 
 .holo-card.gold-secret::before {
 	--shift: 1px;
-	--foil: url("/pokemon-tcg-viewer/holo-textures/geometric.png");
+	--foil: url("/holo-textures/geometric.png");
 	--imgsize: 33%;
 
 	background-image:
