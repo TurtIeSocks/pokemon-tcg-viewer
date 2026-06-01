@@ -1,9 +1,13 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import {
 	fetchCardsByPokedex,
 	getPokemonListCached,
 } from "../../server/card-data";
 import { dexByName } from "../../server/pokemon-dex";
+import { CardGridIsland } from "../../components/islands/card-grid-island";
+import { SearchControls } from "../../components/islands/search-controls";
+import { deriveFacets } from "../../server/set-facets";
+import { listSearchToUrl, validateListSearch } from "../../lib/list-search";
 
 function titleCase(slug: string): string {
 	return slug
@@ -13,16 +17,13 @@ function titleCase(slug: string): string {
 }
 
 export const Route = createFileRoute("/pokemon/$name")({
+	validateSearch: validateListSearch,
 	loader: async ({ params }) => {
 		const list = await getPokemonListCached();
 		const dex = dexByName(list, params.name);
 		if (dex === null) throw notFound();
 		const res = await fetchCardsByPokedex(dex, 1, 60);
-		return {
-			display: titleCase(params.name),
-			cards: res.cards,
-			total: res.totalCount,
-		};
+		return { display: titleCase(params.name), dex, cards: res.cards, total: res.totalCount };
 	},
 	head: ({ loaderData }) => {
 		const d = loaderData?.display ?? "Pokémon";
@@ -41,30 +42,31 @@ export const Route = createFileRoute("/pokemon/$name")({
 });
 
 function PokemonPage() {
-	const { display, cards, total } = Route.useLoaderData();
+	const { display, dex, cards, total } = Route.useLoaderData();
+	const search = Route.useSearch();
+	const params = Route.useParams();
+	const navigate = useNavigate({ from: Route.fullPath });
+	const onChange = (patch: Parameters<typeof listSearchToUrl>[0]) =>
+		navigate({ search: (prev) => ({ ...prev, ...listSearchToUrl(patch) }) });
+	const options = deriveFacets(cards);
+
 	return (
-		<div className="mx-auto w-full max-w-7xl overflow-y-auto px-4 py-5">
+		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
 			<h1 className="mb-3 text-xl font-bold">
-				{display}{" "}
-				<span className="ml-2 text-sm text-muted-foreground">
-					{total} cards
-				</span>
+				{display} <span className="ml-2 text-sm text-muted-foreground">{total} cards</span>
 			</h1>
-			<ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-				{cards.map((card) => (
-					<li key={card.id} className="flex flex-col items-center gap-1">
-						<img
-							src={card.imageUrlSmall}
-							alt={card.name}
-							loading="lazy"
-							className="w-full rounded"
-						/>
-						<span className="text-center text-[10px] text-muted-foreground">
-							{card.setName}
-						</span>
-					</li>
-				))}
-			</ul>
+			<div className="mb-4 shrink-0">
+				<SearchControls value={search} options={options} showScope={false} onChange={onChange} />
+			</div>
+			<div className="min-h-0 flex-1">
+				<CardGridIsland
+					search={search}
+					context={{ dexNumber: dex }}
+					seedCards={cards}
+					seedTotal={total}
+					cardHref={() => ({ to: "/pokemon/$name", params: { name: params.name }, search })}
+				/>
+			</div>
 		</div>
 	);
 }
