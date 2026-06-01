@@ -8,7 +8,7 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
-import type { NavTree } from "../../server/nav-tree";
+import type { NavTree } from "../../lib/nav-tree";
 import { SidebarCollapsible } from "../islands/sidebar-collapsible";
 import { AboutDialog } from "./about-dialog";
 import { RepoLink } from "./repo-link";

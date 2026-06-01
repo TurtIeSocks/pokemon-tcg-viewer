@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import type { NavSet } from "../../server/nav-tree";
+import type { NavSet } from "../../lib/nav-tree";
 import "../booster-pack/booster-pack.css";
 
 /** Non-interactive booster-pack-styled tile that navigates to the set page. */

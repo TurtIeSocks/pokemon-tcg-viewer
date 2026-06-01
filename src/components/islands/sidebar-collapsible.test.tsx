@@ -5,7 +5,7 @@ import {
 	RouterProvider,
 } from "@tanstack/react-router";
 import { render, screen } from "@testing-library/react";
-import type { NavTree } from "../../server/nav-tree";
+import type { NavTree } from "../../lib/nav-tree";
 import { SidebarCollapsible } from "./sidebar-collapsible";
 
 const tree: NavTree = [

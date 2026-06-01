@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { NavTree } from "../../server/nav-tree";
+import type { NavTree } from "../../lib/nav-tree";
 
 interface SidebarNavProps {
 	tree: NavTree;

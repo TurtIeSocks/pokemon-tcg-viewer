@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
-import type { NavSeries, NavTree } from "../../server/nav-tree";
+import type { NavSeries, NavTree } from "../../lib/nav-tree";
 
 interface SidebarCollapsibleProps {
 	tree: NavTree;
