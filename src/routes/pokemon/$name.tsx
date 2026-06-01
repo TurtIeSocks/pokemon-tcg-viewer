@@ -31,7 +31,11 @@ export const Route = createFileRoute("/pokemon/$name")({
 		const list = await getPokemonListCached();
 		const dex = dexByName(list, params.name);
 		if (dex === null) throw notFound();
-		const all = await queryCorpusServer({ dexNumber: dex, setId: null, relevance: false });
+		const all = await queryCorpusServer({
+			dexNumber: dex,
+			setId: null,
+			relevance: false,
+		});
 		return {
 			display: titleCase(params.name),
 			dex,

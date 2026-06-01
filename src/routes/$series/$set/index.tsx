@@ -18,8 +18,8 @@ import {
 	listSearchToUrl,
 	validateListSearch,
 } from "../../../lib/list-search";
-import { queryCorpusServer } from "../../../server/corpus-server";
 import { buildSetCardSlugs } from "../../../server/card-resolve";
+import { queryCorpusServer } from "../../../server/corpus-server";
 import { findSet, getNavTreeFn } from "../../../server/nav-tree";
 import { deriveFacets } from "../../../server/set-facets";
 
@@ -33,7 +33,10 @@ export const Route = createFileRoute("/$series/$set/")({
 
 		const all = await queryCorpusServer({ setId: set.id, relevance: false });
 		const slugs = buildSetCardSlugs(all);
-		const cards = all.map((c) => ({ ...c, slug: slugs.slugById.get(c.id) ?? c.id }));
+		const cards = all.map((c) => ({
+			...c,
+			slug: slugs.slugById.get(c.id) ?? c.id,
+		}));
 		return { set, cards, facets: deriveFacets(all) };
 	},
 	head: ({ loaderData }) => ({

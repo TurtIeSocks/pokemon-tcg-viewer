@@ -1,6 +1,5 @@
 import { gunzipSync } from "node:zlib";
-import { apiBase, fetchAllSets } from "./card-data";
-import type { PokemonSet } from "./card-mappers";
+import type { HoloCardData } from "../components/holo-card";
 import {
 	buildIndex,
 	type CorpusIndex,
@@ -8,7 +7,8 @@ import {
 	queryCorpus,
 } from "../store/corpus/corpus-engine";
 import type { CorpusCard } from "../store/corpus/corpus-types";
-import type { HoloCardData } from "../components/holo-card";
+import { apiBase, fetchAllSets } from "./card-data";
+import type { PokemonSet } from "./card-mappers";
 
 /** Gunzip + parse a gzipped CorpusCard[] blob (server-side; node:zlib). */
 export function decodeCorpusGz(gz: ArrayBuffer): CorpusCard[] {
@@ -49,7 +49,9 @@ function getServerCorpus(): Promise<ServerCorpus> {
 }
 
 /** Query the server-side corpus. Returns the full sorted match list. */
-export async function queryCorpusServer(q: CorpusQuery): Promise<HoloCardData[]> {
+export async function queryCorpusServer(
+	q: CorpusQuery,
+): Promise<HoloCardData[]> {
 	const { index, setsById } = await getServerCorpus();
 	return queryCorpus(index, q, setsById);
 }
