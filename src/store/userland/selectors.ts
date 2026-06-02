@@ -12,7 +12,8 @@ import {
 	type SortKey,
 	sortCardRows,
 } from "./card-rows";
-import type { CollectionItem } from "./types";
+import { computeGoalProgress, type GoalProgress } from "./goal-progress";
+import type { CollectionItem, Goal } from "./types";
 import { loadUserland, useUserland } from "./userland-store";
 
 // --- Pure helpers (unit-tested) ---
@@ -120,4 +121,21 @@ export function useOwnedCardRows(key: SortKey, dir: SortDir): CardRow[] {
 			dir,
 		);
 	}, [items, index, sets, key, dir]);
+}
+
+export function useGoalProgress(goal: Goal): GoalProgress | null {
+	useEnsureUserland();
+	const items = useUserland((s) => s.items);
+	const index = useCorpusRuntime((s) => s.index);
+	const sets = useStore((s) => s.sets);
+	return useMemo(() => {
+		if (!index || !sets) return null;
+		const owned = new Set(Object.values(items).map((i) => i.cardId));
+		return computeGoalProgress(
+			goal,
+			owned,
+			index,
+			new Map(sets.map((s) => [s.id, s])),
+		);
+	}, [goal, items, index, sets]);
 }
