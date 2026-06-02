@@ -138,7 +138,7 @@ function SetPageInner({
 							{active ? "Done selecting" : "Select cards"}
 						</button>
 						<BulkAddMenu
-							cardIds={cards.map((c: HoloCardData & { slug: string }) => c.id)}
+							cardIds={cards.map((c: HoloCardData) => c.id)}
 							ruleQuery={toSerializedQuery(search, { setId: set.id })}
 							selectedCardIds={active ? [...selected] : undefined}
 						/>

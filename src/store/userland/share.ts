@@ -44,6 +44,7 @@ function bestCopy(copies: CollectionItem[]): CollectionItem | undefined {
 	return copies.reduce((a, b) => (a.createdAt <= b.createdAt ? a : b));
 }
 
+/** Builds a serialisable snapshot of a binder's cards for URL sharing. */
 export function buildSnapshot(input: BuildSnapshotInput): BinderSnapshot {
 	const {
 		binder,
@@ -119,12 +120,14 @@ function fromBase64Url(s: string): Uint8Array {
 	return new Uint8Array(Buffer.from(b64, "base64"));
 }
 
+/** Deflate-compresses and base64url-encodes a snapshot for embedding in a URL hash. */
 export function encodeSnapshot(s: BinderSnapshot): string {
 	const json = JSON.stringify(s);
 	const compressed = deflateSync(strToU8(json));
 	return toBase64Url(compressed);
 }
 
+/** Type guard: returns true only when `v` is a structurally valid {@link BinderSnapshot}. */
 export function isValidSnapshot(v: unknown): v is BinderSnapshot {
 	if (typeof v !== "object" || v === null) return false;
 	const o = v as Record<string, unknown>;
@@ -132,7 +135,10 @@ export function isValidSnapshot(v: unknown): v is BinderSnapshot {
 	if (typeof o.name !== "string") return false;
 	if (o.scope !== "all" && o.scope !== "owned" && o.scope !== "needed")
 		return false;
+	if (typeof o.sharedAt !== "number" || !Number.isFinite(o.sharedAt))
+		return false;
 	if (!Array.isArray(o.cards)) return false;
+	if (o.cards.length > 50_000) return false;
 	for (const c of o.cards) {
 		if (typeof c !== "object" || c === null) return false;
 		const card = c as Record<string, unknown>;
@@ -142,7 +148,9 @@ export function isValidSnapshot(v: unknown): v is BinderSnapshot {
 	return true;
 }
 
+/** Decodes a base64url + deflate-encoded string back into a {@link BinderSnapshot}; throws on invalid input. */
 export function decodeSnapshot(encoded: string): BinderSnapshot {
+	if (encoded.length > 100_000) throw new Error("Invalid binder snapshot");
 	try {
 		const compressed = fromBase64Url(encoded);
 		const json = strFromU8(inflateSync(compressed));

@@ -24,6 +24,32 @@ import {
 import { BinderFormDialog } from "./binder-form-dialog";
 import { ShareDialog } from "./share-dialog";
 
+interface RemovableChipProps {
+	/** Display text for the chip. */
+	label: string;
+	/** Called when the remove button is clicked. */
+	onRemove: () => void;
+	/** Accessible label for the remove button (e.g. "Remove rule Foo"). */
+	removeLabel: string;
+}
+
+/** Pill chip with an inline × remove button; used for rule and manual-card chips. */
+function RemovableChip({ label, onRemove, removeLabel }: RemovableChipProps) {
+	return (
+		<span className="inline-flex items-center gap-1 rounded-full border bg-secondary px-3 py-1 text-sm">
+			{label}
+			<button
+				type="button"
+				aria-label={removeLabel}
+				className="ml-1 text-muted-foreground hover:text-destructive leading-none"
+				onClick={onRemove}
+			>
+				<span aria-hidden="true">×</span>
+			</button>
+		</span>
+	);
+}
+
 /** Props for {@link BinderDetail}. */
 interface BinderDetailProps {
 	/** The binder to display and manage. */
@@ -156,22 +182,12 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 								dexName: dexNameResolver,
 							});
 							return (
-								<span
+								<RemovableChip
 									key={rule.id}
-									className="inline-flex items-center gap-1 rounded-full border bg-secondary px-3 py-1 text-sm"
-								>
-									{label}
-									<button
-										type="button"
-										aria-label={`Remove rule ${label}`}
-										className="ml-1 text-muted-foreground hover:text-destructive leading-none"
-										onClick={() =>
-											void removeRuleFromBinder(binder.id, rule.id)
-										}
-									>
-										<span aria-hidden="true">×</span>
-									</button>
-								</span>
+									label={label}
+									removeLabel={`Remove rule ${label}`}
+									onRemove={() => void removeRuleFromBinder(binder.id, rule.id)}
+								/>
 							);
 						})}
 					</div>
@@ -196,20 +212,12 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 							const card = index?.byId.get(cardId);
 							if (!card) return null;
 							return (
-								<span
+								<RemovableChip
 									key={cardId}
-									className="inline-flex items-center gap-1 rounded-full border bg-secondary px-3 py-1 text-sm"
-								>
-									{card.name}
-									<button
-										type="button"
-										aria-label={`Remove ${card.name} from binder`}
-										className="ml-1 text-muted-foreground hover:text-destructive leading-none"
-										onClick={() => void removeCardFromBinder(binder.id, cardId)}
-									>
-										<span aria-hidden="true">×</span>
-									</button>
-								</span>
+									label={card.name}
+									removeLabel={`Remove ${card.name} from binder`}
+									onRemove={() => void removeCardFromBinder(binder.id, cardId)}
+								/>
 							);
 						})}
 					</div>

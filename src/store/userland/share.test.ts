@@ -366,3 +366,72 @@ describe("decodeSnapshot — malformed input", () => {
 		).toBe(true);
 	});
 });
+
+// ---------------------------------------------------------------------------
+// Security hardening
+// ---------------------------------------------------------------------------
+
+describe("decodeSnapshot — security hardening", () => {
+	it("throws on an over-long encoded string (> 100_000 chars)", () => {
+		const longString = "a".repeat(100_001);
+		expect(() => decodeSnapshot(longString)).toThrow("Invalid binder snapshot");
+	});
+
+	it("isValidSnapshot rejects non-numeric sharedAt", () => {
+		expect(
+			isValidSnapshot({
+				v: 1,
+				name: "n",
+				description: null,
+				sharedAt: "not-a-number",
+				scope: "all",
+				cards: [],
+			}),
+		).toBe(false);
+	});
+
+	it("isValidSnapshot rejects Infinity sharedAt", () => {
+		expect(
+			isValidSnapshot({
+				v: 1,
+				name: "n",
+				description: null,
+				sharedAt: Number.POSITIVE_INFINITY,
+				scope: "all",
+				cards: [],
+			}),
+		).toBe(false);
+	});
+
+	it("isValidSnapshot rejects cards array over the 50_000 cap", () => {
+		expect(
+			isValidSnapshot({
+				v: 1,
+				name: "n",
+				description: null,
+				sharedAt: 0,
+				scope: "all",
+				cards: Array.from({ length: 50_001 }, (_, i) => ({
+					cardId: `c${i}`,
+					owned: false,
+				})),
+			}),
+		).toBe(false);
+	});
+
+	it("isValidSnapshot accepts cards array exactly at the 50_000 cap", () => {
+		expect(
+			isValidSnapshot({
+				v: 1,
+				name: "n",
+				description: null,
+				sharedAt: 0,
+				scope: "all",
+				cards: Array.from({ length: 50_000 }, (_, i) => ({
+					cardId: `c${i}`,
+					owned: false,
+				})),
+			}),
+		).toBe(true);
+	});
+});

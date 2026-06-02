@@ -28,6 +28,7 @@ const VAULT_CHILDREN: VaultChild[] = [
 	{ label: "Binders", to: "/vault/binders" },
 ];
 
+/** Collapsible sidebar section linking to the Vault sub-pages (Cards, Sets, Binders). */
 function VaultGroup({ onNavigate }: { onNavigate?: () => void }) {
 	const { pathname } = useLocation();
 	const isVaultPath = pathname.startsWith("/vault");

@@ -79,7 +79,11 @@ export function BinderFormDialog({
 	});
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<Dialog
+			key={binder?.id ?? "create"}
+			open={open}
+			onOpenChange={onOpenChange}
+		>
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>{isEdit ? "Edit Binder" : "New Binder"}</DialogTitle>
