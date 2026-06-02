@@ -11,6 +11,10 @@ import { Package } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CardGridIsland } from "../../../components/islands/card-grid-island";
+import {
+	CardSelectionProvider,
+	useCardSelection,
+} from "../../../components/islands/card-selection";
 import { PackDialog } from "../../../components/islands/pack-dialog";
 import { SearchControls } from "../../../components/islands/search-controls";
 import { BulkAddMenu } from "../../../components/vault/bulk-add-menu";
@@ -74,6 +78,48 @@ function SetPage() {
 	);
 
 	return (
+		<CardSelectionProvider>
+			<SetPageInner
+				set={set}
+				cards={cards}
+				facets={facets}
+				search={search}
+				params={params}
+				onChange={onChange}
+				slugById={slugById}
+				packOpen={packOpen}
+				setPackOpen={setPackOpen}
+			/>
+		</CardSelectionProvider>
+	);
+}
+
+interface SetPageInnerProps {
+	set: ReturnType<typeof Route.useLoaderData>["set"];
+	cards: ReturnType<typeof Route.useLoaderData>["cards"];
+	facets: ReturnType<typeof Route.useLoaderData>["facets"];
+	search: ReturnType<typeof Route.useSearch>;
+	params: ReturnType<typeof Route.useParams>;
+	onChange: (patch: Parameters<typeof listSearchToUrl>[0]) => void;
+	slugById: Map<string, string>;
+	packOpen: boolean;
+	setPackOpen: (open: boolean) => void;
+}
+
+function SetPageInner({
+	set,
+	cards,
+	facets,
+	search,
+	params,
+	onChange,
+	slugById,
+	packOpen,
+	setPackOpen,
+}: SetPageInnerProps) {
+	const { active, selected, toggleActive } = useCardSelection();
+
+	return (
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
 			<div className="mb-3 flex items-center gap-3">
 				<h1 className="text-xl font-bold">{set.name}</h1>
@@ -82,9 +128,18 @@ function SetPage() {
 				</span>
 				<ClientOnly fallback={null}>
 					<div className="ml-auto flex items-center gap-2">
+						<button
+							type="button"
+							aria-pressed={active}
+							onClick={toggleActive}
+							className="rounded border px-3 py-1.5 text-sm hover:bg-secondary"
+						>
+							{active ? "Done selecting" : "Select cards"}
+						</button>
 						<BulkAddMenu
 							cardIds={cards.map((c) => c.id)}
 							ruleQuery={toSerializedQuery(search, { setId: set.id })}
+							selectedCardIds={active ? [...selected] : undefined}
 						/>
 						<Button
 							variant="outline"

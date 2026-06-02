@@ -1,4 +1,5 @@
 import { Link, type LinkProps } from "@tanstack/react-router";
+import { Check } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { VirtuosoGrid } from "react-virtuoso";
 import {
@@ -16,6 +17,7 @@ import {
 import { useOwnedCardIdSet } from "../../store/userland/selectors";
 import { CollectionToggle } from "../collection-toggle";
 import type { HoloCardData } from "../holo-card";
+import { useCardSelection } from "./card-selection";
 import { FlipCard } from "./flip-card";
 import { HoloCardIsland } from "./holo-card-island";
 import { PokemonTimeline } from "./pokemon-timeline";
@@ -132,8 +134,16 @@ export function CardGridIsland({
 			});
 	};
 
-	const renderCard = (card: HoloCardData) => (
-		<Link {...cardHref(card)} className="block">
+	const {
+		active: selectActive,
+		selected,
+		toggle: toggleCard,
+	} = useCardSelection();
+
+	const renderCard = (card: HoloCardData) => {
+		const isSelected = selected.has(card.id);
+
+		const cardContent = (
 			<FlipCard imageUrl={card.imageUrlSmall ?? card.imageUrl}>
 				<HoloCardIsland
 					imageUrl={card.imageUrl}
@@ -146,11 +156,45 @@ export function CardGridIsland({
 					series={card.setSeries}
 					variants={card.variants}
 					cardNumber={card.cardNumber}
-					hoverOverlay={<CollectionToggle card={card} />}
+					hoverOverlay={
+						selectActive ? undefined : <CollectionToggle card={card} />
+					}
 				/>
+				{selectActive && (
+					<div
+						aria-hidden="true"
+						className={`absolute inset-0 rounded-lg transition-opacity ${isSelected ? "bg-primary/40 opacity-100" : "opacity-0"}`}
+					>
+						{isSelected && (
+							<div className="flex h-full items-center justify-center">
+								<Check className="size-10 text-white drop-shadow" />
+							</div>
+						)}
+					</div>
+				)}
 			</FlipCard>
-		</Link>
-	);
+		);
+
+		if (selectActive) {
+			return (
+				<button
+					type="button"
+					className="block w-full cursor-pointer"
+					aria-pressed={isSelected}
+					aria-label={`${isSelected ? "Deselect" : "Select"} ${card.name}`}
+					onClick={() => toggleCard(card.id)}
+				>
+					{cardContent}
+				</button>
+			);
+		}
+
+		return (
+			<Link {...cardHref(card)} className="block">
+				{cardContent}
+			</Link>
+		);
+	};
 
 	if (search.view === "timeline") {
 		return (
