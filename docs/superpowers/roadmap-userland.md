@@ -85,7 +85,9 @@ Layers 3–8 are largely independent once 1 and 2 land; reorder by appetite. Lay
 
 **Open questions:** target-picker UX (search/add from anywhere); goal page layout (per-target cards reusing the set-grid overlay style); overall-progress definition surfaced to the user; master-set vs base-set counting for set/series targets (variants); goal cover art / ordering; whether goals are shareable later.
 
-## Layer 6 — Bulk add `[ ]`
+## Layer 6 — Bulk add `[x]`
+
+> Implemented + verified 2026-06-02. "Add all" menu on set/series/search pages → collection (skip-owned) or a goal (set/series target, or capped card targets for search). tsc/biome/316 tests/build/browser-smoke. PR pending.
 
 **Adds:** "add all" from a search result, a set, or a series → into the collection and/or a goal in one action.
 
