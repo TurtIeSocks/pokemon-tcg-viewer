@@ -12,10 +12,13 @@ import { GoalFormDialog } from "./goal-form-dialog";
 import { GoalTargetRow } from "./goal-target-row";
 import { TargetPicker } from "./target-picker";
 
+/** Props for {@link GoalDetail}. */
 interface GoalDetailProps {
+	/** The goal to display and manage in full detail. */
 	goal: Goal;
 }
 
+/** Full-page goal view with progress summary, per-target rows, edit/delete actions, and target picker. */
 export function GoalDetail({ goal }: GoalDetailProps) {
 	const navigate = useNavigate();
 	const [editOpen, setEditOpen] = useState(false);

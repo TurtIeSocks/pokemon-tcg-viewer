@@ -3,6 +3,7 @@
 /** Raw (ungraded) condition, TCGplayer scale. */
 export type CardCondition = "NM" | "LP" | "MP" | "HP" | "DMG";
 
+/** Third-party grading label for a physical copy. */
 export interface CardGrading {
 	company: string; // "PSA" | "BGS" | "CGC" | "TAG" | "SGC" | … (UI offers a common set)
 	grade: number; // e.g. 9.5, 10
@@ -38,11 +39,13 @@ export type CopyPatch = Partial<
 	EditableCopyFields & Pick<CollectionItem, "isPrimary">
 >;
 
+/** Discriminated union identifying what a goal tracks — a set, a series, or a single card. */
 export type GoalTarget =
 	| { kind: "set"; setId: string }
 	| { kind: "series"; series: string }
 	| { kind: "card"; cardId: string };
 
+/** A user-defined collection goal with one or more targets. */
 export interface Goal {
 	id: string;
 	name: string;
@@ -59,6 +62,7 @@ export type NewGoal = {
 	targets?: GoalTarget[];
 };
 
+/** update() patch for a goal; omitted keys are left untouched. */
 export type GoalPatch = Partial<Pick<Goal, "name" | "description" | "targets">>;
 
 /** Import/export envelope. */

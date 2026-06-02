@@ -21,6 +21,7 @@ import type { CollectionItem, Goal, NewCollectionItem, NewGoal } from "./types";
 const collectionStore = createStore("ptcg-collection", "items");
 const goalsStore = createStore("ptcg-goals", "goals");
 
+/** Assign id, createdAt, and acquiredAt defaults; null-fill optional fields. */
 function fillItem(input: NewCollectionItem): CollectionItem {
 	const now = Date.now();
 	return {
@@ -36,6 +37,7 @@ function fillItem(input: NewCollectionItem): CollectionItem {
 	};
 }
 
+/** Assign id, createdAt/updatedAt defaults, and fill optional fields. */
 function fillGoal(input: NewGoal): Goal {
 	const now = Date.now();
 	return {
@@ -48,6 +50,7 @@ function fillGoal(input: NewGoal): Goal {
 	};
 }
 
+/** Create an IndexedDB-backed GoalsRepo; uses the default goals store unless overridden (tests). */
 export function createIdbGoalsRepo(store: UseStore = goalsStore): GoalsRepo {
 	return {
 		async list() {
@@ -73,6 +76,7 @@ export function createIdbGoalsRepo(store: UseStore = goalsStore): GoalsRepo {
 	};
 }
 
+/** Create a BackupRepo that delegates to the provided collection + goals repos. */
 function createIdbBackupRepo(
 	collection: CollectionRepo,
 	goals: GoalsRepo,
@@ -105,6 +109,7 @@ function createIdbBackupRepo(
 	};
 }
 
+/** Wire all three IDB-backed repos into a UserlandRepos bundle. */
 export function createIdbRepos(): UserlandRepos {
 	const collection = createIdbCollectionRepo();
 	const goals = createIdbGoalsRepo();
@@ -114,11 +119,13 @@ export function createIdbRepos(): UserlandRepos {
 
 // The ONE swap point. Today: IDB. Later: choose by auth/config.
 let repos: UserlandRepos | null = null;
+/** Lazily initialise and return the singleton IDB repo bundle. */
 export function getRepos(): UserlandRepos {
 	if (!repos) repos = createIdbRepos();
 	return repos;
 }
 
+/** Create an IndexedDB-backed CollectionRepo; uses the default collection store unless overridden (tests). */
 export function createIdbCollectionRepo(
 	store: UseStore = collectionStore,
 ): CollectionRepo {

@@ -22,13 +22,19 @@ const goalFormSchema = z.object({
 	description: z.string(),
 });
 
+/** Props for {@link GoalFormDialog}. */
 interface GoalFormDialogProps {
+	/** Whether the dialog is open. */
 	open: boolean;
+	/** Called to request open-state change; caller owns the state. */
 	onOpenChange: (open: boolean) => void;
+	/** When provided the dialog operates in edit mode; omit for create mode. */
 	goal?: Goal;
+	/** Optional callback invoked with the created or updated goal after a successful save. */
 	onSaved?: (goal: Goal) => void;
 }
 
+/** Dialog form for creating a new goal or editing an existing one's name/description. */
 export function GoalFormDialog({
 	open,
 	onOpenChange,

@@ -3,6 +3,7 @@ import { downloadSnapshot } from "../../store/userland/backup";
 import { exportUserData } from "../../store/userland/userland-store";
 import { ImportDialog } from "./import-dialog";
 
+/** Toolbar with Export-backup and Import-backup actions; import opens a dialog for file selection. */
 export function VaultBackupControls() {
 	const [importOpen, setImportOpen] = useState(false);
 

@@ -5,10 +5,13 @@ import { ProgressBar } from "@/components/ui/progress-bar";
 import { useGoalProgress } from "../../store/userland/selectors";
 import type { Goal } from "../../store/userland/types";
 
+/** Props for {@link GoalCard}. */
 interface GoalCardProps {
+	/** Goal to display in summary form. */
 	goal: Goal;
 }
 
+/** Summary card linking to a goal's detail page; shows target count and overall progress bar. */
 export function GoalCard({ goal }: GoalCardProps) {
 	const progress = useGoalProgress(goal);
 	return (

@@ -13,12 +13,17 @@ import { useStore } from "../../store";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
 import { addGoalTargets } from "../../store/userland/userland-store";
 
+/** Props for {@link TargetPicker}. */
 interface TargetPickerProps {
+	/** ID of the goal that receives the newly picked targets. */
 	goalId: string;
+	/** Whether the command dialog is open. */
 	open: boolean;
+	/** Called to request open-state change; caller owns the state. */
 	onOpenChange: (open: boolean) => void;
 }
 
+/** Command-palette dialog for searching sets, series, and cards to add as goal targets. Card results only shown after 2+ characters. */
 export function TargetPicker({
 	goalId,
 	open,

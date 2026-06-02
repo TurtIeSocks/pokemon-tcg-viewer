@@ -8,11 +8,15 @@ import {
 import { CopyEditForm } from "./copy-edit-form";
 import { dayMsToInput } from "./copy-form-mapping";
 
+/** Props for {@link CopyRow}. */
 interface CopyRowProps {
+	/** The individual collection item this row represents. */
 	item: CollectionItem;
+	/** Optional known variant strings for this card; forwarded to CopyEditForm. */
 	variants?: string[];
 }
 
+/** Returns true if any optional field on the item is non-null; used to gate the delete confirmation prompt. */
 function hasNonNullOptional(item: CollectionItem): boolean {
 	return (
 		item.pricePaid != null ||
@@ -23,6 +27,7 @@ function hasNonNullOptional(item: CollectionItem): boolean {
 	);
 }
 
+/** Collapsible row showing a copy summary with expand-to-edit, set-primary, and delete actions. */
 export function CopyRow({ item, variants }: CopyRowProps) {
 	const [expanded, setExpanded] = useState(false);
 

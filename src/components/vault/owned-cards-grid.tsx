@@ -13,6 +13,7 @@ import {
 } from "../ui/select";
 import { OwnedCardTile } from "./owned-card-tile";
 
+/** Sortable column options shown in the sort dropdown. */
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 	{ value: "set", label: "Set & number" },
 	{ value: "acquired", label: "Date acquired" },
@@ -20,6 +21,7 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 	{ value: "year", label: "Year released" },
 ];
 
+/** Sortable grid of all cards the user owns at least one copy of; empty-state handled inline. */
 export function OwnedCardsGrid() {
 	useEnsureCorpus();
 	const [key, setKey] = useState<SortKey>("set");

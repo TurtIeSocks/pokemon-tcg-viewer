@@ -1,10 +1,15 @@
 // src/store/userland/backup.ts
 import type { UserDataSnapshot } from "./types";
 
+/** Type guard: true when v is a non-null object. */
 function isRecord(v: unknown): v is Record<string, unknown> {
 	return typeof v === "object" && v !== null;
 }
 
+/**
+ * Type guard: validates that v has the minimum shape of a UserDataSnapshot
+ * (schemaVersion=1, collection/goals arrays with required id fields).
+ */
 export function isValidSnapshot(v: unknown): v is UserDataSnapshot {
 	if (!isRecord(v)) return false;
 	if (v.schemaVersion !== 1) return false;
@@ -20,6 +25,7 @@ export function isValidSnapshot(v: unknown): v is UserDataSnapshot {
 	return itemsOk && goalsOk;
 }
 
+/** Parse and validate a JSON string as a UserDataSnapshot; throws a user-readable error on failure. */
 export function parseSnapshot(json: string): UserDataSnapshot {
 	let data: unknown;
 	try {
@@ -33,6 +39,7 @@ export function parseSnapshot(json: string): UserDataSnapshot {
 	return data;
 }
 
+/** Build the suggested download filename using the current date (ISO YYYY-MM-DD suffix). */
 export function snapshotFilename(now: Date): string {
 	return `pokemon-tcg-collection-${now.toISOString().slice(0, 10)}.json`;
 }

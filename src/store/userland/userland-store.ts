@@ -13,10 +13,15 @@ import type {
 	UserDataSnapshot,
 } from "./types";
 
+/** Shape of the Zustand userland store slice. */
 interface UserlandState {
+	/** All owned copies, keyed by copy id. */
 	items: Record<string, CollectionItem>;
+	/** All user goals, keyed by goal id. */
 	goals: Record<string, Goal>;
+	/** True once the first load from the repo has completed. */
 	hydrated: boolean;
+	/** True while the initial load is in flight. */
 	loading: boolean;
 }
 
@@ -27,19 +32,23 @@ const initial: UserlandState = {
 	loading: false,
 };
 
+/** Zustand store holding all user-owned copies and goals. Subscribe via selectors. */
 export const useUserland = create<UserlandState>(() => ({ ...initial }));
 
 // --- Repo wiring (the swap point; overridable in tests) ---
 let repos: UserlandRepos | null = null;
+/** Return the active repo bundle, lazily initialising the IDB default. */
 export function activeRepos(): UserlandRepos {
 	if (!repos) repos = getRepos();
 	return repos;
 }
+/** Override the active repo bundle (pass null to reset to the IDB default). Used in tests. */
 export function setUserlandRepos(r: UserlandRepos | null): void {
 	repos = r;
 }
 
 // --- Hydration ---
+/** Load all items and goals from the repo and index them by id. */
 async function fetchAll(
 	r: UserlandRepos,
 ): Promise<Pick<UserlandState, "items" | "goals">> {
@@ -55,6 +64,10 @@ async function fetchAll(
 }
 
 let inFlight: Promise<void> | null = null;
+/**
+ * Hydrate the store from the repo. Idempotent — no-ops if already hydrated;
+ * deduplicates concurrent calls by returning the same in-flight promise.
+ */
 export function loadUserland(): Promise<void> {
 	if (useUserland.getState().hydrated) return Promise.resolve();
 	if (inFlight) return inFlight;
@@ -75,6 +88,7 @@ export function resetUserlandForTests(): void {
 }
 
 // --- Collection actions ---
+/** Persist a new copy for the given card and update the store. */
 export async function addCopy(
 	cardId: string,
 	fields: Partial<EditableCopyFields> = {},
@@ -84,6 +98,7 @@ export async function addCopy(
 	return item;
 }
 
+/** Persist a patch to an existing copy and update the store optimistically. */
 export async function updateCopy(id: string, patch: CopyPatch): Promise<void> {
 	await activeRepos().collection.update(id, patch);
 	useUserland.setState((s) => {
@@ -93,6 +108,7 @@ export async function updateCopy(id: string, patch: CopyPatch): Promise<void> {
 	});
 }
 
+/** Delete a single copy by id from the repo and the store. */
 export async function removeCopy(id: string): Promise<void> {
 	await activeRepos().collection.remove(id);
 	useUserland.setState((s) => {
@@ -102,6 +118,7 @@ export async function removeCopy(id: string): Promise<void> {
 	});
 }
 
+/** Delete every copy owned for a given cardId in one batched operation. */
 export async function removeAllCopiesOfCard(cardId: string): Promise<void> {
 	const ids = Object.values(useUserland.getState().items)
 		.filter((i) => i.cardId === cardId)
@@ -115,6 +132,7 @@ export async function removeAllCopiesOfCard(cardId: string): Promise<void> {
 	});
 }
 
+/** Persist one copy per cardId in a single write; useful for bulk import flows. */
 export async function bulkAddCopies(
 	cardIds: string[],
 	fields: Partial<EditableCopyFields> = {},
@@ -129,11 +147,16 @@ export async function bulkAddCopies(
 	});
 }
 
+/** Erase the entire collection from storage and the store. */
 export async function clearCollection(): Promise<void> {
 	await activeRepos().collection.clear();
 	useUserland.setState({ items: {} });
 }
 
+/**
+ * Mark `copyId` as the primary copy for `cardId`; clears isPrimary on all other
+ * copies of that card atomically (parallel repo writes, then a single state update).
+ */
 export async function setPrimaryCopy(
 	cardId: string,
 	copyId: string,
@@ -159,6 +182,7 @@ export async function setPrimaryCopy(
 }
 
 // --- Goal actions ---
+/** Deep-equality check for two GoalTargets (kind + discriminant field). */
 function sameTarget(a: GoalTarget, b: GoalTarget): boolean {
 	if (a.kind !== b.kind) return false;
 	if (a.kind === "set" && b.kind === "set") return a.setId === b.setId;
@@ -167,18 +191,21 @@ function sameTarget(a: GoalTarget, b: GoalTarget): boolean {
 	return false;
 }
 
+/** Return targets with duplicates removed (preserves first occurrence). */
 function dedupeTargets(targets: GoalTarget[]): GoalTarget[] {
 	const out: GoalTarget[] = [];
 	for (const t of targets) if (!out.some((o) => sameTarget(o, t))) out.push(t);
 	return out;
 }
 
+/** Persist a new goal and add it to the store. */
 export async function createGoal(input: NewGoal): Promise<Goal> {
 	const g = await activeRepos().goals.create(input);
 	useUserland.setState((s) => ({ goals: { ...s.goals, [g.id]: g } }));
 	return g;
 }
 
+/** Persist a patch to an existing goal; updates updatedAt in both storage and store. */
 export async function updateGoal(id: string, patch: GoalPatch): Promise<void> {
 	await activeRepos().goals.update(id, patch);
 	useUserland.setState((s) => {
@@ -193,6 +220,7 @@ export async function updateGoal(id: string, patch: GoalPatch): Promise<void> {
 	});
 }
 
+/** Delete a goal by id from storage and the store. */
 export async function removeGoal(id: string): Promise<void> {
 	await activeRepos().goals.remove(id);
 	useUserland.setState((s) => {
@@ -202,6 +230,7 @@ export async function removeGoal(id: string): Promise<void> {
 	});
 }
 
+/** Append targets to a goal, deduplicating against existing ones. */
 export async function addGoalTargets(
 	id: string,
 	targets: GoalTarget[],
@@ -211,6 +240,7 @@ export async function addGoalTargets(
 	await updateGoal(id, { targets: dedupeTargets([...g.targets, ...targets]) });
 }
 
+/** Remove a single target from a goal by deep equality. */
 export async function removeGoalTarget(
 	id: string,
 	target: GoalTarget,
@@ -223,10 +253,15 @@ export async function removeGoalTarget(
 }
 
 // --- Import / export actions ---
+/** Produce a full snapshot of collection + goals via the backup repo. */
 export function exportUserData(): Promise<UserDataSnapshot> {
 	return activeRepos().backup.exportAll();
 }
 
+/**
+ * Write a snapshot to storage then force-refresh the store.
+ * Bypasses the hydrated guard so the store reflects the import immediately.
+ */
 export async function importUserData(
 	snapshot: UserDataSnapshot,
 	mode: "replace" | "merge",

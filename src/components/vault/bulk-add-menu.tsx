@@ -19,12 +19,17 @@ import {
 } from "../ui/dropdown-menu";
 import { partitionUnowned } from "./bulk-add";
 
+/** Props for {@link BulkAddMenu}. */
 interface BulkAddMenuProps {
+	/** Card IDs eligible for bulk-add; already-owned cards are filtered and counted as skipped. */
 	cardIds: string[];
+	/** When provided, used as the sole goal target instead of mapping each cardId to a card target. */
 	goalTarget?: GoalTarget;
+	/** Trigger button label; defaults to "Add all". */
 	label?: string;
 }
 
+/** Dropdown menu for adding a batch of cards to the collection or to a specific goal. */
 export function BulkAddMenu({ cardIds, goalTarget, label }: BulkAddMenuProps) {
 	const ownedSet = useOwnedCardIdSet();
 	const goals = useUserland((s) => s.goals);

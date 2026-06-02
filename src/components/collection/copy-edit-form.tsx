@@ -24,11 +24,41 @@ function fromSelectVal(v: string) {
 	return v === NONE ? "" : v;
 }
 
+/** Returns true when a TanStack Form field has been touched and is currently invalid. */
+function fieldIsInvalid(field: {
+	state: { meta: { isTouched: boolean; isValid: boolean } };
+}): boolean {
+	return field.state.meta.isTouched && !field.state.meta.isValid;
+}
+
+/** Renders the first error message for a field when the field is invalid; renders nothing otherwise. */
+function FieldError({
+	field,
+}: {
+	field: {
+		state: {
+			meta: { isTouched: boolean; isValid: boolean; errors: unknown[] };
+		};
+	};
+}) {
+	if (!fieldIsInvalid(field) || field.state.meta.errors.length === 0)
+		return null;
+	return (
+		<p className="text-sm text-destructive">
+			{String(field.state.meta.errors[0])}
+		</p>
+	);
+}
+
+/** Props for {@link CopyEditForm}. */
 interface CopyEditFormProps {
+	/** The collection item being edited; used both as initial values and as the patch target. */
 	item: CollectionItem;
+	/** Optional list of known variant strings for this card (from the corpus). */
 	variants?: string[];
 }
 
+/** Inline form for editing a single copy's metadata; each field auto-saves on blur. */
 export function CopyEditForm({ item, variants }: CopyEditFormProps) {
 	const form = useForm({
 		defaultValues: itemToForm(item),
@@ -54,28 +84,20 @@ export function CopyEditForm({ item, variants }: CopyEditFormProps) {
 					},
 				}}
 				// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
-				children={(field) => {
-					const isInvalid =
-						field.state.meta.isTouched && !field.state.meta.isValid;
-					return (
-						<div>
-							<Label htmlFor={field.name}>Acquired date</Label>
-							<Input
-								id={field.name}
-								type="date"
-								aria-invalid={isInvalid}
-								value={field.state.value}
-								onBlur={field.handleBlur}
-								onChange={(e) => field.handleChange(e.target.value)}
-							/>
-							{isInvalid && field.state.meta.errors.length > 0 && (
-								<p className="text-sm text-destructive">
-									{String(field.state.meta.errors[0])}
-								</p>
-							)}
-						</div>
-					);
-				}}
+				children={(field) => (
+					<div>
+						<Label htmlFor={field.name}>Acquired date</Label>
+						<Input
+							id={field.name}
+							type="date"
+							aria-invalid={fieldIsInvalid(field)}
+							value={field.state.value}
+							onBlur={field.handleBlur}
+							onChange={(e) => field.handleChange(e.target.value)}
+						/>
+						<FieldError field={field} />
+					</div>
+				)}
 			/>
 
 			{/* Price paid */}
@@ -103,29 +125,21 @@ export function CopyEditForm({ item, variants }: CopyEditFormProps) {
 					},
 				}}
 				// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
-				children={(field) => {
-					const isInvalid =
-						field.state.meta.isTouched && !field.state.meta.isValid;
-					return (
-						<div>
-							<Label htmlFor={field.name}>Price paid</Label>
-							<Input
-								id={field.name}
-								type="number"
-								aria-label="Price paid"
-								aria-invalid={isInvalid}
-								value={field.state.value}
-								onBlur={field.handleBlur}
-								onChange={(e) => field.handleChange(e.target.value)}
-							/>
-							{isInvalid && field.state.meta.errors.length > 0 && (
-								<p className="text-sm text-destructive">
-									{String(field.state.meta.errors[0])}
-								</p>
-							)}
-						</div>
-					);
-				}}
+				children={(field) => (
+					<div>
+						<Label htmlFor={field.name}>Price paid</Label>
+						<Input
+							id={field.name}
+							type="number"
+							aria-label="Price paid"
+							aria-invalid={fieldIsInvalid(field)}
+							value={field.state.value}
+							onBlur={field.handleBlur}
+							onChange={(e) => field.handleChange(e.target.value)}
+						/>
+						<FieldError field={field} />
+					</div>
+				)}
 			/>
 
 			{/* Variant */}
@@ -146,39 +160,35 @@ export function CopyEditForm({ item, variants }: CopyEditFormProps) {
 					},
 				}}
 				// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
-				children={(field) => {
-					const isInvalid =
-						field.state.meta.isTouched && !field.state.meta.isValid;
-					return (
-						<div>
-							<Label htmlFor={field.name}>Variant</Label>
-							<Select
-								value={toSelectVal(field.state.value)}
-								onValueChange={(v) => {
-									const val = fromSelectVal(v);
-									field.handleChange(val);
-									void updateCopy(item.id, formFieldToPatch("variant", val));
-								}}
+				children={(field) => (
+					<div>
+						<Label htmlFor={field.name}>Variant</Label>
+						<Select
+							value={toSelectVal(field.state.value)}
+							onValueChange={(v) => {
+								const val = fromSelectVal(v);
+								field.handleChange(val);
+								void updateCopy(item.id, formFieldToPatch("variant", val));
+							}}
+						>
+							<SelectTrigger
+								id={field.name}
+								aria-invalid={fieldIsInvalid(field)}
+								onBlur={field.handleBlur}
 							>
-								<SelectTrigger
-									id={field.name}
-									aria-invalid={isInvalid}
-									onBlur={field.handleBlur}
-								>
-									<SelectValue placeholder="Select variant..." />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value={NONE}>Unspecified</SelectItem>
-									{(variants ?? []).map((v) => (
-										<SelectItem key={v} value={v}>
-											{v}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
-					);
-				}}
+								<SelectValue placeholder="Select variant..." />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value={NONE}>Unspecified</SelectItem>
+								{(variants ?? []).map((v) => (
+									<SelectItem key={v} value={v}>
+										{v}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+				)}
 			/>
 
 			{/* State radio: raw | graded */}
@@ -233,44 +243,38 @@ export function CopyEditForm({ item, variants }: CopyEditFormProps) {
 								},
 							}}
 							// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
-							children={(field) => {
-								const isInvalid =
-									field.state.meta.isTouched && !field.state.meta.isValid;
-								return (
-									<div>
-										<Label htmlFor={field.name}>Condition</Label>
-										<Select
-											value={toSelectVal(field.state.value)}
-											onValueChange={(v) => {
-												const val = fromSelectVal(
-													v,
-												) as typeof field.state.value;
-												field.handleChange(val);
-												void updateCopy(
-													item.id,
-													formFieldToPatch("condition", val),
-												);
-											}}
+							children={(field) => (
+								<div>
+									<Label htmlFor={field.name}>Condition</Label>
+									<Select
+										value={toSelectVal(field.state.value)}
+										onValueChange={(v) => {
+											const val = fromSelectVal(v) as typeof field.state.value;
+											field.handleChange(val);
+											void updateCopy(
+												item.id,
+												formFieldToPatch("condition", val),
+											);
+										}}
+									>
+										<SelectTrigger
+											id={field.name}
+											aria-invalid={fieldIsInvalid(field)}
+											onBlur={field.handleBlur}
 										>
-											<SelectTrigger
-												id={field.name}
-												aria-invalid={isInvalid}
-												onBlur={field.handleBlur}
-											>
-												<SelectValue placeholder="Select condition..." />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectItem value={NONE}>Unspecified</SelectItem>
-												{CONDITIONS.map((c) => (
-													<SelectItem key={c} value={c}>
-														{c}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</div>
-								);
-							}}
+											<SelectValue placeholder="Select condition..." />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value={NONE}>Unspecified</SelectItem>
+											{CONDITIONS.map((c) => (
+												<SelectItem key={c} value={c}>
+													{c}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+							)}
 						/>
 					) : (
 						<>
@@ -292,48 +296,44 @@ export function CopyEditForm({ item, variants }: CopyEditFormProps) {
 									},
 								}}
 								// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
-								children={(field) => {
-									const isInvalid =
-										field.state.meta.isTouched && !field.state.meta.isValid;
-									return (
-										<div>
-											<Label htmlFor={field.name}>Grader / company</Label>
-											<Select
-												value={toSelectVal(field.state.value)}
-												onValueChange={(v) => {
-													const val = fromSelectVal(
-														v,
-													) as typeof field.state.value;
-													field.handleChange(val);
-													void updateCopy(
-														item.id,
-														formFieldToPatch("gradingCompany", val, {
-															gradingCompany: val,
-															grade: form.getFieldValue("grade"),
-														}),
-													);
-												}}
+								children={(field) => (
+									<div>
+										<Label htmlFor={field.name}>Grader / company</Label>
+										<Select
+											value={toSelectVal(field.state.value)}
+											onValueChange={(v) => {
+												const val = fromSelectVal(
+													v,
+												) as typeof field.state.value;
+												field.handleChange(val);
+												void updateCopy(
+													item.id,
+													formFieldToPatch("gradingCompany", val, {
+														gradingCompany: val,
+														grade: form.getFieldValue("grade"),
+													}),
+												);
+											}}
+										>
+											<SelectTrigger
+												id={field.name}
+												aria-label="Grader / company"
+												aria-invalid={fieldIsInvalid(field)}
+												onBlur={field.handleBlur}
 											>
-												<SelectTrigger
-													id={field.name}
-													aria-label="Grader / company"
-													aria-invalid={isInvalid}
-													onBlur={field.handleBlur}
-												>
-													<SelectValue placeholder="Select grader..." />
-												</SelectTrigger>
-												<SelectContent>
-													<SelectItem value={NONE}>Unspecified</SelectItem>
-													{GRADERS.map((g) => (
-														<SelectItem key={g} value={g}>
-															{g}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										</div>
-									);
-								}}
+												<SelectValue placeholder="Select grader..." />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value={NONE}>Unspecified</SelectItem>
+												{GRADERS.map((g) => (
+													<SelectItem key={g} value={g}>
+														{g}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+								)}
 							/>
 
 							{/* Grade Input */}
@@ -361,28 +361,20 @@ export function CopyEditForm({ item, variants }: CopyEditFormProps) {
 									},
 								}}
 								// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
-								children={(field) => {
-									const isInvalid =
-										field.state.meta.isTouched && !field.state.meta.isValid;
-									return (
-										<div>
-											<Label htmlFor={field.name}>Grade</Label>
-											<Input
-												id={field.name}
-												type="number"
-												aria-invalid={isInvalid}
-												value={field.state.value}
-												onBlur={field.handleBlur}
-												onChange={(e) => field.handleChange(e.target.value)}
-											/>
-											{isInvalid && field.state.meta.errors.length > 0 && (
-												<p className="text-sm text-destructive">
-													{String(field.state.meta.errors[0])}
-												</p>
-											)}
-										</div>
-									);
-								}}
+								children={(field) => (
+									<div>
+										<Label htmlFor={field.name}>Grade</Label>
+										<Input
+											id={field.name}
+											type="number"
+											aria-invalid={fieldIsInvalid(field)}
+											value={field.state.value}
+											onBlur={field.handleBlur}
+											onChange={(e) => field.handleChange(e.target.value)}
+										/>
+										<FieldError field={field} />
+									</div>
+								)}
 							/>
 						</>
 					)
@@ -407,22 +399,18 @@ export function CopyEditForm({ item, variants }: CopyEditFormProps) {
 					},
 				}}
 				// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
-				children={(field) => {
-					const isInvalid =
-						field.state.meta.isTouched && !field.state.meta.isValid;
-					return (
-						<div>
-							<Label htmlFor={field.name}>Notes</Label>
-							<Textarea
-								id={field.name}
-								aria-invalid={isInvalid}
-								value={field.state.value}
-								onBlur={field.handleBlur}
-								onChange={(e) => field.handleChange(e.target.value)}
-							/>
-						</div>
-					);
-				}}
+				children={(field) => (
+					<div>
+						<Label htmlFor={field.name}>Notes</Label>
+						<Textarea
+							id={field.name}
+							aria-invalid={fieldIsInvalid(field)}
+							value={field.state.value}
+							onBlur={field.handleBlur}
+							onChange={(e) => field.handleChange(e.target.value)}
+						/>
+					</div>
+				)}
 			/>
 		</form>
 	);

@@ -6,11 +6,15 @@ import { ProgressBar } from "@/components/ui/progress-bar";
 import type { TargetProgress } from "../../store/userland/goal-progress";
 import { removeGoalTarget } from "../../store/userland/userland-store";
 
+/** Props for {@link GoalTargetRow}. */
 interface GoalTargetRowProps {
+	/** ID of the parent goal; used when removing this target. */
 	goalId: string;
+	/** Progress snapshot for a single target, including label and owned/total counts. */
 	tp: TargetProgress;
 }
 
+/** Renders an icon matching the target kind (set / series / card). */
 function KindIcon({ kind }: { kind: TargetProgress["target"]["kind"] }) {
 	if (kind === "set")
 		return <Layers className="h-4 w-4 shrink-0 text-muted-foreground" />;
@@ -19,6 +23,7 @@ function KindIcon({ kind }: { kind: TargetProgress["target"]["kind"] }) {
 	return <CreditCard className="h-4 w-4 shrink-0 text-muted-foreground" />;
 }
 
+/** Row showing a single goal target's label, progress bar, and a remove button. */
 export function GoalTargetRow({ goalId, tp }: GoalTargetRowProps) {
 	return (
 		<div className="flex items-center gap-3 py-2">
@@ -39,7 +44,9 @@ export function GoalTargetRow({ goalId, tp }: GoalTargetRowProps) {
 				aria-label={`Remove target ${tp.label}`}
 				onClick={() => void removeGoalTarget(goalId, tp.target)}
 			>
-				<span className="text-base leading-none">×</span>
+				<span aria-hidden="true" className="text-base leading-none">
+					×
+				</span>
 			</Button>
 		</div>
 	);

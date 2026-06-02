@@ -12,11 +12,15 @@ import { parseSnapshot } from "../../store/userland/backup";
 import type { UserDataSnapshot } from "../../store/userland/types";
 import { importUserData } from "../../store/userland/userland-store";
 
+/** Props for {@link ImportDialog}. */
 interface ImportDialogProps {
+	/** Whether the dialog is visible. */
 	open: boolean;
+	/** Called when the dialog requests open-state change; caller owns the state. */
 	onOpenChange: (open: boolean) => void;
 }
 
+/** Dialog for importing a JSON backup; supports merge (additive) or replace (destructive) strategies. */
 export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 	const [snapshot, setSnapshot] = useState<UserDataSnapshot | null>(null);
 	const [error, setError] = useState<string | null>(null);

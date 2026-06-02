@@ -6,11 +6,15 @@ import {
 } from "../../store/userland/userland-store";
 import { CopyRow } from "./copy-row";
 
+/** Props for {@link CopyManager}. */
 interface CopyManagerProps {
+	/** The card ID whose copies are managed. */
 	cardId: string;
+	/** Optional known variant strings for the card; forwarded to each CopyRow. */
 	variants?: string[];
 }
 
+/** Lists all owned copies of a card with add/remove-all controls and per-copy editing. */
 export function CopyManager({ cardId, variants }: CopyManagerProps) {
 	const copies = useOwnedIndex().get(cardId) ?? [];
 

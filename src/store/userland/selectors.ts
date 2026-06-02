@@ -34,6 +34,7 @@ export function useOwnedCardIdSet(): Set<string> {
 	return new Set(useOwnedIndex().keys());
 }
 
+/** Group a flat list of copies into a map keyed by cardId. */
 export function groupByCardId(
 	items: CollectionItem[],
 ): Map<string, CollectionItem[]> {
@@ -46,6 +47,10 @@ export function groupByCardId(
 	return map;
 }
 
+/**
+ * Join owned copies with corpus card data; returns one HoloCardData per distinct cardId.
+ * Cards not found in the corpus index are silently skipped.
+ */
 export function joinOwnedViews(
 	items: CollectionItem[],
 	index: CorpusIndex,
@@ -70,16 +75,19 @@ export function useEnsureUserland(): void {
 	}, []);
 }
 
+/** Hook: returns all copies grouped by cardId; triggers hydration as a side-effect. */
 export function useOwnedIndex(): Map<string, CollectionItem[]> {
 	useEnsureUserland();
 	const items = useUserland((s) => s.items);
 	return useMemo(() => groupByCardId(Object.values(items)), [items]);
 }
 
+/** Hook: true if the user owns at least one copy of the given card. */
 export function useIsOwned(cardId: string): boolean {
 	return useOwnedIndex().has(cardId);
 }
 
+/** Hook: number of copies owned for the given card (0 if none). */
 export function useOwnedCount(cardId: string): number {
 	return useOwnedIndex().get(cardId)?.length ?? 0;
 }
@@ -137,6 +145,7 @@ export function useOwnedCardRows(key: SortKey, dir: SortDir): CardRow[] {
 	}, [items, index, sets, key, dir]);
 }
 
+/** Hook: compute progress for a goal; null until corpus + sets are loaded. */
 export function useGoalProgress(goal: Goal): GoalProgress | null {
 	useEnsureUserland();
 	const items = useUserland((s) => s.items);

@@ -30,6 +30,7 @@ export function setsById(
 	return new Map((sets ?? []).map((s) => [s.id, s]));
 }
 
+/** Build the in-memory search index from a flat card list (normalised names + token arrays). */
 export function buildIndex(cards: CorpusCard[]): CorpusIndex {
 	const nameNorm = cards.map((c) => normalize(c.name));
 	const nameTokens = cards.map((c) =>
@@ -61,6 +62,10 @@ function passesFilters(card: CorpusCard, f: FilterClauses): boolean {
 	return true;
 }
 
+/**
+ * Merge a lean CorpusCard with set metadata to produce a fully-hydrated HoloCardData.
+ * Set fields fall back to setId / empty string when the set is not in the map.
+ */
 export function hydrateCard(
 	card: CorpusCard,
 	setsById: Map<string, PokemonSet>,

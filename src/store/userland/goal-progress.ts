@@ -3,17 +3,29 @@ import type { PokemonSet } from "../../server/card-mappers";
 import type { CorpusIndex } from "../corpus/corpus-engine";
 import type { Goal, GoalTarget } from "./types";
 
+/** Progress breakdown for a single GoalTarget. */
 export interface TargetProgress {
+	/** The original target descriptor. */
 	target: GoalTarget;
+	/** Human-readable label (set name, series name, or card name). */
 	label: string;
+	/** Distinct cards the user owns within this target. */
 	owned: number;
+	/** Total distinct cards in this target according to the corpus. */
 	total: number;
 }
+/** Aggregated progress for a Goal across all its targets. */
 export interface GoalProgress {
+	/** Per-target breakdowns in the same order as goal.targets. */
 	targets: TargetProgress[];
+	/** De-duplicated totals across all targets (a card in two targets counts once). */
 	overall: { owned: number; total: number };
 }
 
+/**
+ * Compute per-target and overall owned/total progress for a goal.
+ * The overall count de-duplicates cards that appear in multiple targets.
+ */
 export function computeGoalProgress(
 	goal: Goal,
 	ownedCardIds: Set<string>,

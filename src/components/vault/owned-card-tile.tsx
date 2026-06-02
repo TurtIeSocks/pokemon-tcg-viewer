@@ -3,10 +3,13 @@ import type { CardRow } from "../../store/userland/card-rows";
 import { CopyManagerDialog } from "../collection/copy-manager-dialog";
 import { HoloCardIsland } from "../islands/holo-card-island";
 
+/** Props for {@link OwnedCardTile}. */
 interface OwnedCardTileProps {
+	/** Aggregated row containing the card metadata and copy count. */
 	row: CardRow;
 }
 
+/** Clickable card tile that opens the CopyManager dialog; shows a copy-count badge when > 1. */
 export function OwnedCardTile({ row }: OwnedCardTileProps) {
 	const [open, setOpen] = useState(false);
 

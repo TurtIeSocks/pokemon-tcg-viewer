@@ -1,16 +1,19 @@
 import type { CollectionItem, CopyPatch } from "../../store/userland/types";
 import type { CopyFormValues } from "./copy-form-schema";
 
+/** Converts a UTC epoch-ms timestamp to a YYYY-MM-DD string using local time. */
 export function dayMsToInput(ms: number): string {
 	const d = new Date(ms);
 	const p = (n: number) => String(n).padStart(2, "0");
 	return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
+/** Parses a YYYY-MM-DD string to a local-midnight epoch-ms value. */
 export function inputDayToMs(s: string): number {
 	const [y, m, d] = s.split("-").map(Number);
 	return new Date(y, m - 1, d).getTime(); // local midnight
 }
 
+/** Converts a store CollectionItem into the flat string-keyed form values shape. */
 export function itemToForm(i: CollectionItem): CopyFormValues {
 	return {
 		acquiredAt: dayMsToInput(i.acquiredAt),
