@@ -3,13 +3,14 @@ import { create } from "zustand";
 import { getRepos } from "./idb-repo";
 import type { UserlandRepos } from "./repo";
 import type {
+	Binder,
+	BinderPatch,
+	BinderRule,
 	CollectionItem,
 	CopyPatch,
 	EditableCopyFields,
-	Goal,
-	GoalPatch,
-	GoalTarget,
-	NewGoal,
+	NewBinder,
+	SerializedQuery,
 	UserDataSnapshot,
 } from "./types";
 
@@ -17,8 +18,8 @@ import type {
 interface UserlandState {
 	/** All owned copies, keyed by copy id. */
 	items: Record<string, CollectionItem>;
-	/** All user goals, keyed by goal id. */
-	goals: Record<string, Goal>;
+	/** All user binders, keyed by binder id. */
+	binders: Record<string, Binder>;
 	/** True once the first load from the repo has completed. */
 	hydrated: boolean;
 	/** True while the initial load is in flight. */
@@ -27,12 +28,12 @@ interface UserlandState {
 
 const initial: UserlandState = {
 	items: {},
-	goals: {},
+	binders: {},
 	hydrated: false,
 	loading: false,
 };
 
-/** Zustand store holding all user-owned copies and goals. Subscribe via selectors. */
+/** Zustand store holding all user-owned copies and binders. Subscribe via selectors. */
 export const useUserland = create<UserlandState>(() => ({ ...initial }));
 
 // --- Repo wiring (the swap point; overridable in tests) ---
@@ -48,19 +49,19 @@ export function setUserlandRepos(r: UserlandRepos | null): void {
 }
 
 // --- Hydration ---
-/** Load all items and goals from the repo and index them by id. */
+/** Load all items and binders from the repo and index them by id. */
 async function fetchAll(
 	r: UserlandRepos,
-): Promise<Pick<UserlandState, "items" | "goals">> {
-	const [itemList, goalList] = await Promise.all([
+): Promise<Pick<UserlandState, "items" | "binders">> {
+	const [itemList, binderList] = await Promise.all([
 		r.collection.list(),
-		r.goals.list(),
+		r.binders.list(),
 	]);
 	const items: Record<string, CollectionItem> = {};
 	for (const it of itemList) items[it.id] = it;
-	const goals: Record<string, Goal> = {};
-	for (const g of goalList) goals[g.id] = g;
-	return { items, goals };
+	const binders: Record<string, Binder> = {};
+	for (const b of binderList) binders[b.id] = b;
+	return { items, binders };
 }
 
 let inFlight: Promise<void> | null = null;
@@ -73,8 +74,8 @@ export function loadUserland(): Promise<void> {
 	if (inFlight) return inFlight;
 	useUserland.setState({ loading: true });
 	inFlight = (async () => {
-		const { items, goals } = await fetchAll(activeRepos());
-		useUserland.setState({ items, goals, hydrated: true, loading: false });
+		const { items, binders } = await fetchAll(activeRepos());
+		useUserland.setState({ items, binders, hydrated: true, loading: false });
 	})().finally(() => {
 		inFlight = null;
 	});
@@ -93,7 +94,19 @@ export async function addCopy(
 	cardId: string,
 	fields: Partial<EditableCopyFields> = {},
 ): Promise<CollectionItem> {
-	const item = await activeRepos().collection.add({ cardId, ...fields });
+	// Auto-primary: first copy of this card becomes primary.
+	const existingCount = Object.values(useUserland.getState().items).filter(
+		(i) => i.cardId === cardId,
+	).length;
+	const isPrimary = existingCount === 0 ? true : undefined;
+	const item = await activeRepos().collection.add({ cardId, ...fields, ...(isPrimary !== undefined ? { isPrimary } : {}) });
+	// If repo did not persist isPrimary (fillItem doesn't), patch it now.
+	if (isPrimary && !item.isPrimary) {
+		await activeRepos().collection.update(item.id, { isPrimary: true });
+		const patched = { ...item, isPrimary: true };
+		useUserland.setState((s) => ({ items: { ...s.items, [patched.id]: patched } }));
+		return patched;
+	}
 	useUserland.setState((s) => ({ items: { ...s.items, [item.id]: item } }));
 	return item;
 }
@@ -110,12 +123,23 @@ export async function updateCopy(id: string, patch: CopyPatch): Promise<void> {
 
 /** Delete a single copy by id from the repo and the store. */
 export async function removeCopy(id: string): Promise<void> {
+	const state = useUserland.getState();
+	const copy = state.items[id];
 	await activeRepos().collection.remove(id);
 	useUserland.setState((s) => {
 		const items = { ...s.items };
 		delete items[id];
 		return { items };
 	});
+	// Promote-on-delete: if removed copy was primary, promote earliest-createdAt survivor.
+	if (copy?.isPrimary) {
+		const survivors = Object.values(useUserland.getState().items)
+			.filter((i) => i.cardId === copy.cardId)
+			.sort((a, b) => a.createdAt - b.createdAt);
+		if (survivors.length > 0) {
+			await setPrimaryCopy(copy.cardId, survivors[0].id);
+		}
+	}
 }
 
 /** Delete every copy owned for a given cardId in one batched operation. */
@@ -137,12 +161,25 @@ export async function bulkAddCopies(
 	cardIds: string[],
 	fields: Partial<EditableCopyFields> = {},
 ): Promise<void> {
+	// Determine which cardIds are not yet owned (they get isPrimary=true).
+	const existing = useUserland.getState().items;
+	const ownedCardIds = new Set(Object.values(existing).map((i) => i.cardId));
 	const created = await activeRepos().collection.bulkAdd(
 		cardIds.map((cardId) => ({ cardId, ...fields })),
 	);
+	// Patch primary flag for newly-owned cards.
+	const patched = await Promise.all(
+		created.map(async (item) => {
+			if (!ownedCardIds.has(item.cardId)) {
+				await activeRepos().collection.update(item.id, { isPrimary: true });
+				return { ...item, isPrimary: true };
+			}
+			return item;
+		}),
+	);
 	useUserland.setState((s) => {
 		const items = { ...s.items };
-		for (const it of created) items[it.id] = it;
+		for (const it of patched) items[it.id] = it;
 		return { items };
 	});
 }
@@ -181,79 +218,118 @@ export async function setPrimaryCopy(
 	});
 }
 
-// --- Goal actions ---
-/** Deep-equality check for two GoalTargets (kind + discriminant field). */
-function sameTarget(a: GoalTarget, b: GoalTarget): boolean {
-	if (a.kind !== b.kind) return false;
-	if (a.kind === "set" && b.kind === "set") return a.setId === b.setId;
-	if (a.kind === "series" && b.kind === "series") return a.series === b.series;
-	if (a.kind === "card" && b.kind === "card") return a.cardId === b.cardId;
-	return false;
+// --- Binder actions ---
+/** Persist a new binder and add it to the store. */
+export async function createBinder(input: NewBinder): Promise<Binder> {
+	const b = await activeRepos().binders.create(input);
+	useUserland.setState((s) => ({ binders: { ...s.binders, [b.id]: b } }));
+	return b;
 }
 
-/** Return targets with duplicates removed (preserves first occurrence). */
-function dedupeTargets(targets: GoalTarget[]): GoalTarget[] {
-	const out: GoalTarget[] = [];
-	for (const t of targets) if (!out.some((o) => sameTarget(o, t))) out.push(t);
-	return out;
-}
-
-/** Persist a new goal and add it to the store. */
-export async function createGoal(input: NewGoal): Promise<Goal> {
-	const g = await activeRepos().goals.create(input);
-	useUserland.setState((s) => ({ goals: { ...s.goals, [g.id]: g } }));
-	return g;
-}
-
-/** Persist a patch to an existing goal; updates updatedAt in both storage and store. */
-export async function updateGoal(id: string, patch: GoalPatch): Promise<void> {
-	await activeRepos().goals.update(id, patch);
+/** Persist a patch to an existing binder; updates updatedAt in both storage and store. */
+export async function updateBinder(
+	id: string,
+	patch: BinderPatch,
+): Promise<void> {
+	await activeRepos().binders.update(id, patch);
 	useUserland.setState((s) => {
-		const existing = s.goals[id];
+		const existing = s.binders[id];
 		if (!existing) return s;
 		return {
-			goals: {
-				...s.goals,
+			binders: {
+				...s.binders,
 				[id]: { ...existing, ...patch, updatedAt: Date.now() },
 			},
 		};
 	});
 }
 
-/** Delete a goal by id from storage and the store. */
-export async function removeGoal(id: string): Promise<void> {
-	await activeRepos().goals.remove(id);
+/** Delete a binder by id from storage and the store. */
+export async function removeBinder(id: string): Promise<void> {
+	await activeRepos().binders.remove(id);
 	useUserland.setState((s) => {
-		const goals = { ...s.goals };
-		delete goals[id];
-		return { goals };
+		const binders = { ...s.binders };
+		delete binders[id];
+		return { binders };
 	});
 }
 
-/** Append targets to a goal, deduplicating against existing ones. */
-export async function addGoalTargets(
+/** Union cardIds into includeCardIds; remove those ids from excludeCardIds. */
+export async function addCardsToBinder(
 	id: string,
-	targets: GoalTarget[],
+	cardIds: string[],
 ): Promise<void> {
-	const g = useUserland.getState().goals[id];
-	if (!g) return;
-	await updateGoal(id, { targets: dedupeTargets([...g.targets, ...targets]) });
+	const binder = useUserland.getState().binders[id];
+	if (!binder) return;
+	const newIncludes = Array.from(
+		new Set([...binder.includeCardIds, ...cardIds]),
+	);
+	const newExcludes = binder.excludeCardIds.filter(
+		(eid) => !cardIds.includes(eid),
+	);
+	await updateBinder(id, {
+		includeCardIds: newIncludes,
+		excludeCardIds: newExcludes,
+	});
 }
 
-/** Remove a single target from a goal by deep equality. */
-export async function removeGoalTarget(
+/** Push a new rule onto the binder's rules array. */
+export async function addRuleToBinder(
 	id: string,
-	target: GoalTarget,
+	query: SerializedQuery,
 ): Promise<void> {
-	const g = useUserland.getState().goals[id];
-	if (!g) return;
-	await updateGoal(id, {
-		targets: g.targets.filter((t) => !sameTarget(t, target)),
+	const binder = useUserland.getState().binders[id];
+	if (!binder) return;
+	const rule: BinderRule = { id: crypto.randomUUID(), query };
+	await updateBinder(id, { rules: [...binder.rules, rule] });
+}
+
+/** Remove a rule from the binder by ruleId. */
+export async function removeRuleFromBinder(
+	id: string,
+	ruleId: string,
+): Promise<void> {
+	const binder = useUserland.getState().binders[id];
+	if (!binder) return;
+	await updateBinder(id, {
+		rules: binder.rules.filter((r) => r.id !== ruleId),
+	});
+}
+
+/**
+ * Remove cardId from includeCardIds and add to excludeCardIds.
+ * Hides the card whether it came from a rule or a manual include. Idempotent.
+ */
+export async function removeCardFromBinder(
+	id: string,
+	cardId: string,
+): Promise<void> {
+	const binder = useUserland.getState().binders[id];
+	if (!binder) return;
+	const newIncludes = binder.includeCardIds.filter((cid) => cid !== cardId);
+	const newExcludes = binder.excludeCardIds.includes(cardId)
+		? binder.excludeCardIds
+		: [...binder.excludeCardIds, cardId];
+	await updateBinder(id, {
+		includeCardIds: newIncludes,
+		excludeCardIds: newExcludes,
+	});
+}
+
+/** Remove cardId from excludeCardIds (restores card visibility). */
+export async function restoreCardToBinder(
+	id: string,
+	cardId: string,
+): Promise<void> {
+	const binder = useUserland.getState().binders[id];
+	if (!binder) return;
+	await updateBinder(id, {
+		excludeCardIds: binder.excludeCardIds.filter((eid) => eid !== cardId),
 	});
 }
 
 // --- Import / export actions ---
-/** Produce a full snapshot of collection + goals via the backup repo. */
+/** Produce a full snapshot of collection + binders via the backup repo. */
 export function exportUserData(): Promise<UserDataSnapshot> {
 	return activeRepos().backup.exportAll();
 }
@@ -268,6 +344,6 @@ export async function importUserData(
 ): Promise<void> {
 	const r = activeRepos();
 	await r.backup.importAll(snapshot, mode);
-	const { items, goals } = await fetchAll(r); // force-refresh (loadUserland would no-op once hydrated)
-	useUserland.setState({ items, goals, hydrated: true });
+	const { items, binders } = await fetchAll(r); // force-refresh (loadUserland would no-op once hydrated)
+	useUserland.setState({ items, binders, hydrated: true });
 }

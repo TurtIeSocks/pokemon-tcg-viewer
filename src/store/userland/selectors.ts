@@ -155,8 +155,7 @@ export function useOwnedCardRows(key: SortKey, dir: SortDir): CardRow[] {
 /** Hook: compute progress for a binder by id; null until corpus + sets + userland load. */
 export function useBinderProgress(binderId: string): BinderProgress | null {
 	useEnsureUserland();
-	// biome-ignore lint/suspicious/noExplicitAny: binders field added by a later migration task
-	const binder = useUserland((s) => (s as any).binders?.[binderId] ?? null);
+	const binder = useUserland((s) => s.binders[binderId] ?? null);
 	const items = useUserland((s) => s.items);
 	const index = useCorpusRuntime((s) => s.index);
 	const sets = useStore((s) => s.sets);
@@ -174,8 +173,7 @@ export function useBinderProgress(binderId: string): BinderProgress | null {
 /** Hook: compute the member card-id set for a binder by id; null until corpus + sets load. */
 export function useBinderMembers(binderId: string): Set<string> | null {
 	useEnsureUserland();
-	// biome-ignore lint/suspicious/noExplicitAny: binders field added by a later migration task
-	const binder = useUserland((s) => (s as any).binders?.[binderId] ?? null);
+	const binder = useUserland((s) => s.binders[binderId] ?? null);
 	const index = useCorpusRuntime((s) => s.index);
 	const sets = useStore((s) => s.sets);
 	return useMemo(() => {
