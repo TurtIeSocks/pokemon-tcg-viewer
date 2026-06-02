@@ -38,7 +38,7 @@ let repos = createIdbRepos();
 beforeEach(async () => {
 	repos = createIdbRepos();
 	await repos.collection.clear();
-	await repos.goals.clear();
+	await repos.binders.clear();
 	setUserlandRepos(repos);
 	resetUserlandForTests();
 	// Pre-seed an empty corpus index so OwnedCardsGrid's loadCorpus() effect

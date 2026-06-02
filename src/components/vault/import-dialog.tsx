@@ -60,7 +60,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 	async function onReplace() {
 		if (!snapshot) return;
 		const ok = window.confirm(
-			"Replace your entire collection + goals with this backup?",
+			"Replace your entire collection + binders with this backup?",
 		);
 		if (!ok) return;
 		await importUserData(snapshot, "replace");
@@ -73,7 +73,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 				<DialogHeader>
 					<DialogTitle>Import backup</DialogTitle>
 					<DialogDescription>
-						Choose a JSON backup file to restore your collection and goals.
+						Choose a JSON backup file to restore your collection and binders.
 					</DialogDescription>
 				</DialogHeader>
 
@@ -89,7 +89,8 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 
 					{snapshot && (
 						<p className="text-sm">
-							{snapshot.collection.length} cards · {snapshot.goals.length} goals
+							{snapshot.collection.length} cards · {snapshot.binders.length}{" "}
+							binders
 						</p>
 					)}
 				</div>

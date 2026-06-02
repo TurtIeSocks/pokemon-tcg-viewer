@@ -1,44 +1,18 @@
 // bulk-add-menu.test.tsx
-import { beforeEach, expect, mock, spyOn, test } from "bun:test";
+import { afterEach, beforeEach, expect, mock, spyOn, test } from "bun:test";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { buildIndex } from "../../store/corpus/corpus-engine";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
 import { clearCorpus } from "../../store/corpus/corpus-store";
 import type { CorpusCard } from "../../store/corpus/corpus-types";
 import { createIdbRepos } from "../../store/userland/idb-repo";
+import * as userlandStore from "../../store/userland/userland-store";
 import {
 	resetUserlandForTests,
 	setUserlandRepos,
 	useUserland,
 } from "../../store/userland/userland-store";
 import { BulkAddMenu } from "./bulk-add-menu";
-
-// Mock store actions used by the menu.
-const mockBulkAddCopies = mock(async () => {});
-const mockAddCardsToBinder = mock(async () => {});
-const mockAddRuleToBinder = mock(async () => {});
-
-mock.module("../../store/userland/userland-store", () => ({
-	// Re-export the real store / helpers needed by tests.
-	useUserland,
-	resetUserlandForTests,
-	setUserlandRepos,
-	bulkAddCopies: mockBulkAddCopies,
-	addCardsToBinder: mockAddCardsToBinder,
-	addRuleToBinder: mockAddRuleToBinder,
-	// BinderFormDialog calls createBinder; keep real export so it doesn't crash.
-	createBinder: mock(async (input: { name: string }) => ({
-		id: "new-b",
-		name: input.name,
-		description: null,
-		rules: [],
-		includeCardIds: [],
-		excludeCardIds: [],
-		createdAt: 0,
-		updatedAt: 0,
-	})),
-	updateBinder: mock(async () => {}),
-}));
 
 const base1Cards: CorpusCard[] = [
 	{
@@ -96,13 +70,26 @@ const emptyRule = {
 	yearMax: null,
 };
 
+// Spy references — set in beforeEach, restored in afterEach.
+let spyBulkAddCopies: ReturnType<
+	typeof spyOn<typeof userlandStore, "bulkAddCopies">
+>;
+let spyAddCardsToBinder: ReturnType<
+	typeof spyOn<typeof userlandStore, "addCardsToBinder">
+>;
+let spyAddRuleToBinder: ReturnType<
+	typeof spyOn<typeof userlandStore, "addRuleToBinder">
+>;
+let spyCreateBinder: ReturnType<
+	typeof spyOn<typeof userlandStore, "createBinder">
+>;
+let spyUpdateBinder: ReturnType<
+	typeof spyOn<typeof userlandStore, "updateBinder">
+>;
+
 let repos = createIdbRepos();
 
 beforeEach(async () => {
-	mockBulkAddCopies.mockClear();
-	mockAddCardsToBinder.mockClear();
-	mockAddRuleToBinder.mockClear();
-
 	repos = createIdbRepos();
 	await repos.collection.clear();
 	await repos.binders.clear();
@@ -111,6 +98,42 @@ beforeEach(async () => {
 	await clearCorpus();
 	useCorpusRuntime.setState({ index: buildIndex(base1Cards), loading: false });
 	useUserland.setState({ hydrated: true });
+
+	// Spy on store actions used by the menu; all others remain real.
+	spyBulkAddCopies = spyOn(userlandStore, "bulkAddCopies").mockImplementation(
+		mock(async () => {}),
+	);
+	spyAddCardsToBinder = spyOn(
+		userlandStore,
+		"addCardsToBinder",
+	).mockImplementation(mock(async () => {}));
+	spyAddRuleToBinder = spyOn(
+		userlandStore,
+		"addRuleToBinder",
+	).mockImplementation(mock(async () => {}));
+	spyCreateBinder = spyOn(userlandStore, "createBinder").mockImplementation(
+		mock(async (input: { name: string }) => ({
+			id: "new-b",
+			name: input.name,
+			description: null,
+			rules: [],
+			includeCardIds: [],
+			excludeCardIds: [],
+			createdAt: 0,
+			updatedAt: 0,
+		})),
+	);
+	spyUpdateBinder = spyOn(userlandStore, "updateBinder").mockImplementation(
+		mock(async () => {}),
+	);
+});
+
+afterEach(() => {
+	spyBulkAddCopies.mockRestore();
+	spyAddCardsToBinder.mockRestore();
+	spyAddRuleToBinder.mockRestore();
+	spyCreateBinder.mockRestore();
+	spyUpdateBinder.mockRestore();
 });
 
 function openMenu(name = /add all/i) {
@@ -142,8 +165,8 @@ test("collection-add calls bulkAddCopies with unowned cards", async () => {
 	);
 	fireEvent.click(item);
 
-	await waitFor(() => expect(mockBulkAddCopies).toHaveBeenCalledTimes(1));
-	expect(mockBulkAddCopies.mock.calls[0][0]).toEqual(["base1-1", "base1-2"]);
+	await waitFor(() => expect(spyBulkAddCopies).toHaveBeenCalledTimes(1));
+	expect(spyBulkAddCopies.mock.calls[0][0]).toEqual(["base1-1", "base1-2"]);
 });
 
 test("collection item is disabled when all cards are owned", async () => {
@@ -202,8 +225,8 @@ test("'Add cards to binder' submenu lists binders and calls addCardsToBinder", a
 	);
 	fireEvent.click(binderItem);
 
-	await waitFor(() => expect(mockAddCardsToBinder).toHaveBeenCalledTimes(1));
-	expect(mockAddCardsToBinder.mock.calls[0]).toEqual([
+	await waitFor(() => expect(spyAddCardsToBinder).toHaveBeenCalledTimes(1));
+	expect(spyAddCardsToBinder.mock.calls[0]).toEqual([
 		"b1",
 		["base1-1", "base1-2"],
 	]);
@@ -245,8 +268,8 @@ test("'Add smart rule to binder' calls addRuleToBinder when capturable", async (
 	);
 	fireEvent.click(binderItem);
 
-	await waitFor(() => expect(mockAddRuleToBinder).toHaveBeenCalledTimes(1));
-	expect(mockAddRuleToBinder.mock.calls[0]).toEqual(["b1", capturableRule]);
+	await waitFor(() => expect(spyAddRuleToBinder).toHaveBeenCalledTimes(1));
+	expect(spyAddRuleToBinder.mock.calls[0]).toEqual(["b1", capturableRule]);
 });
 
 test("smart-rule submenu trigger is disabled when ruleQuery is null", async () => {
@@ -309,7 +332,7 @@ test("when selectedCardIds provided, card actions target the selection", async (
 	);
 	fireEvent.click(collItem);
 	await waitFor(() =>
-		expect(mockBulkAddCopies).toHaveBeenCalledWith(["base1-1"]),
+		expect(spyBulkAddCopies).toHaveBeenCalledWith(["base1-1"]),
 	);
 
 	// Binder item should show "1 cards"
@@ -323,7 +346,7 @@ test("when selectedCardIds provided, card actions target the selection", async (
 	);
 	fireEvent.click(binderItem);
 	await waitFor(() =>
-		expect(mockAddCardsToBinder).toHaveBeenCalledWith("b1", ["base1-1"]),
+		expect(spyAddCardsToBinder).toHaveBeenCalledWith("b1", ["base1-1"]),
 	);
 });
 
