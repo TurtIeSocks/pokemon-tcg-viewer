@@ -35,7 +35,9 @@ Layers 3–8 are largely independent once 1 and 2 land; reorder by appetite. Lay
 
 ---
 
-## Layer 1 — Copy Manager (per-copy CRUD UI) `[ ]`
+## Layer 1 — Copy Manager (per-copy CRUD UI) `[x]`
+
+> Implemented + verified 2026-06-02 (TanStack Form + Zod; non-destructive toggle; tsc/biome/270 tests/build/browser-smoke). PR pending.
 
 **Adds:** the real interaction for the per-copy model — add a copy, edit a copy's fields (acquiredAt, pricePaid, variant, notes, raw condition **or** grading company+grade), delete a copy; view all copies of a card. Replaces the foundation's **interim destructive toggle** (owned → remove-all).
 
@@ -49,7 +51,7 @@ Layers 3–8 are largely independent once 1 and 2 land; reorder by appetite. Lay
 
 **Depends on:** foundation; benefits from 1.
 
-**Open questions:** the name; landing-page composition (summary stats? recent acquisitions? quick links?); route structure (`/binder`, `/binder/sets`, `/binder/cards`, `/binder/goals`); nav entry treatment.
+**Decided:** name = **Vault** (routes `/vault`, `/vault/sets`, `/vault/cards`, `/vault/goals`); "Binder" reserved for future shareable showcases (see Cross-cutting). **Open (I'll design):** landing-page composition (summary stats? recent acquisitions? quick links?); nav entry treatment; live sub-sections vs stubs for the not-yet-built layers.
 
 ## Layer 3 — Set grid (X/Y owned overlays) `[ ]`
 
@@ -103,6 +105,7 @@ Layers 3–8 are largely independent once 1 and 2 land; reorder by appetite. Lay
 
 ## Cross-cutting future work (not yet specced)
 
+- **"Binder" — shareable card showcases** — user-curated collections of cards to show off / share publicly, distinct from Goals (progress checklists). The name "Binder" is reserved for this feature; the main hub is "Vault" (Layer 2).
 - **Remote adapter + auth + sync** — the `RemoteRepo` behind the port; the possible paid tier. Drop-in by design; no feature rewrites expected.
 - **Variants / master-set semantics** — a consistent model for "do reverse-holo / 1st-ed count as separate completion targets?" touches layers 3, 5, and the `variant` field.
 - **Stats / value** — collection value (needs price data join), spend over time, P&L from `pricePaid`. Natural once the card grid + price join exist.
