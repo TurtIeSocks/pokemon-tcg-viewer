@@ -16,8 +16,12 @@ import {
 	type SortKey,
 	sortCardRows,
 } from "./card-rows";
-import { computeGoalProgress, type GoalProgress } from "./goal-progress";
-import type { CollectionItem, Goal } from "./types";
+import {
+	computeBinderProgress,
+	binderMembers,
+	type BinderProgress,
+} from "./binder-progress";
+import type { CollectionItem } from "./types";
 import { loadUserland, useUserland } from "./userland-store";
 
 // --- Pure helpers (unit-tested) ---
@@ -148,19 +152,34 @@ export function useOwnedCardRows(key: SortKey, dir: SortDir): CardRow[] {
 	}, [items, index, sets, key, dir]);
 }
 
-/** Hook: compute progress for a goal; null until corpus + sets are loaded. */
-export function useGoalProgress(goal: Goal): GoalProgress | null {
+/** Hook: compute progress for a binder by id; null until corpus + sets + userland load. */
+export function useBinderProgress(binderId: string): BinderProgress | null {
 	useEnsureUserland();
+	// biome-ignore lint/suspicious/noExplicitAny: binders field added by a later migration task
+	const binder = useUserland((s) => (s as any).binders?.[binderId] ?? null);
 	const items = useUserland((s) => s.items);
 	const index = useCorpusRuntime((s) => s.index);
 	const sets = useStore((s) => s.sets);
 	return useMemo(() => {
-		if (!index || !sets) return null;
-		return computeGoalProgress(
-			goal,
-			ownedCardIdSet(items),
+		if (!binder || !index || !sets) return null;
+		return computeBinderProgress(
+			binder,
 			index,
 			setsById(sets),
+			ownedCardIdSet(items),
 		);
-	}, [goal, items, index, sets]);
+	}, [binder, items, index, sets]);
+}
+
+/** Hook: compute the member card-id set for a binder by id; null until corpus + sets load. */
+export function useBinderMembers(binderId: string): Set<string> | null {
+	useEnsureUserland();
+	// biome-ignore lint/suspicious/noExplicitAny: binders field added by a later migration task
+	const binder = useUserland((s) => (s as any).binders?.[binderId] ?? null);
+	const index = useCorpusRuntime((s) => s.index);
+	const sets = useStore((s) => s.sets);
+	return useMemo(() => {
+		if (!binder || !index || !sets) return null;
+		return binderMembers(binder, index, setsById(sets));
+	}, [binder, index, sets]);
 }
