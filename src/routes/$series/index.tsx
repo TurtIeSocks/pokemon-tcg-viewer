@@ -1,5 +1,5 @@
 import { ClientOnly, createFileRoute, notFound } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { SetTile } from "../../components/shell/set-tile";
 import { cardIdsInSets } from "../../components/vault/bulk-add";
 import { BulkAddMenu } from "../../components/vault/bulk-add-menu";
@@ -42,8 +42,11 @@ function SeriesBulkMenu({
 	useEffect(() => {
 		void loadCorpus();
 	}, []);
+	const cardIds = useMemo(
+		() => (index ? cardIdsInSets(index, setIds) : []),
+		[index, setIds],
+	);
 	if (!index) return null;
-	const cardIds = cardIdsInSets(index, setIds);
 	return (
 		<BulkAddMenu
 			cardIds={cardIds}
@@ -54,7 +57,7 @@ function SeriesBulkMenu({
 
 function SeriesPage() {
 	const series = Route.useLoaderData();
-	const setIds = series.sets.map((s) => s.id);
+	const setIds = useMemo(() => series.sets.map((s) => s.id), [series.sets]);
 	return (
 		<div className="mx-auto w-full max-w-7xl overflow-y-auto px-4 py-6">
 			<div className="mb-4 flex items-center gap-3">
