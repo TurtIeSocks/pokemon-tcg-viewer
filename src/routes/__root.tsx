@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import appCss from "../app.css?url";
+import { CardOverlay } from "../components/islands/card-overlay";
 import { SidebarCollapsible } from "../components/islands/sidebar-collapsible";
 import { AppToolbar } from "../components/shell/app-toolbar";
 import { SidebarNav } from "../components/shell/sidebar-nav";
@@ -113,6 +114,9 @@ function RootComponent() {
 					</main>
 				</div>
 			</div>
+			<ClientOnly fallback={null}>
+				<CardOverlay />
+			</ClientOnly>
 		</RootDocument>
 	);
 }

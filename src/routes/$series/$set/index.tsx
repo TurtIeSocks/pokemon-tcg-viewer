@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { CardGridIsland } from "../../../components/islands/card-grid-island";
 import { PackDialog } from "../../../components/islands/pack-dialog";
 import { SearchControls } from "../../../components/islands/search-controls";
+import { cardModalLinkPropsFor } from "../../../lib/card-route";
 import { buildSetCardSlugs } from "../../../lib/card-slugs";
 import {
 	LIST_SEARCH_DEFAULTS,
@@ -132,14 +133,13 @@ function SetPage() {
 						context={{ setId: set.id }}
 						seedCards={cards}
 						seedTotal={cards.length}
-						cardHref={(card) => ({
-							to: "/$series/$set/$card",
-							params: {
+						cardHref={(card) =>
+							cardModalLinkPropsFor({
 								series: params.series,
 								set: params.set,
 								card: slugById.get(card.id) ?? card.id,
-							},
-						})}
+							})
+						}
 					/>
 				</ClientOnly>
 			</div>
@@ -150,14 +150,13 @@ function SetPage() {
 					onOpenChange={setPackOpen}
 					art={{ name: set.name, logo: set.logo, symbol: set.symbol }}
 					pool={cards}
-					cardHref={(card) => ({
-						to: "/$series/$set/$card",
-						params: {
+					cardHref={(card) =>
+						cardModalLinkPropsFor({
 							series: params.series,
 							set: params.set,
 							card: slugById.get(card.id) ?? card.id,
-						},
-					})}
+						})
+					}
 				/>
 			</ClientOnly>
 		</div>

@@ -9,7 +9,7 @@ import type { HoloCardData } from "../components/holo-card";
 import { CardGridIsland } from "../components/islands/card-grid-island";
 import { SearchControls } from "../components/islands/search-controls";
 import { ViewModeToggle } from "../components/islands/view-mode-toggle";
-import { cardRouteProps } from "../lib/card-route";
+import { cardModalLinkProps } from "../lib/card-route";
 import {
 	LIST_SEARCH_DEFAULTS,
 	listSearchToUrl,
@@ -74,7 +74,7 @@ function SearchPage() {
 	const slugIndex = useSlugIndex();
 	const cardHref = useCallback(
 		(card: HoloCardData): LinkProps =>
-			(slugIndex ? cardRouteProps(slugIndex, card) : null) ?? {
+			(slugIndex ? cardModalLinkProps(slugIndex, card) : null) ?? {
 				to: "/search",
 				search,
 			},

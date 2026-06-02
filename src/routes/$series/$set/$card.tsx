@@ -1,6 +1,6 @@
-import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { CardModal } from "../../../components/islands/card-modal";
+import { CardDetail } from "../../../components/card/card-detail";
 import { LIST_SEARCH_DEFAULTS } from "../../../lib/list-search";
 import { getCardForRouteFn } from "../../../server/corpus-server";
 import { useRecentsStore } from "../../../store/recents";
@@ -37,10 +37,13 @@ export const Route = createFileRoute("/$series/$set/$card")({
 	component: CardPage,
 });
 
+// Cold-load / shared / direct-navigation view: a dedicated full page (no modal).
+// In-app clicks open the same card as an overlay over the grid via history
+// state + a route mask (see card-overlay.tsx) — this route is what the masked
+// URL falls back to on reload or when the link is shared.
 function CardPage() {
 	const { card, crossLinks } = Route.useLoaderData();
 	const params = Route.useParams();
-	const navigate = useNavigate();
 	const addRecentlyViewed = useRecentsStore((s) => s.addRecentlyViewed);
 	useEffect(() => {
 		addRecentlyViewed({
@@ -58,16 +61,20 @@ function CardPage() {
 		});
 	}, [card, addRecentlyViewed]);
 	return (
-		<CardModal
-			card={card}
-			crossLinks={crossLinks}
-			onClose={() =>
-				navigate({
-					to: "/$series/$set",
-					params: { series: params.series, set: params.set },
-					search: LIST_SEARCH_DEFAULTS,
-				})
-			}
-		/>
+		<div className="mx-auto w-full max-w-4xl overflow-y-auto px-4 py-6">
+			<div className="mb-3">
+				<Link
+					to="/$series/$set"
+					params={{ series: params.series, set: params.set }}
+					search={LIST_SEARCH_DEFAULTS}
+					className="text-sm text-muted-foreground hover:text-foreground"
+				>
+					← {card.setName}
+				</Link>
+			</div>
+			<div className="rounded-2xl border border-white/10 bg-[#0d0d0f]">
+				<CardDetail card={card} crossLinks={crossLinks} />
+			</div>
+		</div>
 	);
 }

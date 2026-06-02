@@ -1,6 +1,6 @@
 import { ClientOnly, Link, type LinkProps } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { cardRouteProps } from "../../lib/card-route";
+import { cardModalLinkProps } from "../../lib/card-route";
 import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import { useStore } from "../../store";
 import { loadCorpus, useSlugIndex } from "../../store/corpus/corpus-runtime";
@@ -64,7 +64,7 @@ function RecentsInner() {
 							// Real card-detail link once the slug index is ready; until then
 							// fall back to a name search so the tile is never a dead click.
 							const linkProps: LinkProps = (slugIndex &&
-								cardRouteProps(slugIndex, card)) || {
+								cardModalLinkProps(slugIndex, card)) || {
 								to: "/search",
 								search: { ...LIST_SEARCH_DEFAULTS, q: card.name },
 							};
