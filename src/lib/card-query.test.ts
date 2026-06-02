@@ -8,6 +8,7 @@ const empty: ListSearch = {
 	supertype: [],
 	subtypes: [],
 	view: "grid",
+	owned: "all",
 };
 
 describe("buildCorpusQuery", () => {

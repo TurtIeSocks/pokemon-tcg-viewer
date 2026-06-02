@@ -1,4 +1,4 @@
-import type { ListSearch, ViewMode } from "./card-query";
+import type { ListSearch, OwnedMode, ViewMode } from "./card-query";
 
 /**
  * Default value for every list-search field. Paired with the TanStack
@@ -14,6 +14,7 @@ export const LIST_SEARCH_DEFAULTS: ListSearch = {
 	supertype: [],
 	subtypes: [],
 	view: "grid",
+	owned: "all",
 };
 
 const VALID_SEARCH_PARAMS = [
@@ -34,6 +35,10 @@ export function validateListSearch(
 	search: Record<string, unknown>,
 ): ListSearch {
 	const view: ViewMode = search.view === "timeline" ? "timeline" : "grid";
+	const owned: OwnedMode =
+		search.owned === "owned" || search.owned === "missing"
+			? search.owned
+			: "all";
 
 	return {
 		q: typeof search.q === "string" ? search.q : "",
@@ -42,6 +47,7 @@ export function validateListSearch(
 		supertype: csv(search.supertype),
 		subtypes: csv(search.subtypes),
 		view,
+		owned,
 	};
 }
 
@@ -56,6 +62,8 @@ export function listSearchToUrl(
 	}
 	if (s.view !== undefined)
 		out.view = s.view === "timeline" ? "timeline" : undefined;
+	if (s.owned !== undefined)
+		out.owned = s.owned !== "all" ? s.owned : undefined;
 
 	return out;
 }
