@@ -107,8 +107,16 @@ export function loadCorpus(): Promise<void> {
 // cached result — no stale pages after a version bump.
 const queryCache = new WeakMap<CorpusIndex, Map<string, HoloCardData[]>>();
 
+export interface OwnedFilter {
+	mode: "owned" | "missing";
+	ownedCardIds: Set<string>;
+}
+
 /** Build a CardFetcher backed by the in-memory corpus for the given params. */
-export function makeCorpusFetcher(params: CorpusQuery): CardFetcher {
+export function makeCorpusFetcher(
+	params: CorpusQuery,
+	owned?: OwnedFilter,
+): CardFetcher {
 	return (key, page, pageSize) => {
 		const index = useCorpusRuntime.getState().index;
 		if (!index) return Promise.resolve({ cards: [], totalCount: 0 });
@@ -124,9 +132,16 @@ export function makeCorpusFetcher(params: CorpusQuery): CardFetcher {
 			all = queryCorpus(index, params, setsById);
 			perKey.set(key, all);
 		}
+		const list = owned
+			? all.filter((c) =>
+					owned.mode === "owned"
+						? owned.ownedCardIds.has(c.id)
+						: !owned.ownedCardIds.has(c.id),
+				)
+			: all;
 		return Promise.resolve({
-			cards: all.slice((page - 1) * pageSize, page * pageSize),
-			totalCount: all.length,
+			cards: list.slice((page - 1) * pageSize, page * pageSize),
+			totalCount: list.length,
 		});
 	};
 }
