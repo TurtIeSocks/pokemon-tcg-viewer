@@ -365,6 +365,19 @@ describe("decodeSnapshot — malformed input", () => {
 			}),
 		).toBe(true);
 	});
+
+	it("isValidSnapshot rejects a non-string, non-null description", () => {
+		expect(
+			isValidSnapshot({
+				v: 1,
+				name: "n",
+				description: 123,
+				sharedAt: 0,
+				scope: "all",
+				cards: [{ cardId: "x", owned: true }],
+			}),
+		).toBe(false);
+	});
 });
 
 // ---------------------------------------------------------------------------

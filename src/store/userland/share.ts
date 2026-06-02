@@ -133,6 +133,7 @@ export function isValidSnapshot(v: unknown): v is BinderSnapshot {
 	const o = v as Record<string, unknown>;
 	if (o.v !== 1) return false;
 	if (typeof o.name !== "string") return false;
+	if (typeof o.description !== "string" && o.description !== null) return false;
 	if (o.scope !== "all" && o.scope !== "owned" && o.scope !== "needed")
 		return false;
 	if (typeof o.sharedAt !== "number" || !Number.isFinite(o.sharedAt))
