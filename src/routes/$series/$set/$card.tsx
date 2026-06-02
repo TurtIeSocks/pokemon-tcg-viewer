@@ -1,7 +1,7 @@
 import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { CardModal } from "../../../components/islands/card-modal";
-import type { CrossLink } from "../../../components/islands/cross-link-overlay";
+import type { CrossLink } from "../../../components/islands/cross-links";
 import { LIST_SEARCH_DEFAULTS } from "../../../lib/list-search";
 import { getCardByIdFn, getPokemonListFn } from "../../../server/card-data";
 import { resolveCardInSetFn } from "../../../server/corpus-server";

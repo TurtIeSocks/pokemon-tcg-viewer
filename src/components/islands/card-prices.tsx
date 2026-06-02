@@ -14,20 +14,25 @@ function PriceLines({ card }: { card: FocusCardData }) {
 	const lines = buildPriceLines(card);
 	if (!lines.length) return null;
 	return (
-		<section className="space-y-1 text-sm">
-			{lines.map((l) => (
-				<p key={l.source}>
-					<strong>{l.source}</strong> · {l.priceLabel} ·{" "}
+		<section className="flex flex-wrap gap-x-5 gap-y-1.5 font-mono text-[13px]">
+			{lines.map((l) => {
+				const [value, ...rest] = l.priceLabel.split(" ");
+				const qualifier = rest.join(" ");
+				return (
 					<a
+						key={l.source}
 						href={l.url}
 						target="_blank"
 						rel="noopener noreferrer"
-						className="text-primary underline"
+						className="text-[#7d7a70] no-underline transition-colors hover:text-[color:var(--accent,#c9a86a)] focus-visible:text-[color:var(--accent,#c9a86a)] focus-visible:outline-none"
 					>
-						open ↗
+						<b className="font-bold text-[color:var(--accent,#c9a86a)]">
+							{value}
+						</b>{" "}
+						{qualifier} · {l.source} ↗
 					</a>
-				</p>
-			))}
+				);
+			})}
 		</section>
 	);
 }
