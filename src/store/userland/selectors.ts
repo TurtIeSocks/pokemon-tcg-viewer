@@ -71,3 +71,29 @@ export function useOwnedCardViews(): HoloCardData[] {
 		return joinOwnedViews(Object.values(items), index, setsById);
 	}, [items, index, sets]);
 }
+
+/** Tally distinct owned cardIds into per-set counts via the corpus byId map. */
+export function tallyOwnedBySet(
+	cardIds: Iterable<string>,
+	index: CorpusIndex,
+): Map<string, number> {
+	const counts = new Map<string, number>();
+	for (const id of cardIds) {
+		const setId = index.byId.get(id)?.setId;
+		if (!setId) continue;
+		counts.set(setId, (counts.get(setId) ?? 0) + 1);
+	}
+	return counts;
+}
+
+/** Owned distinct-card count per setId. Empty until the corpus loads. */
+export function useOwnedCountBySet(): Map<string, number> {
+	useEnsureUserland();
+	const items = useUserland((s) => s.items);
+	const index = useCorpusRuntime((s) => s.index);
+	return useMemo(() => {
+		if (!index) return new Map<string, number>();
+		const distinct = new Set(Object.values(items).map((i) => i.cardId));
+		return tallyOwnedBySet(distinct, index);
+	}, [items, index]);
+}

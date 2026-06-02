@@ -66,3 +66,23 @@ test("joinOwnedViews skips cards missing from the corpus", () => {
 	);
 	expect(views.map((v) => v.id)).toEqual(["a"]);
 });
+
+import { tallyOwnedBySet } from "./selectors";
+
+test("tallyOwnedBySet tallies distinct cardIds by their set via corpus byId", () => {
+	const index = buildIndex([
+		corpusCard("base1-1", "base1"),
+		corpusCard("base1-2", "base1"),
+		corpusCard("xy1-5", "xy1"),
+	]);
+	const counts = tallyOwnedBySet(["base1-1", "base1-2", "xy1-5"], index);
+	expect(counts.get("base1")).toBe(2);
+	expect(counts.get("xy1")).toBe(1);
+});
+
+test("tallyOwnedBySet skips cardIds absent from the corpus", () => {
+	const index = buildIndex([corpusCard("base1-1", "base1")]);
+	const counts = tallyOwnedBySet(["base1-1", "ghost-9"], index);
+	expect(counts.get("base1")).toBe(1);
+	expect([...counts.keys()]).toEqual(["base1"]);
+});
