@@ -55,7 +55,9 @@ Layers 3–8 are largely independent once 1 and 2 land; reorder by appetite. Lay
 
 **Decided:** name = **Vault** (routes `/vault`, `/vault/sets`, `/vault/cards`, `/vault/goals`); "Binder" reserved for future shareable showcases (see Cross-cutting). **Open (I'll design):** landing-page composition (summary stats? recent acquisitions? quick links?); nav entry treatment; live sub-sections vs stubs for the not-yet-built layers.
 
-## Layer 3 — Set grid (X/Y owned overlays) `[ ]`
+## Layer 3 — Set grid (X/Y owned overlays) `[x]`
+
+> Implemented + verified 2026-06-02. `/vault/sets`: all sets grouped by series, `SetTile` owned-count badge + progress bar (`useOwnedCountBySet`). tsc/biome/279 tests/build/browser-smoke. PR pending.
 
 **Adds:** a grid of sets (like the card grid but set tiles) with an owned-count overlay per set, e.g. `13/120`. Count = distinct owned cardIds in the set ÷ `set.total`.
 
