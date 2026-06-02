@@ -1,8 +1,6 @@
 import { ClientOnly, createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect } from "react";
 import { GoalDetail } from "@/components/goals/goal-detail";
-import { useStore } from "@/store";
-import { loadCorpus } from "@/store/corpus/corpus-runtime";
+import { useEnsureCorpus } from "@/store/corpus/use-ensure-corpus";
 import { useUserland } from "@/store/userland/userland-store";
 
 export const Route = createFileRoute("/vault/goals/$goalId")({
@@ -10,14 +8,9 @@ export const Route = createFileRoute("/vault/goals/$goalId")({
 });
 
 function VaultGoalDetailInner() {
+	useEnsureCorpus();
 	const { goalId } = Route.useParams();
 	const goal = useUserland((s) => s.goals[goalId]);
-	const loadSets = useStore((s) => s.loadSets);
-
-	useEffect(() => {
-		void loadCorpus();
-		void loadSets();
-	}, [loadSets]);
 
 	if (!goal) {
 		return (

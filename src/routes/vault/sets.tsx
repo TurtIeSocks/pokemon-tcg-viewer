@@ -1,8 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect } from "react";
 import { SetTile } from "../../components/shell/set-tile";
 import { getNavTreeFn } from "../../server/nav-tree";
-import { loadCorpus } from "../../store/corpus/corpus-runtime";
+import { useEnsureCorpus } from "../../store/corpus/use-ensure-corpus";
 import { useOwnedCountBySet } from "../../store/userland/selectors";
 
 export const Route = createFileRoute("/vault/sets")({
@@ -11,10 +10,8 @@ export const Route = createFileRoute("/vault/sets")({
 });
 
 function VaultSets() {
+	useEnsureCorpus();
 	const tree = Route.useLoaderData();
-	useEffect(() => {
-		void loadCorpus();
-	}, []);
 	const counts = useOwnedCountBySet();
 	return (
 		<div className="space-y-8">

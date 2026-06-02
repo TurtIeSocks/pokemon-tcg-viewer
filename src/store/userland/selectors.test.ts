@@ -86,3 +86,21 @@ test("tallyOwnedBySet skips cardIds absent from the corpus", () => {
 	expect(counts.get("base1")).toBe(1);
 	expect([...counts.keys()]).toEqual(["base1"]);
 });
+
+import { ownedCardIdSet } from "./selectors";
+
+test("ownedCardIdSet returns distinct cardIds from items record", () => {
+	const items = {
+		i1: item("i1", "card-a"),
+		i2: item("i2", "card-a"),
+		i3: item("i3", "card-b"),
+	};
+	const set = ownedCardIdSet(items);
+	expect(set.has("card-a")).toBe(true);
+	expect(set.has("card-b")).toBe(true);
+	expect(set.size).toBe(2);
+});
+
+test("ownedCardIdSet returns empty set for empty items", () => {
+	expect(ownedCardIdSet({}).size).toBe(0);
+});

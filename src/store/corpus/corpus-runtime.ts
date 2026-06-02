@@ -10,6 +10,7 @@ import {
 	type CorpusIndex,
 	type CorpusQuery,
 	queryCorpus,
+	setsById,
 } from "./corpus-engine";
 import { type CorpusMeta, readGz, readMeta, writeCorpus } from "./corpus-store";
 import type { CorpusCard } from "./corpus-types";
@@ -127,9 +128,7 @@ export function makeCorpusFetcher(
 		}
 		let all = perKey.get(key);
 		if (!all) {
-			const sets = useStore.getState().sets ?? [];
-			const setsById = new Map(sets.map((s) => [s.id, s]));
-			all = queryCorpus(index, params, setsById);
+			all = queryCorpus(index, params, setsById(useStore.getState().sets));
 			perKey.set(key, all);
 		}
 		const list = owned

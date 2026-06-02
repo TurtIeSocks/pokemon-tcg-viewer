@@ -13,7 +13,7 @@ import {
 	type OwnedFilter,
 	useCorpusRuntime,
 } from "../../store/corpus/corpus-runtime";
-import { useOwnedIndex } from "../../store/userland/selectors";
+import { useOwnedCardIdSet } from "../../store/userland/selectors";
 import { CollectionToggle } from "../collection-toggle";
 import type { HoloCardData } from "../holo-card";
 import { FlipCard } from "./flip-card";
@@ -56,8 +56,7 @@ export function CardGridIsland({
 	const pageRef = useRef(1);
 	const loadingMoreRef = useRef(false);
 
-	const ownedIndex = useOwnedIndex();
-	const ownedCardIds = useMemo(() => new Set(ownedIndex.keys()), [ownedIndex]);
+	const ownedCardIds = useOwnedCardIdSet();
 	const ownedFilter: OwnedFilter | undefined =
 		search.owned === "all" ? undefined : { mode: search.owned, ownedCardIds };
 

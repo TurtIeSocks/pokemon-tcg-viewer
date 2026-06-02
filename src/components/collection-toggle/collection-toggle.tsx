@@ -1,14 +1,8 @@
 import { useState } from "react";
 import { useIsOwned, useOwnedCount } from "../../store/userland/selectors";
 import { addCopy } from "../../store/userland/userland-store";
-import { CopyManager } from "../collection/copy-manager";
+import { CopyManagerDialog } from "../collection/copy-manager-dialog";
 import type { HoloCardData } from "../holo-card";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogTitle,
-} from "../ui/dialog";
 
 interface CollectionToggleProps {
 	card: HoloCardData;
@@ -35,7 +29,7 @@ export function CollectionToggle({ card }: CollectionToggleProps) {
 
 	if (owned) {
 		return (
-			<Dialog open={open} onOpenChange={setOpen}>
+			<>
 				<button
 					type="button"
 					className={`${baseClasses} ${ownedClasses}`}
@@ -48,14 +42,14 @@ export function CollectionToggle({ card }: CollectionToggleProps) {
 				>
 					✓{count}
 				</button>
-				<DialogContent>
-					<DialogTitle>{card.name} — Copies</DialogTitle>
-					<DialogDescription>
-						Add, edit, or remove individual copies you own.
-					</DialogDescription>
-					<CopyManager cardId={card.id} variants={card.variants} />
-				</DialogContent>
-			</Dialog>
+				<CopyManagerDialog
+					cardId={card.id}
+					variants={card.variants}
+					name={card.name}
+					open={open}
+					onOpenChange={setOpen}
+				/>
+			</>
 		);
 	}
 

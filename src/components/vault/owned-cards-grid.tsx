@@ -1,7 +1,6 @@
 import { ArrowDownIcon, ArrowUpIcon } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useStore } from "../../store";
-import { loadCorpus } from "../../store/corpus/corpus-runtime";
+import { useState } from "react";
+import { useEnsureCorpus } from "../../store/corpus/use-ensure-corpus";
 import type { SortDir, SortKey } from "../../store/userland/card-rows";
 import { useOwnedCardRows } from "../../store/userland/selectors";
 import { Button } from "../ui/button";
@@ -22,14 +21,9 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 ];
 
 export function OwnedCardsGrid() {
-	const loadSets = useStore((s) => s.loadSets);
+	useEnsureCorpus();
 	const [key, setKey] = useState<SortKey>("set");
 	const [dir, setDir] = useState<SortDir>("asc");
-
-	useEffect(() => {
-		void loadCorpus();
-		void loadSets();
-	}, [loadSets]);
 
 	const rows = useOwnedCardRows(key, dir);
 

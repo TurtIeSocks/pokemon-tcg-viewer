@@ -2,6 +2,7 @@ import type { HoloCardData } from "../../components/holo-card";
 import type { PokemonSet } from "../../server/card-mappers";
 import { type CorpusIndex, hydrateCard } from "../corpus/corpus-engine";
 import { compareCardNumber } from "../corpus/natural-compare";
+import { groupByCardId } from "./selectors";
 import type { CollectionItem } from "./types";
 
 export type SortKey = "set" | "acquired" | "price" | "year";
@@ -18,12 +19,7 @@ export function buildCardRows(
 	index: CorpusIndex,
 	setsById: Map<string, PokemonSet>,
 ): CardRow[] {
-	const byCard = new Map<string, CollectionItem[]>();
-	for (const it of items) {
-		const arr = byCard.get(it.cardId);
-		if (arr) arr.push(it);
-		else byCard.set(it.cardId, [it]);
-	}
+	const byCard = groupByCardId(items);
 	const rows: CardRow[] = [];
 	for (const [cardId, copies] of byCard) {
 		const cc = index.byId.get(cardId);

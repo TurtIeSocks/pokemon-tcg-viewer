@@ -23,6 +23,13 @@ export interface CorpusIndex {
 	nameTokens: string[][];
 }
 
+/** Build an id→set lookup from the sets list (or empty when not loaded yet). */
+export function setsById(
+	sets: PokemonSet[] | null | undefined,
+): Map<string, PokemonSet> {
+	return new Map((sets ?? []).map((s) => [s.id, s]));
+}
+
 export function buildIndex(cards: CorpusCard[]): CorpusIndex {
 	const nameNorm = cards.map((c) => normalize(c.name));
 	const nameTokens = cards.map((c) =>

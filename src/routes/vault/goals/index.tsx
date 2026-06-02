@@ -3,12 +3,11 @@ import {
 	createFileRoute,
 	useNavigate,
 } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { GoalCard } from "@/components/goals/goal-card";
 import { GoalFormDialog } from "@/components/goals/goal-form-dialog";
 import { Button } from "@/components/ui/button";
-import { useStore } from "@/store";
-import { loadCorpus } from "@/store/corpus/corpus-runtime";
+import { useEnsureCorpus } from "@/store/corpus/use-ensure-corpus";
 import type { Goal } from "@/store/userland/types";
 import { useUserland } from "@/store/userland/userland-store";
 
@@ -17,16 +16,11 @@ export const Route = createFileRoute("/vault/goals/")({
 });
 
 function VaultGoalsInner() {
+	useEnsureCorpus();
 	const navigate = useNavigate();
 	const [newOpen, setNewOpen] = useState(false);
 	const goalsMap = useUserland((s) => s.goals);
 	const goals = Object.values(goalsMap);
-	const loadSets = useStore((s) => s.loadSets);
-
-	useEffect(() => {
-		void loadCorpus();
-		void loadSets();
-	}, [loadSets]);
 
 	function handleSaved(goal: Goal) {
 		void navigate({ to: "/vault/goals/$goalId", params: { goalId: goal.id } });

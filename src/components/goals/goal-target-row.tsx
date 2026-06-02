@@ -2,6 +2,7 @@
 
 import { CreditCard, Layers, Library } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ProgressBar } from "@/components/ui/progress-bar";
 import type { TargetProgress } from "../../store/userland/goal-progress";
 import { removeGoalTarget } from "../../store/userland/userland-store";
 
@@ -19,8 +20,6 @@ function KindIcon({ kind }: { kind: TargetProgress["target"]["kind"] }) {
 }
 
 export function GoalTargetRow({ goalId, tp }: GoalTargetRowProps) {
-	const pct = tp.total > 0 ? Math.round((tp.owned / tp.total) * 100) : 0;
-
 	return (
 		<div className="flex items-center gap-3 py-2">
 			<KindIcon kind={tp.target.kind} />
@@ -31,12 +30,7 @@ export function GoalTargetRow({ goalId, tp }: GoalTargetRowProps) {
 						{tp.owned}/{tp.total}
 					</span>
 				</div>
-				<div className="mt-1 h-1.5 rounded-full bg-muted overflow-hidden">
-					<div
-						className="h-full bg-primary rounded-full transition-all"
-						style={{ width: `${pct}%` }}
-					/>
-				</div>
+				<ProgressBar value={tp.owned} total={tp.total} className="mt-1 h-1.5" />
 			</div>
 			<Button
 				variant="ghost"

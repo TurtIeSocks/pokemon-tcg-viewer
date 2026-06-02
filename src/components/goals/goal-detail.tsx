@@ -4,6 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ProgressBar } from "@/components/ui/progress-bar";
 import { useGoalProgress } from "../../store/userland/selectors";
 import type { Goal } from "../../store/userland/types";
 import { removeGoal } from "../../store/userland/userland-store";
@@ -20,11 +21,6 @@ export function GoalDetail({ goal }: GoalDetailProps) {
 	const [editOpen, setEditOpen] = useState(false);
 	const [pickerOpen, setPickerOpen] = useState(false);
 	const progress = useGoalProgress(goal);
-
-	const pct =
-		progress && progress.overall.total > 0
-			? Math.round((progress.overall.owned / progress.overall.total) * 100)
-			: 0;
 
 	async function handleDelete() {
 		if (!window.confirm(`Delete goal "${goal.name}"? This cannot be undone.`))
@@ -72,15 +68,20 @@ export function GoalDetail({ goal }: GoalDetailProps) {
 					<div className="flex justify-between text-sm">
 						<span className="font-medium">Overall progress</span>
 						<span className="text-muted-foreground">
-							{progress.overall.owned}/{progress.overall.total} cards ({pct}%)
+							{progress.overall.owned}/{progress.overall.total} cards (
+							{progress.overall.total > 0
+								? Math.round(
+										(progress.overall.owned / progress.overall.total) * 100,
+									)
+								: 0}
+							%)
 						</span>
 					</div>
-					<div className="h-3 rounded-full bg-muted overflow-hidden">
-						<div
-							className="h-full bg-primary rounded-full transition-all"
-							style={{ width: `${pct}%` }}
-						/>
-					</div>
+					<ProgressBar
+						value={progress.overall.owned}
+						total={progress.overall.total}
+						className="h-3"
+					/>
 				</div>
 			) : null}
 

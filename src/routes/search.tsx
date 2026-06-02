@@ -20,7 +20,7 @@ import {
 import { searchCardsFn } from "../server/corpus-server";
 import { deriveFacets } from "../server/set-facets";
 import { useStore } from "../store";
-import { queryCorpus } from "../store/corpus/corpus-engine";
+import { queryCorpus, setsById } from "../store/corpus/corpus-engine";
 import { useCorpusRuntime, useSlugIndex } from "../store/corpus/corpus-runtime";
 import { useRecentsStore } from "../store/recents";
 
@@ -74,16 +74,12 @@ function SearchPage() {
 	// Corpus + sets for BulkAddMenu cardIds derivation.
 	const index = useCorpusRuntime((s) => s.index);
 	const sets = useStore((s) => s.sets);
-	const setsById = useMemo(
-		() => new Map((sets ?? []).map((s) => [s.id, s])),
-		[sets],
-	);
 	const bulkCardIds = useMemo(() => {
 		if (!index || !sets) return [];
-		return queryCorpus(index, buildCorpusQuery(search, {}), setsById).map(
+		return queryCorpus(index, buildCorpusQuery(search, {}), setsById(sets)).map(
 			(c) => c.id,
 		);
-	}, [index, sets, search, setsById]);
+	}, [index, sets, search]);
 
 	// Search results span many sets, so each card's detail link is resolved from
 	// the client corpus (same slugs the detail route uses). Falls back to a no-op

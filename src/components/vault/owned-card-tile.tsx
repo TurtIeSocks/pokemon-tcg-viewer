@@ -1,13 +1,7 @@
 import { useState } from "react";
 import type { CardRow } from "../../store/userland/card-rows";
-import { CopyManager } from "../collection/copy-manager";
+import { CopyManagerDialog } from "../collection/copy-manager-dialog";
 import { HoloCardIsland } from "../islands/holo-card-island";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogTitle,
-} from "../ui/dialog";
 
 interface OwnedCardTileProps {
 	row: CardRow;
@@ -42,15 +36,13 @@ export function OwnedCardTile({ row }: OwnedCardTileProps) {
 					</span>
 				)}
 			</button>
-			<Dialog open={open} onOpenChange={setOpen}>
-				<DialogContent>
-					<DialogTitle>{row.card.name} — Copies</DialogTitle>
-					<DialogDescription>
-						Add, edit, or remove individual copies you own.
-					</DialogDescription>
-					<CopyManager cardId={row.card.id} variants={row.card.variants} />
-				</DialogContent>
-			</Dialog>
+			<CopyManagerDialog
+				cardId={row.card.id}
+				variants={row.card.variants}
+				name={row.card.name}
+				open={open}
+				onOpenChange={setOpen}
+			/>
 		</>
 	);
 }

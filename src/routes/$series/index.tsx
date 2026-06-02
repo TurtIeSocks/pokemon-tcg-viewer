@@ -1,13 +1,11 @@
 import { ClientOnly, createFileRoute, notFound } from "@tanstack/react-router";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { SetTile } from "../../components/shell/set-tile";
 import { cardIdsInSets } from "../../components/vault/bulk-add";
 import { BulkAddMenu } from "../../components/vault/bulk-add-menu";
 import { findSeries, getNavTreeFn } from "../../server/nav-tree";
-import {
-	loadCorpus,
-	useCorpusRuntime,
-} from "../../store/corpus/corpus-runtime";
+import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
+import { useEnsureCorpus } from "../../store/corpus/use-ensure-corpus";
 
 export const Route = createFileRoute("/$series/")({
 	loader: async ({ params }) => {
@@ -38,10 +36,8 @@ function SeriesBulkMenu({
 	seriesName: string;
 	setIds: string[];
 }) {
+	useEnsureCorpus();
 	const index = useCorpusRuntime((s) => s.index);
-	useEffect(() => {
-		void loadCorpus();
-	}, []);
 	const cardIds = useMemo(
 		() => (index ? cardIdsInSets(index, setIds) : []),
 		[index, setIds],

@@ -2,7 +2,11 @@
 import { useEffect, useMemo } from "react";
 import type { HoloCardData } from "../../components/holo-card";
 import type { PokemonSet } from "../../server/card-mappers";
-import { type CorpusIndex, hydrateCard } from "../corpus/corpus-engine";
+import {
+	type CorpusIndex,
+	hydrateCard,
+	setsById,
+} from "../corpus/corpus-engine";
 import { useCorpusRuntime } from "../corpus/corpus-runtime";
 import { useStore } from "../index";
 import {
@@ -17,6 +21,19 @@ import type { CollectionItem, Goal } from "./types";
 import { loadUserland, useUserland } from "./userland-store";
 
 // --- Pure helpers (unit-tested) ---
+
+/** Distinct owned cardIds from the items map. */
+export function ownedCardIdSet(
+	items: Record<string, CollectionItem>,
+): Set<string> {
+	return new Set(Object.values(items).map((i) => i.cardId));
+}
+
+/** Reactive distinct-owned-cardId set (memoized). */
+export function useOwnedCardIdSet(): Set<string> {
+	return new Set(useOwnedIndex().keys());
+}
+
 export function groupByCardId(
 	items: CollectionItem[],
 ): Map<string, CollectionItem[]> {
@@ -75,8 +92,7 @@ export function useOwnedCardViews(): HoloCardData[] {
 	const sets = useStore((s) => s.sets);
 	return useMemo(() => {
 		if (!index || !sets) return [];
-		const setsById = new Map(sets.map((s) => [s.id, s]));
-		return joinOwnedViews(Object.values(items), index, setsById);
+		return joinOwnedViews(Object.values(items), index, setsById(sets));
 	}, [items, index, sets]);
 }
 
@@ -101,8 +117,7 @@ export function useOwnedCountBySet(): Map<string, number> {
 	const index = useCorpusRuntime((s) => s.index);
 	return useMemo(() => {
 		if (!index) return new Map<string, number>();
-		const distinct = new Set(Object.values(items).map((i) => i.cardId));
-		return tallyOwnedBySet(distinct, index);
+		return tallyOwnedBySet(ownedCardIdSet(items), index);
 	}, [items, index]);
 }
 
@@ -114,9 +129,8 @@ export function useOwnedCardRows(key: SortKey, dir: SortDir): CardRow[] {
 	const sets = useStore((s) => s.sets);
 	return useMemo(() => {
 		if (!index || !sets) return [];
-		const setsById = new Map(sets.map((s) => [s.id, s]));
 		return sortCardRows(
-			buildCardRows(Object.values(items), index, setsById),
+			buildCardRows(Object.values(items), index, setsById(sets)),
 			key,
 			dir,
 		);
@@ -130,12 +144,11 @@ export function useGoalProgress(goal: Goal): GoalProgress | null {
 	const sets = useStore((s) => s.sets);
 	return useMemo(() => {
 		if (!index || !sets) return null;
-		const owned = new Set(Object.values(items).map((i) => i.cardId));
 		return computeGoalProgress(
 			goal,
-			owned,
+			ownedCardIdSet(items),
 			index,
-			new Map(sets.map((s) => [s.id, s])),
+			setsById(sets),
 		);
 	}, [goal, items, index, sets]);
 }

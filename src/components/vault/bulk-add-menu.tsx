@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useOwnedIndex } from "../../store/userland/selectors";
+import { useOwnedCardIdSet } from "../../store/userland/selectors";
 import type { GoalTarget } from "../../store/userland/types";
 import {
 	addGoalTargets,
@@ -26,10 +26,8 @@ interface BulkAddMenuProps {
 }
 
 export function BulkAddMenu({ cardIds, goalTarget, label }: BulkAddMenuProps) {
-	const ownedIndex = useOwnedIndex();
+	const ownedSet = useOwnedCardIdSet();
 	const goals = useUserland((s) => s.goals);
-
-	const ownedSet = useMemo(() => new Set(ownedIndex.keys()), [ownedIndex]);
 
 	const { toAdd, skipped } = useMemo(
 		() => partitionUnowned(cardIds, ownedSet),
