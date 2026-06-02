@@ -19,12 +19,14 @@ const good: UserDataSnapshot = {
 			grading: null,
 		},
 	],
-	goals: [
+	binders: [
 		{
-			id: "g1",
-			name: "G",
+			id: "b1",
+			name: "My Binder",
 			description: null,
-			targets: [],
+			rules: [],
+			includeCardIds: [],
+			excludeCardIds: [],
 			createdAt: 1,
 			updatedAt: 1,
 		},
@@ -33,6 +35,10 @@ const good: UserDataSnapshot = {
 
 test("isValidSnapshot accepts a v1 snapshot", () => {
 	expect(isValidSnapshot(good)).toBe(true);
+});
+
+test("isValidSnapshot accepts a v1 snapshot with empty binders", () => {
+	expect(isValidSnapshot({ ...good, binders: [] })).toBe(true);
 });
 
 test("isValidSnapshot rejects wrong version / shape", () => {
@@ -45,6 +51,41 @@ test("isValidSnapshot rejects wrong version / shape", () => {
 	expect(isValidSnapshot({ schemaVersion: 1 })).toBe(false);
 });
 
+test("isValidSnapshot rejects snapshot missing binders", () => {
+	const { binders: _b, ...withoutBinders } = good;
+	expect(isValidSnapshot(withoutBinders)).toBe(false);
+});
+
+test("isValidSnapshot rejects snapshot with goals instead of binders", () => {
+	// Old snapshot format with goals field but no binders
+	expect(
+		isValidSnapshot({
+			schemaVersion: 1,
+			exportedAt: 0,
+			collection: [],
+			goals: [],
+		}),
+	).toBe(false);
+});
+
+test("isValidSnapshot rejects binder item missing id", () => {
+	expect(
+		isValidSnapshot({
+			...good,
+			binders: [{ name: "No id binder" }],
+		}),
+	).toBe(false);
+});
+
+test("isValidSnapshot rejects binder item missing name", () => {
+	expect(
+		isValidSnapshot({
+			...good,
+			binders: [{ id: "b1" }],
+		}),
+	).toBe(false);
+});
+
 test("parseSnapshot returns the snapshot for valid JSON", () => {
 	expect(parseSnapshot(JSON.stringify(good))).toEqual(good);
 });
@@ -52,6 +93,11 @@ test("parseSnapshot returns the snapshot for valid JSON", () => {
 test("parseSnapshot throws on bad JSON and bad shape", () => {
 	expect(() => parseSnapshot("{not json")).toThrow();
 	expect(() => parseSnapshot(JSON.stringify({ schemaVersion: 9 }))).toThrow();
+});
+
+test("parseSnapshot throws when binders is missing", () => {
+	const { binders: _b, ...withoutBinders } = good;
+	expect(() => parseSnapshot(JSON.stringify(withoutBinders))).toThrow();
 });
 
 test("snapshotFilename formats the date", () => {

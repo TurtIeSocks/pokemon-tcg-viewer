@@ -1,11 +1,11 @@
 // src/store/userland/repo.ts
 import type {
+	Binder,
+	BinderPatch,
 	CollectionItem,
 	CopyPatch,
-	Goal,
-	GoalPatch,
+	NewBinder,
 	NewCollectionItem,
-	NewGoal,
 	UserDataSnapshot,
 } from "./types";
 
@@ -27,23 +27,23 @@ export interface CollectionRepo {
 	clear(): Promise<void>;
 }
 
-/** Persistence contract for user goals. */
-export interface GoalsRepo {
-	/** Returns all stored goals in insertion order. */
-	list(): Promise<Goal[]>;
-	/** Persist a new goal and return the fully-filled record. */
-	create(goal: NewGoal): Promise<Goal>;
-	/** Merge patch into an existing goal; bumps updatedAt. */
-	update(id: string, patch: GoalPatch): Promise<void>;
-	/** Delete a goal by id. */
+/** Persistence contract for user binders. */
+export interface BindersRepo {
+	/** Returns all stored binders in insertion order. */
+	list(): Promise<Binder[]>;
+	/** Persist a new binder and return the fully-filled record. */
+	create(binder: NewBinder): Promise<Binder>;
+	/** Merge patch into an existing binder; bumps updatedAt. */
+	update(id: string, patch: BinderPatch): Promise<void>;
+	/** Delete a binder by id. */
 	remove(id: string): Promise<void>;
-	/** Delete every goal in the store. */
+	/** Delete every binder in the store. */
 	clear(): Promise<void>;
 }
 
 /** Persistence contract for full-data backup operations. */
 export interface BackupRepo {
-	/** Snapshot the entire collection + goals into a serialisable envelope. */
+	/** Snapshot the entire collection + binders into a serialisable envelope. */
 	exportAll(): Promise<UserDataSnapshot>;
 	/**
 	 * Write a snapshot back to storage.
@@ -58,6 +58,6 @@ export interface BackupRepo {
 /** Aggregates all per-domain repos for the userland data layer. */
 export interface UserlandRepos {
 	collection: CollectionRepo;
-	goals: GoalsRepo;
+	binders: BindersRepo;
 	backup: BackupRepo;
 }

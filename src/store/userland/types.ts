@@ -39,36 +39,52 @@ export type CopyPatch = Partial<
 	EditableCopyFields & Pick<CollectionItem, "isPrimary">
 >;
 
-/** Discriminated union identifying what a goal tracks — a set, a series, or a single card. */
-export type GoalTarget =
-	| { kind: "set"; setId: string }
-	| { kind: "series"; series: string }
-	| { kind: "card"; cardId: string };
+/** A serialized search/filter query that defines the dynamic membership of a Binder rule. */
+export interface SerializedQuery {
+	text: string | null;
+	setId: string | null;
+	dexNumber: number | null;
+	types: string[];
+	rarities: string[];
+	supertypes: string[];
+	subtypes: string[];
+	yearMin: number | null;
+	yearMax: number | null;
+}
 
-/** A user-defined collection goal with one or more targets. */
-export interface Goal {
+/** A single dynamic rule inside a Binder; cards matching the query are included. */
+export interface BinderRule {
+	id: string;
+	query: SerializedQuery;
+}
+
+/** A user-defined card binder with hybrid membership: dynamic rules + explicit include/exclude lists. */
+export interface Binder {
 	id: string;
 	name: string;
 	description: string | null;
-	targets: GoalTarget[];
+	rules: BinderRule[];
+	includeCardIds: string[];
+	excludeCardIds: string[];
 	createdAt: number;
 	updatedAt: number;
 }
 
-/** create() input. Repo assigns id/createdAt/updatedAt; fills description=null, targets=[]. */
-export type NewGoal = {
+/** create() input. Repo assigns id/createdAt/updatedAt; fills description=null, rules=[], includeCardIds=[], excludeCardIds=[]. */
+export type NewBinder = {
 	name: string;
 	description?: string | null;
-	targets?: GoalTarget[];
 };
 
-/** update() patch for a goal; omitted keys are left untouched. */
-export type GoalPatch = Partial<Pick<Goal, "name" | "description" | "targets">>;
+/** update() patch for a binder; omitted keys are left untouched. */
+export type BinderPatch = Partial<
+	Pick<Binder, "name" | "description" | "rules" | "includeCardIds" | "excludeCardIds">
+>;
 
 /** Import/export envelope. */
 export interface UserDataSnapshot {
 	schemaVersion: 1;
 	exportedAt: number;
 	collection: CollectionItem[];
-	goals: Goal[];
+	binders: Binder[];
 }
