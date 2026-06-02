@@ -1,45 +1,101 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { isRuleCapturable } from "../../lib/serialized-query";
 import { useOwnedCardIdSet } from "../../store/userland/selectors";
-import type { GoalTarget } from "../../store/userland/types";
+import type { Binder, SerializedQuery } from "../../store/userland/types";
 import {
-	addGoalTargets,
+	addCardsToBinder,
+	addRuleToBinder,
 	bulkAddCopies,
 	useUserland,
 } from "../../store/userland/userland-store";
+import { BinderFormDialog } from "../binders/binder-form-dialog";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuLabel,
 	DropdownMenuSub,
 	DropdownMenuSubContent,
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "../ui/tooltip";
 import { partitionUnowned } from "./bulk-add";
 
 /** Props for {@link BulkAddMenu}. */
 interface BulkAddMenuProps {
 	/** Card IDs eligible for bulk-add; already-owned cards are filtered and counted as skipped. */
 	cardIds: string[];
-	/** When provided, used as the sole goal target instead of mapping each cardId to a card target. */
-	goalTarget?: GoalTarget;
+	/** When provided, enables the "Add smart rule to binder" item. */
+	ruleQuery?: SerializedQuery | null;
+	/** When non-empty, actions target this selection instead of all cardIds. */
+	selectedCardIds?: string[];
 	/** Trigger button label; defaults to "Add all". */
 	label?: string;
 }
 
-/** Dropdown menu for adding a batch of cards to the collection or to a specific goal. */
-export function BulkAddMenu({ cardIds, goalTarget, label }: BulkAddMenuProps) {
-	const ownedSet = useOwnedCardIdSet();
-	const goals = useUserland((s) => s.goals);
+/** Pending action to run after a new binder is created. */
+type PendingAction =
+	| { kind: "cards"; targetIds: string[] }
+	| { kind: "rule"; query: SerializedQuery };
 
-	const { toAdd, skipped } = useMemo(
-		() => partitionUnowned(cardIds, ownedSet),
-		[cardIds, ownedSet],
+/** Dropdown menu for adding a batch of cards to the collection or to a binder. */
+export function BulkAddMenu({
+	cardIds,
+	ruleQuery,
+	selectedCardIds,
+	label,
+}: BulkAddMenuProps) {
+	const ownedSet = useOwnedCardIdSet();
+	const binders = useUserland((s) => s.binders);
+
+	const inSelectMode = (selectedCardIds?.length ?? 0) > 0;
+
+	// Target set: selection if in select mode, otherwise all cardIds.
+	const targetIds = useMemo(
+		() => (inSelectMode ? (selectedCardIds ?? []) : cardIds),
+		[inSelectMode, selectedCardIds, cardIds],
 	);
 
-	const goalList = useMemo(() => Object.values(goals), [goals]);
+	const { toAdd, skipped } = useMemo(
+		() => partitionUnowned(targetIds, ownedSet),
+		[targetIds, ownedSet],
+	);
+
+	const binderList = useMemo(() => Object.values(binders), [binders]);
+
+	// Smart-rule submenu enabled iff not in select mode AND ruleQuery is capturable.
+	const ruleDisabled =
+		inSelectMode || !ruleQuery || !isRuleCapturable(ruleQuery);
+	const ruleDisabledReason = inSelectMode
+		? "Clear your selection to save a rule"
+		: "Apply a filter/search to save it as a rule";
+
+	// BinderFormDialog state + pending action.
+	const [newBinderOpen, setNewBinderOpen] = useState(false);
+	const [pending, setPending] = useState<PendingAction | null>(null);
+
+	function openNewBinder(action: PendingAction) {
+		setPending(action);
+		setNewBinderOpen(true);
+	}
+
+	function handleNewBinderSaved(b: Binder) {
+		if (!pending) return;
+		if (pending.kind === "cards") {
+			void addCardsToBinder(b.id, pending.targetIds);
+		} else {
+			void addRuleToBinder(b.id, pending.query);
+		}
+		setPending(null);
+	}
 
 	async function handleCollectionAdd() {
 		if (toAdd.length === 0) return;
@@ -55,55 +111,112 @@ export function BulkAddMenu({ cardIds, goalTarget, label }: BulkAddMenuProps) {
 		);
 	}
 
-	async function handleGoalAdd(goalId: string) {
-		const targets: GoalTarget[] = goalTarget
-			? [goalTarget]
-			: cardIds
-					.slice(0, 100)
-					.map((id) => ({ kind: "card" as const, cardId: id }));
-		await addGoalTargets(goalId, targets);
+	// Binder sub-items shared between both submenus.
+	function binderCardItems() {
+		return (
+			<>
+				{binderList.map((b) => (
+					<DropdownMenuItem
+						key={b.id}
+						onSelect={() => void addCardsToBinder(b.id, targetIds)}
+					>
+						{b.name}
+					</DropdownMenuItem>
+				))}
+				<DropdownMenuItem
+					onSelect={() => openNewBinder({ kind: "cards", targetIds })}
+				>
+					＋ New binder…
+				</DropdownMenuItem>
+			</>
+		);
 	}
 
-	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger asChild>
-				<button
-					type="button"
-					className="rounded border px-3 py-1.5 text-sm hover:bg-secondary"
-				>
-					{label ?? "Add all"}
-				</button>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent>
+	function binderRuleItems() {
+		// ruleDisabled is true when ruleQuery is null/empty, so this is only rendered
+		// when ruleQuery is a valid SerializedQuery.
+		const q = ruleQuery ?? ({} as NonNullable<typeof ruleQuery>);
+		return (
+			<>
+				{binderList.map((b) => (
+					<DropdownMenuItem
+						key={b.id}
+						onSelect={() => void addRuleToBinder(b.id, q)}
+					>
+						{b.name}
+					</DropdownMenuItem>
+				))}
 				<DropdownMenuItem
-					disabled={toAdd.length === 0}
-					onSelect={handleCollectionAdd}
+					onSelect={() => openNewBinder({ kind: "rule", query: q })}
 				>
-					{toAdd.length === 0
-						? "All owned"
-						: `Add ${toAdd.length} to collection`}
+					＋ New binder…
 				</DropdownMenuItem>
+				<DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+					Matching cards always appear in this binder, including ones from
+					future sets.
+				</DropdownMenuLabel>
+			</>
+		);
+	}
 
-				<DropdownMenuSub>
-					<DropdownMenuSubTrigger>Add to goal</DropdownMenuSubTrigger>
-					<DropdownMenuSubContent>
-						{goalList.length === 0 ? (
-							<DropdownMenuItem disabled>No goals yet</DropdownMenuItem>
+	const ruleSubTrigger = (
+		<DropdownMenuSubTrigger disabled={ruleDisabled}>
+			Add smart rule to binder
+		</DropdownMenuSubTrigger>
+	);
+
+	return (
+		<>
+			<DropdownMenu>
+				<DropdownMenuTrigger asChild>
+					<button
+						type="button"
+						className="rounded border px-3 py-1.5 text-sm hover:bg-secondary"
+					>
+						{label ?? "Add all"}
+					</button>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent>
+					{/* Item 1: Add to collection */}
+					<DropdownMenuItem
+						disabled={toAdd.length === 0}
+						onSelect={handleCollectionAdd}
+					>
+						{toAdd.length === 0
+							? "All owned"
+							: `Add ${toAdd.length} to collection`}
+					</DropdownMenuItem>
+
+					{/* Item 2: Add cards to binder */}
+					<DropdownMenuSub>
+						<DropdownMenuSubTrigger>
+							Add {targetIds.length} cards to binder
+						</DropdownMenuSubTrigger>
+						<DropdownMenuSubContent>{binderCardItems()}</DropdownMenuSubContent>
+					</DropdownMenuSub>
+
+					{/* Item 3: Add smart rule to binder */}
+					<DropdownMenuSub>
+						{ruleDisabled ? (
+							<TooltipProvider>
+								<Tooltip>
+									<TooltipTrigger asChild>{ruleSubTrigger}</TooltipTrigger>
+									<TooltipContent>{ruleDisabledReason}</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
 						) : (
-							goalList.map((goal) => (
-								<DropdownMenuItem
-									key={goal.id}
-									onSelect={() => {
-										void handleGoalAdd(goal.id);
-									}}
-								>
-									{goal.name}
-								</DropdownMenuItem>
-							))
+							ruleSubTrigger
 						)}
-					</DropdownMenuSubContent>
-				</DropdownMenuSub>
-			</DropdownMenuContent>
-		</DropdownMenu>
+						<DropdownMenuSubContent>{binderRuleItems()}</DropdownMenuSubContent>
+					</DropdownMenuSub>
+				</DropdownMenuContent>
+			</DropdownMenu>
+
+			<BinderFormDialog
+				open={newBinderOpen}
+				onOpenChange={setNewBinderOpen}
+				onSaved={handleNewBinderSaved}
+			/>
+		</>
 	);
 }

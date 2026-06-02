@@ -29,13 +29,7 @@ export const Route = createFileRoute("/$series/")({
 	component: SeriesPage,
 });
 
-function SeriesBulkMenu({
-	seriesName,
-	setIds,
-}: {
-	seriesName: string;
-	setIds: string[];
-}) {
+function SeriesBulkMenu({ setIds }: { setIds: string[] }) {
 	useEnsureCorpus();
 	const index = useCorpusRuntime((s) => s.index);
 	const cardIds = useMemo(
@@ -43,12 +37,7 @@ function SeriesBulkMenu({
 		[index, setIds],
 	);
 	if (!index) return null;
-	return (
-		<BulkAddMenu
-			cardIds={cardIds}
-			goalTarget={{ kind: "series", series: seriesName }}
-		/>
-	);
+	return <BulkAddMenu cardIds={cardIds} ruleQuery={null} />;
 }
 
 function SeriesPage() {
@@ -59,7 +48,7 @@ function SeriesPage() {
 			<div className="mb-4 flex items-center gap-3">
 				<h1 className="text-2xl font-bold">{series.name}</h1>
 				<ClientOnly fallback={null}>
-					<SeriesBulkMenu seriesName={series.name} setIds={setIds} />
+					<SeriesBulkMenu setIds={setIds} />
 				</ClientOnly>
 			</div>
 			<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">

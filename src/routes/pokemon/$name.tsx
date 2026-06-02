@@ -10,12 +10,14 @@ import type { HoloCardData } from "../../components/holo-card";
 import { CardGridIsland } from "../../components/islands/card-grid-island";
 import { SearchControls } from "../../components/islands/search-controls";
 import { ViewModeToggle } from "../../components/islands/view-mode-toggle";
+import { BulkAddMenu } from "../../components/vault/bulk-add-menu";
 import { cardModalLinkProps } from "../../lib/card-route";
 import {
 	LIST_SEARCH_DEFAULTS,
 	listSearchToUrl,
 	validateListSearch,
 } from "../../lib/list-search";
+import { toSerializedQuery } from "../../lib/serialized-query";
 import { getPokemonListFn } from "../../server/card-data";
 import { getDexCardsFn } from "../../server/corpus-server";
 import { dexByName } from "../../server/pokemon-dex";
@@ -95,7 +97,11 @@ function PokemonPage() {
 						{total} cards
 					</span>
 				</h1>
-				<div className="ml-auto">
+				<div className="ml-auto flex items-center gap-2">
+					<BulkAddMenu
+						cardIds={cards.map((c) => c.id)}
+						ruleQuery={toSerializedQuery(search, { dexNumber: dex })}
+					/>
 					<ViewModeToggle
 						value={search.view}
 						disabled={false}

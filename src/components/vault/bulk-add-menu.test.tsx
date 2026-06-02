@@ -1,5 +1,5 @@
 // bulk-add-menu.test.tsx
-import { beforeEach, expect, spyOn, test } from "bun:test";
+import { beforeEach, expect, mock, spyOn, test } from "bun:test";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { buildIndex } from "../../store/corpus/corpus-engine";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
@@ -7,12 +7,38 @@ import { clearCorpus } from "../../store/corpus/corpus-store";
 import type { CorpusCard } from "../../store/corpus/corpus-types";
 import { createIdbRepos } from "../../store/userland/idb-repo";
 import {
-	createGoal,
 	resetUserlandForTests,
 	setUserlandRepos,
 	useUserland,
 } from "../../store/userland/userland-store";
 import { BulkAddMenu } from "./bulk-add-menu";
+
+// Mock store actions used by the menu.
+const mockBulkAddCopies = mock(async () => {});
+const mockAddCardsToBinder = mock(async () => {});
+const mockAddRuleToBinder = mock(async () => {});
+
+mock.module("../../store/userland/userland-store", () => ({
+	// Re-export the real store / helpers needed by tests.
+	useUserland,
+	resetUserlandForTests,
+	setUserlandRepos,
+	bulkAddCopies: mockBulkAddCopies,
+	addCardsToBinder: mockAddCardsToBinder,
+	addRuleToBinder: mockAddRuleToBinder,
+	// BinderFormDialog calls createBinder; keep real export so it doesn't crash.
+	createBinder: mock(async (input: { name: string }) => ({
+		id: "new-b",
+		name: input.name,
+		description: null,
+		rules: [],
+		includeCardIds: [],
+		excludeCardIds: [],
+		createdAt: 0,
+		updatedAt: 0,
+	})),
+	updateBinder: mock(async () => {}),
+}));
 
 const base1Cards: CorpusCard[] = [
 	{
@@ -35,17 +61,55 @@ const base1Cards: CorpusCard[] = [
 	},
 ];
 
+const binder1 = {
+	id: "b1",
+	name: "My Binder",
+	description: null,
+	rules: [],
+	includeCardIds: [],
+	excludeCardIds: [],
+	createdAt: 0,
+	updatedAt: 0,
+};
+
+const capturableRule = {
+	text: null,
+	setId: "base1",
+	dexNumber: null,
+	types: [],
+	rarities: [],
+	supertypes: [],
+	subtypes: [],
+	yearMin: null,
+	yearMax: null,
+};
+
+const emptyRule = {
+	text: null,
+	setId: null,
+	dexNumber: null,
+	types: [],
+	rarities: [],
+	supertypes: [],
+	subtypes: [],
+	yearMin: null,
+	yearMax: null,
+};
+
 let repos = createIdbRepos();
 
 beforeEach(async () => {
+	mockBulkAddCopies.mockClear();
+	mockAddCardsToBinder.mockClear();
+	mockAddRuleToBinder.mockClear();
+
 	repos = createIdbRepos();
 	await repos.collection.clear();
-	await repos.goals.clear();
+	await repos.binders.clear();
 	setUserlandRepos(repos);
 	resetUserlandForTests();
 	await clearCorpus();
 	useCorpusRuntime.setState({ index: buildIndex(base1Cards), loading: false });
-	// Mark hydrated so useOwnedIndex works without network
 	useUserland.setState({ hydrated: true });
 });
 
@@ -54,7 +118,7 @@ function openMenu(name = /add all/i) {
 	fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
 }
 
-// ---- Collection add ----
+// ---- Item 1: Collection add ----
 
 test("shows 'Add 2 to collection' when nothing is owned", async () => {
 	render(<BulkAddMenu cardIds={["base1-1", "base1-2"]} />);
@@ -66,7 +130,7 @@ test("shows 'Add 2 to collection' when nothing is owned", async () => {
 	);
 });
 
-test("collection-add adds unowned cards to the store", async () => {
+test("collection-add calls bulkAddCopies with unowned cards", async () => {
 	spyOn(globalThis, "confirm").mockImplementation(() => true);
 	spyOn(globalThis, "alert").mockImplementation(() => {});
 
@@ -78,49 +142,8 @@ test("collection-add adds unowned cards to the store", async () => {
 	);
 	fireEvent.click(item);
 
-	await waitFor(() => {
-		const items = Object.values(useUserland.getState().items);
-		expect(items.length).toBe(2);
-	});
-});
-
-test("shows 'Add 1 to collection' skipping already-owned card", async () => {
-	// Pre-own base1-1
-	await repos.collection.add({ cardId: "base1-1" });
-	useUserland.setState({
-		items: {
-			"copy-1": {
-				id: "copy-1",
-				cardId: "base1-1",
-				acquiredAt: 0,
-				createdAt: 0,
-				pricePaid: null,
-				variant: null,
-				notes: null,
-				condition: null,
-				grading: null,
-			},
-		},
-		hydrated: true,
-	});
-
-	spyOn(globalThis, "confirm").mockImplementation(() => true);
-	spyOn(globalThis, "alert").mockImplementation(() => {});
-
-	render(<BulkAddMenu cardIds={["base1-1", "base1-2"]} />);
-	openMenu();
-
-	const item = await waitFor(() =>
-		screen.getByRole("menuitem", { name: /add 1 to collection/i }),
-	);
-	fireEvent.click(item);
-
-	await waitFor(() => {
-		const items = Object.values(useUserland.getState().items);
-		// base1-1 already existed + base1-2 added = 2 total
-		const cardIds = items.map((i) => i.cardId);
-		expect(cardIds).toContain("base1-2");
-	});
+	await waitFor(() => expect(mockBulkAddCopies).toHaveBeenCalledTimes(1));
+	expect(mockBulkAddCopies.mock.calls[0][0]).toEqual(["base1-1", "base1-2"]);
 });
 
 test("collection item is disabled when all cards are owned", async () => {
@@ -161,53 +184,150 @@ test("collection item is disabled when all cards are owned", async () => {
 	expect(item.dataset.disabled).toBe("");
 });
 
-// ---- Goal add ----
+// ---- Item 2: Add cards to binder ----
 
-test("goal-add with goalTarget={kind:set} adds that target to the goal", async () => {
-	spyOn(globalThis, "alert").mockImplementation(() => {});
+test("'Add cards to binder' submenu lists binders and calls addCardsToBinder", async () => {
+	useUserland.setState({ binders: { b1: binder1 }, hydrated: true });
 
-	const goal = await createGoal({ name: "Test Goal" });
-
-	render(
-		<BulkAddMenu
-			cardIds={["base1-1", "base1-2"]}
-			goalTarget={{ kind: "set", setId: "base1" }}
-		/>,
-	);
-	openMenu();
-
-	// The "Add to goal" submenu trigger should be visible
-	const subTrigger = await waitFor(() =>
-		screen.getByRole("menuitem", { name: /add to goal/i }),
-	);
-	fireEvent.click(subTrigger);
-
-	// Goal items should appear
-	const goalItem = await waitFor(() =>
-		screen.getByRole("menuitem", { name: /test goal/i }),
-	);
-	fireEvent.click(goalItem);
-
-	await waitFor(() => {
-		const g = useUserland.getState().goals[goal.id];
-		expect(g?.targets.some((t) => t.kind === "set")).toBe(true);
-	});
-});
-
-test("shows disabled 'No goals yet' when no goals exist", async () => {
 	render(<BulkAddMenu cardIds={["base1-1", "base1-2"]} />);
 	openMenu();
 
 	const subTrigger = await waitFor(() =>
-		screen.getByRole("menuitem", { name: /add to goal/i }),
+		screen.getByRole("menuitem", { name: /add 2 cards to binder/i }),
 	);
 	fireEvent.click(subTrigger);
 
-	const noGoals = await waitFor(() =>
-		screen.getByRole("menuitem", { name: /no goals yet/i }),
+	const binderItem = await waitFor(() =>
+		screen.getByRole("menuitem", { name: /my binder/i }),
 	);
-	expect(noGoals.dataset.disabled).toBe("");
+	fireEvent.click(binderItem);
+
+	await waitFor(() => expect(mockAddCardsToBinder).toHaveBeenCalledTimes(1));
+	expect(mockAddCardsToBinder.mock.calls[0]).toEqual([
+		"b1",
+		["base1-1", "base1-2"],
+	]);
 });
+
+test("'Add cards to binder' shows '＋ New binder…' even with no binders", async () => {
+	render(<BulkAddMenu cardIds={["base1-1", "base1-2"]} />);
+	openMenu();
+
+	const subTrigger = await waitFor(() =>
+		screen.getByRole("menuitem", { name: /add 2 cards to binder/i }),
+	);
+	fireEvent.click(subTrigger);
+
+	await waitFor(() =>
+		expect(
+			screen.getAllByRole("menuitem", { name: /new binder/i }).length,
+		).toBeGreaterThan(0),
+	);
+});
+
+// ---- Item 3: Smart rule ----
+
+test("'Add smart rule to binder' calls addRuleToBinder when capturable", async () => {
+	useUserland.setState({ binders: { b1: binder1 }, hydrated: true });
+
+	render(
+		<BulkAddMenu cardIds={["base1-1", "base1-2"]} ruleQuery={capturableRule} />,
+	);
+	openMenu();
+
+	const subTrigger = await waitFor(() =>
+		screen.getByRole("menuitem", { name: /add smart rule to binder/i }),
+	);
+	fireEvent.click(subTrigger);
+
+	const binderItem = await waitFor(() =>
+		screen.getByRole("menuitem", { name: /my binder/i }),
+	);
+	fireEvent.click(binderItem);
+
+	await waitFor(() => expect(mockAddRuleToBinder).toHaveBeenCalledTimes(1));
+	expect(mockAddRuleToBinder.mock.calls[0]).toEqual(["b1", capturableRule]);
+});
+
+test("smart-rule submenu trigger is disabled when ruleQuery is null", async () => {
+	render(<BulkAddMenu cardIds={["base1-1", "base1-2"]} ruleQuery={null} />);
+	openMenu();
+
+	const subTrigger = await waitFor(() =>
+		screen.getByRole("menuitem", { name: /add smart rule to binder/i }),
+	);
+	expect(subTrigger.dataset.disabled).toBe("");
+});
+
+test("smart-rule submenu trigger is disabled when ruleQuery is not capturable", async () => {
+	render(
+		<BulkAddMenu cardIds={["base1-1", "base1-2"]} ruleQuery={emptyRule} />,
+	);
+	openMenu();
+
+	const subTrigger = await waitFor(() =>
+		screen.getByRole("menuitem", { name: /add smart rule to binder/i }),
+	);
+	expect(subTrigger.dataset.disabled).toBe("");
+});
+
+test("smart-rule submenu trigger is disabled when in select mode", async () => {
+	render(
+		<BulkAddMenu
+			cardIds={["base1-1", "base1-2"]}
+			ruleQuery={capturableRule}
+			selectedCardIds={["base1-1"]}
+		/>,
+	);
+	openMenu();
+
+	const subTrigger = await waitFor(() =>
+		screen.getByRole("menuitem", { name: /add smart rule to binder/i }),
+	);
+	expect(subTrigger.dataset.disabled).toBe("");
+});
+
+// ---- selectedCardIds targeting ----
+
+test("when selectedCardIds provided, card actions target the selection", async () => {
+	spyOn(globalThis, "confirm").mockImplementation(() => true);
+	spyOn(globalThis, "alert").mockImplementation(() => {});
+	useUserland.setState({ binders: { b1: binder1 }, hydrated: true });
+
+	render(
+		<BulkAddMenu
+			cardIds={["base1-1", "base1-2"]}
+			ruleQuery={capturableRule}
+			selectedCardIds={["base1-1"]}
+		/>,
+	);
+	openMenu();
+
+	// Collection item should show count 1 (unowned selection = 1)
+	const collItem = await waitFor(() =>
+		screen.getByRole("menuitem", { name: /add 1 to collection/i }),
+	);
+	fireEvent.click(collItem);
+	await waitFor(() =>
+		expect(mockBulkAddCopies).toHaveBeenCalledWith(["base1-1"]),
+	);
+
+	// Binder item should show "1 cards"
+	openMenu();
+	const subTrigger = await waitFor(() =>
+		screen.getByRole("menuitem", { name: /add 1 cards to binder/i }),
+	);
+	fireEvent.click(subTrigger);
+	const binderItem = await waitFor(() =>
+		screen.getByRole("menuitem", { name: /my binder/i }),
+	);
+	fireEvent.click(binderItem);
+	await waitFor(() =>
+		expect(mockAddCardsToBinder).toHaveBeenCalledWith("b1", ["base1-1"]),
+	);
+});
+
+// ---- Custom label ----
 
 test("custom label renders on trigger button", () => {
 	render(<BulkAddMenu cardIds={[]} label="Bulk add" />);

@@ -21,6 +21,7 @@ import {
 	listSearchToUrl,
 	validateListSearch,
 } from "../../../lib/list-search";
+import { toSerializedQuery } from "../../../lib/serialized-query";
 import { getSetCardsFn } from "../../../server/corpus-server";
 import { findSet, getNavTreeFn } from "../../../server/nav-tree";
 import { deriveFacets } from "../../../server/set-facets";
@@ -83,7 +84,7 @@ function SetPage() {
 					<div className="ml-auto flex items-center gap-2">
 						<BulkAddMenu
 							cardIds={cards.map((c) => c.id)}
-							goalTarget={{ kind: "set", setId: set.id }}
+							ruleQuery={toSerializedQuery(search, { setId: set.id })}
 						/>
 						<Button
 							variant="outline"

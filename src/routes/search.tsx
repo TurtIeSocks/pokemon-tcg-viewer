@@ -17,6 +17,7 @@ import {
 	listSearchToUrl,
 	validateListSearch,
 } from "../lib/list-search";
+import { toSerializedQuery } from "../lib/serialized-query";
 import { searchCardsFn } from "../server/corpus-server";
 import { deriveFacets } from "../server/set-facets";
 import { useStore } from "../store";
@@ -105,7 +106,12 @@ function SearchPage() {
 					<span className="text-sm text-muted-foreground">{total} cards</span>
 				) : null}
 				<div className="ml-auto flex items-center gap-2">
-					{q ? <BulkAddMenu cardIds={bulkCardIds} /> : null}
+					{q ? (
+						<BulkAddMenu
+							cardIds={bulkCardIds}
+							ruleQuery={toSerializedQuery(search, {})}
+						/>
+					) : null}
 					<ViewModeToggle
 						value={search.view}
 						disabled={!q}
