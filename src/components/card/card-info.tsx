@@ -72,7 +72,7 @@ function AttackRow({
 					) : null}
 				</span>
 				{attack.damage ? (
-					<span className="shrink-0 font-mono text-[17px] font-bold text-[color:var(--accent)]">
+					<span className="shrink-0 font-mono text-[17px] font-bold text-[color:var(--accent,#c9a86a)]">
 						{attack.damage}
 					</span>
 				) : null}
@@ -149,7 +149,7 @@ export function CardInfo({
 				</h2>
 				{card.hp ? (
 					<span className="shrink-0 whitespace-nowrap font-mono text-sm text-[#7d7a70]">
-						<b className="text-[1.4rem] font-bold text-[color:var(--accent)]">
+						<b className="text-[1.4rem] font-bold text-[color:var(--accent,#c9a86a)]">
 							{card.hp}
 						</b>{" "}
 						HP

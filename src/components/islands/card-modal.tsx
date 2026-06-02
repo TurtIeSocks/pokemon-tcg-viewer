@@ -38,7 +38,7 @@ export function CardModal({
 							className="h-full rounded-2xl border border-white/[0.06] p-5"
 							style={{
 								background:
-									"radial-gradient(120% 60% at 50% 0%, color-mix(in oklab, var(--accent) 8%, transparent), transparent 55%), #131215",
+									"radial-gradient(120% 60% at 50% 0%, color-mix(in oklab, var(--accent,#c9a86a) 8%, transparent), transparent 55%), #131215",
 							}}
 						>
 							<div className="flex flex-col items-center md:sticky md:top-8">
@@ -100,7 +100,7 @@ function CollectionButton({
 			className={cn(
 				"w-full rounded-[10px] py-2.5 text-center font-mono text-[13px] tracking-[0.04em] transition-colors",
 				owned
-					? "bg-[color:var(--accent)] font-bold text-[#1a1206]"
+					? "bg-[color:var(--accent,#c9a86a)] font-bold text-[#1a1206]"
 					: "border border-white/15 text-[#e7e3d8] hover:border-white/30",
 			)}
 		>

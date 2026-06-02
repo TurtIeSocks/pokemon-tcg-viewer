@@ -24,9 +24,11 @@ function PriceLines({ card }: { card: FocusCardData }) {
 						href={l.url}
 						target="_blank"
 						rel="noopener noreferrer"
-						className="text-[#7d7a70] no-underline transition-colors hover:text-[color:var(--accent)] focus-visible:text-[color:var(--accent)] focus-visible:outline-none"
+						className="text-[#7d7a70] no-underline transition-colors hover:text-[color:var(--accent,#c9a86a)] focus-visible:text-[color:var(--accent,#c9a86a)] focus-visible:outline-none"
 					>
-						<b className="font-bold text-[color:var(--accent)]">{value}</b>{" "}
+						<b className="font-bold text-[color:var(--accent,#c9a86a)]">
+							{value}
+						</b>{" "}
 						{qualifier} · {l.source} ↗
 					</a>
 				);
