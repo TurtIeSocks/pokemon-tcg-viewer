@@ -1,6 +1,6 @@
 // owned-cards-grid.test.tsx
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { PokemonSet } from "../../server/card-mappers";
 import { useStore } from "../../store";
 import { buildIndex } from "../../store/corpus/corpus-engine";
@@ -86,4 +86,38 @@ test("renders ×2 badge when two copies are owned", async () => {
 
 	render(<OwnedCardsGrid />);
 	expect(screen.getByText("×2")).toBeDefined();
+});
+
+test("changing sort key re-renders grid without crashing", async () => {
+	useCorpusRuntime.setState({ index: buildIndex([testCard]), loading: false });
+	useStore.setState({ sets: [testSet], setsFetchedAt: Date.now() });
+	await addCopy(testCard.id);
+
+	render(<OwnedCardsGrid />);
+	// The sort select trigger shows the current value; click it then change option
+	const selectTrigger = screen.getByRole("combobox");
+	fireEvent.click(selectTrigger);
+	// Select "Date acquired"
+	const option = await screen.findByText(/date acquired/i);
+	fireEvent.click(option);
+	// Grid still shows the card
+	expect(
+		screen.getByRole("button", { name: "Manage copies of Charizard" }),
+	).toBeDefined();
+});
+
+test("clicking asc/desc toggle re-renders grid without crashing", async () => {
+	useCorpusRuntime.setState({ index: buildIndex([testCard]), loading: false });
+	useStore.setState({ sets: [testSet], setsFetchedAt: Date.now() });
+	await addCopy(testCard.id);
+
+	render(<OwnedCardsGrid />);
+	const toggleBtn = screen.getByRole("button", { name: /sort descending/i });
+	fireEvent.click(toggleBtn);
+	// Now label flips
+	expect(screen.getByRole("button", { name: /sort ascending/i })).toBeDefined();
+	// Card still present
+	expect(
+		screen.getByRole("button", { name: "Manage copies of Charizard" }),
+	).toBeDefined();
 });

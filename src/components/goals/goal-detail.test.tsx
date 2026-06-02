@@ -147,3 +147,41 @@ test("Edit button opens the GoalFormDialog in edit mode", async () => {
 		expect(screen.getByRole("heading", { name: /edit goal/i })).toBeTruthy();
 	});
 });
+
+test("Delete button: confirm=false does NOT remove goal", async () => {
+	const goal = await createGoal({ name: "Keep Me" });
+	useUserland.setState((s) => ({ goals: { ...s.goals, [goal.id]: goal } }));
+
+	await renderGoalDetail(goal);
+
+	const origConfirm = window.confirm;
+	window.confirm = () => false;
+
+	const deleteBtn = screen.getByRole("button", { name: /delete goal/i });
+	await act(async () => {
+		fireEvent.click(deleteBtn);
+	});
+
+	expect(useUserland.getState().goals[goal.id]).toBeDefined();
+	window.confirm = origConfirm;
+});
+
+test("Delete button: confirm=true removes goal", async () => {
+	const goal = await createGoal({ name: "Delete Me" });
+	useUserland.setState((s) => ({ goals: { ...s.goals, [goal.id]: goal } }));
+
+	await renderGoalDetail(goal);
+
+	const origConfirm = window.confirm;
+	window.confirm = () => true;
+
+	const deleteBtn = screen.getByRole("button", { name: /delete goal/i });
+	await act(async () => {
+		fireEvent.click(deleteBtn);
+	});
+
+	await waitFor(() =>
+		expect(useUserland.getState().goals[goal.id]).toBeUndefined(),
+	);
+	window.confirm = origConfirm;
+});

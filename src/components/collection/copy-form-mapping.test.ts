@@ -51,3 +51,58 @@ test("formFieldToPatch: acquiredAt date → ms midnight", () => {
 		acquiredAt: inputDayToMs("2024-03-01"),
 	});
 });
+
+test("formFieldToPatch: condition non-empty → condition value", () => {
+	expect(formFieldToPatch("condition", "NM")).toEqual({ condition: "NM" });
+});
+
+test("formFieldToPatch: condition empty → null", () => {
+	expect(formFieldToPatch("condition", "")).toEqual({ condition: null });
+});
+
+test("formFieldToPatch: notes non-empty → notes value", () => {
+	expect(formFieldToPatch("notes", "Near mint")).toEqual({
+		notes: "Near mint",
+	});
+});
+
+test("formFieldToPatch: notes empty → null", () => {
+	expect(formFieldToPatch("notes", "")).toEqual({ notes: null });
+});
+
+test("formFieldToPatch: variant non-empty → variant value", () => {
+	expect(formFieldToPatch("variant", "Holo")).toEqual({ variant: "Holo" });
+});
+
+test("formFieldToPatch: variant empty → null", () => {
+	expect(formFieldToPatch("variant", "")).toEqual({ variant: null });
+});
+
+test("formFieldToPatch: gradingCompany with company + grade ctx → grading object", () => {
+	expect(
+		formFieldToPatch("gradingCompany", "PSA", {
+			gradingCompany: "PSA",
+			grade: "10",
+		}),
+	).toEqual({ grading: { company: "PSA", grade: 10 } });
+});
+
+test("formFieldToPatch: gradingCompany empty company → clears grading", () => {
+	expect(formFieldToPatch("gradingCompany", "", {})).toEqual({ grading: null });
+});
+
+test("formFieldToPatch: grade with grading ctx → grading object", () => {
+	expect(
+		formFieldToPatch("grade", "9", { gradingCompany: "BGS", grade: "9" }),
+	).toEqual({ grading: { company: "BGS", grade: 9 } });
+});
+
+test("formFieldToPatch: grade with empty grade → defaults to 0", () => {
+	expect(
+		formFieldToPatch("grade", "", { gradingCompany: "PSA", grade: "" }),
+	).toEqual({ grading: { company: "PSA", grade: 0 } });
+});
+
+test("formFieldToPatch: grade with missing company → clears grading", () => {
+	expect(formFieldToPatch("grade", "9", {})).toEqual({ grading: null });
+});
