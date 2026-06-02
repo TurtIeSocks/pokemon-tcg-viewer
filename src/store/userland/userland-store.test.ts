@@ -93,3 +93,53 @@ async function activeReposList(): Promise<string[]> {
 	const { activeRepos } = await import("./userland-store");
 	return (await activeRepos().collection.list()).map((i) => i.id);
 }
+
+import {
+	addGoalTargets,
+	createGoal,
+	removeGoal,
+	removeGoalTarget,
+	updateGoal,
+} from "./userland-store";
+
+test("createGoal commits to cache", async () => {
+	const g = await createGoal({ name: "Gen 1" });
+	expect(useUserland.getState().goals[g.id]?.name).toBe("Gen 1");
+});
+
+test("updateGoal patches name", async () => {
+	const g = await createGoal({ name: "A" });
+	await updateGoal(g.id, { name: "B" });
+	expect(useUserland.getState().goals[g.id]?.name).toBe("B");
+});
+
+test("addGoalTargets de-duplicates; removeGoalTarget removes", async () => {
+	const g = await createGoal({ name: "A" });
+	await addGoalTargets(g.id, [{ kind: "set", setId: "base1" }]);
+	await addGoalTargets(g.id, [{ kind: "set", setId: "base1" }]); // dup
+	expect(useUserland.getState().goals[g.id]?.targets).toHaveLength(1);
+	await removeGoalTarget(g.id, { kind: "set", setId: "base1" });
+	expect(useUserland.getState().goals[g.id]?.targets).toHaveLength(0);
+});
+
+test("removeGoal deletes", async () => {
+	const g = await createGoal({ name: "A" });
+	await removeGoal(g.id);
+	expect(useUserland.getState().goals[g.id]).toBeUndefined();
+});
+
+import { exportUserData, importUserData } from "./userland-store";
+
+test("export then import (replace) round-trips through the cache", async () => {
+	await addCopy("a", { pricePaid: 7 });
+	await createGoal({ name: "G" });
+	const snap = await exportUserData();
+
+	await clearCollection();
+	await importUserData(snap, "replace");
+
+	const items = Object.values(useUserland.getState().items);
+	expect(items).toHaveLength(1);
+	expect(items[0].pricePaid).toBe(7);
+	expect(Object.values(useUserland.getState().goals)).toHaveLength(1);
+});
