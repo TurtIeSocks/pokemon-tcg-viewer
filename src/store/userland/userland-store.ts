@@ -148,8 +148,12 @@ export async function setPrimaryCopy(
 	);
 	useUserland.setState((s) => {
 		const items = { ...s.items };
-		for (const c of copies)
-			items[c.id] = { ...items[c.id], isPrimary: c.id === copyId };
+		// Re-derive from fresh state (not the pre-await `copies` snapshot) so a
+		// concurrent add/delete can't resurrect a removed copy as a bogus entry.
+		for (const it of Object.values(items)) {
+			if (it.cardId === cardId)
+				items[it.id] = { ...it, isPrimary: it.id === copyId };
+		}
 		return { items };
 	});
 }
