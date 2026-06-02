@@ -54,7 +54,7 @@ export function SetTile({
 			/>
 			{showCount && (
 				<>
-					<span className="absolute left-0 right-0 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-1 pointer-events-none">
+					<span className="absolute top-2 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center pointer-events-none">
 						<span className="text-3xl font-bold tabular-nums text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">
 							{ownedCount}/{set.total}
 						</span>

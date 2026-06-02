@@ -22,12 +22,48 @@ const options = {
 	types: ["fire", "water"],
 };
 
-test("renders From and To year inputs", () => {
+// ─── Year filter visibility ───────────────────────────────────────────────────
+
+test("year inputs NOT rendered by default (showYearFilter omitted)", () => {
 	render(
 		<SearchControls
 			value={defaultValue}
 			options={options}
 			onChange={() => {}}
+		/>,
+	);
+	expect(
+		screen.queryByRole("spinbutton", { name: /release year from/i }),
+	).toBeNull();
+	expect(
+		screen.queryByRole("spinbutton", { name: /release year to/i }),
+	).toBeNull();
+});
+
+test("year inputs NOT rendered when showYearFilter={false}", () => {
+	render(
+		<SearchControls
+			value={defaultValue}
+			options={options}
+			onChange={() => {}}
+			showYearFilter={false}
+		/>,
+	);
+	expect(
+		screen.queryByRole("spinbutton", { name: /release year from/i }),
+	).toBeNull();
+	expect(
+		screen.queryByRole("spinbutton", { name: /release year to/i }),
+	).toBeNull();
+});
+
+test("renders From and To year inputs when showYearFilter={true}", () => {
+	render(
+		<SearchControls
+			value={defaultValue}
+			options={options}
+			onChange={() => {}}
+			showYearFilter
 		/>,
 	);
 	expect(
@@ -44,6 +80,7 @@ test("From year input has correct placeholder", () => {
 			value={defaultValue}
 			options={options}
 			onChange={() => {}}
+			showYearFilter
 		/>,
 	);
 	const from = screen.getByRole("spinbutton", {
@@ -58,6 +95,7 @@ test("To year input has correct placeholder", () => {
 			value={defaultValue}
 			options={options}
 			onChange={() => {}}
+			showYearFilter
 		/>,
 	);
 	const to = screen.getByRole("spinbutton", {
@@ -73,6 +111,7 @@ test("typing a year into From fires onChange with yearMin", () => {
 			value={defaultValue}
 			options={options}
 			onChange={onChange}
+			showYearFilter
 		/>,
 	);
 	const from = screen.getByRole("spinbutton", { name: /release year from/i });
@@ -87,6 +126,7 @@ test("typing a year into To fires onChange with yearMax", () => {
 			value={defaultValue}
 			options={options}
 			onChange={onChange}
+			showYearFilter
 		/>,
 	);
 	const to = screen.getByRole("spinbutton", { name: /release year to/i });
@@ -101,6 +141,7 @@ test("clearing From fires onChange with yearMin null", () => {
 			value={{ ...defaultValue, yearMin: 2020 }}
 			options={options}
 			onChange={onChange}
+			showYearFilter
 		/>,
 	);
 	const from = screen.getByRole("spinbutton", { name: /release year from/i });
@@ -115,6 +156,7 @@ test("clearing To fires onChange with yearMax null", () => {
 			value={{ ...defaultValue, yearMax: 2023 }}
 			options={options}
 			onChange={onChange}
+			showYearFilter
 		/>,
 	);
 	const to = screen.getByRole("spinbutton", { name: /release year to/i });
@@ -139,6 +181,7 @@ test("yearMin value reflects prop", () => {
 			value={{ ...defaultValue, yearMin: 1999 }}
 			options={options}
 			onChange={() => {}}
+			showYearFilter
 		/>,
 	);
 	const from = screen.getByRole("spinbutton", {
@@ -153,6 +196,7 @@ test("yearMax value reflects prop", () => {
 			value={{ ...defaultValue, yearMax: 2006 }}
 			options={options}
 			onChange={() => {}}
+			showYearFilter
 		/>,
 	);
 	const to = screen.getByRole("spinbutton", {

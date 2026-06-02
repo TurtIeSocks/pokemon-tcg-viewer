@@ -179,6 +179,7 @@ function SearchPageInner({
 					options={options}
 					onChange={onChange}
 					placeholder="Search all cards"
+					showYearFilter
 				/>
 			</div>
 			<div className="min-h-0 flex-1">
