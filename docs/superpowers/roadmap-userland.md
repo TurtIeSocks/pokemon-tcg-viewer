@@ -45,7 +45,9 @@ Layers 3–8 are largely independent once 1 and 2 land; reorder by appetite. Lay
 
 **Open questions to brainstorm:** where editing happens (inline popover on the card vs a copy-list panel in card detail vs a modal); the raw/graded toggle UX; condition enum copy/labels; the grading company picklist (PSA/BGS/CGC/TAG/SGC + "Other"); how the card-grid "+" affordance reads once a card has N copies (badge + count, opens manager).
 
-## Layer 2 — Themed hub + IA / rename `[ ]`
+## Layer 2 — Themed hub + IA / rename `[x]`
+
+> Implemented + verified 2026-06-02. `/collection` → `/vault` hub (layout + Cards live, Sets/Goals stubs, backup in header, owned count). tsc/biome/275 tests/build/browser-smoke. PR pending.
 
 **Adds:** rename "Collection" → a TCG-themed hub (candidate: **Binder** / "My Binder"; alternatives to explore), a landing page tying together set grid + card grid + goals + backup, and nav placement (sidebar + toolbar).
 
