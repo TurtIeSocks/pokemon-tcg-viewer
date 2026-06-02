@@ -66,3 +66,37 @@ test("bulkAdd inserts many", async () => {
 	expect(created).toHaveLength(2);
 	expect(await repo.list()).toHaveLength(2);
 });
+
+import { createIdbGoalsRepo } from "./idb-repo";
+
+const goals = createIdbGoalsRepo();
+beforeEach(async () => {
+	await goals.clear();
+});
+
+test("goals.create assigns id/timestamps and defaults description=null, targets=[]", async () => {
+	const g = await goals.create({ name: "Gen 1 binder" });
+	expect(typeof g.id).toBe("string");
+	expect(g.name).toBe("Gen 1 binder");
+	expect(g.description).toBeNull();
+	expect(g.targets).toEqual([]);
+	expect(g.createdAt).toBe(g.updatedAt);
+});
+
+test("goals.update patches fields and bumps updatedAt", async () => {
+	const g = await goals.create({ name: "A" });
+	await goals.update(g.id, {
+		name: "B",
+		targets: [{ kind: "set", setId: "base1" }],
+	});
+	const [reloaded] = await goals.list();
+	expect(reloaded.name).toBe("B");
+	expect(reloaded.targets).toEqual([{ kind: "set", setId: "base1" }]);
+	expect(reloaded.updatedAt).toBeGreaterThanOrEqual(reloaded.createdAt);
+});
+
+test("goals.remove deletes", async () => {
+	const g = await goals.create({ name: "A" });
+	await goals.remove(g.id);
+	expect(await goals.list()).toEqual([]);
+});
