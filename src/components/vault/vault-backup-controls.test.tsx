@@ -1,6 +1,6 @@
 // vault-backup-controls.test.tsx
 import { beforeEach, expect, test } from "bun:test";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createIdbRepos } from "../../store/userland/idb-repo";
 import {
 	exportUserData,
@@ -24,11 +24,18 @@ test("renders Export backup and Import backup buttons", () => {
 	expect(screen.getByRole("button", { name: /import backup/i })).toBeDefined();
 });
 
-test("hidden file input is present for import wiring", () => {
-	const { container } = render(<VaultBackupControls />);
-	const input = container.querySelector('input[type="file"]');
-	expect(input).toBeDefined();
-	expect(input?.getAttribute("accept")).toBe("application/json");
+test("clicking Import backup opens the import dialog", async () => {
+	render(<VaultBackupControls />);
+	const importBtn = screen.getByRole("button", { name: /import backup/i });
+	fireEvent.click(importBtn);
+	// Dialog title should appear
+	await waitFor(() => {
+		expect(
+			screen.getByText(/import backup/i, {
+				selector: '[data-slot="dialog-title"]',
+			}),
+		).toBeDefined();
+	});
 });
 
 test("exportUserData resolves a snapshot with correct shape", async () => {

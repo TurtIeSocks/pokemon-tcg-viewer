@@ -1,27 +1,13 @@
-import { type ChangeEvent, useRef } from "react";
-import { downloadSnapshot, parseSnapshot } from "../../store/userland/backup";
-import {
-	exportUserData,
-	importUserData,
-} from "../../store/userland/userland-store";
+import { useState } from "react";
+import { downloadSnapshot } from "../../store/userland/backup";
+import { exportUserData } from "../../store/userland/userland-store";
+import { ImportDialog } from "./import-dialog";
 
 export function VaultBackupControls() {
-	const fileRef = useRef<HTMLInputElement>(null);
+	const [importOpen, setImportOpen] = useState(false);
 
 	async function onExport() {
 		downloadSnapshot(await exportUserData());
-	}
-
-	async function onImport(e: ChangeEvent<HTMLInputElement>) {
-		const file = e.target.files?.[0];
-		if (!file) return;
-		try {
-			await importUserData(parseSnapshot(await file.text()), "replace");
-		} catch (err) {
-			alert(err instanceof Error ? err.message : "Import failed");
-		} finally {
-			if (fileRef.current) fileRef.current.value = "";
-		}
 	}
 
 	return (
@@ -35,18 +21,12 @@ export function VaultBackupControls() {
 			</button>
 			<button
 				type="button"
-				onClick={() => fileRef.current?.click()}
+				onClick={() => setImportOpen(true)}
 				className="rounded border px-3 py-1.5 text-sm hover:bg-secondary"
 			>
 				Import backup
 			</button>
-			<input
-				ref={fileRef}
-				type="file"
-				accept="application/json"
-				className="hidden"
-				onChange={onImport}
-			/>
+			<ImportDialog open={importOpen} onOpenChange={setImportOpen} />
 		</div>
 	);
 }
