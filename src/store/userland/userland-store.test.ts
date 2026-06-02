@@ -135,6 +135,15 @@ test("bulkAddCopies: each new card's copy is primary; already-owned cards' new c
 	expect(bCopies[0]?.isPrimary).toBe(true);
 });
 
+test("bulkAddCopies: same unowned cardId twice in one batch → exactly one primary", async () => {
+	await bulkAddCopies(["x", "x"]);
+	const xCopies = Object.values(useUserland.getState().items).filter(
+		(i) => i.cardId === "x",
+	);
+	expect(xCopies).toHaveLength(2);
+	expect(xCopies.filter((i) => i.isPrimary)).toHaveLength(1);
+});
+
 test("bulkAddCopies: two brand-new cards both get primary copies", async () => {
 	await bulkAddCopies(["alpha", "beta"]);
 	const items = Object.values(useUserland.getState().items);

@@ -161,16 +161,20 @@ export async function bulkAddCopies(
 	cardIds: string[],
 	fields: Partial<EditableCopyFields> = {},
 ): Promise<void> {
-	// Determine which cardIds are not yet owned (they get isPrimary=true).
+	// Seed with already-owned cardIds; only the FIRST newly-added copy of each
+	// previously-unowned cardId in this batch becomes primary.
 	const existing = useUserland.getState().items;
-	const ownedCardIds = new Set(Object.values(existing).map((i) => i.cardId));
+	const grantedPrimary = new Set(
+		Object.values(existing).map((i) => i.cardId),
+	);
 	const created = await activeRepos().collection.bulkAdd(
 		cardIds.map((cardId) => ({ cardId, ...fields })),
 	);
-	// Patch primary flag for newly-owned cards.
+	// Patch primary flag for the first newly-owned copy of each card.
 	const patched = await Promise.all(
 		created.map(async (item) => {
-			if (!ownedCardIds.has(item.cardId)) {
+			if (!grantedPrimary.has(item.cardId)) {
+				grantedPrimary.add(item.cardId);
 				await activeRepos().collection.update(item.id, { isPrimary: true });
 				return { ...item, isPrimary: true };
 			}
@@ -307,8 +311,9 @@ export async function removeCardFromBinder(
 	const binder = useUserland.getState().binders[id];
 	if (!binder) return;
 	const newIncludes = binder.includeCardIds.filter((cid) => cid !== cardId);
+	// Always build a fresh array so the patch never shares a reference with prior state.
 	const newExcludes = binder.excludeCardIds.includes(cardId)
-		? binder.excludeCardIds
+		? [...binder.excludeCardIds]
 		: [...binder.excludeCardIds, cardId];
 	await updateBinder(id, {
 		includeCardIds: newIncludes,
