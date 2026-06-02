@@ -103,21 +103,22 @@ export function buildSnapshot(input: BuildSnapshotInput): BinderSnapshot {
 // Encode / Decode
 // ---------------------------------------------------------------------------
 
+// btoa/atob are universal (browser + Bun + happy-dom); Buffer is Node-only and
+// crashes in the browser — this code runs client-side (share dialog + /vault/shared).
 function toBase64Url(bytes: Uint8Array): string {
-	// Buffer is available in Bun
-	return Buffer.from(bytes)
-		.toString("base64")
-		.replace(/\+/g, "-")
-		.replace(/\//g, "_")
-		.replace(/=+$/, "");
+	let bin = "";
+	for (const b of bytes) bin += String.fromCharCode(b);
+	return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 function fromBase64Url(s: string): Uint8Array {
 	// Restore standard base64 padding
 	const padded = s.replace(/-/g, "+").replace(/_/g, "/");
 	const pad = (4 - (padded.length % 4)) % 4;
-	const b64 = padded + "=".repeat(pad);
-	return new Uint8Array(Buffer.from(b64, "base64"));
+	const bin = atob(padded + "=".repeat(pad));
+	const bytes = new Uint8Array(bin.length);
+	for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+	return bytes;
 }
 
 /** Deflate-compresses and base64url-encodes a snapshot for embedding in a URL hash. */

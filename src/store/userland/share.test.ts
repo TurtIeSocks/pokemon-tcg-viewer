@@ -68,6 +68,21 @@ describe("encodeSnapshot / decodeSnapshot round-trip", () => {
 		const encoded = encodeSnapshot(baseSnapshot);
 		expect(encoded).not.toMatch(/[+/=]/);
 	});
+
+	// Regression: encode/decode run in the BROWSER (share dialog + /vault/shared),
+	// which has no Node `Buffer`. Earlier impl used Buffer and crashed at runtime.
+	it("round-trips without Node Buffer (browser-safe)", () => {
+		const orig = globalThis.Buffer;
+		// @ts-expect-error — simulate a browser env with no Buffer global
+		globalThis.Buffer = undefined;
+		try {
+			expect(decodeSnapshot(encodeSnapshot(baseSnapshot))).toEqual(
+				baseSnapshot,
+			);
+		} finally {
+			globalThis.Buffer = orig;
+		}
+	});
 });
 
 // ---------------------------------------------------------------------------
