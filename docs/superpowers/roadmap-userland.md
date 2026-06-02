@@ -11,7 +11,9 @@ Everything below sits on the **foundation** (per-copy data model + repository po
 
 `[ ]` not started · `[~]` in progress · `[x]` done
 
-## Layer 0 — Foundation `[ ]`
+## Layer 0 — Foundation `[x]`
+
+> Implemented + verified 2026-06-02 on branch `claude/priceless-elgamal-fae119` (tsc, biome, 257 tests, vite build, code review, live browser smoke). PR pending (batched with subsequent layers).
 
 Per-copy `CollectionItem` + `Goal` model; IDB-backed `CollectionRepo`/`GoalsRepo`/`BackupRepo` behind a port; non-persisted Zustand cache hydrated from the repo; corpus join (`byId` + `hydrateCard`); versioned import/export engine + minimal backup buttons; migrate existing call sites; clean break (no migration). **Must land before any layer below.**
 
