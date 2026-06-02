@@ -65,7 +65,9 @@ Layers 3–8 are largely independent once 1 and 2 land; reorder by appetite. Lay
 
 **Open questions:** tile design (reuse `set-tile`/booster art?); sort/group (by series? by completion %?); progress visualization (text vs ring/bar); click-through target (set page, optionally pre-filtered to owned).
 
-## Layer 4 — Full card grid + multi-sort `[ ]`
+## Layer 4 — Full card grid + multi-sort `[x]`
+
+> Implemented + verified 2026-06-02. `/vault/cards`: per-card grid (×N), sort by set→#/date/price/year + asc/desc; click → Copy Manager modal with a user-settable **primary** copy (`isPrimary` + `setPrimaryCopy`); per-copy sorts use the primary. tsc/biome/289 tests/build/browser-smoke. PR pending.
 
 **Adds:** a grid of all owned cards with sort by **set → set#**, **date acquired**, **price paid**, **year released**; asc/desc. Handles a card with multiple copies (expand into N copies, or aggregate with a count + per-copy drill-in).
 
