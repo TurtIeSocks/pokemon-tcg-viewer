@@ -3,7 +3,12 @@ import { useIsOwned, useOwnedCount } from "../../store/userland/selectors";
 import { addCopy } from "../../store/userland/userland-store";
 import { CopyManager } from "../collection/copy-manager";
 import type { HoloCardData } from "../holo-card";
-import { Dialog, DialogContent, DialogTitle } from "../ui/dialog";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogTitle,
+} from "../ui/dialog";
 
 interface CollectionToggleProps {
 	card: HoloCardData;
@@ -45,6 +50,9 @@ export function CollectionToggle({ card }: CollectionToggleProps) {
 				</button>
 				<DialogContent>
 					<DialogTitle>{card.name} — Copies</DialogTitle>
+					<DialogDescription>
+						Add, edit, or remove individual copies you own.
+					</DialogDescription>
 					<CopyManager cardId={card.id} variants={card.variants} />
 				</DialogContent>
 			</Dialog>
