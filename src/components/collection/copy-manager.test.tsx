@@ -48,3 +48,16 @@ test("remove all (confirmed) empties the card's copies", async () => {
 	);
 	window.confirm = orig;
 });
+
+test("Set as primary marks the copy primary", async () => {
+	await addCopy("c");
+	await addCopy("c");
+	render(<CopyManager cardId="c" />);
+	const btns = screen.getAllByRole("button", { name: /set as primary/i });
+	fireEvent.click(btns[btns.length - 1]); // last row
+	await waitFor(() =>
+		expect(
+			Object.values(useUserland.getState().items).some((i) => i.isPrimary),
+		).toBe(true),
+	);
+});

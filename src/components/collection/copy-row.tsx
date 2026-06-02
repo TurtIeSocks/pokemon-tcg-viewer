@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { CollectionItem } from "../../store/userland/types";
-import { removeCopy } from "../../store/userland/userland-store";
+import {
+	removeCopy,
+	setPrimaryCopy,
+} from "../../store/userland/userland-store";
 import { CopyEditForm } from "./copy-edit-form";
 import { dayMsToInput } from "./copy-form-mapping";
 
@@ -51,6 +54,19 @@ export function CopyRow({ item, variants }: CopyRowProps) {
 				>
 					{summary || dayMsToInput(item.acquiredAt)}
 				</button>
+				{item.isPrimary ? (
+					<span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+						★ Primary
+					</span>
+				) : (
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => void setPrimaryCopy(item.cardId, item.id)}
+					>
+						Set as primary
+					</Button>
+				)}
 				<Button variant="destructive" size="sm" onClick={handleDelete}>
 					Delete
 				</Button>
