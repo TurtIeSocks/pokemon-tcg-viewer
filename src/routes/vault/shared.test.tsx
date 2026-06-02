@@ -11,8 +11,8 @@ import { buildIndex } from "../../store/corpus/corpus-engine";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
 import type { CorpusCard } from "../../store/corpus/corpus-types";
 import {
-	encodeSnapshot,
 	type BinderSnapshot,
+	encodeSnapshot,
 } from "../../store/userland/share";
 import { SharedBinderInner } from "./shared";
 
@@ -117,12 +117,8 @@ test("owned card renders in color (no grayscale), missing card renders greyscale
 	await renderInner();
 
 	// OwnedMissingGrid uses aria-label "owned"/"missing" on indicator dots
-	const ownedDots = screen.getAllByRole("generic", { hidden: true }).filter(
-		(el) => el.getAttribute("aria-label") === "owned",
-	);
-	const missingDots = screen.getAllByRole("generic", { hidden: true }).filter(
-		(el) => el.getAttribute("aria-label") === "missing",
-	);
+	const ownedDots = screen.getAllByLabelText("owned");
+	const missingDots = screen.getAllByLabelText("missing");
 
 	expect(ownedDots.length).toBeGreaterThanOrEqual(1);
 	expect(missingDots.length).toBeGreaterThanOrEqual(1);
@@ -136,9 +132,9 @@ test("owned card renders in color (no grayscale), missing card renders greyscale
 	expect(ivysaur).toBeTruthy();
 
 	// Owned card: no grayscale
-	expect(bulbasaur!.className).not.toContain("grayscale");
+	expect(bulbasaur?.className ?? "").not.toContain("grayscale");
 	// Missing card: has grayscale
-	expect(ivysaur!.className).toContain("grayscale");
+	expect(ivysaur?.className ?? "").toContain("grayscale");
 });
 
 test("garbage hash renders friendly error state", async () => {

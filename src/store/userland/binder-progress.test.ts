@@ -117,7 +117,9 @@ test("toCorpusQuery: null setId/dexNumber/yearMin/yearMax → undefined", () => 
 });
 
 test("toCorpusQuery: non-null scalar fields pass through", () => {
-	const cq = toCorpusQuery(sq({ setId: "base1", dexNumber: 25, yearMin: 1999, yearMax: 2000 }));
+	const cq = toCorpusQuery(
+		sq({ setId: "base1", dexNumber: 25, yearMin: 1999, yearMax: 2000 }),
+	);
 	expect(cq.setId).toBe("base1");
 	expect(cq.dexNumber).toBe(25);
 	expect(cq.yearMin).toBe(1999);
@@ -125,7 +127,14 @@ test("toCorpusQuery: non-null scalar fields pass through", () => {
 });
 
 test("toCorpusQuery: filter arrays passed through into filters object", () => {
-	const cq = toCorpusQuery(sq({ types: ["Fire"], rarities: ["Rare Holo"], supertypes: ["Pokémon"], subtypes: ["Stage 1"] }));
+	const cq = toCorpusQuery(
+		sq({
+			types: ["Fire"],
+			rarities: ["Rare Holo"],
+			supertypes: ["Pokémon"],
+			subtypes: ["Stage 1"],
+		}),
+	);
 	expect(cq.filters?.types).toEqual(["Fire"]);
 	expect(cq.filters?.rarities).toEqual(["Rare Holo"]);
 	expect(cq.filters?.supertypes).toEqual(["Pokémon"]);
@@ -195,7 +204,9 @@ test("binderMembers: year-bounded rule keeps only cards in sets up to yearMax", 
 	// yearMax: 1999 → should include old-1 (1999-11-24), base1 (1999-01-09), base2 (1999-06-16) cards
 	// but NOT new-1 (2001-01-01)
 	const b = binder({
-		rules: [{ id: "r1", query: sq({ supertypes: ["Pokémon"], yearMax: 1999 }) }],
+		rules: [
+			{ id: "r1", query: sq({ supertypes: ["Pokémon"], yearMax: 1999 }) },
+		],
 	});
 	const members = binderMembers(b, index, setsMap);
 	expect(members.has("old-1")).toBe(true);
@@ -220,7 +231,12 @@ test("computeBinderProgress: owned/total counts", () => {
 });
 
 test("computeBinderProgress: empty binder → 0/0", () => {
-	const progress = computeBinderProgress(binder(), index, setsMap, new Set(["pika-1"]));
+	const progress = computeBinderProgress(
+		binder(),
+		index,
+		setsMap,
+		new Set(["pika-1"]),
+	);
 	expect(progress.total).toBe(0);
 	expect(progress.owned).toBe(0);
 	expect(progress.members.size).toBe(0);
@@ -232,7 +248,12 @@ test("computeBinderProgress: owned card not in binder not counted", () => {
 		rules: [{ id: "r1", query: sq({ supertypes: ["Trainer"] }) }],
 	});
 	// own pika-1 which is not in binder
-	const progress = computeBinderProgress(b, index, setsMap, new Set(["pika-1"]));
+	const progress = computeBinderProgress(
+		b,
+		index,
+		setsMap,
+		new Set(["pika-1"]),
+	);
 	expect(progress.total).toBe(1);
 	expect(progress.owned).toBe(0);
 });
@@ -241,7 +262,7 @@ test("computeBinderProgress: include+exclude combined with owned", () => {
 	const b = binder({
 		rules: [{ id: "r1", query: sq({ supertypes: ["Pokémon"] }) }],
 		includeCardIds: ["trainer-1"], // add trainer
-		excludeCardIds: ["new-1"],     // remove new-1
+		excludeCardIds: ["new-1"], // remove new-1
 	});
 	// Pokémon (5) + trainer-1 (1) - new-1 (1) = 5
 	const owned = new Set(["pika-1", "trainer-1", "new-1"]);

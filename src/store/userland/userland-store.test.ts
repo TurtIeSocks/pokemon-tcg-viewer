@@ -18,8 +18,8 @@ import {
 	removeRuleFromBinder,
 	resetUserlandForTests,
 	restoreCardToBinder,
-	setUserlandRepos,
 	setPrimaryCopy,
+	setUserlandRepos,
 	updateCopy,
 	useUserland,
 } from "./userland-store";
@@ -263,9 +263,13 @@ test("removeCardFromBinder is idempotent", async () => {
 test("restoreCardToBinder removes cardId from excludeCardIds", async () => {
 	const b = await createBinder({ name: "B" });
 	await removeCardFromBinder(b.id, "card-a");
-	expect(useUserland.getState().binders[b.id]?.excludeCardIds).toContain("card-a");
+	expect(useUserland.getState().binders[b.id]?.excludeCardIds).toContain(
+		"card-a",
+	);
 	await restoreCardToBinder(b.id, "card-a");
-	expect(useUserland.getState().binders[b.id]?.excludeCardIds).not.toContain("card-a");
+	expect(useUserland.getState().binders[b.id]?.excludeCardIds).not.toContain(
+		"card-a",
+	);
 });
 
 test("removeRuleFromBinder drops the rule", async () => {

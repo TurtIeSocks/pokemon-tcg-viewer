@@ -74,7 +74,10 @@ describe("toSerializedQuery", () => {
 		const s = baseSearch();
 		s.owned = "owned";
 		s.view = "timeline";
-		const q = toSerializedQuery(s, baseCtx()) as unknown as Record<string, unknown>;
+		const q = toSerializedQuery(s, baseCtx()) as unknown as Record<
+			string,
+			unknown
+		>;
 		expect(q.owned).toBeUndefined();
 		expect(q.view).toBeUndefined();
 	});

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
-import { binderRuleLabel } from "./binder-rule-label";
 import type { SerializedQuery } from "../store/userland/types";
+import { binderRuleLabel } from "./binder-rule-label";
 
 const empty = (): SerializedQuery => ({
 	text: null,
@@ -115,6 +115,8 @@ describe("binderRuleLabel — basics", () => {
 			yearMax: 2000,
 		};
 		const label = binderRuleLabel(q, { setName: () => "Base" });
-		expect(label).toBe('Base · Pokémon · Basic · Rare Holo · Fire · "charizard" · 1999–2000');
+		expect(label).toBe(
+			'Base · Pokémon · Basic · Rare Holo · Fire · "charizard" · 1999–2000',
+		);
 	});
 });

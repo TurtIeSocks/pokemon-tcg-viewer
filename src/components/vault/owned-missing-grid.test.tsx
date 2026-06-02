@@ -36,7 +36,11 @@ test("missing card is rendered with grayscale class", () => {
 
 test("mode=owned hides missing cards", () => {
 	render(
-		<OwnedMissingGrid cards={[cardA, cardB]} ownedCardIds={ownedSet} mode="owned" />,
+		<OwnedMissingGrid
+			cards={[cardA, cardB]}
+			ownedCardIds={ownedSet}
+			mode="owned"
+		/>,
 	);
 	expect(screen.getByAltText("Bulbasaur")).toBeDefined();
 	expect(screen.queryByAltText("Ivysaur")).toBeNull();

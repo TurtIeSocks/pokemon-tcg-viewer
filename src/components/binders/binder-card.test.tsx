@@ -54,7 +54,22 @@ function makeBinder(overrides: Partial<Binder> = {}): Binder {
 		id: "b1",
 		name: "My Test Binder",
 		description: null,
-		rules: [{ id: "r1", query: { text: null, setId: "base1", dexNumber: null, types: [], rarities: [], supertypes: [], subtypes: [], yearMin: null, yearMax: null } }],
+		rules: [
+			{
+				id: "r1",
+				query: {
+					text: null,
+					setId: "base1",
+					dexNumber: null,
+					types: [],
+					rarities: [],
+					supertypes: [],
+					subtypes: [],
+					yearMin: null,
+					yearMax: null,
+				},
+			},
+		],
 		includeCardIds: ["base1-1"],
 		excludeCardIds: [],
 		createdAt: 1000,
@@ -92,7 +107,9 @@ beforeEach(async () => {
 
 test("renders binder name", async () => {
 	const binder = makeBinder();
-	useUserland.setState((s) => ({ binders: { ...s.binders, [binder.id]: binder } }));
+	useUserland.setState((s) => ({
+		binders: { ...s.binders, [binder.id]: binder },
+	}));
 
 	await renderBinderCard(binder);
 
@@ -101,7 +118,9 @@ test("renders binder name", async () => {
 
 test("renders description when present", async () => {
 	const binder = makeBinder({ description: "All Base Set holos" });
-	useUserland.setState((s) => ({ binders: { ...s.binders, [binder.id]: binder } }));
+	useUserland.setState((s) => ({
+		binders: { ...s.binders, [binder.id]: binder },
+	}));
 
 	await renderBinderCard(binder);
 
@@ -110,7 +129,9 @@ test("renders description when present", async () => {
 
 test("does not render description element when null", async () => {
 	const binder = makeBinder({ description: null });
-	useUserland.setState((s) => ({ binders: { ...s.binders, [binder.id]: binder } }));
+	useUserland.setState((s) => ({
+		binders: { ...s.binders, [binder.id]: binder },
+	}));
 
 	await renderBinderCard(binder);
 
@@ -119,7 +140,9 @@ test("does not render description element when null", async () => {
 
 test("renders progress indicator (owned/total label)", async () => {
 	const binder = makeBinder();
-	useUserland.setState((s) => ({ binders: { ...s.binders, [binder.id]: binder } }));
+	useUserland.setState((s) => ({
+		binders: { ...s.binders, [binder.id]: binder },
+	}));
 
 	await renderBinderCard(binder);
 
@@ -132,8 +155,42 @@ test("renders progress indicator (owned/total label)", async () => {
 });
 
 test("renders rules and cards counts line", async () => {
-	const binder = makeBinder({ rules: [{ id: "r1", query: { text: null, setId: "base1", dexNumber: null, types: [], rarities: [], supertypes: [], subtypes: [], yearMin: null, yearMax: null } }, { id: "r2", query: { text: null, setId: null, dexNumber: null, types: [], rarities: [], supertypes: [], subtypes: [], yearMin: null, yearMax: null } }], includeCardIds: ["base1-1", "base1-2"] });
-	useUserland.setState((s) => ({ binders: { ...s.binders, [binder.id]: binder } }));
+	const binder = makeBinder({
+		rules: [
+			{
+				id: "r1",
+				query: {
+					text: null,
+					setId: "base1",
+					dexNumber: null,
+					types: [],
+					rarities: [],
+					supertypes: [],
+					subtypes: [],
+					yearMin: null,
+					yearMax: null,
+				},
+			},
+			{
+				id: "r2",
+				query: {
+					text: null,
+					setId: null,
+					dexNumber: null,
+					types: [],
+					rarities: [],
+					supertypes: [],
+					subtypes: [],
+					yearMin: null,
+					yearMax: null,
+				},
+			},
+		],
+		includeCardIds: ["base1-1", "base1-2"],
+	});
+	useUserland.setState((s) => ({
+		binders: { ...s.binders, [binder.id]: binder },
+	}));
 
 	await renderBinderCard(binder);
 
@@ -143,7 +200,9 @@ test("renders rules and cards counts line", async () => {
 
 test("share icon button opens ShareDialog", async () => {
 	const binder = makeBinder();
-	useUserland.setState((s) => ({ binders: { ...s.binders, [binder.id]: binder } }));
+	useUserland.setState((s) => ({
+		binders: { ...s.binders, [binder.id]: binder },
+	}));
 
 	await renderBinderCard(binder);
 
@@ -158,7 +217,9 @@ test("share icon button opens ShareDialog", async () => {
 
 test("share button click does not navigate (stopPropagation)", async () => {
 	const binder = makeBinder();
-	useUserland.setState((s) => ({ binders: { ...s.binders, [binder.id]: binder } }));
+	useUserland.setState((s) => ({
+		binders: { ...s.binders, [binder.id]: binder },
+	}));
 
 	await renderBinderCard(binder);
 

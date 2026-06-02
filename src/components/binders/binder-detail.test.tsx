@@ -1,4 +1,4 @@
-import { beforeEach, expect, mock, test } from "bun:test";
+import { beforeEach, expect, test } from "bun:test";
 import {
 	createRootRoute,
 	createRouter,
@@ -32,7 +32,12 @@ import { BinderDetail } from "./binder-detail";
 // Helpers
 // ---------------------------------------------------------------------------
 
-function cc(id: string, name: string, setId: string, dex?: number[]): CorpusCard {
+function cc(
+	id: string,
+	name: string,
+	setId: string,
+	dex?: number[],
+): CorpusCard {
 	return {
 		id,
 		name,
@@ -159,9 +164,9 @@ test("clicking rule × calls removeRuleFromBinder", async () => {
 
 	await waitFor(() => {
 		expect(
-			useUserland.getState().binders[updated.id]?.rules.find(
-				(r) => r.id === ruleId,
-			),
+			useUserland
+				.getState()
+				.binders[updated.id]?.rules.find((r) => r.id === ruleId),
 		).toBeUndefined();
 	});
 });

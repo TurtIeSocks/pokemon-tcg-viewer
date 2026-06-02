@@ -10,17 +10,17 @@ import {
 import { useCorpusRuntime } from "../corpus/corpus-runtime";
 import { useStore } from "../index";
 import {
+	type BinderProgress,
+	binderMembers,
+	computeBinderProgress,
+} from "./binder-progress";
+import {
 	buildCardRows,
 	type CardRow,
 	type SortDir,
 	type SortKey,
 	sortCardRows,
 } from "./card-rows";
-import {
-	computeBinderProgress,
-	binderMembers,
-	type BinderProgress,
-} from "./binder-progress";
 import type { CollectionItem } from "./types";
 import { loadUserland, useUserland } from "./userland-store";
 

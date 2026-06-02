@@ -87,7 +87,10 @@ test("binders.create assigns id/timestamps and defaults description=null, rules/
 });
 
 test("binders.create with description preserves it", async () => {
-	const b = await binders.create({ name: "Fire deck", description: "All fire cards" });
+	const b = await binders.create({
+		name: "Fire deck",
+		description: "All fire cards",
+	});
 	expect(b.description).toBe("All fire cards");
 });
 

@@ -2,10 +2,7 @@ import { ClientOnly, createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { OwnedMissingGrid } from "@/components/vault/owned-missing-grid";
 import { useStore } from "@/store";
-import {
-	hydrateCard,
-	setsById,
-} from "@/store/corpus/corpus-engine";
+import { hydrateCard, setsById } from "@/store/corpus/corpus-engine";
 import { useCorpusRuntime } from "@/store/corpus/corpus-runtime";
 import { useEnsureCorpus } from "@/store/corpus/use-ensure-corpus";
 import type { BinderSnapshot } from "@/store/userland/share";
@@ -58,7 +55,8 @@ export function SharedBinderInner() {
 		return (
 			<div className="py-16 text-center space-y-2">
 				<p className="text-lg font-medium text-destructive">
-					Couldn't read this shared binder — the link may be broken or incomplete.
+					Couldn't read this shared binder — the link may be broken or
+					incomplete.
 				</p>
 			</div>
 		);
@@ -74,9 +72,7 @@ export function SharedBinderInner() {
 				className="flex items-center gap-2 rounded-md border border-amber-400 bg-amber-50 px-4 py-3 text-amber-800 text-sm font-medium dark:border-amber-500 dark:bg-amber-950/30 dark:text-amber-300"
 			>
 				<span aria-hidden="true">📸</span>
-				<span>
-					Snapshot from {snapshotDate} — not live
-				</span>
+				<span>Snapshot from {snapshotDate} — not live</span>
 			</div>
 
 			{/* Header */}

@@ -78,7 +78,10 @@ export type NewBinder = {
 
 /** update() patch for a binder; omitted keys are left untouched. */
 export type BinderPatch = Partial<
-	Pick<Binder, "name" | "description" | "rules" | "includeCardIds" | "excludeCardIds">
+	Pick<
+		Binder,
+		"name" | "description" | "rules" | "includeCardIds" | "excludeCardIds"
+	>
 >;
 
 /** Import/export envelope. */

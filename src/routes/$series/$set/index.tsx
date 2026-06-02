@@ -10,6 +10,7 @@ import {
 import { Package } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import type { HoloCardData } from "../../../components/holo-card";
 import { CardGridIsland } from "../../../components/islands/card-grid-island";
 import {
 	CardSelectionProvider,
@@ -18,7 +19,6 @@ import {
 import { PackDialog } from "../../../components/islands/pack-dialog";
 import { SearchControls } from "../../../components/islands/search-controls";
 import { BulkAddMenu } from "../../../components/vault/bulk-add-menu";
-import type { HoloCardData } from "../../../components/holo-card";
 import { cardModalLinkPropsFor } from "../../../lib/card-route";
 import { buildSetCardSlugs } from "../../../lib/card-slugs";
 import {

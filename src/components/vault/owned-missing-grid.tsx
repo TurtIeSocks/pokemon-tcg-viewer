@@ -72,6 +72,7 @@ export function OwnedMissingGrid({
 							/>
 							{/* Owned / missing indicator dot */}
 							<span
+								role="img"
 								aria-label={owned ? "owned" : "missing"}
 								className={cn(
 									"absolute bottom-1 right-1 h-3 w-3 rounded-full border border-white/80",

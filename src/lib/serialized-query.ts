@@ -1,5 +1,5 @@
 import type { SerializedQuery } from "../store/userland/types";
-import type { ListSearch, ListContext } from "./card-query";
+import type { ListContext, ListSearch } from "./card-query";
 
 /**
  * Capture the current list page search + context into a serialized, display-agnostic query.

@@ -55,12 +55,18 @@ describe("buildCorpusQuery", () => {
 		expect(q.yearMax).toBeUndefined();
 	});
 	test("yearMin/yearMax forwarded in set context", () => {
-		const q = buildCorpusQuery({ ...empty, yearMin: 2020, yearMax: 2023 }, { setId: "swsh9" });
+		const q = buildCorpusQuery(
+			{ ...empty, yearMin: 2020, yearMax: 2023 },
+			{ setId: "swsh9" },
+		);
 		expect(q.yearMin).toBe(2020);
 		expect(q.yearMax).toBe(2023);
 	});
 	test("yearMin/yearMax forwarded in dex context", () => {
-		const q = buildCorpusQuery({ ...empty, yearMin: 1999, yearMax: null }, { dexNumber: 6 });
+		const q = buildCorpusQuery(
+			{ ...empty, yearMin: 1999, yearMax: null },
+			{ dexNumber: 6 },
+		);
 		expect(q.yearMin).toBe(1999);
 		expect(q.yearMax).toBeUndefined();
 	});

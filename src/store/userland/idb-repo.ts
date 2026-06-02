@@ -16,7 +16,12 @@ import type {
 	CollectionRepo,
 	UserlandRepos,
 } from "./repo";
-import type { Binder, CollectionItem, NewBinder, NewCollectionItem } from "./types";
+import type {
+	Binder,
+	CollectionItem,
+	NewBinder,
+	NewCollectionItem,
+} from "./types";
 
 const collectionStore = createStore("ptcg-collection", "items");
 const bindersStore = createStore("ptcg-binders", "binders");
@@ -53,7 +58,9 @@ function fillBinder(input: NewBinder): Binder {
 }
 
 /** Create an IndexedDB-backed BindersRepo; uses the default binders store unless overridden (tests). */
-export function createIdbBindersRepo(store: UseStore = bindersStore): BindersRepo {
+export function createIdbBindersRepo(
+	store: UseStore = bindersStore,
+): BindersRepo {
 	return {
 		async list() {
 			const rows = await entries<string, Binder>(store);

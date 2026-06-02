@@ -99,12 +99,18 @@ export async function addCopy(
 		(i) => i.cardId === cardId,
 	).length;
 	const isPrimary = existingCount === 0 ? true : undefined;
-	const item = await activeRepos().collection.add({ cardId, ...fields, ...(isPrimary !== undefined ? { isPrimary } : {}) });
+	const item = await activeRepos().collection.add({
+		cardId,
+		...fields,
+		...(isPrimary !== undefined ? { isPrimary } : {}),
+	});
 	// If repo did not persist isPrimary (fillItem doesn't), patch it now.
 	if (isPrimary && !item.isPrimary) {
 		await activeRepos().collection.update(item.id, { isPrimary: true });
 		const patched = { ...item, isPrimary: true };
-		useUserland.setState((s) => ({ items: { ...s.items, [patched.id]: patched } }));
+		useUserland.setState((s) => ({
+			items: { ...s.items, [patched.id]: patched },
+		}));
 		return patched;
 	}
 	useUserland.setState((s) => ({ items: { ...s.items, [item.id]: item } }));
@@ -164,9 +170,7 @@ export async function bulkAddCopies(
 	// Seed with already-owned cardIds; only the FIRST newly-added copy of each
 	// previously-unowned cardId in this batch becomes primary.
 	const existing = useUserland.getState().items;
-	const grantedPrimary = new Set(
-		Object.values(existing).map((i) => i.cardId),
-	);
+	const grantedPrimary = new Set(Object.values(existing).map((i) => i.cardId));
 	const created = await activeRepos().collection.bulkAdd(
 		cardIds.map((cardId) => ({ cardId, ...fields })),
 	);

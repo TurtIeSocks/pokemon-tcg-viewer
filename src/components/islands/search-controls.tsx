@@ -119,10 +119,14 @@ export function SearchControls({
 					value={value.yearMin ?? ""}
 					onChange={(e) => {
 						const n = Number(e.target.value);
-						onChange({ yearMin: e.target.value === "" || Number.isNaN(n) ? null : n });
+						onChange({
+							yearMin: e.target.value === "" || Number.isNaN(n) ? null : n,
+						});
 					}}
 				/>
-				<span className="text-sm text-muted-foreground" aria-hidden="true">–</span>
+				<span className="text-sm text-muted-foreground" aria-hidden="true">
+					–
+				</span>
 				<Input
 					type="number"
 					aria-label="Release year to"
@@ -133,7 +137,9 @@ export function SearchControls({
 					value={value.yearMax ?? ""}
 					onChange={(e) => {
 						const n = Number(e.target.value);
-						onChange({ yearMax: e.target.value === "" || Number.isNaN(n) ? null : n });
+						onChange({
+							yearMax: e.target.value === "" || Number.isNaN(n) ? null : n,
+						});
 					}}
 				/>
 			</fieldset>

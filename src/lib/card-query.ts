@@ -47,10 +47,24 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 	const yearMax = s.yearMax ?? undefined;
 
 	if (ctx.setId != null) {
-		return { setId: ctx.setId, query, filters, yearMin, yearMax, relevance: false };
+		return {
+			setId: ctx.setId,
+			query,
+			filters,
+			yearMin,
+			yearMax,
+			relevance: false,
+		};
 	}
 	if (ctx.dexNumber != null) {
-		return { dexNumber: ctx.dexNumber, query, filters, yearMin, yearMax, relevance: false };
+		return {
+			dexNumber: ctx.dexNumber,
+			query,
+			filters,
+			yearMin,
+			yearMax,
+			relevance: false,
+		};
 	}
 	return { setId: null, query, filters, yearMin, yearMax, relevance: !!query };
 }

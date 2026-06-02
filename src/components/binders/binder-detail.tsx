@@ -3,13 +3,13 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Pencil, Share2, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { binderRuleLabel } from "@/lib/binder-rule-label";
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { OwnedMissingGrid } from "@/components/vault/owned-missing-grid";
+import { binderRuleLabel } from "@/lib/binder-rule-label";
+import { useStore } from "../../store";
 import { hydrateCard, setsById } from "../../store/corpus/corpus-engine";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
-import { useStore } from "../../store";
 import {
 	useBinderMembers,
 	useBinderProgress,
@@ -75,7 +75,9 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 	}, [memberIds, index, sets]);
 
 	async function handleDelete() {
-		if (!window.confirm(`Delete binder "${binder.name}"? This cannot be undone.`))
+		if (
+			!window.confirm(`Delete binder "${binder.name}"? This cannot be undone.`)
+		)
 			return;
 		await removeBinder(binder.id);
 		await navigate({ to: "/vault/binders" });
@@ -163,7 +165,9 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 										type="button"
 										aria-label={`Remove rule ${label}`}
 										className="ml-1 text-muted-foreground hover:text-destructive leading-none"
-										onClick={() => void removeRuleFromBinder(binder.id, rule.id)}
+										onClick={() =>
+											void removeRuleFromBinder(binder.id, rule.id)
+										}
 									>
 										<span aria-hidden="true">×</span>
 									</button>
@@ -211,10 +215,7 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 					</div>
 				)}
 
-				<OwnedMissingGrid
-					cards={memberCards}
-					ownedCardIds={ownedCardIds}
-				/>
+				<OwnedMissingGrid cards={memberCards} ownedCardIds={ownedCardIds} />
 			</div>
 
 			<BinderFormDialog
@@ -222,7 +223,11 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 				onOpenChange={setEditOpen}
 				binder={binder}
 			/>
-			<ShareDialog open={shareOpen} onOpenChange={setShareOpen} binder={binder} />
+			<ShareDialog
+				open={shareOpen}
+				onOpenChange={setShareOpen}
+				binder={binder}
+			/>
 		</div>
 	);
 }

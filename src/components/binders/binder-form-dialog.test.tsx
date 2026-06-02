@@ -38,9 +38,7 @@ test("empty name shows 'Name is required' error with role=alert, not [object Obj
 
 test("filling name + submitting calls createBinder then onOpenChange(false)", async () => {
 	const onOpenChange = mock(() => {});
-	render(
-		<BinderFormDialog open={true} onOpenChange={onOpenChange} />,
-	);
+	render(<BinderFormDialog open={true} onOpenChange={onOpenChange} />);
 	fireEvent.change(screen.getByLabelText(/name/i), {
 		target: { value: "Base Set Complete" },
 	});

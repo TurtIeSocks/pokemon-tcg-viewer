@@ -20,7 +20,9 @@ test("yearMin/yearMax: number → string in URL", () => {
 });
 
 test("yearMin/yearMax: validate round-trips number", () => {
-	expect(validateListSearch({ yearMin: "2020", yearMax: "2023" })).toMatchObject({
+	expect(
+		validateListSearch({ yearMin: "2020", yearMax: "2023" }),
+	).toMatchObject({
 		yearMin: 2020,
 		yearMax: 2023,
 	});
