@@ -44,18 +44,18 @@ describe("<CollectionToggle />", () => {
 				(await repos.collection.list()).some((i) => i.cardId === card.id),
 			).toBe(true),
 		);
-		await screen.findByRole("button", { name: /remove .* collection/i });
+		await screen.findByRole("button", { name: /copies|manage|collection/i });
 	});
 
-	test("click when owned removes all copies", async () => {
+	test("owned shows count and opens the manager dialog (never deletes)", async () => {
 		await repos.collection.add({ cardId: card.id });
 		resetUserlandForTests();
 		render(<CollectionToggle card={card} />);
-		fireEvent.click(
-			await screen.findByRole("button", { name: /remove .* collection/i }),
-		);
-		await waitFor(async () =>
-			expect(await repos.collection.list()).toHaveLength(0),
-		);
+		const btn = await screen.findByRole("button", {
+			name: /manage copies/i,
+		});
+		fireEvent.click(btn);
+		expect(await screen.findByText(/your copies/i)).toBeDefined();
+		expect(await repos.collection.list()).toHaveLength(1); // unchanged
 	});
 });
