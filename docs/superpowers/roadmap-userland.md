@@ -95,7 +95,9 @@ Layers 3–8 are largely independent once 1 and 2 land; reorder by appetite. Lay
 
 **Open questions:** dedupe policy (skip cards already owned? add another copy?); default per-copy fields for bulk (likely all unset except acquiredAt); confirm/preview step for large adds; entry points (button on set/series/search headers); add-to-goal target selection.
 
-## Layer 7 — Owned / not-owned filter on set pages `[ ]`
+## Layer 7 — Owned / not-owned filter on set pages `[x]`
+
+> Implemented + verified 2026-06-02. `owned: all|owned|missing` on the shared list-search; tri-state control in SearchControls; corpus fetcher filters by owned membership (set + search pages). tsc/biome/318 tests/build/browser-smoke (timeline view). PR pending.
 
 **Adds:** a filter on the existing set page (and likely series/search) to show only **owned** or **not owned** cards.
 
