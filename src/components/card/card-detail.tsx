@@ -2,7 +2,11 @@ import { ClientOnly } from "@tanstack/react-router";
 import type { CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import type { FocusCardData } from "../../server/card-mappers";
-import { useStore } from "../../store";
+import { useIsOwned } from "../../store/userland/selectors";
+import {
+	addCopy,
+	removeAllCopiesOfCard,
+} from "../../store/userland/userland-store";
 import { getCardAccent, getReadableAccent } from "../../utils/card-colors";
 import { HoloCard } from "../holo-card";
 import { CardPrices } from "../islands/card-prices";
@@ -85,13 +89,13 @@ function CollectionButton({
 }: {
 	card: ReturnType<typeof toHoloCardData>;
 }) {
-	const owned = useStore((s) => !!s.owned[card.id]);
-	const add = useStore((s) => s.addToCollection);
-	const remove = useStore((s) => s.removeFromCollection);
+	const owned = useIsOwned(card.id);
 	return (
 		<button
 			type="button"
-			onClick={() => (owned ? remove(card.id) : add(card))}
+			onClick={() =>
+				owned ? void removeAllCopiesOfCard(card.id) : void addCopy(card.id)
+			}
 			className={cn(
 				"w-full rounded-[10px] py-2.5 text-center font-mono text-[13px] tracking-[0.04em] transition-colors",
 				owned

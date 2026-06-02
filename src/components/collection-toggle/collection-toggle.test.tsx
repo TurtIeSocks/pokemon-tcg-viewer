@@ -1,6 +1,10 @@
-import { afterEach, describe, expect, test } from "bun:test";
-import { fireEvent, render, screen } from "@testing-library/react";
-import { useStore } from "../../store";
+import { beforeEach, describe, expect, test } from "bun:test";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { createIdbRepos } from "../../store/userland/idb-repo";
+import {
+	resetUserlandForTests,
+	setUserlandRepos,
+} from "../../store/userland/userland-store";
 import type { HoloCardData } from "../holo-card";
 import { CollectionToggle } from "./collection-toggle";
 
@@ -14,36 +18,44 @@ const card: HoloCardData = {
 	cardNumber: "58",
 };
 
-afterEach(() => {
-	useStore.setState({ owned: {} });
+let repos = createIdbRepos();
+beforeEach(async () => {
+	repos = createIdbRepos();
+	await repos.collection.clear();
+	await repos.goals.clear();
+	setUserlandRepos(repos);
+	resetUserlandForTests();
 });
 
 describe("<CollectionToggle />", () => {
-	test("renders '+' button when card is not owned", () => {
+	test("renders '+' when not owned", async () => {
 		render(<CollectionToggle card={card} />);
-		const btn = screen.getByRole("button", { name: /add .* collection/i });
+		const btn = await screen.findByRole("button", {
+			name: /add .* collection/i,
+		});
 		expect(btn.textContent).toBe("+");
 	});
 
-	test("renders '✓' button when card is owned", () => {
-		useStore.getState().addToCollection(card);
+	test("click adds a copy, then shows '✓'", async () => {
 		render(<CollectionToggle card={card} />);
-		const btn = screen.getByRole("button", {
-			name: /remove .* collection/i,
-		});
-		expect(btn.textContent).toBe("✓");
+		fireEvent.click(await screen.findByRole("button"));
+		await waitFor(async () =>
+			expect(
+				(await repos.collection.list()).some((i) => i.cardId === card.id),
+			).toBe(true),
+		);
+		await screen.findByRole("button", { name: /remove .* collection/i });
 	});
 
-	test("click adds card when absent", () => {
+	test("click when owned removes all copies", async () => {
+		await repos.collection.add({ cardId: card.id });
+		resetUserlandForTests();
 		render(<CollectionToggle card={card} />);
-		fireEvent.click(screen.getByRole("button"));
-		expect(useStore.getState().owned[card.id]).toBeDefined();
-	});
-
-	test("click removes card when present", () => {
-		useStore.getState().addToCollection(card);
-		render(<CollectionToggle card={card} />);
-		fireEvent.click(screen.getByRole("button"));
-		expect(useStore.getState().owned[card.id]).toBeUndefined();
+		fireEvent.click(
+			await screen.findByRole("button", { name: /remove .* collection/i }),
+		);
+		await waitFor(async () =>
+			expect(await repos.collection.list()).toHaveLength(0),
+		);
 	});
 });

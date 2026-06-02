@@ -1,5 +1,5 @@
 import { Link, type LinkProps } from "@tanstack/react-router";
-import { useStore } from "../../store";
+import { useOwnedIndex } from "../../store/userland/selectors";
 import { CollectionToggle } from "../collection-toggle";
 import { HoloCard, type HoloCardData } from "../holo-card";
 import { groupCardsByEra } from "../pokemon-timeline/group-cards-by-era";
@@ -16,7 +16,7 @@ export function PokemonTimeline({
 	cardHref,
 	onEndReached,
 }: PokemonTimelineProps) {
-	const owned = useStore((s) => s.owned);
+	const ownedIndex = useOwnedIndex();
 
 	if (cards.length === 0) {
 		return (
@@ -56,7 +56,7 @@ export function PokemonTimeline({
 									series={card.setSeries}
 									variants={card.variants}
 									cardNumber={card.cardNumber}
-									owned={!!owned[card.id]}
+									owned={ownedIndex.has(card.id)}
 									hoverOverlay={<CollectionToggle card={card} />}
 									style={{ width: 300 }}
 								/>
