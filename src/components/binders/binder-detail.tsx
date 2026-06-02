@@ -1,7 +1,7 @@
 "use client";
 
-import { useNavigate } from "@tanstack/react-router";
-import { Pencil, Share2, Trash2 } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, Pencil, Share2, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/ui/progress-bar";
@@ -20,6 +20,7 @@ import {
 	removeBinder,
 	removeCardFromBinder,
 	removeRuleFromBinder,
+	toggleCardOwned,
 } from "../../store/userland/userland-store";
 import { BinderFormDialog } from "./binder-form-dialog";
 import { ShareDialog } from "./share-dialog";
@@ -111,6 +112,16 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 
 	return (
 		<div className="space-y-6">
+			{/* Back link */}
+			<Link
+				to="/vault/binders"
+				aria-label="Back to binders"
+				className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+			>
+				<ArrowLeft className="h-4 w-4" />
+				Binders
+			</Link>
+
 			{/* Header */}
 			<div className="flex items-start gap-4">
 				<div className="flex-1 min-w-0">
@@ -223,7 +234,11 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 					</div>
 				)}
 
-				<OwnedMissingGrid cards={memberCards} ownedCardIds={ownedCardIds} />
+				<OwnedMissingGrid
+					cards={memberCards}
+					ownedCardIds={ownedCardIds}
+					onToggleOwned={(id) => void toggleCardOwned(id)}
+				/>
 			</div>
 
 			<BinderFormDialog

@@ -148,6 +148,26 @@ export async function removeCopy(id: string): Promise<void> {
 	}
 }
 
+/**
+ * Toggle ownership of a card: if ≥1 copy exists, remove all of them;
+ * if 0 copies, add one (auto-marked primary by addCopy).
+ */
+export async function toggleCardOwned(cardId: string): Promise<void> {
+	const ids = Object.values(useUserland.getState().items)
+		.filter((i) => i.cardId === cardId)
+		.map((i) => i.id);
+	if (ids.length > 0) {
+		await activeRepos().collection.removeMany(ids);
+		useUserland.setState((s) => {
+			const items = { ...s.items };
+			for (const id of ids) delete items[id];
+			return { items };
+		});
+	} else {
+		await addCopy(cardId);
+	}
+}
+
 /** Delete every copy owned for a given cardId in one batched operation. */
 export async function removeAllCopiesOfCard(cardId: string): Promise<void> {
 	const ids = Object.values(useUserland.getState().items)

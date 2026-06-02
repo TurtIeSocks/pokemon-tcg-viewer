@@ -20,6 +20,7 @@ import {
 	restoreCardToBinder,
 	setPrimaryCopy,
 	setUserlandRepos,
+	toggleCardOwned,
 	updateCopy,
 	useUserland,
 } from "./userland-store";
@@ -311,4 +312,40 @@ test("export then import (replace) round-trips through the cache", async () => {
 	expect(items).toHaveLength(1);
 	expect(items[0].pricePaid).toBe(7);
 	expect(Object.values(useUserland.getState().binders)).toHaveLength(1);
+});
+
+// --- toggleCardOwned ---
+
+test("toggleCardOwned: unowned card → 1 copy added (owned)", async () => {
+	await toggleCardOwned("card-toggle");
+	const copies = Object.values(useUserland.getState().items).filter(
+		(i) => i.cardId === "card-toggle",
+	);
+	expect(copies).toHaveLength(1);
+	expect(copies[0]?.isPrimary).toBe(true);
+});
+
+test("toggleCardOwned: owned card → all copies removed (unowned)", async () => {
+	await toggleCardOwned("card-toggle");
+	await toggleCardOwned("card-toggle");
+	const copies = Object.values(useUserland.getState().items).filter(
+		(i) => i.cardId === "card-toggle",
+	);
+	expect(copies).toHaveLength(0);
+});
+
+test("toggleCardOwned: card with 2 copies → all removed", async () => {
+	await addCopy("multi-copy");
+	await addCopy("multi-copy");
+	expect(
+		Object.values(useUserland.getState().items).filter(
+			(i) => i.cardId === "multi-copy",
+		),
+	).toHaveLength(2);
+	await toggleCardOwned("multi-copy");
+	expect(
+		Object.values(useUserland.getState().items).filter(
+			(i) => i.cardId === "multi-copy",
+		),
+	).toHaveLength(0);
 });

@@ -19,6 +19,11 @@ interface OwnedMissingGridProps {
 	 * - "missing": only show cards the user does not own.
 	 */
 	mode?: OwnedMissingMode;
+	/**
+	 * When provided, each card becomes an interactive button that calls this
+	 * handler with the card's id. When absent, the grid is purely presentational.
+	 */
+	onToggleOwned?: (cardId: string) => void;
 }
 
 /**
@@ -30,6 +35,7 @@ export function OwnedMissingGrid({
 	cards,
 	ownedCardIds,
 	mode = "all",
+	onToggleOwned,
 }: OwnedMissingGridProps) {
 	const visible = cards.filter((c) => {
 		const owned = ownedCardIds.has(c.id);
@@ -58,8 +64,8 @@ export function OwnedMissingGrid({
 			{visible.map((card) => {
 				const owned = ownedCardIds.has(card.id);
 				const src = card.imageUrlSmall ?? card.imageUrl;
-				return (
-					<li key={card.id} className="flex flex-col gap-1">
+				const cardInner = (
+					<>
 						<div className="relative aspect-[2.5/3.5]">
 							<img
 								src={src}
@@ -83,6 +89,22 @@ export function OwnedMissingGrid({
 						<p className="truncate text-center text-xs text-muted-foreground leading-tight">
 							{card.name}
 						</p>
+					</>
+				);
+				return (
+					<li key={card.id} className="flex flex-col gap-1">
+						{onToggleOwned ? (
+							<button
+								type="button"
+								aria-label={`${owned ? "Remove" : "Add"} ${card.name}`}
+								className="flex flex-col gap-1 cursor-pointer hover:opacity-80 transition-opacity text-left w-full"
+								onClick={() => onToggleOwned(card.id)}
+							>
+								{cardInner}
+							</button>
+						) : (
+							cardInner
+						)}
 					</li>
 				);
 			})}

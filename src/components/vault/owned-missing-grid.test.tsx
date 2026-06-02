@@ -1,5 +1,5 @@
-import { expect, test } from "bun:test";
-import { render, screen } from "@testing-library/react";
+import { expect, mock, test } from "bun:test";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { HoloCardData } from "../holo-card";
 import { OwnedMissingGrid } from "./owned-missing-grid";
 
@@ -66,4 +66,42 @@ test("owned indicator dot has aria-label=owned", () => {
 test("missing indicator dot has aria-label=missing", () => {
 	render(<OwnedMissingGrid cards={[cardB]} ownedCardIds={ownedSet} />);
 	expect(screen.getByLabelText("missing")).toBeDefined();
+});
+
+// --- onToggleOwned ---
+
+test("with onToggleOwned, clicking a card calls it with the cardId", () => {
+	const onToggle = mock(() => {});
+	render(
+		<OwnedMissingGrid
+			cards={[cardA, cardB]}
+			ownedCardIds={ownedSet}
+			onToggleOwned={onToggle}
+		/>,
+	);
+	// Each card should be a button; click the first one (Bulbasaur)
+	const btn = screen.getByRole("button", { name: /bulbasaur/i });
+	fireEvent.click(btn);
+	expect(onToggle).toHaveBeenCalledTimes(1);
+	expect(onToggle).toHaveBeenCalledWith("base1-1");
+});
+
+test("with onToggleOwned, clicking missing card calls it with the correct cardId", () => {
+	const onToggle = mock(() => {});
+	render(
+		<OwnedMissingGrid
+			cards={[cardA, cardB]}
+			ownedCardIds={ownedSet}
+			onToggleOwned={onToggle}
+		/>,
+	);
+	const btn = screen.getByRole("button", { name: /ivysaur/i });
+	fireEvent.click(btn);
+	expect(onToggle).toHaveBeenCalledWith("base1-2");
+});
+
+test("without onToggleOwned, cards are not buttons", () => {
+	render(<OwnedMissingGrid cards={[cardA, cardB]} ownedCardIds={ownedSet} />);
+	// No buttons rendered when prop is absent
+	expect(screen.queryAllByRole("button")).toHaveLength(0);
 });

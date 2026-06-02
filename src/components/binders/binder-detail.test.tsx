@@ -284,3 +284,98 @@ test("Delete: confirm=false does NOT remove binder", async () => {
 
 	window.confirm = origConfirm;
 });
+
+// --- back link ---
+
+test("renders a back link with to=/vault/binders", async () => {
+	const binder = await createBinder({ name: "Nav Binder" });
+	useUserland.setState((s) => ({
+		binders: { ...s.binders, [binder.id]: binder },
+	}));
+
+	await renderDetail(binder);
+
+	const link = screen.getByRole("link", { name: /back to binders/i });
+	expect(link).toBeDefined();
+	// TanStack Link renders href from the `to` prop
+	expect((link as HTMLAnchorElement).getAttribute("href")).toMatch(
+		/\/vault\/binders/,
+	);
+});
+
+// --- click-to-toggle-owned ---
+
+test("clicking a member card toggles ownership via toggleCardOwned", async () => {
+	const binder = await createBinder({ name: "Toggle Binder" });
+	await addRuleToBinder(binder.id, {
+		text: null,
+		setId: "base1",
+		dexNumber: null,
+		types: [],
+		rarities: [],
+		supertypes: [],
+		subtypes: [],
+		yearMin: null,
+		yearMax: null,
+	});
+	const updated = useUserland.getState().binders[binder.id];
+
+	await renderDetail(updated);
+
+	// Wait for member cards to render
+	await waitFor(() => {
+		expect(screen.getByAltText("Bulbasaur")).toBeDefined();
+	});
+
+	// Bulbasaur is owned (added in beforeEach); clicking it should remove it
+	const toggleBtn = screen.getByRole("button", { name: /remove bulbasaur/i });
+	expect(toggleBtn).toBeDefined();
+
+	await act(async () => {
+		fireEvent.click(toggleBtn);
+	});
+
+	await waitFor(() => {
+		const copies = Object.values(useUserland.getState().items).filter(
+			(i) => i.cardId === ownedCard.id,
+		);
+		expect(copies).toHaveLength(0);
+	});
+});
+
+test("clicking an unowned member card adds it via toggleCardOwned", async () => {
+	const binder = await createBinder({ name: "Toggle Add Binder" });
+	await addRuleToBinder(binder.id, {
+		text: null,
+		setId: "base1",
+		dexNumber: null,
+		types: [],
+		rarities: [],
+		supertypes: [],
+		subtypes: [],
+		yearMin: null,
+		yearMax: null,
+	});
+	const updated = useUserland.getState().binders[binder.id];
+
+	await renderDetail(updated);
+
+	await waitFor(() => {
+		expect(screen.getByAltText("Ivysaur")).toBeDefined();
+	});
+
+	// Ivysaur is unowned; clicking should add it
+	const toggleBtn = screen.getByRole("button", { name: /add ivysaur/i });
+	expect(toggleBtn).toBeDefined();
+
+	await act(async () => {
+		fireEvent.click(toggleBtn);
+	});
+
+	await waitFor(() => {
+		const copies = Object.values(useUserland.getState().items).filter(
+			(i) => i.cardId === missingCard.id,
+		);
+		expect(copies).toHaveLength(1);
+	});
+});
