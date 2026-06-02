@@ -105,7 +105,9 @@ Layers 3–8 are largely independent once 1 and 2 land; reorder by appetite. Lay
 
 **Open questions:** where the toggle lives in `SearchControls`; whether it's a tri-state (all/owned/missing); URL search-param persistence (existing `validateListSearch` pattern).
 
-## Layer 8 — Import / export polish `[ ]`
+## Layer 8 — Import / export polish `[x]`
+
+> Implemented + verified 2026-06-02. Import dialog (file → parse → summary or inline error → Merge/Replace, Replace confirmed) replaces the alert path; Export unchanged. tsc/biome/322 tests/build/browser-smoke. PR pending.
 
 **Adds:** a proper home for backup (settings/hub), merge-vs-replace prompt UX, clear validation-error surfacing, optional per-goal or per-set export, maybe drag-drop import.
 
