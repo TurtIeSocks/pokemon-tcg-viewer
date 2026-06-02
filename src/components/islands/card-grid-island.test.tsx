@@ -42,6 +42,8 @@ const defaultSearch = {
 	subtypes: [],
 	view: "grid" as const,
 	owned: "all" as const,
+	yearMin: null,
+	yearMax: null,
 };
 
 beforeEach(() => {

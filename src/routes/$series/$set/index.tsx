@@ -18,6 +18,7 @@ import {
 import { PackDialog } from "../../../components/islands/pack-dialog";
 import { SearchControls } from "../../../components/islands/search-controls";
 import { BulkAddMenu } from "../../../components/vault/bulk-add-menu";
+import type { HoloCardData } from "../../../components/holo-card";
 import { cardModalLinkPropsFor } from "../../../lib/card-route";
 import { buildSetCardSlugs } from "../../../lib/card-slugs";
 import {
@@ -137,7 +138,7 @@ function SetPageInner({
 							{active ? "Done selecting" : "Select cards"}
 						</button>
 						<BulkAddMenu
-							cardIds={cards.map((c) => c.id)}
+							cardIds={cards.map((c: HoloCardData & { slug: string }) => c.id)}
 							ruleQuery={toSerializedQuery(search, { setId: set.id })}
 							selectedCardIds={active ? [...selected] : undefined}
 						/>
@@ -166,7 +167,7 @@ function SetPageInner({
 				<ClientOnly
 					fallback={
 						<ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-							{cards.map((card) => (
+							{cards.map((card: HoloCardData & { slug: string }) => (
 								<li key={card.id} className="flex flex-col items-center gap-1">
 									<Link
 										to="/$series/$set/$card"

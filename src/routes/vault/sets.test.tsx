@@ -60,6 +60,7 @@ function makeItem(id: string, cardId: string): CollectionItem {
 		id,
 		cardId,
 		acquiredAt: Date.now(),
+		createdAt: Date.now(),
 		pricePaid: null,
 		variant: null,
 		condition: null,

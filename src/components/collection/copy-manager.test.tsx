@@ -83,5 +83,5 @@ test("CopyManagerDialog: Done button is present and calls onOpenChange(false)", 
 	const doneBtn = screen.getByRole("button", { name: /done/i });
 	expect(doneBtn).toBeDefined();
 	fireEvent.click(doneBtn);
-	expect(closedWith).toBe(false);
+	expect(closedWith!).toBe(false);
 });

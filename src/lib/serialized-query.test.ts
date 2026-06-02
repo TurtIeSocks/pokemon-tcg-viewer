@@ -25,8 +25,8 @@ describe("toSerializedQuery", () => {
 		expect(q.rarities).toEqual(["Rare Holo"]);
 		expect(q.supertypes).toEqual(["Trainer"]);
 		// original ListSearch fields should NOT appear on SerializedQuery
-		expect((q as Record<string, unknown>).rarity).toBeUndefined();
-		expect((q as Record<string, unknown>).supertype).toBeUndefined();
+		expect((q as unknown as Record<string, unknown>).rarity).toBeUndefined();
+		expect((q as unknown as Record<string, unknown>).supertype).toBeUndefined();
 	});
 
 	it("trims q and maps blank to null", () => {
@@ -39,7 +39,10 @@ describe("toSerializedQuery", () => {
 	});
 
 	it("maps ctx.setId and ctx.dexNumber", () => {
-		const q = toSerializedQuery(baseSearch(), { setId: "base1", dexNumber: 151 });
+		const q = toSerializedQuery(baseSearch(), {
+			setId: "base1",
+			dexNumber: 151,
+		});
 		expect(q.setId).toBe("base1");
 		expect(q.dexNumber).toBe(151);
 	});
@@ -71,7 +74,7 @@ describe("toSerializedQuery", () => {
 		const s = baseSearch();
 		s.owned = "owned";
 		s.view = "timeline";
-		const q = toSerializedQuery(s, baseCtx()) as Record<string, unknown>;
+		const q = toSerializedQuery(s, baseCtx()) as unknown as Record<string, unknown>;
 		expect(q.owned).toBeUndefined();
 		expect(q.view).toBeUndefined();
 	});
@@ -111,11 +114,15 @@ describe("isRuleCapturable", () => {
 	});
 
 	it("returns true when rarities non-empty", () => {
-		expect(isRuleCapturable({ ...empty(), rarities: ["Rare Holo"] })).toBe(true);
+		expect(isRuleCapturable({ ...empty(), rarities: ["Rare Holo"] })).toBe(
+			true,
+		);
 	});
 
 	it("returns true when supertypes non-empty", () => {
-		expect(isRuleCapturable({ ...empty(), supertypes: ["Trainer"] })).toBe(true);
+		expect(isRuleCapturable({ ...empty(), supertypes: ["Trainer"] })).toBe(
+			true,
+		);
 	});
 
 	it("returns true when subtypes non-empty", () => {
