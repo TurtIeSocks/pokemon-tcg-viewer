@@ -86,11 +86,7 @@ function PokemonPage() {
 				</div>
 			</div>
 			<div className="mb-4 shrink-0">
-				<SearchControls
-					value={search}
-					options={options}
-					onChange={onChange}
-				/>
+				<SearchControls value={search} options={options} onChange={onChange} />
 			</div>
 			<div className="min-h-0 flex-1">
 				<CardGridIsland
