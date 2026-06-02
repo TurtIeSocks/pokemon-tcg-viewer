@@ -75,7 +75,9 @@ Layers 3–8 are largely independent once 1 and 2 land; reorder by appetite. Lay
 
 **Open questions:** copy expansion vs aggregation in the grid; sort behavior when the key is per-copy (e.g. sort by pricePaid when a card has 3 prices — min? each copy as a row?); default sort; where sort/asc-desc controls live; virtualization (reuse react-virtuoso grid).
 
-## Layer 5 — Collection Goals UI `[ ]`
+## Layer 5 — Collection Goals UI `[x]`
+
+> Implemented + verified 2026-06-02. `/vault/goals` list + `/vault/goals/$goalId` detail; create/edit dialog; cmdk target picker (sets/series/cards); per-target + overall (union-deduped) progress (`computeGoalProgress`). tsc/biome/307 tests/build/browser-smoke. PR pending.
 
 **Adds:** create/edit/delete goals; a **target picker** to add sets, series, or individual cards; a goal display page showing per-target progress (set→owned/total, series→owned/total, card→owned?) and overall (deduped across overlapping targets).
 
