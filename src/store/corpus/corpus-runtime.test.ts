@@ -83,3 +83,48 @@ test("loadCorpus toggles the loading flag (true during, false after)", async () 
 	expect(useCorpusRuntime.getState().loading).toBe(false);
 	expect(useCorpusRuntime.getState().index).not.toBeNull();
 });
+
+test("makeCorpusFetcher owned filter keeps only owned / only missing", async () => {
+	globalThis.fetch = mock(
+		async () =>
+			new Response(
+				gzipOf([
+					{
+						id: "base1-1",
+						name: "A",
+						imageUrl: "",
+						imageUrlSmall: "",
+						supertype: "P",
+						setId: "base1",
+						number: "1",
+					},
+					{
+						id: "base1-2",
+						name: "B",
+						imageUrl: "",
+						imageUrlSmall: "",
+						supertype: "P",
+						setId: "base1",
+						number: "2",
+					},
+				]),
+				{ status: 200, headers: { ETag: '"v2"' } },
+			),
+	) as unknown as typeof fetch;
+	await loadCorpus();
+	const owned = new Set(["base1-1"]);
+	const f1 = makeCorpusFetcher(
+		{ setId: "base1", relevance: false },
+		{ mode: "owned", ownedCardIds: owned },
+	);
+	expect((await f1("k-owned", 1, 20)).cards.map((c) => c.id)).toEqual([
+		"base1-1",
+	]);
+	const f2 = makeCorpusFetcher(
+		{ setId: "base1", relevance: false },
+		{ mode: "missing", ownedCardIds: owned },
+	);
+	expect((await f2("k-missing", 1, 20)).cards.map((c) => c.id)).toEqual([
+		"base1-2",
+	]);
+});

@@ -4,11 +4,13 @@ import {
 	stripSearchParams,
 	useNavigate,
 } from "@tanstack/react-router";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import type { HoloCardData } from "../components/holo-card";
 import { CardGridIsland } from "../components/islands/card-grid-island";
 import { SearchControls } from "../components/islands/search-controls";
 import { ViewModeToggle } from "../components/islands/view-mode-toggle";
+import { BulkAddMenu } from "../components/vault/bulk-add-menu";
+import { buildCorpusQuery } from "../lib/card-query";
 import { cardModalLinkProps } from "../lib/card-route";
 import {
 	LIST_SEARCH_DEFAULTS,
@@ -17,7 +19,9 @@ import {
 } from "../lib/list-search";
 import { searchCardsFn } from "../server/corpus-server";
 import { deriveFacets } from "../server/set-facets";
-import { useSlugIndex } from "../store/corpus/corpus-runtime";
+import { useStore } from "../store";
+import { queryCorpus, setsById } from "../store/corpus/corpus-engine";
+import { useCorpusRuntime, useSlugIndex } from "../store/corpus/corpus-runtime";
 import { useRecentsStore } from "../store/recents";
 
 export const Route = createFileRoute("/search")({
@@ -67,6 +71,16 @@ function SearchPage() {
 	// Options derived from the SSR seed (corpus refines as the user filters live).
 	const options = deriveFacets(cards);
 
+	// Corpus + sets for BulkAddMenu cardIds derivation.
+	const index = useCorpusRuntime((s) => s.index);
+	const sets = useStore((s) => s.sets);
+	const bulkCardIds = useMemo(() => {
+		if (!index || !sets) return [];
+		return queryCorpus(index, buildCorpusQuery(search, {}), setsById(sets)).map(
+			(c) => c.id,
+		);
+	}, [index, sets, search]);
+
 	// Search results span many sets, so each card's detail link is resolved from
 	// the client corpus (same slugs the detail route uses). Falls back to a no-op
 	// until the corpus + sets load — the live grid pulls cards from that same
@@ -90,7 +104,8 @@ function SearchPage() {
 				{q ? (
 					<span className="text-sm text-muted-foreground">{total} cards</span>
 				) : null}
-				<div className="ml-auto">
+				<div className="ml-auto flex items-center gap-2">
+					{q ? <BulkAddMenu cardIds={bulkCardIds} /> : null}
 					<ViewModeToggle
 						value={search.view}
 						disabled={!q}

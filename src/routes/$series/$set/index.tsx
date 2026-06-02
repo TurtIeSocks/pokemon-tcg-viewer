@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { CardGridIsland } from "../../../components/islands/card-grid-island";
 import { PackDialog } from "../../../components/islands/pack-dialog";
 import { SearchControls } from "../../../components/islands/search-controls";
+import { BulkAddMenu } from "../../../components/vault/bulk-add-menu";
 import { cardModalLinkPropsFor } from "../../../lib/card-route";
 import { buildSetCardSlugs } from "../../../lib/card-slugs";
 import {
@@ -79,15 +80,20 @@ function SetPage() {
 					{cards.length} cards
 				</span>
 				<ClientOnly fallback={null}>
-					<Button
-						variant="outline"
-						size="sm"
-						className="ml-auto"
-						onClick={() => setPackOpen(true)}
-					>
-						<Package className="size-4 sm:mr-2" />
-						<span className="hidden sm:inline">Open Packs</span>
-					</Button>
+					<div className="ml-auto flex items-center gap-2">
+						<BulkAddMenu
+							cardIds={cards.map((c) => c.id)}
+							goalTarget={{ kind: "set", setId: set.id }}
+						/>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => setPackOpen(true)}
+						>
+							<Package className="size-4 sm:mr-2" />
+							<span className="hidden sm:inline">Open Packs</span>
+						</Button>
+					</div>
 				</ClientOnly>
 			</div>
 			<ClientOnly fallback={null}>

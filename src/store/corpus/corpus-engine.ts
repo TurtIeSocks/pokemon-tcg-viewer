@@ -18,10 +18,19 @@ export interface CorpusQuery {
 /** In-memory corpus + parallel precomputed name indices. */
 export interface CorpusIndex {
 	cards: CorpusCard[];
+	byId: Map<string, CorpusCard>;
 	nameNorm: string[];
 	nameTokens: string[][];
 }
 
+/** Build an id→set lookup from the sets list (or empty when not loaded yet). */
+export function setsById(
+	sets: PokemonSet[] | null | undefined,
+): Map<string, PokemonSet> {
+	return new Map((sets ?? []).map((s) => [s.id, s]));
+}
+
+/** Build the in-memory search index from a flat card list (normalised names + token arrays). */
 export function buildIndex(cards: CorpusCard[]): CorpusIndex {
 	const nameNorm = cards.map((c) => normalize(c.name));
 	const nameTokens = cards.map((c) =>
@@ -30,7 +39,8 @@ export function buildIndex(cards: CorpusCard[]): CorpusIndex {
 			.map(normalize)
 			.filter(Boolean),
 	);
-	return { cards, nameNorm, nameTokens };
+	const byId = new Map(cards.map((c) => [c.id, c]));
+	return { cards, byId, nameNorm, nameTokens };
 }
 
 function intersects(a: string[] | undefined, sel: string[]): boolean {
@@ -52,7 +62,11 @@ function passesFilters(card: CorpusCard, f: FilterClauses): boolean {
 	return true;
 }
 
-function hydrate(
+/**
+ * Merge a lean CorpusCard with set metadata to produce a fully-hydrated HoloCardData.
+ * Set fields fall back to setId / empty string when the set is not in the map.
+ */
+export function hydrateCard(
 	card: CorpusCard,
 	setsById: Map<string, PokemonSet>,
 ): HoloCardData {
@@ -127,5 +141,5 @@ export function queryCorpus(
 		return compareCardNumber(a.card.number, b.card.number);
 	});
 
-	return hits.map((h) => hydrate(h.card, setsById));
+	return hits.map((h) => hydrateCard(h.card, setsById));
 }

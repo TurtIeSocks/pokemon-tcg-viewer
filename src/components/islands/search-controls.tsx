@@ -7,7 +7,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import type { SetFacets } from "@/server/set-facets";
-import type { ListSearch } from "../../lib/card-query";
+import type { ListSearch, OwnedMode } from "../../lib/card-query";
 
 interface SearchControlsProps {
 	value: ListSearch;
@@ -66,7 +66,7 @@ export function SearchControls({
 				aria-label={placeholder}
 				onChange={(e) => onChange({ q: e.target.value })}
 			/>
-			<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+			<div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
 				<FilterSelect
 					label="Card Type"
 					value={value.supertype}
@@ -91,6 +91,19 @@ export function SearchControls({
 					options={options.types}
 					onChange={(v) => onChange({ types: v })}
 				/>
+				<Select
+					value={value.owned}
+					onValueChange={(v) => onChange({ owned: v as OwnedMode })}
+				>
+					<SelectTrigger className="text-sm w-full">
+						<SelectValue placeholder="Collection" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="all">All cards</SelectItem>
+						<SelectItem value="owned">Owned</SelectItem>
+						<SelectItem value="missing">Not owned</SelectItem>
+					</SelectContent>
+				</Select>
 			</div>
 		</div>
 	);

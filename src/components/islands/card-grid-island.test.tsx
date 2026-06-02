@@ -38,6 +38,7 @@ test("CardGridIsland shows seeded SSR cards before the corpus is ready", async (
 				supertype: [],
 				subtypes: [],
 				view: "grid",
+				owned: "all",
 			}}
 			context={{ setId: "swsh9" }}
 			seedCards={seed}

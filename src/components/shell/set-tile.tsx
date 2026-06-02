@@ -7,10 +7,17 @@ import "../booster-pack/booster-pack.css";
 export function SetTile({
 	seriesSlug,
 	set,
+	ownedCount,
 }: {
 	seriesSlug: string;
 	set: NavSet;
+	ownedCount?: number;
 }) {
+	const showCount = ownedCount != null;
+	const pct =
+		showCount && set.total > 0
+			? Math.min(100, Math.round((ownedCount / set.total) * 100))
+			: 0;
 	return (
 		<Link
 			to="/$series/$set"
@@ -30,6 +37,19 @@ export function SetTile({
 				alt=""
 				aria-hidden="true"
 			/>
+			{showCount && (
+				<>
+					<span className="absolute right-2 top-2 z-10 rounded-md bg-black/65 px-1.5 py-0.5 text-xs font-semibold tabular-nums text-white">
+						{ownedCount}/{set.total}
+					</span>
+					<span className="absolute inset-x-0 bottom-0 z-10 h-1 bg-black/30">
+						<span
+							className="block h-full bg-[var(--accent,#e0b341)]"
+							style={{ width: `${pct}%` }}
+						/>
+					</span>
+				</>
+			)}
 		</Link>
 	);
 }

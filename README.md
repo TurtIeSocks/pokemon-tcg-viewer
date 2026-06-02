@@ -14,7 +14,10 @@ full catalog, and view any card on its own shareable, crawlable page.
 * Holographic card effect that reacts to pointer movement
 * Virtualized grid for smooth scrolling through large sets
 * Instant client-side search once the in-memory card corpus loads
-* Personal collection, stored locally in IndexedDB
+* **Your Vault** — a local-first (IndexedDB) collection hub: track owned cards
+  per physical copy (price paid, date acquired, condition/grade, notes), a set
+  grid with completion overlays, a sortable card grid, collection goals with
+  live progress, bulk "add all", owned/not-owned filters, and JSON import/export
 
 ## Stack
 
@@ -60,7 +63,7 @@ and cards are server-rendered on demand and cached at the edge (see Deployment).
 | `/{series}/{set}/{card}`    | SSR + SWR + OG      | Card detail; dialog over the grid on client nav |
 | `/search?q=`                | SSR → corpus island | API first paint, instant once corpus loads      |
 | `/pokemon/{name}`           | SSR + OG            | Every card of a Pokémon, across all sets        |
-| `/collection`               | Client island       | IndexedDB-backed; `no-store`                     |
+| `/vault/{cards,sets,goals}` | Client islands      | The Vault hub — local IndexedDB collection, grids, goals |
 
 ## Project layout
 
@@ -86,7 +89,9 @@ src/
     holo-card/      # The pointer-reactive holographic card
     card/           # Static card detail / metadata (SSR)
     ui/             # Radix-based primitives
-  store/            # Zustand: collection + cards cache (IndexedDB), sets, recents
+  store/            # Zustand caches (sets, recents)
+    userland/       #   the Vault: per-copy collection + goals behind a repository
+                    #   port (IndexedDB adapter now; swappable for a hosted DB later)
     corpus/         # In-memory ~20k-card search index (loaded client-side)
 deploy/             # nginx, systemd, and the deploy runbook (see below)
 worker/             # Cloudflare Worker: pokemontcg.io proxy + /corpus blob
@@ -97,7 +102,7 @@ How the SSR/island split works: the server renders crawlable HTML (card names,
 images, OG tags) in route loaders via the `src/server/` seam — the
 pokemontcg.io API key never reaches the browser. Anything that needs the browser
 (pointer-reactive holo, the Virtuoso grid, the in-memory corpus, the IndexedDB
-collection) is a `<ClientOnly>` island whose SSR fallback mirrors the crawlable
+Vault) is a `<ClientOnly>` island whose SSR fallback mirrors the crawlable
 markup, so hydration never mismatches and SEO never regresses.
 
 ## Deployment

@@ -2,6 +2,7 @@ import type { CorpusQuery } from "../store/corpus/corpus-engine";
 import type { FilterClauses } from "../utils/build-filter-clauses";
 
 export type ViewMode = "grid" | "timeline";
+export type OwnedMode = "all" | "owned" | "missing";
 
 /** Typed list-page search params (shared validateSearch shape). */
 export interface ListSearch {
@@ -11,6 +12,7 @@ export interface ListSearch {
 	supertype: string[];
 	subtypes: string[];
 	view: ViewMode;
+	owned: OwnedMode;
 }
 
 /** Page context: which entity the list is anchored to. */

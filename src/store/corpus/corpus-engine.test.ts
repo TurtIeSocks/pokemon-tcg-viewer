@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import type { PokemonSet } from "../../server/card-mappers";
-import { buildIndex, queryCorpus } from "./corpus-engine";
+import { buildIndex, hydrateCard, queryCorpus } from "./corpus-engine";
 import type { CorpusCard } from "./corpus-types";
 
 function card(
@@ -117,4 +117,50 @@ test("missing set falls back to setId as name", () => {
 	const r = queryCorpus(orphan, { setId: "ghost", relevance: false }, setsById);
 	expect(r[0].setName).toBe("ghost");
 	expect(r[0].setReleaseDate).toBeUndefined();
+});
+
+function corpusCard(id: string, over: Partial<CorpusCard> = {}): CorpusCard {
+	return {
+		id,
+		name: over.name ?? "Test",
+		imageUrl: `https://img.invalid/${id}.png`,
+		imageUrlSmall: `https://img.invalid/${id}-sm.png`,
+		supertype: over.supertype ?? "Pokémon",
+		setId: over.setId ?? "base1",
+		number: over.number ?? "1",
+		...over,
+	};
+}
+
+const base1: PokemonSet = {
+	id: "base1",
+	name: "Base",
+	series: "Base",
+	releaseDate: "1999-01-09",
+	total: 102,
+	images: { symbol: "", logo: "" },
+};
+
+test("buildIndex exposes a byId lookup", () => {
+	const index = buildIndex([corpusCard("base1-1"), corpusCard("base1-2")]);
+	expect(index.byId.size).toBe(2);
+	expect(index.byId.get("base1-2")?.id).toBe("base1-2");
+	expect(index.byId.get("missing")).toBeUndefined();
+});
+
+test("hydrateCard joins set name/series from setsById", () => {
+	const setsById = new Map([["base1", base1]]);
+	const out = hydrateCard(
+		corpusCard("base1-4", { setId: "base1", name: "Charizard" }),
+		setsById,
+	);
+	expect(out.name).toBe("Charizard");
+	expect(out.setName).toBe("Base");
+	expect(out.setSeries).toBe("Base");
+});
+
+test("hydrateCard falls back to setId when set is unknown", () => {
+	const out = hydrateCard(corpusCard("x-1", { setId: "unknown" }), new Map());
+	expect(out.setName).toBe("unknown");
+	expect(out.setSeries).toBe("");
 });

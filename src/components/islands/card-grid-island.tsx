@@ -10,8 +10,10 @@ import { useStore } from "../../store";
 import {
 	loadCorpus,
 	makeCorpusFetcher,
+	type OwnedFilter,
 	useCorpusRuntime,
 } from "../../store/corpus/corpus-runtime";
+import { useOwnedCardIdSet } from "../../store/userland/selectors";
 import { CollectionToggle } from "../collection-toggle";
 import type { HoloCardData } from "../holo-card";
 import { FlipCard } from "./flip-card";
@@ -54,10 +56,20 @@ export function CardGridIsland({
 	const pageRef = useRef(1);
 	const loadingMoreRef = useRef(false);
 
+	const ownedCardIds = useOwnedCardIdSet();
+	const ownedFilter: OwnedFilter | undefined =
+		search.owned === "all" ? undefined : { mode: search.owned, ownedCardIds };
+
 	// Stable key for the active query; changing it resets pagination.
+	// Include owned mode + count so toggling the filter / adding a card refetches.
 	const queryKey = useMemo(
-		() => JSON.stringify([search, context]),
-		[search, context],
+		() =>
+			JSON.stringify([
+				search,
+				context,
+				search.owned !== "all" ? ownedCardIds.size : null,
+			]),
+		[search, context, ownedCardIds],
 	);
 
 	useEffect(() => {
@@ -79,11 +91,14 @@ export function CardGridIsland({
 	// raw objects (fresh refs every parent render) would re-fire on every render.
 	// The `cancelled` guard drops a stale resolve when the query changes mid-flight
 	// so fast filter edits can't let an older result win (last-write race).
-	// biome-ignore lint/correctness/useExhaustiveDependencies: queryKey encodes search+context.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: queryKey encodes search+context+owned; ownedFilter derived from same.
 	useEffect(() => {
 		if (!ready) return;
 		let cancelled = false;
-		const fetcher = makeCorpusFetcher(buildCorpusQuery(search, context));
+		const fetcher = makeCorpusFetcher(
+			buildCorpusQuery(search, context),
+			ownedFilter,
+		);
 		pageRef.current = 1;
 		loadingMoreRef.current = false;
 		void fetcher(queryKey, 1, PAGE).then((r) => {
@@ -103,7 +118,10 @@ export function CardGridIsland({
 		if (cards.length >= total) return;
 		loadingMoreRef.current = true;
 		const next = pageRef.current + 1;
-		const fetcher = makeCorpusFetcher(buildCorpusQuery(search, context));
+		const fetcher = makeCorpusFetcher(
+			buildCorpusQuery(search, context),
+			ownedFilter,
+		);
 		void fetcher(queryKey, next, PAGE)
 			.then((r) => {
 				pageRef.current = next;

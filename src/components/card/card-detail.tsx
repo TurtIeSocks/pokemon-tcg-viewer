@@ -2,8 +2,10 @@ import { ClientOnly } from "@tanstack/react-router";
 import type { CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import type { FocusCardData } from "../../server/card-mappers";
-import { useStore } from "../../store";
+import { useIsOwned } from "../../store/userland/selectors";
+import { addCopy } from "../../store/userland/userland-store";
 import { getCardAccent, getReadableAccent } from "../../utils/card-colors";
+import { CopyManager } from "../collection/copy-manager";
 import { HoloCard } from "../holo-card";
 import { CardPrices } from "../islands/card-prices";
 import { CardCrossLinks, type CrossLink } from "../islands/cross-links";
@@ -85,21 +87,22 @@ function CollectionButton({
 }: {
 	card: ReturnType<typeof toHoloCardData>;
 }) {
-	const owned = useStore((s) => !!s.owned[card.id]);
-	const add = useStore((s) => s.addToCollection);
-	const remove = useStore((s) => s.removeFromCollection);
+	const owned = useIsOwned(card.id);
+
+	if (owned) {
+		return <CopyManager cardId={card.id} variants={card.variants} />;
+	}
+
 	return (
 		<button
 			type="button"
-			onClick={() => (owned ? remove(card.id) : add(card))}
+			onClick={() => void addCopy(card.id)}
 			className={cn(
 				"w-full rounded-[10px] py-2.5 text-center font-mono text-[13px] tracking-[0.04em] transition-colors",
-				owned
-					? "bg-[color:var(--accent,#c9a86a)] font-bold text-[#1a1206]"
-					: "border border-white/15 text-[#e7e3d8] hover:border-white/30",
+				"border border-white/15 text-[#e7e3d8] hover:border-white/30",
 			)}
 		>
-			{owned ? "✓ In collection" : "＋ Add to collection"}
+			＋ Add to collection
 		</button>
 	);
 }

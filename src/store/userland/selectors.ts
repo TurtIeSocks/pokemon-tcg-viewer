@@ -1,0 +1,166 @@
+// src/store/userland/selectors.ts
+import { useEffect, useMemo } from "react";
+import type { HoloCardData } from "../../components/holo-card";
+import type { PokemonSet } from "../../server/card-mappers";
+import {
+	type CorpusIndex,
+	hydrateCard,
+	setsById,
+} from "../corpus/corpus-engine";
+import { useCorpusRuntime } from "../corpus/corpus-runtime";
+import { useStore } from "../index";
+import {
+	buildCardRows,
+	type CardRow,
+	type SortDir,
+	type SortKey,
+	sortCardRows,
+} from "./card-rows";
+import { computeGoalProgress, type GoalProgress } from "./goal-progress";
+import type { CollectionItem, Goal } from "./types";
+import { loadUserland, useUserland } from "./userland-store";
+
+// --- Pure helpers (unit-tested) ---
+
+/** Distinct owned cardIds from the items map. */
+export function ownedCardIdSet(
+	items: Record<string, CollectionItem>,
+): Set<string> {
+	return new Set(Object.values(items).map((i) => i.cardId));
+}
+
+/**
+ * Reactive set of distinct owned cardIds — a fresh Set built from the memoized
+ * owned-index keys on each render (cheap; consumers depend on contents, not identity).
+ */
+export function useOwnedCardIdSet(): Set<string> {
+	return new Set(useOwnedIndex().keys());
+}
+
+/** Group a flat list of copies into a map keyed by cardId. */
+export function groupByCardId(
+	items: CollectionItem[],
+): Map<string, CollectionItem[]> {
+	const map = new Map<string, CollectionItem[]>();
+	for (const item of items) {
+		const arr = map.get(item.cardId);
+		if (arr) arr.push(item);
+		else map.set(item.cardId, [item]);
+	}
+	return map;
+}
+
+/**
+ * Join owned copies with corpus card data; returns one HoloCardData per distinct cardId.
+ * Cards not found in the corpus index are silently skipped.
+ */
+export function joinOwnedViews(
+	items: CollectionItem[],
+	index: CorpusIndex,
+	setsById: Map<string, PokemonSet>,
+): HoloCardData[] {
+	const seen = new Set<string>();
+	const out: HoloCardData[] = [];
+	for (const item of items) {
+		if (seen.has(item.cardId)) continue;
+		seen.add(item.cardId);
+		const card = index.byId.get(item.cardId);
+		if (card) out.push(hydrateCard(card, setsById));
+	}
+	return out;
+}
+
+// --- Hooks ---
+/** Idempotently hydrate the userland cache. Safe to call from many components. */
+export function useEnsureUserland(): void {
+	useEffect(() => {
+		void loadUserland();
+	}, []);
+}
+
+/** Hook: returns all copies grouped by cardId; triggers hydration as a side-effect. */
+export function useOwnedIndex(): Map<string, CollectionItem[]> {
+	useEnsureUserland();
+	const items = useUserland((s) => s.items);
+	return useMemo(() => groupByCardId(Object.values(items)), [items]);
+}
+
+/** Hook: true if the user owns at least one copy of the given card. */
+export function useIsOwned(cardId: string): boolean {
+	return useOwnedIndex().has(cardId);
+}
+
+/** Hook: number of copies owned for the given card (0 if none). */
+export function useOwnedCount(cardId: string): number {
+	return useOwnedIndex().get(cardId)?.length ?? 0;
+}
+
+/** Distinct owned cards joined with the corpus. [] until corpus + sets load. */
+export function useOwnedCardViews(): HoloCardData[] {
+	useEnsureUserland();
+	const items = useUserland((s) => s.items);
+	const index = useCorpusRuntime((s) => s.index);
+	const sets = useStore((s) => s.sets);
+	return useMemo(() => {
+		if (!index || !sets) return [];
+		return joinOwnedViews(Object.values(items), index, setsById(sets));
+	}, [items, index, sets]);
+}
+
+/** Tally distinct owned cardIds into per-set counts via the corpus byId map. */
+export function tallyOwnedBySet(
+	cardIds: Iterable<string>,
+	index: CorpusIndex,
+): Map<string, number> {
+	const counts = new Map<string, number>();
+	for (const id of cardIds) {
+		const setId = index.byId.get(id)?.setId;
+		if (!setId) continue;
+		counts.set(setId, (counts.get(setId) ?? 0) + 1);
+	}
+	return counts;
+}
+
+/** Owned distinct-card count per setId. Empty until the corpus loads. */
+export function useOwnedCountBySet(): Map<string, number> {
+	useEnsureUserland();
+	const items = useUserland((s) => s.items);
+	const index = useCorpusRuntime((s) => s.index);
+	return useMemo(() => {
+		if (!index) return new Map<string, number>();
+		return tallyOwnedBySet(ownedCardIdSet(items), index);
+	}, [items, index]);
+}
+
+/** All owned cards grouped by cardId, sorted by key+dir. [] until corpus + sets load. */
+export function useOwnedCardRows(key: SortKey, dir: SortDir): CardRow[] {
+	useEnsureUserland();
+	const items = useUserland((s) => s.items);
+	const index = useCorpusRuntime((s) => s.index);
+	const sets = useStore((s) => s.sets);
+	return useMemo(() => {
+		if (!index || !sets) return [];
+		return sortCardRows(
+			buildCardRows(Object.values(items), index, setsById(sets)),
+			key,
+			dir,
+		);
+	}, [items, index, sets, key, dir]);
+}
+
+/** Hook: compute progress for a goal; null until corpus + sets are loaded. */
+export function useGoalProgress(goal: Goal): GoalProgress | null {
+	useEnsureUserland();
+	const items = useUserland((s) => s.items);
+	const index = useCorpusRuntime((s) => s.index);
+	const sets = useStore((s) => s.sets);
+	return useMemo(() => {
+		if (!index || !sets) return null;
+		return computeGoalProgress(
+			goal,
+			ownedCardIdSet(items),
+			index,
+			setsById(sets),
+		);
+	}, [goal, items, index, sets]);
+}
