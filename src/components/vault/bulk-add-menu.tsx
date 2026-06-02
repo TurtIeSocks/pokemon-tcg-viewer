@@ -132,10 +132,7 @@ export function BulkAddMenu({
 		);
 	}
 
-	function binderRuleItems() {
-		// ruleDisabled is true when ruleQuery is null/empty, so this is only rendered
-		// when ruleQuery is a valid SerializedQuery.
-		const q = ruleQuery ?? ({} as NonNullable<typeof ruleQuery>);
+	function binderRuleItems(q: SerializedQuery) {
 		return (
 			<>
 				{binderList.map((b) => (
@@ -158,12 +155,6 @@ export function BulkAddMenu({
 			</>
 		);
 	}
-
-	const ruleSubTrigger = (
-		<DropdownMenuSubTrigger disabled={ruleDisabled}>
-			Add smart rule to binder
-		</DropdownMenuSubTrigger>
-	);
 
 	return (
 		<>
@@ -196,19 +187,27 @@ export function BulkAddMenu({
 					</DropdownMenuSub>
 
 					{/* Item 3: Add smart rule to binder */}
-					<DropdownMenuSub>
-						{ruleDisabled ? (
-							<TooltipProvider>
-								<Tooltip>
-									<TooltipTrigger asChild>{ruleSubTrigger}</TooltipTrigger>
-									<TooltipContent>{ruleDisabledReason}</TooltipContent>
-								</Tooltip>
-							</TooltipProvider>
-						) : (
-							ruleSubTrigger
-						)}
-						<DropdownMenuSubContent>{binderRuleItems()}</DropdownMenuSubContent>
-					</DropdownMenuSub>
+					{ruleDisabled || !ruleQuery ? (
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<DropdownMenuItem disabled>
+										Add smart rule to binder
+									</DropdownMenuItem>
+								</TooltipTrigger>
+								<TooltipContent>{ruleDisabledReason}</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+					) : (
+						<DropdownMenuSub>
+							<DropdownMenuSubTrigger>
+								Add smart rule to binder
+							</DropdownMenuSubTrigger>
+							<DropdownMenuSubContent>
+								{binderRuleItems(ruleQuery)}
+							</DropdownMenuSubContent>
+						</DropdownMenuSub>
+					)}
 				</DropdownMenuContent>
 			</DropdownMenu>
 
