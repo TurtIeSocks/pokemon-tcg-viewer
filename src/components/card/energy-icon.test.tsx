@@ -16,7 +16,7 @@ test("circle fill matches getTypeColor for known type", () => {
 	const svg = screen.getByRole("img", { name: "Lightning" });
 	const circle = svg.querySelector("circle");
 	expect(circle).toBeDefined();
-	expect(circle!.getAttribute("fill")).toBe(getTypeColor("Lightning"));
+	expect(circle?.getAttribute("fill")).toBe(getTypeColor("Lightning"));
 });
 
 test("unknown type falls back to Colorless fill", () => {
@@ -24,7 +24,7 @@ test("unknown type falls back to Colorless fill", () => {
 	const svg = screen.getByRole("img", { name: "Bogus" });
 	const circle = svg.querySelector("circle");
 	expect(circle).toBeDefined();
-	expect(circle!.getAttribute("fill")).toBe(getTypeColor("Colorless"));
+	expect(circle?.getAttribute("fill")).toBe(getTypeColor("Colorless"));
 });
 
 test("unknown type still renders aria-label as given type", () => {
@@ -38,7 +38,7 @@ test("unknown type uses fallback glyph path", () => {
 	const svg = screen.getByRole("img", { name: "Bogus" });
 	const path = svg.querySelector("path");
 	expect(path).toBeDefined();
-	expect(path!.getAttribute("d")).toBe(ENERGY_GLYPH_FALLBACK);
+	expect(path?.getAttribute("d")).toBe(ENERGY_GLYPH_FALLBACK);
 });
 
 test("size prop sets width and height attributes", () => {

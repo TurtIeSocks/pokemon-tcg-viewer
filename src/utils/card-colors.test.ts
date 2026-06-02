@@ -1,10 +1,10 @@
 import { describe, expect, it } from "bun:test";
 import {
-	NEUTRAL_ACCENT,
 	getCardAccent,
 	getRarityColor,
 	getReadableAccent,
 	getTypeColor,
+	NEUTRAL_ACCENT,
 } from "./card-colors";
 
 // --- WCAG contrast helpers (test-only) ---
@@ -18,7 +18,9 @@ function relativeLuminance(hex: string): number {
 	const r = Number.parseInt(n.slice(0, 2), 16);
 	const g = Number.parseInt(n.slice(2, 4), 16);
 	const b = Number.parseInt(n.slice(4, 6), 16);
-	return 0.2126 * hexToLinear(r) + 0.7152 * hexToLinear(g) + 0.0722 * hexToLinear(b);
+	return (
+		0.2126 * hexToLinear(r) + 0.7152 * hexToLinear(g) + 0.0722 * hexToLinear(b)
+	);
 }
 
 function contrastRatio(fg: string, bg: string): number {

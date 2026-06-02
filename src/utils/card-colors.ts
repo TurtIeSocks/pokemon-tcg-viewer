@@ -59,7 +59,8 @@ function relativeLuminance(r: number, g: number, b: number): number {
 
 function contrastVsDark(r: number, g: number, b: number): number {
 	// dark bg #0d0d0f has luminance ≈ 0.002
-	const bgLum = 0.2126 * toLinear(13) + 0.7152 * toLinear(13) + 0.0722 * toLinear(15);
+	const bgLum =
+		0.2126 * toLinear(13) + 0.7152 * toLinear(13) + 0.0722 * toLinear(15);
 	const fgLum = relativeLuminance(r, g, b);
 	const lighter = Math.max(fgLum, bgLum);
 	const darker = Math.min(fgLum, bgLum);
