@@ -44,23 +44,25 @@ export function GoalFormDialog({
 		},
 		validators: { onSubmit: goalFormSchema },
 		onSubmit: async ({ value }) => {
+			// Empty/whitespace description → null (null-discipline: "" is not a value).
+			const description = value.description.trim() ? value.description : null;
 			if (isEdit && goal) {
 				await updateGoal(goal.id, {
 					name: value.name,
-					description: value.description ?? null,
+					description,
 				});
 				// Build an updated goal object from the patch
 				const updated: Goal = {
 					...goal,
 					name: value.name,
-					description: value.description ?? null,
+					description,
 					updatedAt: Date.now(),
 				};
 				onSaved?.(updated);
 			} else {
 				const created = await createGoal({
 					name: value.name,
-					description: value.description ?? null,
+					description,
 				});
 				onSaved?.(created);
 			}
