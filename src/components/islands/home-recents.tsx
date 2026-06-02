@@ -1,5 +1,9 @@
-import { ClientOnly, Link } from "@tanstack/react-router";
+import { ClientOnly, Link, type LinkProps } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { cardRouteProps } from "../../lib/card-route";
 import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
+import { useStore } from "../../store";
+import { loadCorpus, useSlugIndex } from "../../store/corpus/corpus-runtime";
 import { useRecentsStore } from "../../store/recents";
 import { HoloCardIsland } from "./holo-card-island";
 
@@ -7,6 +11,16 @@ function RecentsInner() {
 	const recentSearches = useRecentsStore((s) => s.recentSearches);
 	const recentlyViewed = useRecentsStore((s) => s.recentlyViewed);
 	const clearRecentSearches = useRecentsStore((s) => s.clearRecentSearches);
+
+	// Recents store only id/setId/name — resolving the card-detail link needs the
+	// corpus + sets slug index, so load them when there are cards to link. Both
+	// are idempotent + IndexedDB-cached, so a returning visitor pays nothing.
+	const slugIndex = useSlugIndex();
+	useEffect(() => {
+		if (recentlyViewed.length === 0) return;
+		void loadCorpus();
+		void useStore.getState().loadSets();
+	}, [recentlyViewed.length]);
 
 	if (recentSearches.length === 0 && recentlyViewed.length === 0) return null;
 
@@ -46,35 +60,36 @@ function RecentsInner() {
 						Recently viewed
 					</h2>
 					<div className="flex gap-3 overflow-x-auto pb-2">
-						{recentlyViewed.map((card) => (
-							<Link
-								key={card.id}
-								to="/search"
-								search={(prev) => ({
-									q: card.name,
-									types: prev.types ?? [],
-									rarity: prev.rarity ?? [],
-									supertype: prev.supertype ?? [],
-									subtypes: prev.subtypes ?? [],
-									view: "grid" as const,
-								})}
-								style={{ width: 96 }}
-								className="shrink-0"
-							>
-								<HoloCardIsland
-									imageUrl={card.imageUrl}
-									imageUrlSmall={card.imageUrlSmall}
-									name={card.name}
-									rarity={card.rarity}
-									subtypes={card.subtypes}
-									supertype={card.supertype}
-									setId={card.setId}
-									series={card.setSeries}
-									variants={card.variants}
-									cardNumber={card.cardNumber}
-								/>
-							</Link>
-						))}
+						{recentlyViewed.map((card) => {
+							// Real card-detail link once the slug index is ready; until then
+							// fall back to a name search so the tile is never a dead click.
+							const linkProps: LinkProps = (slugIndex &&
+								cardRouteProps(slugIndex, card)) || {
+								to: "/search",
+								search: { ...LIST_SEARCH_DEFAULTS, q: card.name },
+							};
+							return (
+								<Link
+									key={card.id}
+									{...linkProps}
+									style={{ width: 96 }}
+									className="shrink-0"
+								>
+									<HoloCardIsland
+										imageUrl={card.imageUrl}
+										imageUrlSmall={card.imageUrlSmall}
+										name={card.name}
+										rarity={card.rarity}
+										subtypes={card.subtypes}
+										supertype={card.supertype}
+										setId={card.setId}
+										series={card.setSeries}
+										variants={card.variants}
+										cardNumber={card.cardNumber}
+									/>
+								</Link>
+							);
+						})}
 					</div>
 				</section>
 			)}

@@ -23,20 +23,29 @@ export {
 // Memoize across requests in one server process. The sets list changes monthly;
 // a process restart (deploy) picks up new sets. Avoids rebuilding the index per request.
 let cached: NavTree | null = null;
+
+/**
+ * Memoized nav tree (server-only). Shared by getNavTreeFn and the card-route
+ * resolver so a route loader that needs both reuses one fetch + build with no
+ * cross-server-fn RPC hop. No Cache-Control here — that's a getNavTreeFn concern.
+ */
+export async function loadNavTree(): Promise<NavTree> {
+	if (cached) return cached;
+	const sets = await fetchAllSets();
+	cached = deriveNavTree(sets);
+	return cached;
+}
+
 export const getNavTreeFn = createServerFn({ method: "GET" }).handler(
 	async (): Promise<NavTree> => {
 		// The root loader calls this on every page, so the header sets the cache
 		// policy for the SSR document (and this RPC on client nav). Sets change
 		// ~monthly: a short fresh window with long stale-while-revalidate lets the
-		// CDN/browser cache aggressively without serving badly stale data. Set
-		// before the memo early-return so every invocation carries it.
+		// CDN/browser cache aggressively without serving badly stale data.
 		setResponseHeader(
 			"Cache-Control",
 			"public, max-age=60, stale-while-revalidate=86400",
 		);
-		if (cached) return cached;
-		const sets = await fetchAllSets();
-		cached = deriveNavTree(sets);
-		return cached;
+		return loadNavTree();
 	},
 );

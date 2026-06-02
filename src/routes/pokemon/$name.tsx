@@ -1,12 +1,16 @@
 import {
 	createFileRoute,
+	type LinkProps,
 	notFound,
 	stripSearchParams,
 	useNavigate,
 } from "@tanstack/react-router";
+import { useCallback } from "react";
+import type { HoloCardData } from "../../components/holo-card";
 import { CardGridIsland } from "../../components/islands/card-grid-island";
 import { SearchControls } from "../../components/islands/search-controls";
 import { ViewModeToggle } from "../../components/islands/view-mode-toggle";
+import { cardRouteProps } from "../../lib/card-route";
 import {
 	LIST_SEARCH_DEFAULTS,
 	listSearchToUrl,
@@ -16,6 +20,7 @@ import { getPokemonListFn } from "../../server/card-data";
 import { getDexCardsFn } from "../../server/corpus-server";
 import { dexByName } from "../../server/pokemon-dex";
 import { deriveFacets } from "../../server/set-facets";
+import { useSlugIndex } from "../../store/corpus/corpus-runtime";
 
 function titleCase(slug: string): string {
 	return slug
@@ -68,6 +73,19 @@ function PokemonPage() {
 		});
 	const options = deriveFacets(cards);
 
+	// Cards for one Pokémon span many sets — resolve each detail link from the
+	// client corpus. Falls back to a no-op until the corpus + sets load.
+	const slugIndex = useSlugIndex();
+	const cardHref = useCallback(
+		(card: HoloCardData): LinkProps =>
+			(slugIndex ? cardRouteProps(slugIndex, card) : null) ?? {
+				to: "/pokemon/$name",
+				params: { name: params.name },
+				search,
+			},
+		[slugIndex, params.name, search],
+	);
+
 	return (
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
 			<div className="mb-3 flex items-center gap-3">
@@ -95,11 +113,7 @@ function PokemonPage() {
 					context={{ dexNumber: dex }}
 					seedCards={cards}
 					seedTotal={total}
-					cardHref={() => ({
-						to: "/pokemon/$name",
-						params: { name: params.name },
-						search,
-					})}
+					cardHref={cardHref}
 				/>
 			</div>
 		</div>

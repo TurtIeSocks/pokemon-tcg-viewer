@@ -1,12 +1,15 @@
 import {
 	createFileRoute,
+	type LinkProps,
 	stripSearchParams,
 	useNavigate,
 } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
+import type { HoloCardData } from "../components/holo-card";
 import { CardGridIsland } from "../components/islands/card-grid-island";
 import { SearchControls } from "../components/islands/search-controls";
 import { ViewModeToggle } from "../components/islands/view-mode-toggle";
+import { cardRouteProps } from "../lib/card-route";
 import {
 	LIST_SEARCH_DEFAULTS,
 	listSearchToUrl,
@@ -14,6 +17,7 @@ import {
 } from "../lib/list-search";
 import { searchCardsFn } from "../server/corpus-server";
 import { deriveFacets } from "../server/set-facets";
+import { useSlugIndex } from "../store/corpus/corpus-runtime";
 import { useRecentsStore } from "../store/recents";
 
 export const Route = createFileRoute("/search")({
@@ -63,6 +67,20 @@ function SearchPage() {
 	// Options derived from the SSR seed (corpus refines as the user filters live).
 	const options = deriveFacets(cards);
 
+	// Search results span many sets, so each card's detail link is resolved from
+	// the client corpus (same slugs the detail route uses). Falls back to a no-op
+	// until the corpus + sets load — the live grid pulls cards from that same
+	// corpus, so server-side enrichment of the SSR seed alone wouldn't cover it.
+	const slugIndex = useSlugIndex();
+	const cardHref = useCallback(
+		(card: HoloCardData): LinkProps =>
+			(slugIndex ? cardRouteProps(slugIndex, card) : null) ?? {
+				to: "/search",
+				search,
+			},
+		[slugIndex, search],
+	);
+
 	return (
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
 			<div className="mb-3 flex items-center gap-3">
@@ -95,7 +113,7 @@ function SearchPage() {
 					context={{}}
 					seedCards={cards}
 					seedTotal={total}
-					cardHref={() => ({ to: "/search", search })}
+					cardHref={cardHref}
 				/>
 			</div>
 		</div>

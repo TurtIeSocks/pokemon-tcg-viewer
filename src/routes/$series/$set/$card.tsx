@@ -1,52 +1,20 @@
 import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { CardModal } from "../../../components/islands/card-modal";
-import type { CrossLink } from "../../../components/islands/cross-links";
 import { LIST_SEARCH_DEFAULTS } from "../../../lib/list-search";
-import { getCardByIdFn, getPokemonListFn } from "../../../server/card-data";
-import { resolveCardInSetFn } from "../../../server/corpus-server";
-import { findSet, getNavTreeFn } from "../../../server/nav-tree";
-import { nameByDex } from "../../../server/pokemon-dex";
+import { getCardForRouteFn } from "../../../server/corpus-server";
 import { useRecentsStore } from "../../../store/recents";
 
 export const Route = createFileRoute("/$series/$set/$card")({
 	loader: async ({ params }) => {
-		// getPokemonListFn is independent of the tree→cardId→card chain, so kick it
-		// off up front and await it only when building cross-links — no waterfall.
-		const listPromise = getPokemonListFn();
-		// No-op handler so a notFound() bail before the await can't raise an
-		// unhandled rejection; the await below still surfaces a real failure.
-		listPromise.catch(() => {});
-		const tree = await getNavTreeFn();
-		const set = findSet(tree, params.series, params.set);
-		if (!set) throw notFound();
-		const cardId = await resolveCardInSetFn({
-			data: { setId: set.id, cardSlug: params.card },
+		// One server fn resolves tree → set → card id → card + cross-links, all
+		// server-side and memoized. On client navigation this is a single RPC
+		// instead of three serial ones (see getCardForRouteFn).
+		const result = await getCardForRouteFn({
+			data: { series: params.series, set: params.set, card: params.card },
 		});
-		if (!cardId) throw notFound();
-		const card = await getCardByIdFn({ data: cardId });
-
-		const list = await listPromise;
-		const crossLinks: CrossLink[] = [];
-		for (const dex of card.nationalPokedexNumbers ?? []) {
-			const name = nameByDex(list, dex);
-			if (name) {
-				crossLinks.push({
-					label: `View all ${name.replace(/-/g, " ")}`,
-					link: { to: "/pokemon/$name", params: { name } },
-				});
-			}
-		}
-		crossLinks.push({
-			label: `Go to ${card.setName}`,
-			link: {
-				to: "/$series/$set",
-				params: { series: params.series, set: params.set },
-				search: LIST_SEARCH_DEFAULTS,
-			},
-		});
-
-		return { card, crossLinks };
+		if (!result) throw notFound();
+		return result;
 	},
 	head: ({ loaderData }) => {
 		const card = loaderData?.card;

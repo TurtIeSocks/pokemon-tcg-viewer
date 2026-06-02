@@ -1,6 +1,9 @@
+import { useMemo } from "react";
 import { create } from "zustand";
 import type { HoloCardData } from "../../components/holo-card";
 import { apiBase } from "../../lib/api-base-client";
+import { buildSlugIndex, type SlugIndex } from "../../lib/slug";
+import type { PokemonSet } from "../../server/card-mappers";
 import { useStore } from "../index";
 import {
 	buildIndex,
@@ -126,4 +129,38 @@ export function makeCorpusFetcher(params: CorpusQuery): CardFetcher {
 			totalCount: all.length,
 		});
 	};
+}
+
+// Memoize the slug index per (corpus index, sets list). Keyed by the index via a
+// WeakMap so a corpus reload auto-invalidates; the inner Map re-keys on the sets
+// ref so a sets refresh rebuilds too. Built once, reused across every page.
+const slugIndexCache = new WeakMap<CorpusIndex, Map<PokemonSet[], SlugIndex>>();
+
+/**
+ * Slug index over the in-memory corpus + sets — lets a client list build
+ * card-detail links (/$series/$set/$card) with no server round trip. Null until
+ * both the corpus and sets have loaded.
+ */
+export function getSlugIndex(): SlugIndex | null {
+	const index = useCorpusRuntime.getState().index;
+	const sets = useStore.getState().sets;
+	if (!index || !sets) return null;
+	let perSets = slugIndexCache.get(index);
+	if (!perSets) {
+		perSets = new Map();
+		slugIndexCache.set(index, perSets);
+	}
+	let si = perSets.get(sets);
+	if (!si) {
+		si = buildSlugIndex(sets, index.cards);
+		perSets.set(sets, si);
+	}
+	return si;
+}
+
+/** Reactive {@link getSlugIndex}: re-renders when the corpus or sets load. */
+export function useSlugIndex(): SlugIndex | null {
+	const index = useCorpusRuntime((s) => s.index);
+	const sets = useStore((s) => s.sets);
+	return useMemo(() => (index && sets ? getSlugIndex() : null), [index, sets]);
 }

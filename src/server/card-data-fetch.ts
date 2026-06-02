@@ -68,3 +68,20 @@ export async function getPokemonListCached(): Promise<PokemonListEntry[]> {
 	if (!pokemonListCache) pokemonListCache = await fetchPokemonList();
 	return pokemonListCache;
 }
+
+// Memoize card fetches for the process lifetime. Card data is effectively
+// static (prices drift, but the focus view tolerates a process-lifetime cache;
+// a deploy restart refreshes it). Caching the promise also dedupes concurrent
+// opens of the same card. Evict on failure so a transient error doesn't poison.
+const cardByIdCache = new Map<string, Promise<FocusCardData>>();
+export function getCardByIdCached(id: string): Promise<FocusCardData> {
+	let p = cardByIdCache.get(id);
+	if (!p) {
+		p = fetchCardById(id).catch((e) => {
+			cardByIdCache.delete(id);
+			throw e;
+		});
+		cardByIdCache.set(id, p);
+	}
+	return p;
+}

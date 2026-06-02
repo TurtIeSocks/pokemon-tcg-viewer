@@ -1,5 +1,9 @@
 import { createRouter } from "@tanstack/react-router";
-import { RouteError, RouteNotFound } from "./components/shell/route-status";
+import {
+	RouteError,
+	RouteNotFound,
+	RoutePending,
+} from "./components/shell/route-status";
 import { routeTree } from "./routeTree.gen";
 
 export function getRouter() {
@@ -19,6 +23,12 @@ export function getRouter() {
 		// App-wide fallbacks for `throw notFound()` and loader/component errors.
 		defaultNotFoundComponent: RouteNotFound,
 		defaultErrorComponent: RouteError,
+		// Show a spinner only once a navigation's loader has been pending past
+		// ~150ms (fast/preloaded opens never reach it); keep it up ≥400ms once
+		// shown so it can't flash. Stops a slow card open from looking frozen.
+		defaultPendingComponent: RoutePending,
+		defaultPendingMs: 150,
+		defaultPendingMinMs: 400,
 	});
 }
 

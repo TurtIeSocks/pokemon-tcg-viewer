@@ -3,7 +3,25 @@ import {
 	Link,
 	useRouter,
 } from "@tanstack/react-router";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+/**
+ * Router-wide pending UI. Shown when a navigation's loader runs past the
+ * router's pending threshold (see router.tsx) — so a slow open shows motion
+ * instead of a frozen page. Fast/preloaded navigations never reach it.
+ */
+export function RoutePending() {
+	return (
+		<div
+			className="flex h-full items-center justify-center py-16"
+			role="status"
+			aria-label="Loading"
+		>
+			<Loader2 className="size-6 animate-spin text-muted-foreground" />
+		</div>
+	);
+}
 
 /** Router-wide 404 UI. Rendered for every `throw notFound()` in a loader. */
 export function RouteNotFound() {

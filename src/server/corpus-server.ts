@@ -1,9 +1,29 @@
 import { createServerFn } from "@tanstack/react-start";
-import { buildSetCardSlugs } from "../lib/card-slugs";
+import type { ListSearch } from "../lib/card-query";
+import { LIST_SEARCH_DEFAULTS } from "../lib/list-search";
+import { findSet } from "../lib/nav-tree";
+import { nameByDex } from "./pokemon-dex";
 import { boundedInt, nonEmptyString } from "./validate";
 
 // National Pokédex upper bound — matches the species-list fetch limit.
 const MAX_DEX = 1025;
+
+// Serializable cross-link returned by getCardForRouteFn. Deliberately NOT typed
+// as the router's LinkProps (which CrossLink uses): LinkProps permits an Updater
+// function for `hash`/`search`, and a server fn's return must be serializable —
+// TanStack's type check rejects any function-valued field. These literal shapes
+// carry only strings + the all-primitive ListSearch, and stay assignable to
+// CrossLink at the consumer (CardCrossLinks).
+interface RouteCrossLink {
+	label: string;
+	link:
+		| { to: "/pokemon/$name"; params: { name: string } }
+		| {
+				to: "/$series/$set";
+				params: { series: string; set: string };
+				search: ListSearch;
+		  };
+}
 
 // createServerFn wrappers — the ONLY corpus entry points routes may use. The
 // corpus loader (node:zlib, /corpus fetch) lives in ./corpus-loader and is
@@ -37,22 +57,65 @@ export const getDexCardsFn = createServerFn({ method: "GET" })
 	});
 
 /**
- * Resolve a card slug within a set → card id (or null). Server fn so the $card
- * route loader never imports the raw resolver (which pulls node:zlib).
+ * Resolve everything the card-detail route needs in ONE round trip: nav tree →
+ * set → card id → full card + cross-links. Replaces the old three-RPC waterfall
+ * (getNavTreeFn → resolveCardInSetFn → getCardByIdFn) the loader used to run on
+ * every click — on client navigation each createServerFn is its own HTTP hop, so
+ * three serial hops (the last gated on an external API) made opening a card slow.
+ * Here the nav tree, corpus, pokémon list, and card fetch are all memoized and
+ * run in-process, server-side. Returns null (not a thrown notFound) so the
+ * caller decides how to surface "not found".
  */
-export const resolveCardInSetFn = createServerFn({ method: "GET" })
+export const getCardForRouteFn = createServerFn({ method: "GET" })
 	.inputValidator((input: unknown) => {
-		const o = (input ?? {}) as { setId?: unknown; cardSlug?: unknown };
+		const o = (input ?? {}) as {
+			series?: unknown;
+			set?: unknown;
+			card?: unknown;
+		};
 		return {
-			setId: nonEmptyString(o.setId, "setId"),
-			cardSlug: nonEmptyString(o.cardSlug, "cardSlug"),
+			series: nonEmptyString(o.series, "series"),
+			set: nonEmptyString(o.set, "set"),
+			card: nonEmptyString(o.card, "card"),
 		};
 	})
 	.handler(async ({ data }) => {
-		const { queryCorpusServer } = await import("./corpus-loader");
-		const all = await queryCorpusServer({
-			setId: data.setId,
-			relevance: false,
+		const { loadNavTree } = await import("./nav-tree");
+		const { resolveCardInSet } = await import("./card-resolve");
+		const { getCardByIdCached, getPokemonListCached } = await import(
+			"./card-data-fetch"
+		);
+
+		const tree = await loadNavTree();
+		const set = findSet(tree, data.series, data.set);
+		if (!set) return null;
+		const cardId = await resolveCardInSet(set.id, data.card);
+		if (!cardId) return null;
+
+		// Card fetch + species list are independent once we have the id.
+		const [card, list] = await Promise.all([
+			getCardByIdCached(cardId),
+			getPokemonListCached(),
+		]);
+
+		const crossLinks: RouteCrossLink[] = [];
+		for (const dex of card.nationalPokedexNumbers ?? []) {
+			const name = nameByDex(list, dex);
+			if (name) {
+				crossLinks.push({
+					label: `View all ${name.replace(/-/g, " ")}`,
+					link: { to: "/pokemon/$name", params: { name } },
+				});
+			}
+		}
+		crossLinks.push({
+			label: `Go to ${card.setName}`,
+			link: {
+				to: "/$series/$set",
+				params: { series: data.series, set: data.set },
+				search: LIST_SEARCH_DEFAULTS,
+			},
 		});
-		return buildSetCardSlugs(all).idBySlug.get(data.cardSlug) ?? null;
+
+		return { card, crossLinks };
 	});
