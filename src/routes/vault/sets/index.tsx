@@ -1,12 +1,12 @@
 import { ClientOnly, createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { SetTile } from "../../components/shell/set-tile";
-import { Button } from "../../components/ui/button";
-import { getNavTreeFn } from "../../server/nav-tree";
-import { useEnsureCorpus } from "../../store/corpus/use-ensure-corpus";
-import { useOwnedCountBySet } from "../../store/userland/selectors";
+import { SetTile } from "../../../components/shell/set-tile";
+import { Button } from "../../../components/ui/button";
+import { getNavTreeFn } from "../../../server/nav-tree";
+import { useEnsureCorpus } from "../../../store/corpus/use-ensure-corpus";
+import { useOwnedCountBySet } from "../../../store/userland/selectors";
 
-export const Route = createFileRoute("/vault/sets")({
+export const Route = createFileRoute("/vault/sets/")({
 	loader: () => getNavTreeFn(),
 	component: VaultSets,
 });

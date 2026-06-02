@@ -5,18 +5,18 @@ import {
 	RouterProvider,
 } from "@tanstack/react-router";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { PokemonSet } from "../../server/card-mappers";
-import { useStore } from "../../store";
-import { buildIndex } from "../../store/corpus/corpus-engine";
-import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
-import type { CorpusCard } from "../../store/corpus/corpus-types";
-import { createIdbRepos } from "../../store/userland/idb-repo";
-import type { CollectionItem } from "../../store/userland/types";
+import type { PokemonSet } from "../../../server/card-mappers";
+import { useStore } from "../../../store";
+import { buildIndex } from "../../../store/corpus/corpus-engine";
+import { useCorpusRuntime } from "../../../store/corpus/corpus-runtime";
+import type { CorpusCard } from "../../../store/corpus/corpus-types";
+import { createIdbRepos } from "../../../store/userland/idb-repo";
+import type { CollectionItem } from "../../../store/userland/types";
 import {
 	resetUserlandForTests,
 	setUserlandRepos,
 	useUserland,
-} from "../../store/userland/userland-store";
+} from "../../../store/userland/userland-store";
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -74,7 +74,7 @@ function makeItem(id: string, cardId: string): CollectionItem {
 // Route.useLoaderData() internally. The easiest workaround is to mock the
 // sets tree via a Route with matching loader data injected via context.
 // Instead, we supply a loader that returns the tree.
-import { deriveNavTree } from "../../lib/nav-tree";
+import { deriveNavTree } from "../../../lib/nav-tree";
 
 async function renderSetsInner(items: CollectionItem[] = []) {
 	const itemsRecord: Record<string, CollectionItem> = {};
@@ -96,10 +96,10 @@ async function renderSetsInner(items: CollectionItem[] = []) {
 
 // Helper wrapper that bypasses Route.useLoaderData by passing tree directly
 import { useMemo, useState } from "react";
-import { SetTile } from "../../components/shell/set-tile";
-import { Button } from "../../components/ui/button";
-import type { NavTree } from "../../lib/nav-tree";
-import { useOwnedCountBySet } from "../../store/userland/selectors";
+import { SetTile } from "../../../components/shell/set-tile";
+import { Button } from "../../../components/ui/button";
+import type { NavTree } from "../../../lib/nav-tree";
+import { useOwnedCountBySet } from "../../../store/userland/selectors";
 
 function VaultSetsInnerWithData({ tree }: { tree: NavTree }) {
 	const counts = useOwnedCountBySet();
