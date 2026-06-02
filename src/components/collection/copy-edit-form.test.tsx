@@ -14,7 +14,7 @@ let repos = createIdbRepos();
 beforeEach(async () => {
 	repos = createIdbRepos();
 	await repos.collection.clear();
-	await repos.goals.clear();
+	await repos.binders.clear();
 	setUserlandRepos(repos);
 	resetUserlandForTests();
 });
@@ -41,13 +41,16 @@ test("clearing price persists null", async () => {
 	);
 });
 
-test("negative price shows error and does not persist", async () => {
+test("negative price shows error TEXT (not [object Object]) and has role=alert", async () => {
 	const item = await addCopy("c");
 	render(<CopyEditForm item={useUserland.getState().items[item.id]} />);
 	const price = screen.getByLabelText(/price/i);
 	fireEvent.change(price, { target: { value: "-3" } });
 	fireEvent.blur(price);
-	await screen.findByText(/≥ 0|number/i);
+	const errorEl = await screen.findByRole("alert");
+	// must be readable text, not the infamous "[object Object]"
+	expect(errorEl.textContent).not.toBe("[object Object]");
+	expect(errorEl.textContent).toMatch(/≥ 0|number/i);
 	expect(useUserland.getState().items[item.id].pricePaid).toBeNull();
 });
 
@@ -72,17 +75,17 @@ test("acquiredAt field: changing date and blurring persists the new date", async
 	);
 });
 
-test("acquiredAt invalid date shows error on blur", async () => {
+test("acquiredAt invalid date shows error on blur with role=alert", async () => {
 	const item = await addCopy("c");
 	render(<CopyEditForm item={useUserland.getState().items[item.id]} />);
 	const dateInput = screen.getByLabelText(/acquired date/i);
-	// Focus, change to invalid value, then blur to trigger validation
 	fireEvent.focus(dateInput);
 	fireEvent.change(dateInput, { target: { value: "9999-99-99" } });
 	fireEvent.blur(dateInput);
-	await waitFor(() =>
-		expect(screen.queryByText(/invalid date/i)).toBeDefined(),
-	);
+	await waitFor(() => {
+		const alertEl = screen.queryByRole("alert");
+		expect(alertEl).not.toBeNull();
+	});
 });
 
 test("notes field: typing and blurring persists notes value", async () => {
@@ -207,7 +210,7 @@ test("graded: setting grade and blurring persists grading", async () => {
 	);
 });
 
-test("invalid grade shows error and does not persist", async () => {
+test("invalid grade shows error TEXT and has role=alert", async () => {
 	const item = await addCopy("c");
 	render(<CopyEditForm item={useUserland.getState().items[item.id]} />);
 	fireEvent.click(screen.getByLabelText(/graded/i));
@@ -215,6 +218,8 @@ test("invalid grade shows error and does not persist", async () => {
 	const grade = screen.getByLabelText(/^grade$/i);
 	fireEvent.change(grade, { target: { value: "15" } });
 	fireEvent.blur(grade);
-	await screen.findByText(/0[–-]10/i);
+	const errorEl = await screen.findByRole("alert");
+	expect(errorEl.textContent).not.toBe("[object Object]");
+	expect(errorEl.textContent).toMatch(/0[–-]10/i);
 	expect(useUserland.getState().items[item.id].grading).toBeNull();
 });

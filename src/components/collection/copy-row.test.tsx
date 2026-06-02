@@ -14,25 +14,42 @@ let repos = createIdbRepos();
 beforeEach(async () => {
 	repos = createIdbRepos();
 	await repos.collection.clear();
-	await repos.goals.clear();
+	await repos.binders.clear();
 	setUserlandRepos(repos);
 	resetUserlandForTests();
 });
 
-test("renders copy row with acquired date summary", async () => {
+test("renders copy row with delete button", async () => {
 	const item = await addCopy("c");
 	render(<CopyRow item={useUserland.getState().items[item.id]} />);
 	expect(screen.getByRole("button", { name: /delete/i })).toBeDefined();
 });
 
-test("clicking the row summary toggles expand to show edit form", async () => {
+test("edit form is hidden initially; clicking Edit button reveals price/variant fields", async () => {
 	const item = await addCopy("c");
 	render(<CopyRow item={useUserland.getState().items[item.id]} />);
-	const toggleBtn = screen.getByRole("button", { expanded: false });
-	fireEvent.click(toggleBtn);
-	// CopyEditForm renders a label for "Price paid" when expanded
+	// form fields should not be visible before clicking Edit
+	expect(screen.queryByLabelText(/price paid/i)).toBeNull();
+	// Edit button must be present
+	const editBtn = screen.getByRole("button", { name: /edit/i });
+	fireEvent.click(editBtn);
+	// after click, price/variant fields appear
 	await waitFor(() =>
 		expect(screen.getByLabelText(/price paid/i)).toBeDefined(),
+	);
+});
+
+test("primary star toggle: clicking star on non-primary calls setPrimaryCopy", async () => {
+	await addCopy("c");
+	const item2 = await addCopy("c");
+	render(<CopyRow item={useUserland.getState().items[item2.id]} />);
+	// non-primary tile has a star button to set as primary
+	const starBtn = screen.getByRole("button", {
+		name: /set as primary|primary/i,
+	});
+	fireEvent.click(starBtn);
+	await waitFor(() =>
+		expect(useUserland.getState().items[item2.id].isPrimary).toBe(true),
 	);
 });
 
@@ -76,7 +93,7 @@ test("delete copy with data: removes after confirm", async () => {
 	window.confirm = origConfirm;
 });
 
-test("renders graded copy with grading summary", async () => {
+test("renders graded copy with grading summary badge", async () => {
 	const item = await addCopy("c", {
 		grading: { company: "PSA", grade: 10 },
 	});
@@ -98,4 +115,16 @@ test("graded copy delete triggers confirm (has non-null grading)", async () => {
 	fireEvent.click(screen.getByRole("button", { name: /delete/i }));
 	expect(confirmCalled).toBe(true);
 	window.confirm = origConfirm;
+});
+
+test("primary copy tile: primary tile shows filled star (no set-primary button)", async () => {
+	const item = await addCopy("c");
+	// mark it primary
+	const { setPrimaryCopy } = await import(
+		"../../store/userland/userland-store"
+	);
+	await setPrimaryCopy("c", item.id);
+	render(<CopyRow item={useUserland.getState().items[item.id]} />);
+	// primary tile shows star indicator, no "set as primary" button
+	expect(screen.queryByRole("button", { name: /set as primary/i })).toBeNull();
 });
