@@ -13,6 +13,10 @@ export interface ListSearch {
 	subtypes: string[];
 	view: ViewMode;
 	owned: OwnedMode;
+	/** Inclusive lower bound on release year (YYYY). Null → no lower bound. */
+	yearMin: number | null;
+	/** Inclusive upper bound on release year (YYYY). Null → no upper bound. */
+	yearMax: number | null;
 }
 
 /** Page context: which entity the list is anchored to. */
@@ -39,11 +43,14 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 	};
 	const query = s.q.trim() || undefined;
 
+	const yearMin = s.yearMin ?? undefined;
+	const yearMax = s.yearMax ?? undefined;
+
 	if (ctx.setId != null) {
-		return { setId: ctx.setId, query, filters, relevance: false };
+		return { setId: ctx.setId, query, filters, yearMin, yearMax, relevance: false };
 	}
 	if (ctx.dexNumber != null) {
-		return { dexNumber: ctx.dexNumber, query, filters, relevance: false };
+		return { dexNumber: ctx.dexNumber, query, filters, yearMin, yearMax, relevance: false };
 	}
-	return { setId: null, query, filters, relevance: !!query };
+	return { setId: null, query, filters, yearMin, yearMax, relevance: !!query };
 }

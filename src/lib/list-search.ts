@@ -15,6 +15,8 @@ export const LIST_SEARCH_DEFAULTS: ListSearch = {
 	subtypes: [],
 	view: "grid",
 	owned: "all",
+	yearMin: null,
+	yearMax: null,
 };
 
 const VALID_SEARCH_PARAMS = [
@@ -40,6 +42,11 @@ export function validateListSearch(
 			? search.owned
 			: "all";
 
+	const toYear = (v: unknown): number | null => {
+		const n = Number(v);
+		return typeof v === "string" && v !== "" && !Number.isNaN(n) ? n : null;
+	};
+
 	return {
 		q: typeof search.q === "string" ? search.q : "",
 		types: csv(search.types),
@@ -48,6 +55,8 @@ export function validateListSearch(
 		subtypes: csv(search.subtypes),
 		view,
 		owned,
+		yearMin: toYear(search.yearMin),
+		yearMax: toYear(search.yearMax),
 	};
 }
 
@@ -64,6 +73,10 @@ export function listSearchToUrl(
 		out.view = s.view === "timeline" ? "timeline" : undefined;
 	if (s.owned !== undefined)
 		out.owned = s.owned !== "all" ? s.owned : undefined;
+	if (s.yearMin !== undefined)
+		out.yearMin = s.yearMin != null ? String(s.yearMin) : undefined;
+	if (s.yearMax !== undefined)
+		out.yearMax = s.yearMax != null ? String(s.yearMax) : undefined;
 
 	return out;
 }
