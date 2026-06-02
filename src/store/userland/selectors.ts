@@ -29,7 +29,10 @@ export function ownedCardIdSet(
 	return new Set(Object.values(items).map((i) => i.cardId));
 }
 
-/** Reactive distinct-owned-cardId set (memoized). */
+/**
+ * Reactive set of distinct owned cardIds — a fresh Set built from the memoized
+ * owned-index keys on each render (cheap; consumers depend on contents, not identity).
+ */
 export function useOwnedCardIdSet(): Set<string> {
 	return new Set(useOwnedIndex().keys());
 }
