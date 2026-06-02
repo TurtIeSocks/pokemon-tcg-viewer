@@ -134,6 +134,26 @@ export async function clearCollection(): Promise<void> {
 	useUserland.setState({ items: {} });
 }
 
+export async function setPrimaryCopy(
+	cardId: string,
+	copyId: string,
+): Promise<void> {
+	const copies = Object.values(useUserland.getState().items).filter(
+		(i) => i.cardId === cardId,
+	);
+	await Promise.all(
+		copies.map((c) =>
+			activeRepos().collection.update(c.id, { isPrimary: c.id === copyId }),
+		),
+	);
+	useUserland.setState((s) => {
+		const items = { ...s.items };
+		for (const c of copies)
+			items[c.id] = { ...items[c.id], isPrimary: c.id === copyId };
+		return { items };
+	});
+}
+
 // --- Goal actions ---
 function sameTarget(a: GoalTarget, b: GoalTarget): boolean {
 	if (a.kind !== b.kind) return false;

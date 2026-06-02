@@ -128,6 +128,19 @@ test("removeGoal deletes", async () => {
 	expect(useUserland.getState().goals[g.id]).toBeUndefined();
 });
 
+import { setPrimaryCopy } from "./userland-store";
+
+test("setPrimaryCopy marks one copy primary and clears its siblings", async () => {
+	const a = await addCopy("c");
+	const b = await addCopy("c");
+	await setPrimaryCopy("c", b.id);
+	expect(useUserland.getState().items[b.id].isPrimary).toBe(true);
+	expect(useUserland.getState().items[a.id].isPrimary).toBe(false);
+	await setPrimaryCopy("c", a.id);
+	expect(useUserland.getState().items[a.id].isPrimary).toBe(true);
+	expect(useUserland.getState().items[b.id].isPrimary).toBe(false);
+});
+
 import { exportUserData, importUserData } from "./userland-store";
 
 test("export then import (replace) round-trips through the cache", async () => {

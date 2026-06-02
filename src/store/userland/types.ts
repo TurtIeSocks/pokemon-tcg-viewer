@@ -19,6 +19,7 @@ export interface CollectionItem {
 	notes: string | null;
 	condition: CardCondition | null; // raw state
 	grading: CardGrading | null; // null, or a COMPLETE { company, grade }
+	isPrimary?: boolean; // user-designated sort key copy; absent = not primary
 }
 
 /** The user-editable fields of a copy. */
@@ -33,7 +34,9 @@ export type NewCollectionItem = {
 } & Partial<EditableCopyFields>;
 
 /** update() patch: field: null clears; omitted key leaves untouched. */
-export type CopyPatch = Partial<EditableCopyFields>;
+export type CopyPatch = Partial<
+	EditableCopyFields & Pick<CollectionItem, "isPrimary">
+>;
 
 export type GoalTarget =
 	| { kind: "set"; setId: string }
