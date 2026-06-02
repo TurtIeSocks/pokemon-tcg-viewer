@@ -100,3 +100,74 @@ test("goals.remove deletes", async () => {
 	await goals.remove(g.id);
 	expect(await goals.list()).toEqual([]);
 });
+
+import { getRepos } from "./idb-repo";
+import type { UserDataSnapshot } from "./types";
+
+const repos = getRepos();
+beforeEach(async () => {
+	await repos.collection.clear();
+	await repos.goals.clear();
+});
+
+test("exportAll returns a v1 snapshot of current data", async () => {
+	await repos.collection.add({ cardId: "a", pricePaid: 3 });
+	await repos.goals.create({ name: "G" });
+	const snap = await repos.backup.exportAll();
+	expect(snap.schemaVersion).toBe(1);
+	expect(snap.collection).toHaveLength(1);
+	expect(snap.goals).toHaveLength(1);
+	expect(typeof snap.exportedAt).toBe("number");
+});
+
+test("importAll replace clears then writes, preserving ids", async () => {
+	await repos.collection.add({ cardId: "old" });
+	const snap: UserDataSnapshot = {
+		schemaVersion: 1,
+		exportedAt: 0,
+		collection: [
+			{
+				id: "fixed-1",
+				cardId: "new",
+				acquiredAt: 1,
+				createdAt: 1,
+				pricePaid: null,
+				variant: null,
+				notes: null,
+				condition: null,
+				grading: null,
+			},
+		],
+		goals: [],
+	};
+	await repos.backup.importAll(snap, "replace");
+	const all = await repos.collection.list();
+	expect(all).toHaveLength(1);
+	expect(all[0].id).toBe("fixed-1");
+	expect(all[0].cardId).toBe("new");
+});
+
+test("importAll merge upserts by id without clearing", async () => {
+	const existing = await repos.collection.add({ cardId: "keep" });
+	const snap: UserDataSnapshot = {
+		schemaVersion: 1,
+		exportedAt: 0,
+		collection: [
+			{
+				id: "added-1",
+				cardId: "added",
+				acquiredAt: 1,
+				createdAt: 1,
+				pricePaid: null,
+				variant: null,
+				notes: null,
+				condition: null,
+				grading: null,
+			},
+		],
+		goals: [],
+	};
+	await repos.backup.importAll(snap, "merge");
+	const ids = (await repos.collection.list()).map((i) => i.id).sort();
+	expect(ids).toEqual(["added-1", existing.id].sort());
+});
