@@ -1,10 +1,9 @@
 import { Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useOwnedIndex } from "../../store/userland/selectors";
-import {
-	addCopy,
-	removeAllCopiesOfCard,
-} from "../../store/userland/userland-store";
+import { removeAllCopiesOfCard } from "../../store/userland/userland-store";
+import { CopyEditForm } from "./copy-edit-form";
 import { CopyRow } from "./copy-row";
 
 /** Props for {@link CopyManager}. */
@@ -18,10 +17,7 @@ interface CopyManagerProps {
 /** Lists all owned copies of a card with add/remove-all controls and per-copy tile editing. */
 export function CopyManager({ cardId, variants }: CopyManagerProps) {
 	const copies = useOwnedIndex().get(cardId) ?? [];
-
-	function handleAddCopy() {
-		void addCopy(cardId);
-	}
+	const [addOpen, setAddOpen] = useState(false);
 
 	function handleRemoveAll() {
 		if (!window.confirm("Remove all copies of this card?")) return;
@@ -35,19 +31,35 @@ export function CopyManager({ cardId, variants }: CopyManagerProps) {
 				<h3 className="text-sm font-semibold text-muted-foreground">
 					Your copies ({copies.length})
 				</h3>
-				<Button
-					size="sm"
-					onClick={handleAddCopy}
-					className="gap-1.5"
-					aria-label="Add copy"
-				>
-					<Plus className="h-4 w-4" aria-hidden="true" />
-					Add copy
-				</Button>
+				{!addOpen && (
+					<Button
+						size="sm"
+						onClick={() => setAddOpen(true)}
+						className="gap-1.5"
+						aria-label="Add copy"
+					>
+						<Plus className="h-4 w-4" aria-hidden="true" />
+						Add copy
+					</Button>
+				)}
 			</div>
 
+			{/* Create-mode form — shown when Add copy is clicked */}
+			{addOpen && (
+				<div className="rounded-lg border border-dashed border-border p-4">
+					<p className="text-xs text-muted-foreground mb-3">New copy</p>
+					<CopyEditForm
+						mode="create"
+						cardId={cardId}
+						variants={variants}
+						onSaved={() => setAddOpen(false)}
+						onCancel={() => setAddOpen(false)}
+					/>
+				</div>
+			)}
+
 			{/* Copy tiles */}
-			{copies.length === 0 ? (
+			{copies.length === 0 && !addOpen ? (
 				<p className="text-sm text-muted-foreground py-4 text-center">
 					No copies yet — add one above.
 				</p>

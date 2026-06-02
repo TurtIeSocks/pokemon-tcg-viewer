@@ -23,7 +23,7 @@ export function CopyManagerDialog({
 }) {
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="flex flex-col max-h-[90dvh] p-0 gap-0">
+			<DialogContent className="flex flex-col max-h-[90dvh] max-w-2xl p-0 gap-0">
 				{/* Header */}
 				<div className="px-6 pt-6 pb-4 border-b">
 					<DialogTitle>{name} — Copies</DialogTitle>

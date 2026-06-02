@@ -154,7 +154,14 @@ export function CopyRow({ item, variants }: CopyRowProps) {
 			{/* Inline editor — revealed only after Edit is clicked */}
 			{editOpen && (
 				<div className="border-t pt-3">
-					<CopyEditForm item={item} variants={variants} />
+					<CopyEditForm
+						mode="edit"
+						item={item}
+						cardId={item.cardId}
+						variants={variants}
+						onSaved={() => setEditOpen(false)}
+						onCancel={() => setEditOpen(false)}
+					/>
 				</div>
 			)}
 		</div>

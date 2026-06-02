@@ -20,17 +20,51 @@ beforeEach(async () => {
 	resetUserlandForTests();
 });
 
-test("add copy creates a row", async () => {
-	await addCopy("c"); // seed 1 so manager shows
+test("Add copy button opens create-mode form (does NOT immediately create a copy)", async () => {
+	render(<CopyManager cardId="c" />);
+	const before = Object.values(useUserland.getState().items).filter(
+		(i) => i.cardId === "c",
+	).length;
+	fireEvent.click(screen.getByRole("button", { name: /add copy/i }));
+	// form should appear (Save button visible) but store is still empty
+	await waitFor(() =>
+		expect(screen.getByRole("button", { name: /save/i })).toBeDefined(),
+	);
+	expect(
+		Object.values(useUserland.getState().items).filter((i) => i.cardId === "c")
+			.length,
+	).toBe(before);
+});
+
+test("Add copy → fill → Save creates the copy and collapses form", async () => {
 	render(<CopyManager cardId="c" />);
 	fireEvent.click(screen.getByRole("button", { name: /add copy/i }));
+	await screen.findByRole("button", { name: /save/i });
+	// fill in a price so the form is valid (date has a default)
+	const price = screen.getByLabelText(/price paid/i);
+	fireEvent.change(price, { target: { value: "7.5" } });
+	fireEvent.click(screen.getByRole("button", { name: /save/i }));
+	await waitFor(() => {
+		const copies = Object.values(useUserland.getState().items).filter(
+			(i) => i.cardId === "c",
+		);
+		expect(copies).toHaveLength(1);
+		expect(copies[0].pricePaid).toBe(7.5);
+	});
+	// form collapsed — Save button gone
 	await waitFor(() =>
-		expect(
-			Object.values(useUserland.getState().items).filter(
-				(i) => i.cardId === "c",
-			),
-		).toHaveLength(2),
+		expect(screen.queryByRole("button", { name: /save/i })).toBeNull(),
 	);
+});
+
+test("Add copy → Cancel adds nothing", async () => {
+	render(<CopyManager cardId="c" />);
+	fireEvent.click(screen.getByRole("button", { name: /add copy/i }));
+	await screen.findByRole("button", { name: /cancel/i });
+	fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+	expect(
+		Object.values(useUserland.getState().items).filter((i) => i.cardId === "c"),
+	).toHaveLength(0);
 });
 
 test("remove all copies: button is present and calls remove-all action (confirmed)", async () => {

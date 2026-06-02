@@ -33,9 +33,50 @@ test("edit form is hidden initially; clicking Edit button reveals price/variant 
 	// Edit button must be present
 	const editBtn = screen.getByRole("button", { name: /edit/i });
 	fireEvent.click(editBtn);
-	// after click, price/variant fields appear
+	// after click, price field appears
 	await waitFor(() =>
 		expect(screen.getByLabelText(/price paid/i)).toBeDefined(),
+	);
+	// Save + Cancel buttons also appear
+	expect(screen.getByRole("button", { name: /save/i })).toBeDefined();
+	expect(screen.getByRole("button", { name: /cancel/i })).toBeDefined();
+});
+
+test("edit: changing price does NOT update store until Save is clicked", async () => {
+	const item = await addCopy("c");
+	render(<CopyRow item={useUserland.getState().items[item.id]} />);
+	fireEvent.click(screen.getByRole("button", { name: /edit/i }));
+	await screen.findByLabelText(/price paid/i);
+
+	const price = screen.getByLabelText(/price paid/i);
+	fireEvent.change(price, { target: { value: "55" } });
+	fireEvent.blur(price);
+	// pre-Save: no store change
+	expect(useUserland.getState().items[item.id].pricePaid).toBeNull();
+
+	fireEvent.click(screen.getByRole("button", { name: /save/i }));
+	await waitFor(() =>
+		expect(useUserland.getState().items[item.id].pricePaid).toBe(55),
+	);
+	// form collapses after save
+	await waitFor(() =>
+		expect(screen.queryByRole("button", { name: /save/i })).toBeNull(),
+	);
+});
+
+test("edit: Cancel discards changes — store unchanged and form closes", async () => {
+	const item = await addCopy("c");
+	render(<CopyRow item={useUserland.getState().items[item.id]} />);
+	fireEvent.click(screen.getByRole("button", { name: /edit/i }));
+	await screen.findByLabelText(/price paid/i);
+	const price = screen.getByLabelText(/price paid/i);
+	fireEvent.change(price, { target: { value: "99" } });
+	fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+	// store unchanged
+	expect(useUserland.getState().items[item.id].pricePaid).toBeNull();
+	// form closed
+	await waitFor(() =>
+		expect(screen.queryByLabelText(/price paid/i)).toBeNull(),
 	);
 });
 
@@ -43,7 +84,6 @@ test("primary star toggle: clicking star on non-primary calls setPrimaryCopy", a
 	await addCopy("c");
 	const item2 = await addCopy("c");
 	render(<CopyRow item={useUserland.getState().items[item2.id]} />);
-	// non-primary tile has a star button to set as primary
 	const starBtn = screen.getByRole("button", {
 		name: /set as primary|primary/i,
 	});
@@ -76,7 +116,6 @@ test("delete copy with data: shows confirm and cancels if denied", async () => {
 	window.confirm = () => false;
 	render(<CopyRow item={useUserland.getState().items[item.id]} />);
 	fireEvent.click(screen.getByRole("button", { name: /delete/i }));
-	// Item should remain since confirm returned false
 	expect(useUserland.getState().items[item.id]).toBeDefined();
 	window.confirm = origConfirm;
 });
@@ -119,12 +158,10 @@ test("graded copy delete triggers confirm (has non-null grading)", async () => {
 
 test("primary copy tile: primary tile shows filled star (no set-primary button)", async () => {
 	const item = await addCopy("c");
-	// mark it primary
 	const { setPrimaryCopy } = await import(
 		"../../store/userland/userland-store"
 	);
 	await setPrimaryCopy("c", item.id);
 	render(<CopyRow item={useUserland.getState().items[item.id]} />);
-	// primary tile shows star indicator, no "set as primary" button
 	expect(screen.queryByRole("button", { name: /set as primary/i })).toBeNull();
 });
