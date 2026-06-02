@@ -101,7 +101,7 @@ export function SearchControls({
 					<SelectContent>
 						<SelectItem value="all">All cards</SelectItem>
 						<SelectItem value="owned">Owned</SelectItem>
-						<SelectItem value="missing">Not owned</SelectItem>
+						<SelectItem value="missing">Missing</SelectItem>
 					</SelectContent>
 				</Select>
 			</div>
