@@ -5,6 +5,13 @@ import type { PokemonSet } from "../../server/card-mappers";
 import { type CorpusIndex, hydrateCard } from "../corpus/corpus-engine";
 import { useCorpusRuntime } from "../corpus/corpus-runtime";
 import { useStore } from "../index";
+import {
+	buildCardRows,
+	type CardRow,
+	type SortDir,
+	type SortKey,
+	sortCardRows,
+} from "./card-rows";
 import type { CollectionItem } from "./types";
 import { loadUserland, useUserland } from "./userland-store";
 
@@ -96,4 +103,21 @@ export function useOwnedCountBySet(): Map<string, number> {
 		const distinct = new Set(Object.values(items).map((i) => i.cardId));
 		return tallyOwnedBySet(distinct, index);
 	}, [items, index]);
+}
+
+/** All owned cards grouped by cardId, sorted by key+dir. [] until corpus + sets load. */
+export function useOwnedCardRows(key: SortKey, dir: SortDir): CardRow[] {
+	useEnsureUserland();
+	const items = useUserland((s) => s.items);
+	const index = useCorpusRuntime((s) => s.index);
+	const sets = useStore((s) => s.sets);
+	return useMemo(() => {
+		if (!index || !sets) return [];
+		const setsById = new Map(sets.map((s) => [s.id, s]));
+		return sortCardRows(
+			buildCardRows(Object.values(items), index, setsById),
+			key,
+			dir,
+		);
+	}, [items, index, sets, key, dir]);
 }
