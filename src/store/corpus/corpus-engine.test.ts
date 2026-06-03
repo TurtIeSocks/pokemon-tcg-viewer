@@ -228,3 +228,29 @@ test("no year bounds: all cards returned unchanged", () => {
 	expect(r.map((c) => c.id)).toContain("yr1999-1");
 	expect(r.map((c) => c.id)).toContain("yr2001-1");
 });
+
+// --- exact match-mode tests ---
+
+test("exact mode drops the typo (fuzzy) match", () => {
+	const fuzzy = queryCorpus(
+		index,
+		{ query: "charizrd", relevance: true },
+		setsById,
+	);
+	expect(fuzzy.map((c) => c.id)).toContain("base1-4"); // fuzzy still finds it
+	const exact = queryCorpus(
+		index,
+		{ query: "charizrd", relevance: true, exact: true },
+		setsById,
+	);
+	expect(exact).toEqual([]); // exact rejects the typo
+});
+
+test("exact mode keeps exact and prefix matches", () => {
+	const r = queryCorpus(
+		index,
+		{ query: "charizard", relevance: true, exact: true },
+		setsById,
+	);
+	expect(r.map((c) => c.id)).toEqual(["base1-4", "swsh1-25"]); // exact + prefix survive
+});

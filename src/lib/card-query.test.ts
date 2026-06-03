@@ -11,6 +11,7 @@ const empty: ListSearch = {
 	owned: "all",
 	yearMin: null,
 	yearMax: null,
+	exact: false,
 };
 
 describe("buildCorpusQuery", () => {
@@ -74,5 +75,17 @@ describe("buildCorpusQuery", () => {
 		const q = buildCorpusQuery({ ...empty, yearMin: null, yearMax: 2022 }, {});
 		expect(q.yearMin).toBeUndefined();
 		expect(q.yearMax).toBe(2022);
+	});
+	test("exact defaults to false", () => {
+		expect(buildCorpusQuery(empty, {}).exact).toBe(false);
+	});
+	test("exact forwarded in global, set, and dex contexts", () => {
+		expect(buildCorpusQuery({ ...empty, exact: true }, {}).exact).toBe(true);
+		expect(
+			buildCorpusQuery({ ...empty, exact: true }, { setId: "swsh9" }).exact,
+		).toBe(true);
+		expect(
+			buildCorpusQuery({ ...empty, exact: true }, { dexNumber: 6 }).exact,
+		).toBe(true);
 	});
 });

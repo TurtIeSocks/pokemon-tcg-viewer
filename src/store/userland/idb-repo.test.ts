@@ -108,6 +108,7 @@ test("binders.update patches fields and bumps updatedAt", async () => {
 			subtypes: [],
 			yearMin: null,
 			yearMax: null,
+			exact: false,
 		},
 	};
 	await binders.update(b.id, {
@@ -221,6 +222,7 @@ test("backup round-trips a binder with rule + includeCardIds + excludeCardIds, p
 			subtypes: [],
 			yearMin: 1999,
 			yearMax: null,
+			exact: false,
 		},
 	};
 	const fullBinder: Binder = {

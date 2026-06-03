@@ -88,10 +88,18 @@ surface. No new evaluation path.
   onChange({ exact })} />` on the search-input row (input grows, toggle right-aligned; wraps on
   mobile). Always enabled — no-op without a query, so no need to disable.
 
-The three route sites (`search.tsx`, `$series/$set/index.tsx`, `pokemon/$name.tsx`) and
-`CardGridIsland` need **no change**: they pass `value={search}` / call `buildCorpusQuery(search,
-…)`, so they inherit the field automatically. `BulkAddMenu` already receives
-`ruleQuery={toSerializedQuery(search, …)}`, so captured rules inherit `exact` for free.
+`$series/$set/index.tsx`, `pokemon/$name.tsx`, and `CardGridIsland` need **no change**: they
+pass `value={search}` / call `buildCorpusQuery(search, …)`, so they inherit the field
+automatically. `BulkAddMenu` already receives `ruleQuery={toSerializedQuery(search, …)}`, so
+captured rules inherit `exact` for free.
+
+**Server seed (added during verification).** The global `/search` page is the one surface whose
+header count + first page come from a query-specific *server* fetch (`searchCardsFn` →
+`queryCorpusServer`), independent of the client grid. Left unthreaded, exact mode showed a stale
+fuzzy header count (e.g. "3 cards") while the client grid filtered to 1. So `searchCardsFn` now
+takes `{ query, exact }` and forwards `exact` into the `CorpusQuery`, and `search.tsx`'s
+`loaderDeps`/`loader` pass `search.exact` through. (`getSetCardsFn`/`getDexCardsFn` return whole
+set/dex lists filtered client-side, so they carry no query text and need no change.)
 
 ## Back-compat / persistence
 

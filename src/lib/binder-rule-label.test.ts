@@ -12,6 +12,7 @@ const empty = (): SerializedQuery => ({
 	subtypes: [],
 	yearMin: null,
 	yearMax: null,
+	exact: false,
 });
 
 describe("binderRuleLabel — user-story shapes", () => {
@@ -82,6 +83,20 @@ describe("binderRuleLabel — basics", () => {
 		expect(binderRuleLabel(q)).toBe('"pikachu"');
 	});
 
+	it("exact + text → '(exact)' suffix on the quoted text", () => {
+		const q: SerializedQuery = { ...empty(), text: "pikachu", exact: true };
+		expect(binderRuleLabel(q)).toBe('"pikachu" (exact)');
+	});
+
+	it("exact without text → no suffix (flag has no visible effect)", () => {
+		const q: SerializedQuery = {
+			...empty(),
+			supertypes: ["Trainer"],
+			exact: true,
+		};
+		expect(binderRuleLabel(q)).toBe("Trainer");
+	});
+
 	it("both yearMin and yearMax → range with en-dash", () => {
 		const q: SerializedQuery = { ...empty(), yearMin: 1999, yearMax: 2002 };
 		expect(binderRuleLabel(q)).toBe("1999–2002");
@@ -113,6 +128,7 @@ describe("binderRuleLabel — basics", () => {
 			text: "charizard",
 			yearMin: 1999,
 			yearMax: 2000,
+			exact: false,
 		};
 		const label = binderRuleLabel(q, { setName: () => "Base" });
 		expect(label).toBe(

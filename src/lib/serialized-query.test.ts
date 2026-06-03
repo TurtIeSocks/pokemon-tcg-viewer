@@ -12,6 +12,7 @@ const baseSearch = (): ListSearch => ({
 	owned: "all",
 	yearMin: null,
 	yearMax: null,
+	exact: false,
 });
 
 const baseCtx = (): ListContext => ({});
@@ -81,6 +82,13 @@ describe("toSerializedQuery", () => {
 		expect(q.owned).toBeUndefined();
 		expect(q.view).toBeUndefined();
 	});
+
+	it("passes exact through (default false)", () => {
+		expect(toSerializedQuery(baseSearch(), baseCtx()).exact).toBe(false);
+		const s = baseSearch();
+		s.exact = true;
+		expect(toSerializedQuery(s, baseCtx()).exact).toBe(true);
+	});
 });
 
 describe("isRuleCapturable", () => {
@@ -94,10 +102,16 @@ describe("isRuleCapturable", () => {
 		subtypes: [] as string[],
 		yearMin: null,
 		yearMax: null,
+		exact: false,
 	});
 
 	it("returns false for all-empty query", () => {
 		expect(isRuleCapturable(empty())).toBe(false);
+	});
+
+	it("exact alone is NOT a capturable constraint", () => {
+		// exact only changes how text matches; with no text/filters it matches nothing useful
+		expect(isRuleCapturable({ ...empty(), exact: true })).toBe(false);
 	});
 
 	it("returns true when text present", () => {

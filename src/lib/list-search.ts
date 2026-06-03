@@ -17,6 +17,7 @@ export const LIST_SEARCH_DEFAULTS: ListSearch = {
 	owned: "all",
 	yearMin: null,
 	yearMax: null,
+	exact: false,
 };
 
 const VALID_SEARCH_PARAMS = [
@@ -57,6 +58,9 @@ export function validateListSearch(
 		owned,
 		yearMin: toYear(search.yearMin),
 		yearMax: toYear(search.yearMax),
+		// URL params arrive as strings ("true"); also accept a raw boolean from
+		// in-page navigate() merges. Anything else → default false (fuzzy).
+		exact: search.exact === true || search.exact === "true",
 	};
 }
 
@@ -77,6 +81,7 @@ export function listSearchToUrl(
 		out.yearMin = s.yearMin != null ? String(s.yearMin) : undefined;
 	if (s.yearMax !== undefined)
 		out.yearMax = s.yearMax != null ? String(s.yearMax) : undefined;
+	if (s.exact !== undefined) out.exact = s.exact ? "true" : undefined;
 
 	return out;
 }

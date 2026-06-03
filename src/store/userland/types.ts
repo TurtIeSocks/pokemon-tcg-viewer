@@ -50,6 +50,12 @@ export interface SerializedQuery {
 	subtypes: string[];
 	yearMin: number | null;
 	yearMax: number | null;
+	/**
+	 * When true, the text match is exact (no typo-tolerant fuzzy) so the rule's
+	 * membership stays tight. Rules persisted before this field existed lack the
+	 * key; readers treat missing as false (fuzzy) to preserve their behavior.
+	 */
+	exact: boolean;
 }
 
 /** A single dynamic rule inside a Binder; cards matching the query are included. */

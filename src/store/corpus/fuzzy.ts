@@ -44,16 +44,23 @@ export interface NameMatch {
  * Tiered name match. `q` and `name` must already be normalized; `tokens` are
  * the normalized per-word tokens of the name (for fuzzy on one word of a
  * multi-word name). Returns null when nothing matches within budget.
+ *
+ * When `exact` is true, the tier-3 edit-distance pass is skipped: only exact,
+ * prefix, and substring matches (tiers 0–2) are returned. This drops typo
+ * tolerance — e.g. "Brock's Rhydon" no longer matches "Brock's Rhyhorn" — while
+ * still letting a partial name (a substring) find the card.
  */
 export function matchName(
 	q: string,
 	name: string,
 	tokens: string[],
+	exact = false,
 ): NameMatch | null {
 	if (!q) return { tier: 2, distance: 0 }; // empty query matches all (substring)
 	if (name === q) return { tier: 0, distance: 0 };
 	if (name.startsWith(q)) return { tier: 1, distance: 0 };
 	if (name.includes(q)) return { tier: 2, distance: 0 };
+	if (exact) return null; // exact mode: no edit-distance fuzzy beyond substring
 	const maxDist = q.length <= 4 ? 1 : 2;
 	let best = Number.POSITIVE_INFINITY;
 	// Length-prune before the O(mn) distance: |len diff| can't exceed maxDist.

@@ -56,6 +56,7 @@ function sq(partial: Partial<SerializedQuery> = {}): SerializedQuery {
 		subtypes: [],
 		yearMin: null,
 		yearMax: null,
+		exact: false,
 		...partial,
 	};
 }
@@ -124,6 +125,28 @@ test("toCorpusQuery: non-null scalar fields pass through", () => {
 	expect(cq.dexNumber).toBe(25);
 	expect(cq.yearMin).toBe(1999);
 	expect(cq.yearMax).toBe(2000);
+});
+
+test("toCorpusQuery: exact flag maps through (default false)", () => {
+	expect(toCorpusQuery(sq()).exact).toBe(false);
+	expect(toCorpusQuery(sq({ exact: true })).exact).toBe(true);
+});
+
+test("toCorpusQuery: legacy rule missing exact key defaults to fuzzy (false)", () => {
+	// Rules stored before this field existed have no `exact` key. They must keep
+	// their original fuzzy behavior, not silently flip to exact.
+	const legacy = {
+		text: "Pikachu",
+		setId: null,
+		dexNumber: null,
+		types: [],
+		rarities: [],
+		supertypes: [],
+		subtypes: [],
+		yearMin: null,
+		yearMax: null,
+	} as unknown as SerializedQuery;
+	expect(toCorpusQuery(legacy).exact).toBe(false);
 });
 
 test("toCorpusQuery: filter arrays passed through into filters object", () => {

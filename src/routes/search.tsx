@@ -32,11 +32,11 @@ import { useRecentsStore } from "../store/recents";
 export const Route = createFileRoute("/search")({
 	validateSearch: validateListSearch,
 	search: { middlewares: [stripSearchParams(LIST_SEARCH_DEFAULTS)] },
-	loaderDeps: ({ search }) => ({ q: search.q }),
+	loaderDeps: ({ search }) => ({ q: search.q, exact: search.exact }),
 	loader: async ({ deps }) => {
 		const q = deps.q.trim();
 		if (!q) return { q, cards: [], total: 0 };
-		const all = await searchCardsFn({ data: q });
+		const all = await searchCardsFn({ data: { query: q, exact: deps.exact } });
 		return { q, cards: all.slice(0, 40), total: all.length };
 	},
 	head: ({ loaderData }) => ({

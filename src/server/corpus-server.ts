@@ -40,12 +40,24 @@ export const getSetCardsFn = createServerFn({ method: "GET" })
 		return queryCorpusServer({ setId, relevance: false });
 	});
 
-/** Global name search, relevance order. */
+/**
+ * Global name search, relevance order. `exact` (default false) drops the
+ * typo-tolerant fuzzy tier so the server seed + total match the client grid when
+ * the search page is in exact mode.
+ */
 export const searchCardsFn = createServerFn({ method: "GET" })
-	.inputValidator((query: unknown) => nonEmptyString(query, "query"))
-	.handler(async ({ data: query }) => {
+	.inputValidator((input: unknown) => {
+		const o = (input ?? {}) as { query?: unknown; exact?: unknown };
+		return { query: nonEmptyString(o.query, "query"), exact: o.exact === true };
+	})
+	.handler(async ({ data }) => {
 		const { queryCorpusServer } = await import("./corpus-loader");
-		return queryCorpusServer({ query, setId: null, relevance: true });
+		return queryCorpusServer({
+			query: data.query,
+			setId: null,
+			relevance: true,
+			exact: data.exact,
+		});
 	});
 
 /** All cards for a national-dex number, across sets. */

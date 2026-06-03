@@ -43,7 +43,8 @@ export function binderRuleLabel(
 	}
 
 	if (q.text !== null) {
-		parts.push(`"${q.text}"`);
+		// `exact` only changes name matching, so only annotate it when text is present.
+		parts.push(q.exact ? `"${q.text}" (exact)` : `"${q.text}"`);
 	}
 
 	if (q.yearMin !== null && q.yearMax !== null) {

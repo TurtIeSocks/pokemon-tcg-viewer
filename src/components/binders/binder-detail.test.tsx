@@ -124,6 +124,7 @@ test("renders rule chip with human label", async () => {
 		subtypes: [],
 		yearMin: null,
 		yearMax: null,
+		exact: false,
 	});
 	const updated = useUserland.getState().binders[binder.id];
 
@@ -147,6 +148,7 @@ test("clicking rule × calls removeRuleFromBinder", async () => {
 		subtypes: [],
 		yearMin: null,
 		yearMax: null,
+		exact: false,
 	});
 	const updated = useUserland.getState().binders[binder.id];
 	const ruleId = updated.rules[0].id;
@@ -184,6 +186,7 @@ test("member grid shows owned card without grayscale and missing card with grays
 		subtypes: [],
 		yearMin: null,
 		yearMax: null,
+		exact: false,
 	});
 	const updated = useUserland.getState().binders[binder.id];
 
@@ -317,6 +320,7 @@ test("clicking a member card toggles ownership via toggleCardOwned", async () =>
 		subtypes: [],
 		yearMin: null,
 		yearMax: null,
+		exact: false,
 	});
 	const updated = useUserland.getState().binders[binder.id];
 
@@ -355,6 +359,7 @@ test("clicking an unowned member card adds it via toggleCardOwned", async () => 
 		subtypes: [],
 		yearMin: null,
 		yearMax: null,
+		exact: false,
 	});
 	const updated = useUserland.getState().binders[binder.id];
 
