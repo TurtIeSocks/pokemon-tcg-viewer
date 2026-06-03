@@ -1,11 +1,13 @@
-import { ClientOnly } from "@tanstack/react-router";
+import { ClientOnly, Link } from "@tanstack/react-router";
+import { Layers } from "lucide-react";
 import type { CSSProperties } from "react";
 import { cn } from "@/lib/utils";
+import { cardManageLinkProps } from "../../lib/card-route";
 import type { FocusCardData } from "../../server/card-mappers";
+import { useSlugIndex } from "../../store/corpus/corpus-runtime";
 import { useIsOwned } from "../../store/userland/selectors";
 import { addCopy } from "../../store/userland/userland-store";
 import { getCardAccent, getReadableAccent } from "../../utils/card-colors";
-import { CopyManager } from "../collection/copy-manager";
 import { HoloCard } from "../holo-card";
 import { CardPrices } from "../islands/card-prices";
 import { CardCrossLinks, type CrossLink } from "../islands/cross-links";
@@ -88,9 +90,42 @@ function CollectionButton({
 	card: ReturnType<typeof toHoloCardData>;
 }) {
 	const owned = useIsOwned(card.id);
+	const slugIndex = useSlugIndex();
 
 	if (owned) {
-		return <CopyManager cardId={card.id} variants={card.variants} />;
+		const linkProps = slugIndex ? cardManageLinkProps(slugIndex, card) : null;
+
+		const baseClass = cn(
+			"flex w-full items-center justify-center gap-2 rounded-[10px] py-3 min-h-[44px]",
+			"font-mono text-[13px] tracking-[0.04em] transition-colors",
+			"border border-white/15 text-[#e7e3d8] hover:border-white/30",
+		);
+
+		if (linkProps) {
+			return (
+				<Link
+					{...linkProps}
+					className={baseClass}
+					aria-label="Manage Collection"
+				>
+					<Layers className="h-4 w-4 shrink-0" aria-hidden="true" />
+					Manage Collection
+				</Link>
+			);
+		}
+
+		// Corpus not loaded yet — render a disabled button as fallback
+		return (
+			<button
+				type="button"
+				disabled
+				aria-label="Manage Collection"
+				className={cn(baseClass, "opacity-50 cursor-not-allowed")}
+			>
+				<Layers className="h-4 w-4 shrink-0" aria-hidden="true" />
+				Manage Collection
+			</button>
+		);
 	}
 
 	return (
