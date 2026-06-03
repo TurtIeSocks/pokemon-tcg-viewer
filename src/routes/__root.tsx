@@ -140,7 +140,10 @@ function ShellHeader({ tree }: { tree: NavTree }) {
 			{/* Breadcrumb */}
 			<div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
 				{crumbs.map((crumb, i) => (
-					<span key={crumb} className="flex items-center gap-1.5 min-w-0">
+					<span
+						key={`${i}-${crumb}`}
+						className="flex items-center gap-1.5 min-w-0"
+					>
 						{i > 0 && (
 							<span className="font-mono text-[var(--faint)] text-xs opacity-60 shrink-0">
 								›
