@@ -1,6 +1,12 @@
 import { ClientOnly, createFileRoute, Outlet } from "@tanstack/react-router";
+import { Eyebrow } from "../components/ui/eyebrow";
 import { VaultBackupControls } from "../components/vault/vault-backup-controls";
-import { useOwnedCardCount } from "../components/vault/vault-summary";
+import {
+	useOwnedCardCount,
+	VaultSummaryHero,
+} from "../components/vault/vault-summary";
+
+export { useOwnedCardCount };
 
 export const Route = createFileRoute("/vault")({
 	head: () => ({ meta: [{ title: "Your Vault — Pokémon TCG" }] }),
@@ -8,14 +14,18 @@ export const Route = createFileRoute("/vault")({
 });
 
 function VaultHeader() {
-	const count = useOwnedCardCount();
 	return (
-		<div className="mb-4 flex flex-wrap items-center gap-3">
-			<h1 className="text-2xl font-bold">Your Vault</h1>
-			<span className="text-sm text-muted-foreground">{count} cards</span>
-			<div className="ml-auto">
+		<div className="mb-6 space-y-2">
+			<div className="flex flex-wrap items-center justify-between gap-3">
+				<div className="space-y-1.5">
+					<Eyebrow>Your vault</Eyebrow>
+					<h1 className="font-display text-3xl font-semibold tracking-tight text-[var(--ink)]">
+						Collection
+					</h1>
+				</div>
 				<VaultBackupControls />
 			</div>
+			<VaultSummaryHero />
 		</div>
 	);
 }
@@ -25,7 +35,11 @@ function VaultLayout() {
 		<div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
 			<div className="mx-auto w-full max-w-7xl px-4 py-5">
 				<ClientOnly
-					fallback={<h1 className="mb-4 text-2xl font-bold">Your Vault</h1>}
+					fallback={
+						<h1 className="mb-4 font-display text-3xl font-semibold text-[var(--ink)]">
+							Your Vault
+						</h1>
+					}
 				>
 					<VaultHeader />
 				</ClientOnly>

@@ -7,6 +7,7 @@ import { useState } from "react";
 import { BinderCard } from "@/components/binders/binder-card";
 import { BinderFormDialog } from "@/components/binders/binder-form-dialog";
 import { Button } from "@/components/ui/button";
+import { Eyebrow } from "@/components/ui/eyebrow";
 import { useEnsureCorpus } from "@/store/corpus/use-ensure-corpus";
 import type { Binder } from "@/store/userland/types";
 import { useUserland } from "@/store/userland/userland-store";
@@ -32,8 +33,13 @@ export function VaultBindersInner() {
 
 	return (
 		<div className="space-y-6">
-			<div className="flex items-center justify-between">
-				<h1 className="text-2xl font-bold">Binders</h1>
+			<div className="flex items-center justify-between gap-4">
+				<div className="space-y-1.5">
+					<Eyebrow>Binders</Eyebrow>
+					<h1 className="font-display text-2xl font-semibold tracking-tight text-[var(--ink)]">
+						Your Binders
+					</h1>
+				</div>
 				<Button onClick={() => setNewOpen(true)}>New binder</Button>
 			</div>
 
