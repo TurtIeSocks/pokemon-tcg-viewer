@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { CorpusCard } from "../store/corpus/corpus-types";
-import { cardRouteProps } from "./card-route";
+import { cardManageLinkPropsFor, cardRouteProps } from "./card-route";
 import { buildSlugIndex, resolveCard, type SluggableSet } from "./slug";
 
 const sets: SluggableSet[] = [
@@ -31,6 +31,49 @@ const cards: CorpusCard[] = [
 ];
 
 const idx = buildSlugIndex(sets, cards);
+
+const p = { series: "sword-shield", set: "brilliant-stars", card: "charizard" };
+
+describe("cardManageLinkPropsFor", () => {
+	test("sets cardManage: true in state", () => {
+		const props = cardManageLinkPropsFor(p);
+		const state = (
+			props.state as (prev: Record<string, unknown>) => Record<string, unknown>
+		)({});
+		expect(state.cardManage).toBe(true);
+	});
+
+	test("also sets cardOverlay to series/set/card", () => {
+		const props = cardManageLinkPropsFor(p);
+		const state = (
+			props.state as (prev: Record<string, unknown>) => Record<string, unknown>
+		)({});
+		expect(state.cardOverlay).toBe("sword-shield/brilliant-stars/charizard");
+	});
+
+	test("mask.to is /$series/$set/$card/manage", () => {
+		const props = cardManageLinkPropsFor(p);
+		expect((props.mask as { to: string }).to).toBe(
+			"/$series/$set/$card/manage",
+		);
+	});
+
+	test("mask.params matches the input params", () => {
+		const props = cardManageLinkPropsFor(p);
+		expect((props.mask as { to: string; params: typeof p }).params).toEqual(p);
+	});
+
+	test("state updater preserves existing state keys", () => {
+		const props = cardManageLinkPropsFor(p);
+		const state = (
+			props.state as (prev: Record<string, unknown>) => Record<string, unknown>
+		)({
+			someOtherKey: "preserved",
+		});
+		expect(state.someOtherKey).toBe("preserved");
+		expect(state.cardManage).toBe(true);
+	});
+});
 
 describe("cardRouteProps", () => {
 	test("builds /$series/$set/$card props that resolve back to the same card id", () => {

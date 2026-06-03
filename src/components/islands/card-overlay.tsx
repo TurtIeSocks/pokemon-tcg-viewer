@@ -23,6 +23,9 @@ export function CardOverlay() {
 	const cardParam = useRouterState({
 		select: (s) => s.location.state.cardOverlay,
 	});
+	const cardManage = useRouterState({
+		select: (s) => s.location.state.cardManage,
+	});
 	const router = useRouter();
 	const [detail, setDetail] = useState<Detail | null>(null);
 
@@ -55,6 +58,7 @@ export function CardOverlay() {
 		<CardModal
 			card={detail.card}
 			crossLinks={detail.crossLinks}
+			manage={cardManage}
 			onClose={() => router.history.back()}
 		/>
 	);
