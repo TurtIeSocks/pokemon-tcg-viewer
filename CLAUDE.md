@@ -36,15 +36,20 @@ The Vault (collection + **Binders**) is local-first but **DB-ready**. (Binders =
 
 ## Design system — Liquid Glass (reference: `src/components/shell/set-tile.tsx`)
 
-The Vault's visual language is a CSS translation of Apple's Liquid Glass. **New surfaces — tiles, cards, badges, panels, modals — should follow this recipe.** The set tile is the canonical implementation; match its feel for future work.
+The app's visual language fuses **two glass dialects**, governed by tokens in `src/app.css` (`:root` primitives + `@theme inline`). Full spec: `docs/superpowers/specs/2026-06-03-liquid-glass-redesign-design.md`.
 
-Layers, back → front:
+- **Ethereal Glass** (chrome) — shell, nav (shadcn `sidebar` inset variant), panels, forms, dialogs, data. `GlassPanel`/`BezelPanel` (`@/components/ui/glass`), pill buttons, frosted overlays.
+- **Liquid Glass** (hero objects) — set/card tiles, the holo-card frame. Content-derived color (recipe below). `src/components/shell/set-tile.tsx` is canonical.
+
+**Tokens:** accent **violet** `--primary` (`oklch(0.70 0.19 295)`) + `--primary-wash`/`--primary-ink`/`--primary-strong`; canvas `--canvas` (whisper-violet near-black); glass fill `--glass`; text `--ink`/`--ink-muted`/`--faint`; `--success` (emerald) for "owned"; `--shadow`/`--shadow-lift`; `--ease`; `--ambient` (fixed violet mesh on `body::before`). Radii `--r-panel`/`--r-control`/`--r-pill`. **Fonts:** `font-display` = Clash Display (hero), `font-sans` = Space Grotesk (UI), `font-mono` = Geist Mono (all numbers, `tabular-nums`). Shared primitives: `ProgressRing`, `Eyebrow`, `Stat`, `Stagger`, `Sheen`, shimmer `skeleton`. **New surfaces should compose these.**
+
+Liquid-Glass recipe — layers, back → front:
 
 1. **Color backdrop** — a content-derived color field. Take the surface's own image (set logo, card art) upscaled `scale-[1.7]` + `blur-2xl saturate-150 opacity-50` so the element glows in its *own* palette. Layer a base gradient (`bg-gradient-to-b from-black/40 via-black/10 to-black/75`) for text legibility.
 2. **Frosted pane** — `rounded-2xl border border-white/10 bg-white/[0.05] backdrop-blur-xl`, with a bright top edge + inset depth: `shadow-[inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(0,0,0,0.35)]`.
 3. **Specular sheen** (interactive surfaces) — a hover sweep: a `-translate-x-full … group-hover:translate-x-full` gradient `via-white/15`, with `motion-reduce:hidden`.
 4. **Content** — crisp foreground hero (logo/title); data shown as accent-stroked **progress rings** + bold `tabular-nums` numbers.
 
-- **Interaction:** `group` wrapper + `hover:-translate-y-0.5` lift + soft drop shadow; `focus-visible:ring-2 ring-[var(--accent,#e0b341)]`. Guard **all** motion with `motion-reduce:`.
-- **Accent:** gold `var(--accent,#e0b341)` (or a per-context accent). White text on glass + `drop-shadow` for contrast.
+- **Interaction:** `group` wrapper + `hover:-translate-y-0.5` lift + soft drop shadow; `focus-visible:ring-2 ring-[var(--primary)]`. Guard **all** motion with `motion-reduce:`.
+- **Accent:** violet `var(--primary)`. White text on glass + `drop-shadow` for contrast. (The old gold `--accent`/`#e0b341` is retired; `--accent` now aliases `--primary`.)
 - **Never** set a self-referential CSS var (`style={{ "--accent": "var(--accent,…)" }}`) — it infinite-loops happy-dom and hangs `bun test`. Use a concrete color.
