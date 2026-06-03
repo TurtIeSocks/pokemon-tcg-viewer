@@ -91,7 +91,7 @@ function CardPage() {
 					← {card.setName}
 				</Link>
 			</div>
-			<div className="rounded-2xl border border-white/10 bg-[#0d0d0f]">
+			<div className="rounded-2xl border border-white/10 bg-[var(--bg)]">
 				<CardDetail
 					card={card}
 					crossLinks={crossLinks}

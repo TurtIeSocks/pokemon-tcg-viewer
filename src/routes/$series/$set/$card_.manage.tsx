@@ -28,7 +28,7 @@ function ManagePage() {
 
 	return (
 		<div className="mx-auto w-full max-w-4xl overflow-y-auto px-4 py-6">
-			<div className="rounded-2xl border border-white/10 bg-[#0d0d0f]">
+			<div className="rounded-2xl border border-white/10 bg-[var(--bg)]">
 				<CardCollectionManager
 					cardId={card.id}
 					cardName={card.name}

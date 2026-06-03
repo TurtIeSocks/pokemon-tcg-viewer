@@ -75,7 +75,7 @@ export function CardModal({
 		<Dialog open onOpenChange={(o) => !o && onClose()}>
 			<DialogContent
 				aria-describedby={undefined}
-				className="max-w-4xl overflow-hidden border-white/10 bg-[#0d0d0f] p-0 sm:max-w-4xl"
+				className="max-w-4xl overflow-hidden border-white/10 bg-[var(--bg)] p-0 sm:max-w-4xl"
 				/**
 				 * No overflow-y-auto here — each panel owns its own scroll so only
 				 * the active face scrolls. The outer container is clipping-only.

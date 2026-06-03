@@ -49,7 +49,7 @@ function AbilityRow({
 	return (
 		<div className="border-t border-white/[0.07] py-3">
 			<div className="flex items-center gap-2">
-				<span className="rounded border border-[#f85888]/40 px-1.5 py-px font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-[#f85888]">
+				<span className="rounded border border-[var(--primary)]/40 px-1.5 py-px font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--primary)]">
 					{ability.type}
 				</span>
 				<span className="font-display text-base">{ability.name}</span>
@@ -74,7 +74,7 @@ function AttackRow({
 					) : null}
 				</span>
 				{attack.damage ? (
-					<span className="shrink-0 font-mono text-[17px] font-bold text-[color:var(--accent,#c9a86a)]">
+					<span className="shrink-0 font-mono text-[17px] font-bold text-[color:var(--primary)]">
 						{attack.damage}
 					</span>
 				) : null}
@@ -94,7 +94,7 @@ function StatStrip({ card }: { card: FocusCardData }) {
 			{hasWeak ? (
 				<span>
 					Weak{" "}
-					<b className="font-medium text-[#cfcabd]">
+					<b className="font-medium text-[var(--ink-muted)]">
 						{card.weaknesses?.map((w) => `${w.type} ${w.value}`).join(", ")}
 					</b>
 				</span>
@@ -102,7 +102,7 @@ function StatStrip({ card }: { card: FocusCardData }) {
 			{hasResist ? (
 				<span>
 					Resist{" "}
-					<b className="font-medium text-[#cfcabd]">
+					<b className="font-medium text-[var(--ink-muted)]">
 						{card.resistances?.map((r) => `${r.type} ${r.value}`).join(", ")}
 					</b>
 				</span>
@@ -115,7 +115,8 @@ function StatStrip({ card }: { card: FocusCardData }) {
 			) : null}
 			{card.artist ? (
 				<span>
-					Illus. <b className="font-medium text-[#cfcabd]">{card.artist}</b>
+					Illus.{" "}
+					<b className="font-medium text-[var(--ink-muted)]">{card.artist}</b>
 				</span>
 			) : null}
 		</div>
@@ -139,7 +140,7 @@ export function CardInfo({
 	const hasAttacks = !!card.attacks?.length;
 	const hasRules = !!card.rules?.length;
 	return (
-		<div className="flex min-w-0 flex-1 flex-col text-[#e7e3d8]">
+		<div className="flex min-w-0 flex-1 flex-col text-[var(--ink)]">
 			<div className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--ink-muted)]">
 				{card.setName} · #{card.cardNumber}
 			</div>
@@ -150,7 +151,7 @@ export function CardInfo({
 				</h2>
 				{card.hp ? (
 					<span className="shrink-0 whitespace-nowrap font-mono text-sm text-[var(--ink-muted)]">
-						<b className="text-[1.4rem] font-bold text-[color:var(--accent,#c9a86a)]">
+						<b className="text-[1.4rem] font-bold text-[color:var(--primary)]">
 							{card.hp}
 						</b>{" "}
 						HP

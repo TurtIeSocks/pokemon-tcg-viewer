@@ -45,7 +45,7 @@ export function CardDetail({
 					className="h-full rounded-2xl border border-white/[0.06] p-5"
 					style={{
 						background:
-							"radial-gradient(120% 60% at 50% 0%, color-mix(in oklab, var(--accent,#c9a86a) 8%, transparent), transparent 55%), #131215",
+							"radial-gradient(120% 60% at 50% 0%, color-mix(in oklab, var(--primary) 8%, transparent), transparent 55%), var(--bg)",
 					}}
 				>
 					<div className="flex flex-col items-center md:sticky md:top-8">
@@ -104,7 +104,7 @@ function CollectionButton({
 		const baseClass = cn(
 			"flex w-full items-center justify-center gap-2 rounded-[10px] py-3 min-h-[44px]",
 			"font-mono text-[13px] tracking-[0.04em] transition-colors",
-			"border border-white/15 text-[#e7e3d8]",
+			"border border-white/15 text-[var(--ink)]",
 		);
 
 		return (
@@ -132,7 +132,7 @@ function CollectionButton({
 			onClick={() => void addCopy(card.id)}
 			className={cn(
 				"w-full rounded-[10px] py-2.5 text-center font-mono text-[13px] tracking-[0.04em] transition-colors",
-				"border border-white/15 text-[#e7e3d8] hover:border-white/30",
+				"border border-white/15 text-[var(--ink)] hover:border-white/30",
 			)}
 		>
 			＋ Add to collection
