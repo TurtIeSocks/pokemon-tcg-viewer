@@ -75,23 +75,35 @@ test("active series' set is visible", async () => {
 	expect(screen.getByText("Brilliant Stars")).toBeDefined();
 });
 
-test("Vault group renders Cards / Sets / Binders links at /vault", async () => {
+test("Vault group renders Overview / All cards / Sets / Binders links at /vault", async () => {
 	await renderInRouter(
 		<AppSidebar tree={tree} activeSeriesSlug={null} activeSetSlug={null} />,
 		{ initialPath: "/vault" },
 	);
-	expect(screen.getByRole("link", { name: "Cards" })).toBeDefined();
+	expect(screen.getByRole("link", { name: "Overview" })).toBeDefined();
+	expect(screen.getByRole("link", { name: "All cards" })).toBeDefined();
 	expect(screen.getByRole("link", { name: "Sets" })).toBeDefined();
 	expect(screen.getByRole("link", { name: "Binders" })).toBeDefined();
 });
 
-test("Vault Cards link points to /vault", async () => {
+test("Vault Overview link points to /vault", async () => {
 	await renderInRouter(
 		<AppSidebar tree={tree} activeSeriesSlug={null} activeSetSlug={null} />,
 		{ initialPath: "/vault" },
 	);
-	const cards = screen.getByRole("link", { name: "Cards" });
-	expect((cards as HTMLAnchorElement).getAttribute("href")).toBe("/vault");
+	const overview = screen.getByRole("link", { name: "Overview" });
+	expect((overview as HTMLAnchorElement).getAttribute("href")).toBe("/vault");
+});
+
+test("Vault All cards link points to /vault/cards", async () => {
+	await renderInRouter(
+		<AppSidebar tree={tree} activeSeriesSlug={null} activeSetSlug={null} />,
+		{ initialPath: "/vault" },
+	);
+	const cards = screen.getByRole("link", { name: "All cards" });
+	expect((cards as HTMLAnchorElement).getAttribute("href")).toBe(
+		"/vault/cards",
+	);
 });
 
 test("Vault Sets link points to /vault/sets", async () => {
@@ -119,7 +131,8 @@ test("Vault group is expanded when path starts with /vault", async () => {
 		<AppSidebar tree={tree} activeSeriesSlug={null} activeSetSlug={null} />,
 		{ initialPath: "/vault/binders" },
 	);
-	expect(screen.getByRole("link", { name: "Cards" })).toBeDefined();
+	expect(screen.getByRole("link", { name: "Overview" })).toBeDefined();
+	expect(screen.getByRole("link", { name: "All cards" })).toBeDefined();
 	expect(screen.getByRole("link", { name: "Sets" })).toBeDefined();
 	expect(screen.getByRole("link", { name: "Binders" })).toBeDefined();
 });
@@ -131,17 +144,17 @@ test("Binders child is aria-current=page at /vault/binders", async () => {
 	);
 	const binders = screen.getByRole("link", { name: "Binders" });
 	expect(binders.getAttribute("aria-current")).toBe("page");
-	const cards = screen.getByRole("link", { name: "Cards" });
-	expect(cards.getAttribute("aria-current")).toBeNull();
+	const overview = screen.getByRole("link", { name: "Overview" });
+	expect(overview.getAttribute("aria-current")).toBeNull();
 });
 
-test("Cards child is aria-current=page at /vault", async () => {
+test("Overview child is aria-current=page at /vault", async () => {
 	await renderInRouter(
 		<AppSidebar tree={tree} activeSeriesSlug={null} activeSetSlug={null} />,
 		{ initialPath: "/vault" },
 	);
-	const cards = screen.getByRole("link", { name: "Cards" });
-	expect(cards.getAttribute("aria-current")).toBe("page");
+	const overview = screen.getByRole("link", { name: "Overview" });
+	expect(overview.getAttribute("aria-current")).toBe("page");
 	const sets = screen.getByRole("link", { name: "Sets" });
 	expect(sets.getAttribute("aria-current")).toBeNull();
 });
@@ -161,7 +174,8 @@ test("Vault group is collapsed when path is /", async () => {
 		{ initialPath: "/" },
 	);
 	// None of the vault children should be visible when collapsed
-	expect(screen.queryByRole("link", { name: "Cards" })).toBeNull();
+	expect(screen.queryByRole("link", { name: "Overview" })).toBeNull();
+	expect(screen.queryByRole("link", { name: "All cards" })).toBeNull();
 	expect(screen.queryByRole("link", { name: "Sets" })).toBeNull();
 	expect(screen.queryByRole("link", { name: "Binders" })).toBeNull();
 });
