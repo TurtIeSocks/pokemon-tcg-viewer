@@ -1,5 +1,10 @@
 // owned-cards-grid.test.tsx
 import { afterEach, beforeEach, expect, test } from "bun:test";
+import {
+	createRootRoute,
+	createRouter,
+	RouterProvider,
+} from "@tanstack/react-router";
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { PokemonSet } from "../../server/card-mappers";
 import { useStore } from "../../store";
@@ -34,6 +39,17 @@ const testSet: PokemonSet = {
 	images: { symbol: "", logo: "" },
 };
 
+/**
+ * OwnedCardTile renders a TanStack `<Link>` (to the card manage face), which
+ * needs a router context. Wrap the grid in a minimal in-memory router.
+ */
+async function renderGrid() {
+	const rootRoute = createRootRoute({ component: () => <OwnedCardsGrid /> });
+	const router = createRouter({ routeTree: rootRoute });
+	await router.load();
+	return render(<RouterProvider router={router} />);
+}
+
 let repos = createIdbRepos();
 beforeEach(async () => {
 	repos = createIdbRepos();
@@ -54,27 +70,24 @@ afterEach(() => {
 });
 
 test("renders empty state when no owned cards", async () => {
-	render(<OwnedCardsGrid />);
+	await renderGrid();
 	expect(screen.getByText(/your binder is empty/i)).toBeDefined();
 });
 
-test("renders without crashing", () => {
-	const { container } = render(<OwnedCardsGrid />);
+test("renders without crashing", async () => {
+	const { container } = await renderGrid();
 	expect(container).toBeDefined();
 });
 
 test("renders a tile when a card is owned with seeded corpus + sets", async () => {
-	// Seed corpus index with the test card
 	useCorpusRuntime.setState({ index: buildIndex([testCard]), loading: false });
-	// Seed sets
 	useStore.setState({ sets: [testSet], setsFetchedAt: Date.now() });
-	// Add a copy of the card
 	await addCopy(testCard.id);
 
-	render(<OwnedCardsGrid />);
-	// HoloCardIsland under happy-dom renders HoloCard with aria-label={name}
+	await renderGrid();
+	// Owned tile is now a Link to the card's manage face.
 	expect(
-		screen.getByRole("button", { name: "Manage copies of Charizard" }),
+		screen.getByRole("link", { name: "Manage copies of Charizard" }),
 	).toBeDefined();
 });
 
@@ -84,7 +97,7 @@ test("renders ×2 badge when two copies are owned", async () => {
 	await addCopy(testCard.id);
 	await addCopy(testCard.id);
 
-	render(<OwnedCardsGrid />);
+	await renderGrid();
 	expect(screen.getByText("×2")).toBeDefined();
 });
 
@@ -93,7 +106,7 @@ test("changing sort key re-renders grid without crashing", async () => {
 	useStore.setState({ sets: [testSet], setsFetchedAt: Date.now() });
 	await addCopy(testCard.id);
 
-	render(<OwnedCardsGrid />);
+	await renderGrid();
 	// The sort select trigger shows the current value; click it then change option
 	const selectTrigger = screen.getByRole("combobox");
 	fireEvent.click(selectTrigger);
@@ -102,7 +115,7 @@ test("changing sort key re-renders grid without crashing", async () => {
 	fireEvent.click(option);
 	// Grid still shows the card
 	expect(
-		screen.getByRole("button", { name: "Manage copies of Charizard" }),
+		screen.getByRole("link", { name: "Manage copies of Charizard" }),
 	).toBeDefined();
 });
 
@@ -111,13 +124,13 @@ test("clicking asc/desc toggle re-renders grid without crashing", async () => {
 	useStore.setState({ sets: [testSet], setsFetchedAt: Date.now() });
 	await addCopy(testCard.id);
 
-	render(<OwnedCardsGrid />);
+	await renderGrid();
 	const toggleBtn = screen.getByRole("button", { name: /sort descending/i });
 	fireEvent.click(toggleBtn);
 	// Now label flips
 	expect(screen.getByRole("button", { name: /sort ascending/i })).toBeDefined();
 	// Card still present
 	expect(
-		screen.getByRole("button", { name: "Manage copies of Charizard" }),
+		screen.getByRole("link", { name: "Manage copies of Charizard" }),
 	).toBeDefined();
 });
