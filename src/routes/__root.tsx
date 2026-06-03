@@ -7,11 +7,14 @@ import {
 	useRouterState,
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import {
+	SidebarInset,
+	SidebarProvider,
+	SidebarTrigger,
+} from "@/components/ui/sidebar";
 import appCss from "../app.css?url";
 import { CardOverlay } from "../components/islands/card-overlay";
-import { SidebarCollapsible } from "../components/islands/sidebar-collapsible";
-import { AppToolbar } from "../components/shell/app-toolbar";
-import { SidebarNav } from "../components/shell/sidebar-nav";
+import { AppSidebar } from "../components/shell/app-sidebar";
 import { getNavTreeFn } from "../server/nav-tree";
 
 export const Route = createRootRoute({
@@ -20,7 +23,7 @@ export const Route = createRootRoute({
 			{ charSet: "utf-8" },
 			{ name: "viewport", content: "width=device-width, initial-scale=1" },
 			{ title: "Pokémon TCG Holo Playground" },
-			{ name: "theme-color", content: "#0f0823" },
+			{ name: "theme-color", content: "#0d0a16" },
 			{ name: "apple-mobile-web-app-capable", content: "yes" },
 			{
 				name: "apple-mobile-web-app-status-bar-style",
@@ -42,14 +45,14 @@ export const Route = createRootRoute({
 			{ rel: "stylesheet", href: appCss },
 			{
 				rel: "preload",
-				href: "/fonts/newsreader.woff2",
+				href: "/fonts/space-grotesk.woff2",
 				as: "font",
 				type: "font/woff2",
 				crossOrigin: "anonymous",
 			},
 			{
 				rel: "preload",
-				href: "/fonts/jetbrains-mono.woff2",
+				href: "/fonts/geist-mono.woff2",
 				as: "font",
 				type: "font/woff2",
 				crossOrigin: "anonymous",
@@ -85,35 +88,26 @@ function RootComponent() {
 
 	return (
 		<RootDocument>
-			<div className="flex h-screen flex-col overflow-hidden">
-				<AppToolbar
+			<SidebarProvider defaultOpen={true}>
+				<AppSidebar
 					tree={tree}
 					activeSeriesSlug={activeSeriesSlug}
 					activeSetSlug={activeSetSlug}
 				/>
-				<div className="flex min-h-0 flex-1">
-					<aside className="hidden w-72 shrink-0 overflow-y-auto border-r border-border bg-sidebar lg:block">
-						<ClientOnly
-							fallback={
-								<SidebarNav
-									tree={tree}
-									activeSeriesSlug={activeSeriesSlug}
-									activeSetSlug={activeSetSlug}
-								/>
-							}
-						>
-							<SidebarCollapsible
-								tree={tree}
-								activeSeriesSlug={activeSeriesSlug}
-								activeSetSlug={activeSetSlug}
-							/>
-						</ClientOnly>
-					</aside>
-					<main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+				<SidebarInset>
+					<header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-[var(--hairline)] px-4 backdrop-blur">
+						<SidebarTrigger />
+						<div className="flex min-w-0 flex-1 items-center gap-2">
+							<span className="hidden font-display text-sm font-semibold sm:block">
+								Pokémon TCG Viewer
+							</span>
+						</div>
+					</header>
+					<main className="flex-1 min-w-0 overflow-auto">
 						<Outlet />
 					</main>
-				</div>
-			</div>
+				</SidebarInset>
+			</SidebarProvider>
 			<ClientOnly fallback={null}>
 				<CardOverlay />
 			</ClientOnly>
