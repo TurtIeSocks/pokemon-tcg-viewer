@@ -173,6 +173,50 @@
 	}
 }
 
+/* ── Shell: two floating glass plates ───────────────────────────────
+   The SidebarProvider wrapper (data-slot=sidebar-wrapper) is the canvas.
+   Its `has-data-[variant=inset]:bg-sidebar` would paint a solid fill —
+   clear it so the ambient mesh shows through.
+   The sidebar inner container and the inset main become the two glass plates. */
+
+/* Canvas: transparent so the ambient mesh (body::before) shows through */
+[data-slot="sidebar-wrapper"] {
+	background: transparent !important;
+}
+
+/* Plate 1: floating sidebar inner — glass panel with 12px all-side float */
+[data-slot="sidebar-container"] {
+	padding: 12px !important;
+}
+[data-slot="sidebar-inner"] {
+	border-radius: 20px !important;
+	border: 1px solid var(--border) !important;
+	background: var(--glass) !important;
+	box-shadow: var(--shadow) !important;
+	backdrop-filter: blur(22px) saturate(1.4) !important;
+	-webkit-backdrop-filter: blur(22px) saturate(1.4) !important;
+}
+
+/* Plate 2: SidebarInset — matching glass panel with 12px gap on all sides
+   (the peer-based margins from the primitive give right/bottom/top gap;
+    we also add left margin when sidebar is visible for the inter-plate gap) */
+[data-slot="sidebar-inset"] {
+	margin: 12px !important;
+	margin-left: 0 !important;
+	border-radius: 20px !important;
+	border: 1px solid var(--border) !important;
+	background: oklch(1 0 0 / 0.022) !important;
+	box-shadow: var(--shadow) !important;
+	backdrop-filter: blur(20px) saturate(1.3) !important;
+	-webkit-backdrop-filter: blur(20px) saturate(1.3) !important;
+	overflow: hidden !important;
+}
+
+/* When sidebar is collapsed (icon mode), give inset a left margin too */
+.peer[data-variant="inset"][data-state="collapsed"] ~ [data-slot="sidebar-inset"] {
+	margin-left: 12px !important;
+}
+
 /* Home hero backdrop: float via `translate` so it composes with Tailwind v4
    rotate/scale (separate properties) instead of clobbering `transform`. */
 @keyframes float-card {

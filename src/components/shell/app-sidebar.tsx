@@ -44,6 +44,18 @@ const VAULT_CHILDREN: VaultChild[] = [
 	{ label: "Binders", to: "/vault/binders" },
 ];
 
+/** Small square dot — inactive = white/20, active = primary */
+function NavDot({ active }: { active: boolean }) {
+	return (
+		<span
+			className={cn(
+				"size-1.5 shrink-0 rounded-[2px] transition-colors",
+				active ? "bg-[var(--primary)]" : "bg-white/20",
+			)}
+		/>
+	);
+}
+
 function VaultGroup() {
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
 	const { setOpenMobile } = useSidebar();
@@ -55,6 +67,7 @@ function VaultGroup() {
 			<SidebarMenuItem>
 				<CollapsibleTrigger asChild>
 					<SidebarMenuButton isActive={isVaultPath} tooltip="Vault">
+						<NavDot active={isVaultPath} />
 						<ChevronRight
 							className={cn(
 								"size-4 shrink-0 transition-transform",
@@ -82,6 +95,7 @@ function VaultGroup() {
 											activeProps={{}}
 											onClick={() => setOpenMobile(false)}
 										>
+											<NavDot active={isActive} />
 											{label}
 										</Link>
 									</SidebarMenuSubButton>
@@ -113,6 +127,7 @@ function SeriesItem({
 			<SidebarMenuItem>
 				<CollapsibleTrigger asChild>
 					<SidebarMenuButton isActive={isActiveSeries} tooltip={series.name}>
+						<NavDot active={isActiveSeries} />
 						<ChevronRight
 							className={cn(
 								"size-4 shrink-0 transition-transform",
@@ -231,9 +246,24 @@ export function AppSidebar({
 			</SidebarContent>
 
 			<SidebarFooter>
-				<div className="flex items-center gap-1 px-1">
-					<AboutDialog />
-					<RepoLink />
+				<div className="flex items-center gap-2 px-1 py-0.5">
+					{/* Avatar */}
+					<div
+						className="size-7 shrink-0 rounded-full"
+						style={{
+							background:
+								"linear-gradient(135deg, oklch(0.5 0.12 290), oklch(0.4 0.1 320))",
+						}}
+					/>
+					{/* Label — hidden in icon-collapsed state */}
+					<span className="flex-1 truncate text-xs text-[var(--ink-muted)] group-data-[collapsible=icon]:hidden">
+						Collector
+					</span>
+					{/* Icon buttons */}
+					<div className="flex items-center gap-0.5 group-data-[collapsible=icon]:hidden">
+						<AboutDialog />
+						<RepoLink />
+					</div>
 				</div>
 			</SidebarFooter>
 		</Sidebar>
