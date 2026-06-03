@@ -7,6 +7,9 @@ import { loadCorpus, useSlugIndex } from "../../store/corpus/corpus-runtime";
 import { useRecentsStore } from "../../store/recents";
 import { HoloCardIsland } from "./holo-card-island";
 
+const LABEL_CLS =
+	"text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[var(--faint)]";
+
 function RecentsInner() {
 	const recentSearches = useRecentsStore((s) => s.recentSearches);
 	const recentlyViewed = useRecentsStore((s) => s.recentlyViewed);
@@ -25,17 +28,15 @@ function RecentsInner() {
 	if (recentSearches.length === 0 && recentlyViewed.length === 0) return null;
 
 	return (
-		<div className="space-y-5 border-t border-border py-6">
+		<div className="space-y-5 border-t border-[var(--border)] py-6">
 			{recentSearches.length > 0 && (
 				<section>
 					<div className="mb-2 flex items-center justify-between">
-						<h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-							Recent searches
-						</h2>
+						<h2 className={LABEL_CLS}>Recent searches</h2>
 						<button
 							type="button"
 							onClick={clearRecentSearches}
-							className="text-xs text-muted-foreground hover:text-foreground"
+							className="text-[10.5px] text-[var(--faint)] transition-colors hover:text-[var(--ink-muted)]"
 						>
 							Clear
 						</button>
@@ -46,7 +47,7 @@ function RecentsInner() {
 								key={q}
 								to="/search"
 								search={{ ...LIST_SEARCH_DEFAULTS, q }}
-								className="rounded-full bg-secondary px-3 py-1 text-sm text-foreground hover:bg-secondary/80"
+								className="rounded-[var(--r-pill)] border border-[var(--border)] bg-[var(--glass)] px-3 py-1 text-xs text-[var(--ink-muted)] transition-colors hover:border-[var(--primary-wash)] hover:bg-[var(--primary-wash)] hover:text-[var(--primary)]"
 							>
 								{q}
 							</Link>
@@ -56,9 +57,7 @@ function RecentsInner() {
 			)}
 			{recentlyViewed.length > 0 && (
 				<section>
-					<h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-						Recently viewed
-					</h2>
+					<h2 className={`mb-2 ${LABEL_CLS}`}>Recently viewed</h2>
 					<div className="flex gap-3 overflow-x-auto pb-2">
 						{recentlyViewed.map((card) => {
 							// Real card-detail link once the slug index is ready; until then
