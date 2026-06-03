@@ -115,7 +115,7 @@ export function CopyEditForm({
 				e.stopPropagation();
 				void form.handleSubmit();
 			}}
-			className="flex flex-col gap-4"
+			className="flex flex-col gap-4 [&_[data-slot=field-label]]:text-[var(--ink-muted)]"
 		>
 			{/* 2-column responsive grid */}
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -170,6 +170,7 @@ export function CopyEditForm({
 									value={field.state.value}
 									onBlur={field.handleBlur}
 									onChange={(e) => field.handleChange(e.target.value)}
+									className="font-mono tabular-nums"
 								/>
 								{invalid && (
 									<FieldError errors={toFieldErrors(field.state.meta.errors)} />
@@ -222,7 +223,9 @@ export function CopyEditForm({
 					// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 					children={(field) => (
 						<Field className="sm:col-span-2">
-							<span className="text-sm font-medium">Condition type</span>
+							<span className="text-sm font-medium text-[var(--ink-muted)]">
+								Condition type
+							</span>
 							<RadioGroup
 								value={field.state.value}
 								onValueChange={(v) => {
@@ -423,7 +426,7 @@ export function CopyEditForm({
 						</Button>
 						<Button
 							type="button"
-							variant="outline"
+							variant="ghost"
 							onClick={onCancel}
 							className="flex-1"
 						>

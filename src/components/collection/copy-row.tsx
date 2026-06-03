@@ -57,8 +57,8 @@ export function CopyRow({ item, variants }: CopyRowProps) {
 			className={[
 				"rounded-lg border p-3 flex flex-col gap-3 transition-colors duration-150",
 				item.isPrimary
-					? "border-[var(--accent,#e0b341)] bg-amber-950/20 dark:bg-amber-900/10"
-					: "border-border bg-card",
+					? "border-[var(--primary)] bg-[var(--primary-wash)] shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--primary)_25%,transparent)]"
+					: "border-[var(--border)] bg-[var(--glass)]",
 			].join(" ")}
 		>
 			{/* Tile header: badges + action row */}
@@ -79,7 +79,7 @@ export function CopyRow({ item, variants }: CopyRowProps) {
 
 					{/* Grading or condition */}
 					{gradingLabel ? (
-						<Badge className="text-xs bg-amber-600 text-white hover:bg-amber-700">
+						<Badge variant="success" className="text-xs">
 							{gradingLabel}
 						</Badge>
 					) : item.condition ? (
@@ -104,7 +104,7 @@ export function CopyRow({ item, variants }: CopyRowProps) {
 							role="img"
 							aria-label="Primary copy"
 							title="Primary copy"
-							className="inline-flex items-center justify-center h-8 w-8 text-amber-400"
+							className="inline-flex items-center justify-center h-8 w-8 text-[var(--primary)]"
 						>
 							<Star className="h-4 w-4 fill-current" aria-hidden="true" />
 						</span>
@@ -113,7 +113,7 @@ export function CopyRow({ item, variants }: CopyRowProps) {
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="h-8 w-8 text-muted-foreground hover:text-amber-400 transition-colors duration-150"
+							className="h-8 w-8 text-[var(--ink-muted)] hover:text-[var(--primary)] transition-colors duration-150"
 							aria-label="Set as primary"
 							title="Set as primary"
 							onClick={handleSetPrimary}

@@ -63,7 +63,7 @@ export function CardCollectionManager({
 			<div
 				className={[
 					"flex items-center gap-4 px-6 py-4",
-					"border-b border-border bg-card/60 backdrop-blur-sm",
+					"border-b border-[var(--hairline)] bg-[var(--glass)] backdrop-blur-sm",
 				].join(" ")}
 			>
 				{/* Back button — ≥44px tap target */}
@@ -74,9 +74,9 @@ export function CardCollectionManager({
 					className={[
 						"inline-flex items-center gap-2 shrink-0",
 						"min-h-[44px] min-w-[44px] px-3 -ml-3 rounded-lg",
-						"text-sm font-medium text-muted-foreground",
-						"hover:text-foreground hover:bg-muted/60",
-						"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent,#e0b341)]",
+						"text-sm font-medium text-[var(--ink-muted)]",
+						"hover:text-[var(--ink)] hover:bg-white/[0.06]",
+						"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]",
 						"transition-colors duration-150",
 					].join(" ")}
 				>
@@ -89,7 +89,7 @@ export function CardCollectionManager({
 			<div
 				className={[
 					"flex items-center gap-5 px-6 py-5",
-					"border-b border-border",
+					"border-b border-[var(--hairline)]",
 				].join(" ")}
 			>
 				{imageUrl && (
@@ -104,16 +104,16 @@ export function CardCollectionManager({
 
 				<div className="flex flex-col gap-1 min-w-0">
 					<h2
-						className="text-xl font-semibold leading-tight"
+						className="font-display text-xl font-semibold leading-tight text-[var(--ink)]"
 						aria-label={`${cardName} — Your Collection`}
 					>
 						{cardName}{" "}
-						<span className="text-base font-normal text-muted-foreground">
+						<span className="text-base font-normal text-[var(--ink-muted)]">
 							— Your Collection
 						</span>
 					</h2>
 					{subtitle && (
-						<p className="text-sm text-muted-foreground leading-snug">
+						<p className="font-mono text-[11px] text-[var(--faint)] leading-snug">
 							{subtitle}
 						</p>
 					)}
