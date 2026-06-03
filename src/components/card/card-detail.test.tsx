@@ -1,11 +1,11 @@
 // card-detail.test.tsx
-import { beforeEach, expect, test } from "bun:test";
+import { beforeEach, expect, mock, test } from "bun:test";
 import {
 	createRootRoute,
 	createRouter,
 	RouterProvider,
 } from "@tanstack/react-router";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { FocusCardData } from "../../server/card-mappers";
 import { buildIndex } from "../../store/corpus/corpus-engine";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
@@ -71,20 +71,34 @@ test("unowned card renders '＋ Add to collection' button", async () => {
 	expect(screen.queryByRole("link", { name: /manage collection/i })).toBeNull();
 });
 
-test("owned card renders 'Manage Collection' link/button (not 'Add to collection')", async () => {
+test("owned card renders 'Manage Collection' button (not 'Add to collection')", async () => {
 	// Seed a copy so the card is owned.
 	await addCopy("base1-4");
 
 	await renderInRouter(<CardDetail card={CARD} crossLinks={[]} />);
 
-	// "Manage Collection" should be present (link or button)
-	const manageEl =
-		screen.queryByRole("link", { name: /manage collection/i }) ??
-		screen.queryByRole("button", { name: /manage collection/i });
+	// "Manage Collection" button should be present (disabled — no onManage supplied)
+	const manageEl = screen.queryByRole("button", { name: /manage collection/i });
 	expect(manageEl).not.toBeNull();
 
 	// "Add to collection" should NOT be present
 	expect(
 		screen.queryByRole("button", { name: /add to collection/i }),
 	).toBeNull();
+});
+
+test("owned card with onManage: clicking 'Manage Collection' invokes the callback", async () => {
+	await addCopy("base1-4");
+	const onManage = mock(() => {});
+
+	await renderInRouter(
+		<CardDetail card={CARD} crossLinks={[]} onManage={onManage} />,
+	);
+
+	const manageBtn = screen.getByRole("button", { name: /manage collection/i });
+	expect(manageBtn).not.toBeNull();
+	// Button must be enabled when onManage is supplied.
+	expect((manageBtn as HTMLButtonElement).disabled).toBe(false);
+	fireEvent.click(manageBtn);
+	expect(onManage).toHaveBeenCalledTimes(1);
 });

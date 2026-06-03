@@ -1,4 +1,9 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import {
+	createFileRoute,
+	Link,
+	notFound,
+	useNavigate,
+} from "@tanstack/react-router";
 import { useEffect } from "react";
 import { CardDetail } from "../../../components/card/card-detail";
 import { LIST_SEARCH_DEFAULTS } from "../../../lib/list-search";
@@ -44,6 +49,7 @@ export const Route = createFileRoute("/$series/$set/$card")({
 function CardPage() {
 	const { card, crossLinks } = Route.useLoaderData();
 	const params = Route.useParams();
+	const navigate = useNavigate();
 	const addRecentlyViewed = useRecentsStore((s) => s.addRecentlyViewed);
 	useEffect(() => {
 		addRecentlyViewed({
@@ -60,6 +66,19 @@ function CardPage() {
 			nationalPokedexNumbers: card.nationalPokedexNumbers,
 		});
 	}, [card, addRecentlyViewed]);
+
+	// Push — so browser-back from the manage page returns here.
+	function handleManage() {
+		void navigate({
+			to: "/$series/$set/$card/manage",
+			params: {
+				series: params.series,
+				set: params.set,
+				card: params.card,
+			},
+		});
+	}
+
 	return (
 		<div className="mx-auto w-full max-w-4xl overflow-y-auto px-4 py-6">
 			<div className="mb-3">
@@ -73,7 +92,11 @@ function CardPage() {
 				</Link>
 			</div>
 			<div className="rounded-2xl border border-white/10 bg-[#0d0d0f]">
-				<CardDetail card={card} crossLinks={crossLinks} />
+				<CardDetail
+					card={card}
+					crossLinks={crossLinks}
+					onManage={handleManage}
+				/>
 			</div>
 		</div>
 	);

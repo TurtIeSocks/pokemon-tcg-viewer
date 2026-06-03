@@ -1,10 +1,8 @@
-import { ClientOnly, Link } from "@tanstack/react-router";
+import { ClientOnly } from "@tanstack/react-router";
 import { Layers } from "lucide-react";
 import type { CSSProperties } from "react";
 import { cn } from "@/lib/utils";
-import { cardManageLinkProps } from "../../lib/card-route";
 import type { FocusCardData } from "../../server/card-mappers";
-import { useSlugIndex } from "../../store/corpus/corpus-runtime";
 import { useIsOwned } from "../../store/userland/selectors";
 import { addCopy } from "../../store/userland/userland-store";
 import { getCardAccent, getReadableAccent } from "../../utils/card-colors";
@@ -19,13 +17,21 @@ import { toHoloCardData } from "./to-holo";
  * Rendered inside a Dialog for the in-app overlay (CardModal) and inside a page
  * layout for a cold-loaded / shared card URL ($card route). Keeping it wrapper-
  * free means both presentations share one implementation.
+ *
+ * @param onManage - Optional callback invoked when the user clicks "Manage
+ *   Collection" on an owned card. When omitted the button is rendered disabled.
+ *   CardModal supplies a replace-navigate; the cold-load $card route supplies a
+ *   push-navigate; tests pass a mock.
  */
 export function CardDetail({
 	card,
 	crossLinks,
+	onManage,
 }: {
 	card: FocusCardData;
 	crossLinks: CrossLink[];
+	/** Called when the user activates "Manage Collection". Disabled when absent. */
+	onManage?: () => void;
 }) {
 	const holo = toHoloCardData(card);
 	const accent = getReadableAccent(getCardAccent(card.types));
@@ -65,7 +71,7 @@ export function CardDetail({
 									size="focus"
 								/>
 							</ClientOnly>
-							<CollectionButton card={holo} />
+							<CollectionButton card={holo} onManage={onManage} />
 						</div>
 					</div>
 				</div>
@@ -86,41 +92,33 @@ export function CardDetail({
 
 function CollectionButton({
 	card,
+	onManage,
 }: {
 	card: ReturnType<typeof toHoloCardData>;
+	/** Callback for "Manage Collection". Disabled when absent. */
+	onManage?: () => void;
 }) {
 	const owned = useIsOwned(card.id);
-	const slugIndex = useSlugIndex();
 
 	if (owned) {
-		const linkProps = slugIndex ? cardManageLinkProps(slugIndex, card) : null;
-
 		const baseClass = cn(
 			"flex w-full items-center justify-center gap-2 rounded-[10px] py-3 min-h-[44px]",
 			"font-mono text-[13px] tracking-[0.04em] transition-colors",
-			"border border-white/15 text-[#e7e3d8] hover:border-white/30",
+			"border border-white/15 text-[#e7e3d8]",
 		);
 
-		if (linkProps) {
-			return (
-				<Link
-					{...linkProps}
-					className={baseClass}
-					aria-label="Manage Collection"
-				>
-					<Layers className="h-4 w-4 shrink-0" aria-hidden="true" />
-					Manage Collection
-				</Link>
-			);
-		}
-
-		// Corpus not loaded yet — render a disabled button as fallback
 		return (
 			<button
 				type="button"
-				disabled
+				onClick={onManage}
+				disabled={!onManage}
 				aria-label="Manage Collection"
-				className={cn(baseClass, "opacity-50 cursor-not-allowed")}
+				className={cn(
+					baseClass,
+					onManage
+						? "hover:border-white/30 cursor-pointer"
+						: "opacity-50 cursor-not-allowed",
+				)}
 			>
 				<Layers className="h-4 w-4 shrink-0" aria-hidden="true" />
 				Manage Collection

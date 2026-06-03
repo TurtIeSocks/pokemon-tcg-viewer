@@ -1,5 +1,14 @@
 import { beforeEach, describe, expect, test } from "bun:test";
+import {
+	createRootRoute,
+	createRouter,
+	RouterProvider,
+} from "@tanstack/react-router";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { PokemonSet } from "../../server/card-mappers";
+import { buildIndex } from "../../store/corpus/corpus-engine";
+import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
+import { useStore } from "../../store/index";
 import { createIdbRepos } from "../../store/userland/idb-repo";
 import {
 	resetUserlandForTests,
@@ -18,6 +27,22 @@ const card: HoloCardData = {
 	cardNumber: "58",
 };
 
+const testSet: PokemonSet = {
+	id: "base1",
+	name: "Base Set",
+	series: "Base",
+	releaseDate: "1999-01-09",
+	total: 102,
+	images: { symbol: "", logo: "" },
+};
+
+async function renderInRouter(ui: React.ReactNode) {
+	const rootRoute = createRootRoute({ component: () => <>{ui}</> });
+	const router = createRouter({ routeTree: rootRoute });
+	await router.load();
+	return render(<RouterProvider router={router} />);
+}
+
 let repos = createIdbRepos();
 beforeEach(async () => {
 	repos = createIdbRepos();
@@ -25,11 +50,27 @@ beforeEach(async () => {
 	await repos.binders.clear();
 	setUserlandRepos(repos);
 	resetUserlandForTests();
+
+	// Pre-seed corpus + sets so useSlugIndex resolves inside CollectionToggle.
+	useCorpusRuntime.setState({
+		index: buildIndex([
+			{
+				id: card.id,
+				name: card.name,
+				imageUrl: card.imageUrl,
+				imageUrlSmall: card.imageUrl,
+				supertype: card.supertype ?? "Pokémon",
+				setId: card.setId,
+				number: card.cardNumber,
+			},
+		]),
+	});
+	useStore.setState({ sets: [testSet] });
 });
 
 describe("<CollectionToggle />", () => {
 	test("renders '+' when not owned", async () => {
-		render(<CollectionToggle card={card} />);
+		await renderInRouter(<CollectionToggle card={card} />);
 		const btn = await screen.findByRole("button", {
 			name: /add .* collection/i,
 		});
@@ -37,7 +78,7 @@ describe("<CollectionToggle />", () => {
 	});
 
 	test("click adds a copy, then shows '✓'", async () => {
-		render(<CollectionToggle card={card} />);
+		await renderInRouter(<CollectionToggle card={card} />);
 		fireEvent.click(await screen.findByRole("button"));
 		await waitFor(async () =>
 			expect(
@@ -47,15 +88,19 @@ describe("<CollectionToggle />", () => {
 		await screen.findByRole("button", { name: /copies|manage|collection/i });
 	});
 
-	test("owned shows count and opens the manager dialog (never deletes)", async () => {
+	test("owned: renders manage-copies button (no dialog)", async () => {
 		await repos.collection.add({ cardId: card.id });
 		resetUserlandForTests();
-		render(<CollectionToggle card={card} />);
+		await renderInRouter(<CollectionToggle card={card} />);
 		const btn = await screen.findByRole("button", {
 			name: /manage copies/i,
 		});
+		expect(btn).not.toBeNull();
+		// Clicking must not open a dialog (no "Your copies" text)
 		fireEvent.click(btn);
-		expect(await screen.findByText(/your copies/i)).toBeDefined();
-		expect(await repos.collection.list()).toHaveLength(1); // unchanged
+		// After click the button is still present (navigate fires), no modal text
+		expect(screen.queryByText(/your copies/i)).toBeNull();
+		// Collection is unchanged — button never triggered a delete
+		expect(await repos.collection.list()).toHaveLength(1);
 	});
 });

@@ -9,7 +9,6 @@ import {
 	useUserland,
 } from "../../store/userland/userland-store";
 import { CopyManager } from "./copy-manager";
-import { CopyManagerDialog } from "./copy-manager-dialog";
 
 let repos = createIdbRepos();
 beforeEach(async () => {
@@ -99,23 +98,4 @@ test("Set as primary marks the copy primary", async () => {
 			Object.values(useUserland.getState().items).some((i) => i.isPrimary),
 		).toBe(true),
 	);
-});
-
-test("CopyManagerDialog: Done button is present and calls onOpenChange(false)", async () => {
-	await addCopy("dialog-card");
-	let closedWith: boolean | null = null;
-	render(
-		<CopyManagerDialog
-			cardId="dialog-card"
-			name="Charizard"
-			open={true}
-			onOpenChange={(v) => {
-				closedWith = v;
-			}}
-		/>,
-	);
-	const doneBtn = screen.getByRole("button", { name: /done/i });
-	expect(doneBtn).toBeDefined();
-	fireEvent.click(doneBtn);
-	expect(closedWith === false).toBe(true);
 });
