@@ -37,12 +37,12 @@ interface RemovableChipProps {
 /** Pill chip with an inline × remove button; used for rule and manual-card chips. */
 function RemovableChip({ label, onRemove, removeLabel }: RemovableChipProps) {
 	return (
-		<span className="inline-flex items-center gap-1 rounded-full border bg-secondary px-3 py-1 text-sm">
+		<span className="inline-flex items-center gap-1 rounded-[var(--r-control)] border border-[var(--hairline)] bg-[var(--glass)] px-3 py-1 text-sm text-[var(--ink)]">
 			{label}
 			<button
 				type="button"
 				aria-label={removeLabel}
-				className="ml-1 text-muted-foreground hover:text-destructive leading-none"
+				className="ml-1 text-[var(--ink-muted)] hover:text-[var(--danger)] leading-none"
 				onClick={onRemove}
 			>
 				<span aria-hidden="true">×</span>
@@ -116,7 +116,7 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 			<Link
 				to="/vault/binders"
 				aria-label="Back to binders"
-				className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+				className="inline-flex items-center gap-1 text-sm text-[var(--ink-muted)] hover:text-[var(--ink)] transition-colors"
 			>
 				<ArrowLeft className="h-4 w-4" />
 				Binders
@@ -125,14 +125,16 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 			{/* Header */}
 			<div className="flex items-start gap-4">
 				<div className="flex-1 min-w-0">
-					<h1 className="text-2xl font-bold truncate">{binder.name}</h1>
+					<h1 className="font-display text-2xl font-bold truncate text-[var(--ink)]">
+						{binder.name}
+					</h1>
 					{binder.description && (
-						<p className="text-muted-foreground mt-1">{binder.description}</p>
+						<p className="text-[var(--ink-muted)] mt-1">{binder.description}</p>
 					)}
 				</div>
 				<div className="flex gap-2 shrink-0">
 					<Button
-						variant="outline"
+						variant="ghost"
 						size="sm"
 						onClick={() => setEditOpen(true)}
 						aria-label="Edit binder"
@@ -141,7 +143,7 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 						Edit
 					</Button>
 					<Button
-						variant="outline"
+						variant="soft"
 						size="sm"
 						onClick={() => setShareOpen(true)}
 						aria-label="Share binder"
@@ -150,11 +152,11 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 						Share
 					</Button>
 					<Button
-						variant="outline"
+						variant="ghost"
 						size="sm"
 						onClick={() => void handleDelete()}
 						aria-label="Delete binder"
-						className="text-destructive hover:text-destructive"
+						className="text-[var(--danger)] hover:text-[var(--danger)] border-[var(--danger)]/30"
 					>
 						<Trash2 className="h-4 w-4 mr-1" />
 						Delete
@@ -164,11 +166,22 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 
 			{/* Progress summary */}
 			{progress ? (
-				<div className="rounded-lg border bg-card p-4 space-y-2">
+				<div className="rounded-[var(--r-panel)] border border-[var(--border)] bg-[var(--glass)] p-4 space-y-2 backdrop-blur-xl">
 					<div className="flex justify-between text-sm">
-						<span className="font-medium">Progress</span>
-						<span className="text-muted-foreground">
-							{progress.owned}/{progress.total} cards
+						<span className="text-[10.5px] uppercase tracking-[0.18em] text-[var(--faint)] font-semibold self-center">
+							Progress
+						</span>
+						<span className="font-mono tabular-nums text-[var(--ink-muted)]">
+							<span
+								className={
+									progress.total > 0 && progress.owned === progress.total
+										? "text-[var(--success)]"
+										: "text-[var(--ink)]"
+								}
+							>
+								{progress.owned}
+							</span>
+							/{progress.total} cards
 							{progress.total > 0
 								? ` (${Math.round((progress.owned / progress.total) * 100)}%)`
 								: ""}
@@ -177,7 +190,7 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 					<ProgressBar
 						value={progress.owned}
 						total={progress.total}
-						className="h-3"
+						className="h-2"
 					/>
 				</div>
 			) : null}
@@ -185,7 +198,9 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 			{/* Rule chips */}
 			{binder.rules.length > 0 && (
 				<div>
-					<h2 className="text-lg font-semibold mb-2">Rules</h2>
+					<h2 className="text-[10.5px] uppercase tracking-[0.18em] text-[var(--faint)] font-semibold mb-2">
+						Rules
+					</h2>
 					<div className="flex flex-wrap gap-2">
 						{binder.rules.map((rule) => {
 							const label = binderRuleLabel(rule.query, {
@@ -207,10 +222,10 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 
 			{/* Members grid */}
 			<div>
-				<h2 className="text-lg font-semibold mb-3">
+				<h2 className="text-[10.5px] uppercase tracking-[0.18em] text-[var(--faint)] font-semibold mb-3">
 					Members
 					{memberCards.length > 0 && (
-						<span className="ml-2 text-sm font-normal text-muted-foreground">
+						<span className="ml-2 font-mono tabular-nums text-[var(--ink-muted)] normal-case tracking-normal text-sm">
 							({memberCards.length})
 						</span>
 					)}

@@ -86,8 +86,10 @@ export function BinderFormDialog({
 		>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>{isEdit ? "Edit Binder" : "New Binder"}</DialogTitle>
-					<DialogDescription>
+					<DialogTitle className="font-display">
+						{isEdit ? "Edit Binder" : "New Binder"}
+					</DialogTitle>
+					<DialogDescription className="text-[var(--ink-muted)]">
 						{isEdit
 							? "Update this binder's name and description."
 							: "Create a new binder to organize your card collection."}
@@ -164,7 +166,7 @@ export function BinderFormDialog({
 								<>
 									<Button
 										type="button"
-										variant="outline"
+										variant="ghost"
 										onClick={() => onOpenChange(false)}
 									>
 										Cancel

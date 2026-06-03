@@ -68,37 +68,40 @@ export function AboutDialog() {
 			</DialogTrigger>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>About</DialogTitle>
-					<DialogDescription>
+					<DialogTitle className="font-display">About</DialogTitle>
+					<DialogDescription className="text-[var(--ink-muted)]">
 						A fan-made browser for the Pokémon Trading Card Game. With thanks
 						to:
 					</DialogDescription>
 				</DialogHeader>
 				<ul className="flex flex-col gap-4">
 					{CREDITS.map((credit) => (
-						<li key={credit.href} className="flex flex-col gap-1">
-							<span className="text-sm font-medium text-foreground">
+						<li
+							key={credit.href}
+							className="flex flex-col gap-1 rounded-[var(--r-control)] border border-[var(--hairline)] bg-[var(--glass)] px-3 py-2.5"
+						>
+							<span className="text-[10.5px] uppercase tracking-[0.18em] text-[var(--faint)] font-semibold">
 								{credit.title}
 							</span>
-							<p className="text-sm text-muted-foreground">{credit.body}</p>
+							<p className="text-sm text-[var(--ink-muted)]">{credit.body}</p>
 							<a
 								href={credit.href}
 								target="_blank"
 								rel="noreferrer noopener"
-								className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+								className="text-sm font-medium text-[var(--primary)] underline-offset-4 hover:underline"
 							>
 								{credit.linkLabel}
 							</a>
 						</li>
 					))}
 				</ul>
-				<div className="border-t border-border pt-4 text-sm text-muted-foreground">
+				<div className="border-t border-[var(--border)] pt-4 text-sm text-[var(--ink-muted)]">
 					Source code:{" "}
 					<a
 						href={REPO_URL}
 						target="_blank"
 						rel="noreferrer noopener"
-						className="font-medium text-primary underline-offset-4 hover:underline"
+						className="font-medium text-[var(--primary)] underline-offset-4 hover:underline"
 					>
 						TurtIeSocks/pokemon-tcg-viewer
 					</a>
