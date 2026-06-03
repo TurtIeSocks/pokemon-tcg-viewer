@@ -2,7 +2,6 @@ import { useForm } from "@tanstack/react-form";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
 	Select,
 	SelectContent,
@@ -12,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { fieldErrorText } from "@/lib/field-error";
+import { cn } from "@/lib/utils";
 import type { CollectionItem } from "../../store/userland/types";
 import { addCopy, updateCopy } from "../../store/userland/userland-store";
 import { formToPatch, itemToForm } from "./copy-form-mapping";
@@ -44,6 +44,62 @@ function toFieldErrors(
 		const msg = fieldErrorText(e);
 		return msg ? { message: msg } : undefined;
 	});
+}
+
+/**
+ * Segmented pill control — renders a track of segments, one active at a time.
+ * Active segment: `bg-[var(--primary)] text-[var(--primary-ink)] font-semibold`.
+ * Matches the `.seg` pattern in the card-manage mock.
+ */
+interface SegmentedControlProps<T extends string> {
+	value: T;
+	onChange: (v: T) => void;
+	options: { value: T; label: string }[];
+	/** Optional accessible label for the group */
+	"aria-label"?: string;
+}
+
+function SegmentedControl<T extends string>({
+	value,
+	onChange,
+	options,
+	"aria-label": ariaLabel,
+}: SegmentedControlProps<T>) {
+	return (
+		// biome-ignore lint/a11y/useSemanticElements: pill track needs rounded styling incompatible with <fieldset>
+		<div
+			role="group"
+			aria-label={ariaLabel}
+			className={cn(
+				"inline-flex bg-[var(--glass)] border border-[var(--border)]",
+				"rounded-[var(--r-pill,9999px)] p-0.5 gap-0.5",
+			)}
+		>
+			{options.map((opt) => {
+				const active = opt.value === value;
+				return (
+					// biome-ignore lint/a11y/useSemanticElements: segmented pill button styled with explicit role=radio; native radio input fights the track layout
+					<button
+						key={opt.value}
+						type="button"
+						role="radio"
+						aria-checked={active}
+						aria-label={opt.label}
+						onClick={() => onChange(opt.value)}
+						className={cn(
+							"text-[12px] px-3 py-1.5 rounded-[calc(var(--r-pill,9999px)-2px)] transition-colors duration-150",
+							"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]",
+							active
+								? "bg-[var(--primary)] text-[var(--primary-ink)] font-semibold"
+								: "text-[var(--ink-muted)] hover:text-[var(--ink)] cursor-pointer",
+						)}
+					>
+						{opt.label}
+					</button>
+				);
+			})}
+		</div>
+	);
 }
 
 /**
@@ -81,6 +137,8 @@ const BLANK_DEFAULTS = {
 /**
  * Draft→Save form for creating or editing a single copy's metadata.
  * No per-field auto-save: all changes are committed atomically when Save is clicked.
+ *
+ * Variant and State are rendered as segmented pill controls matching the mock.
  */
 export function CopyEditForm({
 	mode,
@@ -119,129 +177,45 @@ export function CopyEditForm({
 		>
 			{/* 2-column responsive grid */}
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-				{/* Acquired date */}
-				<form.Field
-					name="acquiredAt"
-					validators={{ onBlur: copyFormSchema.shape.acquiredAt }}
-					// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
-					children={(field) => {
-						const invalid = fieldIsInvalid(field);
-						return (
-							<Field data-invalid={invalid}>
-								<FieldLabel htmlFor={field.name}>Acquired date</FieldLabel>
-								<Input
-									id={field.name}
-									type="date"
-									aria-invalid={invalid}
+				{/* Variant — segmented pill */}
+				{variants && variants.length > 0 && (
+					<form.Field
+						name="variant"
+						validators={{ onBlur: copyFormSchema.shape.variant }}
+						// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
+						children={(field) => (
+							<Field className="sm:col-span-2">
+								<FieldLabel>Variant</FieldLabel>
+								<SegmentedControl
+									aria-label="Variant"
 									value={field.state.value}
-									onBlur={field.handleBlur}
-									onChange={(e) => field.handleChange(e.target.value)}
+									onChange={(v) => field.handleChange(v)}
+									options={[
+										{ value: "", label: "Unspecified" },
+										...variants.map((v) => ({ value: v, label: v })),
+									]}
 								/>
-								{invalid && (
-									<FieldError errors={toFieldErrors(field.state.meta.errors)} />
-								)}
 							</Field>
-						);
-					}}
-				/>
+						)}
+					/>
+				)}
 
-				{/* Price paid */}
-				<form.Field
-					name="pricePaid"
-					validators={{
-						onBlur: ({ value }) => {
-							if (value === "") return undefined;
-							const n = Number(value);
-							if (!Number.isFinite(n) || n < 0) return "Must be a number ≥ 0";
-							return undefined;
-						},
-					}}
-					// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
-					children={(field) => {
-						const invalid = fieldIsInvalid(field);
-						return (
-							<Field data-invalid={invalid}>
-								<FieldLabel htmlFor={field.name}>Price paid</FieldLabel>
-								<Input
-									id={field.name}
-									type="number"
-									aria-label="Price paid"
-									aria-invalid={invalid}
-									value={field.state.value}
-									onBlur={field.handleBlur}
-									onChange={(e) => field.handleChange(e.target.value)}
-									className="font-mono tabular-nums"
-								/>
-								{invalid && (
-									<FieldError errors={toFieldErrors(field.state.meta.errors)} />
-								)}
-							</Field>
-						);
-					}}
-				/>
-
-				{/* Variant */}
-				<form.Field
-					name="variant"
-					validators={{ onBlur: copyFormSchema.shape.variant }}
-					// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
-					children={(field) => {
-						const invalid = fieldIsInvalid(field);
-						return (
-							<Field data-invalid={invalid}>
-								<FieldLabel htmlFor={field.name}>Variant</FieldLabel>
-								<Select
-									value={toSelectVal(field.state.value)}
-									onValueChange={(v) => {
-										field.handleChange(fromSelectVal(v));
-									}}
-								>
-									<SelectTrigger
-										id={field.name}
-										aria-invalid={invalid}
-										onBlur={field.handleBlur}
-									>
-										<SelectValue placeholder="Select variant..." />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value={NONE}>Unspecified</SelectItem>
-										{(variants ?? []).map((v) => (
-											<SelectItem key={v} value={v}>
-												{v}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</Field>
-						);
-					}}
-				/>
-
-				{/* State radio: raw | graded — spans both columns on sm+ */}
+				{/* State — segmented pill: Raw | Graded */}
 				<form.Field
 					name="state"
 					// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 					children={(field) => (
 						<Field className="sm:col-span-2">
-							<span className="text-sm font-medium text-[var(--ink-muted)]">
-								Condition type
-							</span>
-							<RadioGroup
+							<FieldLabel>State</FieldLabel>
+							<SegmentedControl
+								aria-label="State"
 								value={field.state.value}
-								onValueChange={(v) => {
-									field.handleChange(v as "raw" | "graded");
-								}}
-								className="flex gap-4 mt-1"
-							>
-								<div className="flex items-center gap-2">
-									<RadioGroupItem value="raw" id="state-raw" />
-									<FieldLabel htmlFor="state-raw">Raw</FieldLabel>
-								</div>
-								<div className="flex items-center gap-2">
-									<RadioGroupItem value="graded" id="state-graded" />
-									<FieldLabel htmlFor="state-graded">Graded</FieldLabel>
-								</div>
-							</RadioGroup>
+								onChange={(v) => field.handleChange(v as "raw" | "graded")}
+								options={[
+									{ value: "raw", label: "Raw" },
+									{ value: "graded", label: "Graded" },
+								]}
+							/>
 						</Field>
 					)}
 				/>
@@ -380,6 +354,67 @@ export function CopyEditForm({
 							</>
 						)
 					}
+				/>
+
+				{/* Acquired date */}
+				<form.Field
+					name="acquiredAt"
+					validators={{ onBlur: copyFormSchema.shape.acquiredAt }}
+					// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
+					children={(field) => {
+						const invalid = fieldIsInvalid(field);
+						return (
+							<Field data-invalid={invalid}>
+								<FieldLabel htmlFor={field.name}>Acquired date</FieldLabel>
+								<Input
+									id={field.name}
+									type="date"
+									aria-invalid={invalid}
+									value={field.state.value}
+									onBlur={field.handleBlur}
+									onChange={(e) => field.handleChange(e.target.value)}
+								/>
+								{invalid && (
+									<FieldError errors={toFieldErrors(field.state.meta.errors)} />
+								)}
+							</Field>
+						);
+					}}
+				/>
+
+				{/* Price paid */}
+				<form.Field
+					name="pricePaid"
+					validators={{
+						onBlur: ({ value }) => {
+							if (value === "") return undefined;
+							const n = Number(value);
+							if (!Number.isFinite(n) || n < 0) return "Must be a number ≥ 0";
+							return undefined;
+						},
+					}}
+					// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
+					children={(field) => {
+						const invalid = fieldIsInvalid(field);
+						return (
+							<Field data-invalid={invalid}>
+								<FieldLabel htmlFor={field.name}>Price paid</FieldLabel>
+								<Input
+									id={field.name}
+									type="number"
+									aria-label="Price paid"
+									aria-invalid={invalid}
+									value={field.state.value}
+									onBlur={field.handleBlur}
+									onChange={(e) => field.handleChange(e.target.value)}
+									className="font-mono tabular-nums"
+								/>
+								{invalid && (
+									<FieldError errors={toFieldErrors(field.state.meta.errors)} />
+								)}
+							</Field>
+						);
+					}}
 				/>
 			</div>
 

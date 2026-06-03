@@ -35,6 +35,7 @@ function ManagePage() {
 					setName={card.setName}
 					cardNumber={card.cardNumber}
 					imageUrl={card.imageUrl}
+					card={card}
 					onBack={() =>
 						navigate({
 							to: "/$series/$set/$card",

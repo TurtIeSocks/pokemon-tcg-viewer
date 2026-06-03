@@ -169,7 +169,7 @@ test("edit: Save persists notes", async () => {
 	expect(saved).toBe(true);
 });
 
-test("edit: variant Select: choosing a variant only persists on Save", async () => {
+test("edit: variant pill: choosing a variant only persists on Save", async () => {
 	const item = await addCopy("c");
 	render(
 		<CopyEditForm
@@ -181,10 +181,9 @@ test("edit: variant Select: choosing a variant only persists on Save", async () 
 			onCancel={() => {}}
 		/>,
 	);
-	const trigger = screen.getAllByRole("combobox")[0];
-	fireEvent.click(trigger);
-	const holoOption = await screen.findByRole("option", { name: "Holo" });
-	fireEvent.click(holoOption);
+	// Variant is now a segmented pill — find the "Holo" radio button
+	const holoButton = screen.getByRole("radio", { name: "Holo" });
+	fireEvent.click(holoButton);
 	// pre-Save: store unchanged
 	expect(useUserland.getState().items[item.id].variant).toBeNull();
 	// Save

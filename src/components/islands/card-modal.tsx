@@ -122,6 +122,7 @@ export function CardModal({
 							cardNumber={card.cardNumber}
 							imageUrl={card.imageUrl}
 							variants={holo.variants}
+							card={card}
 							onBack={handleBack ?? onClose}
 						/>
 					</div>
