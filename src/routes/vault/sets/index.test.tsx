@@ -206,10 +206,10 @@ test("default mode shows only owned sets", async () => {
 	await renderSetsInner([makeItem("c1", "base1-1")]);
 
 	await waitFor(() => {
-		expect(screen.getByText("Base Set")).toBeTruthy();
+		expect(screen.getByLabelText(/view vault for base set/i)).toBeTruthy();
 	});
 	// Jungle (unowned) must NOT appear
-	expect(screen.queryByText("Jungle")).toBeNull();
+	expect(screen.queryByLabelText(/view vault for jungle/i)).toBeNull();
 });
 
 test("toggling to All sets reveals unowned set", async () => {
@@ -220,9 +220,9 @@ test("toggling to All sets reveals unowned set", async () => {
 	fireEvent.click(allBtn);
 
 	await waitFor(() => {
-		expect(screen.getByText("Jungle")).toBeTruthy();
+		expect(screen.getByLabelText(/view vault for jungle/i)).toBeTruthy();
 	});
-	expect(screen.getByText("Base Set")).toBeTruthy();
+	expect(screen.getByLabelText(/view vault for base set/i)).toBeTruthy();
 });
 
 test("empty state when user owns nothing in Owned sets mode", async () => {
@@ -244,21 +244,15 @@ test("empty state has a Browse all sets button that switches to All sets", async
 	fireEvent.click(browseBtn);
 
 	await waitFor(() => {
-		expect(screen.getByText("Base Set")).toBeTruthy();
-		expect(screen.getByText("Jungle")).toBeTruthy();
+		expect(screen.getByLabelText(/view vault for base set/i)).toBeTruthy();
+		expect(screen.getByLabelText(/view vault for jungle/i)).toBeTruthy();
 	});
 });
 
 test("owned set tile links to /vault/sets/<setId>", async () => {
 	await renderSetsInner([makeItem("c1", "base1-1")]);
 
-	await waitFor(() => {
-		expect(screen.getByText("Base Set")).toBeTruthy();
-	});
-
-	// SetTile with vaultLink renders a link with aria-label "View vault for <name>"
-	// and href containing the set id
-	const link = screen.getByRole("link", {
+	const link = await screen.findByRole("link", {
 		name: /view vault for base set/i,
 	});
 	expect(link.getAttribute("href")).toContain("base1");

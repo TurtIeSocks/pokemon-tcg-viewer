@@ -24,42 +24,53 @@ async function renderInRouter(ui: React.ReactNode) {
 	return render(<RouterProvider router={router} />);
 }
 
-test("shows owned/total badge when ownedCount provided", async () => {
+test("shows owned/total stat + percent when ownedCount provided", async () => {
 	await renderInRouter(<SetTile seriesSlug="base" set={set} ownedCount={3} />);
 	expect(screen.getByText("3/120")).toBeDefined();
+	expect(screen.getByText(/% complete/i)).toBeDefined();
 });
 
-test("no badge when ownedCount omitted", async () => {
+test("stat is bold tabular-nums (legible hero number)", async () => {
+	await renderInRouter(<SetTile seriesSlug="base" set={set} ownedCount={3} />);
+	const stat = screen.getByText("3/120");
+	expect(stat.className).toContain("font-bold");
+	expect(stat.className).toContain("tabular-nums");
+});
+
+test("no stat when ownedCount omitted (browse mode)", async () => {
 	await renderInRouter(<SetTile seriesSlug="base" set={set} />);
 	expect(screen.queryByText(/\/120/)).toBeNull();
+	expect(screen.queryByText(/% complete/i)).toBeNull();
 });
 
-test("logo img has max-w-full and object-contain classes", async () => {
-	const { container } = await renderInRouter(
-		<SetTile seriesSlug="base" set={set} ownedCount={3} />,
-	);
-	const logo = container.querySelector(
-		"img.booster-pack-logo",
-	) as HTMLImageElement;
-	expect(logo).not.toBeNull();
-	expect(logo.className).toContain("max-w-full");
+test("renders the crisp logo with the set name as alt + object-contain", async () => {
+	await renderInRouter(<SetTile seriesSlug="base" set={set} ownedCount={3} />);
+	const logo = screen.getByAltText("Base") as HTMLImageElement;
+	expect(logo.src).toContain("l.png");
 	expect(logo.className).toContain("object-contain");
 });
 
-test("root link has w-full max-w-full classes", async () => {
+test("renders a completion ring (svg) when ownedCount provided", async () => {
 	const { container } = await renderInRouter(
 		<SetTile seriesSlug="base" set={set} ownedCount={3} />,
 	);
-	const link = container.querySelector("a.booster-pack") as HTMLAnchorElement;
-	expect(link).not.toBeNull();
-	expect(link.className).toContain("w-full");
-	expect(link.className).toContain("max-w-full");
+	expect(container.querySelector("svg")).not.toBeNull();
 });
 
-test("badge count uses large bold tabular-nums styling", async () => {
-	await renderInRouter(<SetTile seriesSlug="base" set={set} ownedCount={3} />);
-	const badge = screen.getByText("3/120");
-	expect(badge.className).toContain("text-3xl");
-	expect(badge.className).toContain("font-bold");
-	expect(badge.className).toContain("tabular-nums");
+test("root link is a rounded glass tile with an accessible label", async () => {
+	const { container } = await renderInRouter(
+		<SetTile seriesSlug="base" set={set} ownedCount={3} />,
+	);
+	const link = container.querySelector("a") as HTMLAnchorElement;
+	expect(link).not.toBeNull();
+	expect(link.className).toContain("rounded-2xl");
+	expect(link.getAttribute("aria-label")).toBe("Browse Base");
+});
+
+test("vaultLink routes to the vault per-set page", async () => {
+	const { container } = await renderInRouter(
+		<SetTile seriesSlug="base" set={set} ownedCount={3} vaultLink />,
+	);
+	const link = container.querySelector("a") as HTMLAnchorElement;
+	expect(link.getAttribute("aria-label")).toBe("View vault for Base");
 });
