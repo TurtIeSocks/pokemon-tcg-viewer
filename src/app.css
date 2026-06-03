@@ -193,3 +193,56 @@
 		animation: none !important;
 	}
 }
+
+/* ── Liquid Glass motion ──────────────────────────────────────────── */
+@keyframes lg-rise {
+	to {
+		opacity: 1;
+		transform: none;
+		filter: blur(0);
+	}
+}
+@keyframes lg-shimmer {
+	100% {
+		transform: translateX(100%);
+	}
+}
+/* Entrance choreography: add `.stagger` to a parent; direct children rise in sequence. */
+.stagger > * {
+	opacity: 0;
+	transform: translateY(18px);
+	filter: blur(6px);
+	animation: lg-rise 0.8s var(--ease) forwards;
+}
+.stagger > *:nth-child(1) { animation-delay: 0.04s; }
+.stagger > *:nth-child(2) { animation-delay: 0.12s; }
+.stagger > *:nth-child(3) { animation-delay: 0.2s; }
+.stagger > *:nth-child(4) { animation-delay: 0.28s; }
+.stagger > *:nth-child(5) { animation-delay: 0.36s; }
+.stagger > *:nth-child(6) { animation-delay: 0.44s; }
+/* Loading: shimmer sweep, never a spinner. */
+.skel {
+	position: relative;
+	overflow: hidden;
+	background: var(--glass-2);
+	border-radius: 8px;
+}
+.skel::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	transform: translateX(-100%);
+	background: linear-gradient(90deg, transparent, var(--primary-wash), transparent);
+	animation: lg-shimmer 1.8s var(--ease) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+	.stagger > * {
+		opacity: 1;
+		transform: none;
+		filter: none;
+		animation: none;
+	}
+	.skel::after {
+		animation: none;
+	}
+}
