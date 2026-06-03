@@ -13,6 +13,7 @@ const defaultValue: ListSearch = {
 	owned: "all",
 	yearMin: null,
 	yearMax: null,
+	exact: false,
 };
 
 const options = {
@@ -173,6 +174,50 @@ test("existing controls (q input + filter selects + owned) still render", () => 
 		/>,
 	);
 	expect(screen.getByRole("searchbox")).toBeDefined();
+});
+
+// ─── Match-mode (fuzzy/exact) toggle ──────────────────────────────────────────
+
+test("match-mode toggle renders, reflecting exact=false as Fuzzy active", () => {
+	render(
+		<SearchControls
+			value={defaultValue}
+			options={options}
+			onChange={() => {}}
+		/>,
+	);
+	expect(
+		screen.getByRole("button", { name: "Fuzzy" }).getAttribute("aria-pressed"),
+	).toBe("true");
+	expect(
+		screen.getByRole("button", { name: "Exact" }).getAttribute("aria-pressed"),
+	).toBe("false");
+});
+
+test("clicking Exact fires onChange with exact:true", () => {
+	const onChange = mock(() => {});
+	render(
+		<SearchControls
+			value={defaultValue}
+			options={options}
+			onChange={onChange}
+		/>,
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Exact" }));
+	expect(onChange).toHaveBeenCalledWith({ exact: true });
+});
+
+test("clicking Fuzzy fires onChange with exact:false", () => {
+	const onChange = mock(() => {});
+	render(
+		<SearchControls
+			value={{ ...defaultValue, exact: true }}
+			options={options}
+			onChange={onChange}
+		/>,
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Fuzzy" }));
+	expect(onChange).toHaveBeenCalledWith({ exact: false });
 });
 
 test("yearMin value reflects prop", () => {

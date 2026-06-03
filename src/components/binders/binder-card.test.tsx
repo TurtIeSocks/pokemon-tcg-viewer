@@ -67,6 +67,7 @@ function makeBinder(overrides: Partial<Binder> = {}): Binder {
 					subtypes: [],
 					yearMin: null,
 					yearMax: null,
+					exact: false,
 				},
 			},
 		],
@@ -169,6 +170,7 @@ test("renders rules and cards counts line", async () => {
 					subtypes: [],
 					yearMin: null,
 					yearMax: null,
+					exact: false,
 				},
 			},
 			{
@@ -183,6 +185,7 @@ test("renders rules and cards counts line", async () => {
 					subtypes: [],
 					yearMin: null,
 					yearMax: null,
+					exact: false,
 				},
 			},
 		],

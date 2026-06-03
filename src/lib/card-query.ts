@@ -17,6 +17,8 @@ export interface ListSearch {
 	yearMin: number | null;
 	/** Inclusive upper bound on release year (YYYY). Null → no upper bound. */
 	yearMax: number | null;
+	/** When true, search by exact/substring only — no typo-tolerant fuzzy matching. */
+	exact: boolean;
 }
 
 /** Page context: which entity the list is anchored to. */
@@ -45,6 +47,7 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 
 	const yearMin = s.yearMin ?? undefined;
 	const yearMax = s.yearMax ?? undefined;
+	const exact = s.exact;
 
 	if (ctx.setId != null) {
 		return {
@@ -53,6 +56,7 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 			filters,
 			yearMin,
 			yearMax,
+			exact,
 			relevance: false,
 		};
 	}
@@ -63,8 +67,17 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 			filters,
 			yearMin,
 			yearMax,
+			exact,
 			relevance: false,
 		};
 	}
-	return { setId: null, query, filters, yearMin, yearMax, relevance: !!query };
+	return {
+		setId: null,
+		query,
+		filters,
+		yearMin,
+		yearMax,
+		exact,
+		relevance: !!query,
+	};
 }

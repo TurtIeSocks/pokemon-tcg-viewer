@@ -41,3 +41,23 @@ test("yearMin/yearMax: full round-trip serialize → parse", () => {
 	expect(parsed.yearMin).toBe(1999);
 	expect(parsed.yearMax).toBe(2006);
 });
+
+test("exact: defaults to false", () => {
+	expect(validateListSearch({}).exact).toBe(false);
+});
+
+test("exact: validates from URL string and boolean", () => {
+	expect(validateListSearch({ exact: "true" }).exact).toBe(true);
+	expect(validateListSearch({ exact: true }).exact).toBe(true);
+	expect(validateListSearch({ exact: "false" }).exact).toBe(false);
+	expect(validateListSearch({ exact: "junk" }).exact).toBe(false);
+});
+
+test("exact: true → 'true' in URL, false → omitted (stays default-stripped)", () => {
+	expect(listSearchToUrl({ exact: true }).exact).toBe("true");
+	expect(listSearchToUrl({ exact: false }).exact).toBeUndefined();
+});
+
+test("exact: full round-trip serialize → parse", () => {
+	expect(validateListSearch(listSearchToUrl({ exact: true })).exact).toBe(true);
+});

@@ -56,6 +56,7 @@ const capturableRule = {
 	subtypes: [],
 	yearMin: null,
 	yearMax: null,
+	exact: false,
 };
 
 const emptyRule = {
@@ -68,6 +69,7 @@ const emptyRule = {
 	subtypes: [],
 	yearMin: null,
 	yearMax: null,
+	exact: false,
 };
 
 // Spy references — set in beforeEach, restored in afterEach.

@@ -15,6 +15,8 @@ export interface CorpusQuery {
 	yearMin?: number | null;
 	/** Inclusive upper bound on release year (YYYY). Null/undefined → no upper bound. */
 	yearMax?: number | null;
+	/** When true, drop typo-tolerant fuzzy matching — only exact/prefix/substring name hits. */
+	exact?: boolean;
 	/** True for global name search (relevance order); false for set/dex (natural order). */
 	relevance: boolean;
 }
@@ -128,7 +130,12 @@ export function queryCorpus(
 		}
 		let match: NameMatch | null = null;
 		if (hasName) {
-			match = matchName(queryNorm, index.nameNorm[i], index.nameTokens[i]);
+			match = matchName(
+				queryNorm,
+				index.nameNorm[i],
+				index.nameTokens[i],
+				q.exact ?? false,
+			);
 			if (!match) continue;
 		}
 		hits.push({ card, i, match });

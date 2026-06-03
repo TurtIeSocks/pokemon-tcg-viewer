@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/select";
 import type { SetFacets } from "@/server/set-facets";
 import type { ListSearch, OwnedMode } from "../../lib/card-query";
+import { MatchModeToggle } from "./match-mode-toggle";
 
 interface SearchControlsProps {
 	value: ListSearch;
@@ -62,13 +63,20 @@ export function SearchControls({
 }: SearchControlsProps) {
 	return (
 		<div className="space-y-3">
-			<Input
-				type="search"
-				defaultValue={value.q}
-				placeholder={`${placeholder}...`}
-				aria-label={placeholder}
-				onChange={(e) => onChange({ q: e.target.value })}
-			/>
+			<div className="flex flex-wrap items-center gap-2">
+				<Input
+					type="search"
+					defaultValue={value.q}
+					placeholder={`${placeholder}...`}
+					aria-label={placeholder}
+					onChange={(e) => onChange({ q: e.target.value })}
+					className="min-w-0 flex-1"
+				/>
+				<MatchModeToggle
+					value={value.exact}
+					onChange={(exact) => onChange({ exact })}
+				/>
+			</div>
 			<div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
 				<FilterSelect
 					label="Card Type"
