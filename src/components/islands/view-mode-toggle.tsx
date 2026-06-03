@@ -8,8 +8,8 @@ interface ViewModeToggleProps {
 
 // Pill-button base: shared across both mode buttons
 const btnBase =
-	"px-[0.85rem] py-[0.35rem] bg-transparent border-none rounded-full text-[0.85rem] cursor-pointer transition-[background,color] duration-[120ms] ease-out text-white/65 hover:not-disabled:text-white/95 disabled:opacity-40 disabled:cursor-not-allowed";
-const btnActive = "bg-[rgba(120,100,255,0.25)] text-white";
+	"px-3 py-1.5 bg-transparent border-none rounded-[var(--r-pill)] text-sm cursor-pointer transition-[background,color] duration-[120ms] ease-out text-[var(--ink-muted)] hover:text-[var(--ink)] disabled:opacity-40 disabled:cursor-not-allowed";
+const btnActive = "bg-[var(--primary)] text-[var(--primary-ink)] font-semibold";
 
 export function ViewModeToggle({
 	value,
@@ -20,7 +20,7 @@ export function ViewModeToggle({
 	// useSemanticElements rule. Tailwind resets fieldset default border/padding/margin/min-inline-size.
 	return (
 		<fieldset
-			className="inline-flex gap-1 p-1 bg-white/5 border border-white/10 rounded-full m-0 min-w-0"
+			className="inline-flex rounded-[var(--r-pill)] bg-[var(--glass)] border border-[var(--border)] p-0.5 m-0 min-w-0"
 			aria-label="View mode"
 		>
 			<button

@@ -13,6 +13,7 @@ import {
 } from "../components/islands/card-selection";
 import { SearchControls } from "../components/islands/search-controls";
 import { ViewModeToggle } from "../components/islands/view-mode-toggle";
+import { Eyebrow } from "../components/ui/eyebrow";
 import { BulkAddMenu } from "../components/vault/bulk-add-menu";
 import { buildCorpusQuery } from "../lib/card-query";
 import { cardModalLinkProps } from "../lib/card-route";
@@ -142,11 +143,14 @@ function SearchPageInner({
 	return (
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
 			<div className="mb-3 flex items-center gap-3">
-				<h1 className="text-xl font-bold">
-					{q ? `Results for "${q}"` : "Search"}
-				</h1>
+				<div className="flex flex-col gap-0.5">
+					{q && <Eyebrow>Search results</Eyebrow>}
+					<h1 className="text-xl font-[var(--font-display)] font-bold leading-tight">
+						{q ? `"${q}"` : "Search"}
+					</h1>
+				</div>
 				{q ? (
-					<span className="text-sm text-muted-foreground">{total} cards</span>
+					<span className="text-sm text-[var(--ink-muted)]">{total} cards</span>
 				) : null}
 				<div className="ml-auto flex items-center gap-2">
 					{q ? (

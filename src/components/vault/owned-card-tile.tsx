@@ -33,7 +33,7 @@ export function OwnedCardTile({ row }: OwnedCardTileProps) {
 				cardNumber={row.card.cardNumber}
 			/>
 			{row.count > 1 && (
-				<span className="absolute bottom-1 right-1 flex h-6 min-w-6 items-center justify-center rounded-full bg-black/70 px-1.5 text-xs font-bold text-white">
+				<span className="absolute bottom-1 right-1 flex h-6 min-w-6 items-center justify-center rounded-[var(--r-pill)] bg-[var(--success)] px-1.5 text-xs font-bold text-[var(--primary-ink)]">
 					×{row.count}
 				</span>
 			)}
@@ -44,7 +44,7 @@ export function OwnedCardTile({ row }: OwnedCardTileProps) {
 		return (
 			<Link
 				{...cardManageLinkPropsFor(p)}
-				className="relative block w-full text-left"
+				className="relative block w-full text-left rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-wash)]"
 				aria-label={`Manage copies of ${row.card.name}`}
 			>
 				{inner}
