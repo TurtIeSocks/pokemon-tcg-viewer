@@ -89,7 +89,7 @@ export function CardModal({
 				 */}
 				<div
 					className={[
-						"flex w-[200%]",
+						"flex w-[200%] items-start",
 						"transition-transform duration-300 ease-out",
 						"motion-reduce:transition-none",
 						isManage ? "-translate-x-1/2" : "translate-x-0",

@@ -91,12 +91,12 @@ test("manage=true: manager face is active (track has -translate-x-1/2)", async (
 	expect(track?.className).not.toContain("translate-x-0");
 });
 
-test("manage=true: 'Back to Pokémon' button is present and not aria-hidden", async () => {
+test("manage=true: 'Card Details' button is present and not aria-hidden", async () => {
 	await renderInRouter(
 		<CardModal card={CARD} crossLinks={[]} onClose={() => {}} manage={true} />,
 	);
 
-	const backBtn = screen.getByRole("button", { name: /back to pokémon/i });
+	const backBtn = screen.getByRole("button", { name: /card details/i });
 	expect(backBtn).not.toBeNull();
 
 	// The panel containing the back button must not itself be aria-hidden

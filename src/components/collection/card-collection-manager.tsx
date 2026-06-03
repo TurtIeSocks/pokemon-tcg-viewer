@@ -58,7 +58,7 @@ export function CardCollectionManager({
 		.join(" · ");
 
 	return (
-		<div className="flex flex-col gap-0 w-full min-h-full">
+		<div className="flex flex-col gap-0 w-full">
 			{/* ── Top bar ─────────────────────────────────────────────────────── */}
 			<div
 				className={[
@@ -70,7 +70,7 @@ export function CardCollectionManager({
 				<button
 					type="button"
 					onClick={onBack}
-					aria-label="Back to Pokémon"
+					aria-label="Card details"
 					className={[
 						"inline-flex items-center gap-2 shrink-0",
 						"min-h-[44px] min-w-[44px] px-3 -ml-3 rounded-lg",
@@ -81,7 +81,7 @@ export function CardCollectionManager({
 					].join(" ")}
 				>
 					<ArrowLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
-					<span>Back to Pokémon</span>
+					<span>Card Details</span>
 				</button>
 			</div>
 

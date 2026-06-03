@@ -65,6 +65,10 @@ export function cardModalLinkPropsFor(p: CardRouteParams): LinkProps {
 		state: (prev: Record<string, unknown>) => ({
 			...prev,
 			cardOverlay: `${p.series}/${p.set}/${p.card}`,
+			// Explicitly clear the manage flag: navigating manage → detail must drop
+			// it, otherwise the spread keeps `cardManage: true` and the overlay never
+			// leaves the manage face ("Back to Pokémon" appears to do nothing).
+			cardManage: false,
 		}),
 		mask: { to: "/$series/$set/$card", params: p },
 	} as LinkProps;

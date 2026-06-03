@@ -40,7 +40,7 @@ test("Back to Pokémon button calls onBack", () => {
 			}}
 		/>,
 	);
-	fireEvent.click(screen.getByRole("button", { name: /back to pokémon/i }));
+	fireEvent.click(screen.getByRole("button", { name: /card details/i }));
 	expect(backCalls).toBe(1);
 });
 

@@ -31,17 +31,31 @@ export function CopyManager({ cardId, variants }: CopyManagerProps) {
 				<h3 className="text-sm font-semibold text-muted-foreground">
 					Your copies ({copies.length})
 				</h3>
-				{!addOpen && (
-					<Button
-						size="sm"
-						onClick={() => setAddOpen(true)}
-						className="gap-1.5"
-						aria-label="Add copy"
-					>
-						<Plus className="h-4 w-4" aria-hidden="true" />
-						Add copy
-					</Button>
-				)}
+				<div className="flex items-center gap-2">
+					{copies.length > 0 && (
+						<Button
+							variant="destructive"
+							size="sm"
+							onClick={handleRemoveAll}
+							className="gap-1.5"
+							aria-label="Remove all copies"
+						>
+							<Trash2 className="h-4 w-4" aria-hidden="true" />
+							Remove all
+						</Button>
+					)}
+					{!addOpen && (
+						<Button
+							size="sm"
+							onClick={() => setAddOpen(true)}
+							className="gap-1.5"
+							aria-label="Add copy"
+						>
+							<Plus className="h-4 w-4" aria-hidden="true" />
+							Add copy
+						</Button>
+					)}
+				</div>
 			</div>
 
 			{/* Create-mode form — shown when Add copy is clicked */}
@@ -68,22 +82,6 @@ export function CopyManager({ cardId, variants }: CopyManagerProps) {
 					{copies.map((item) => (
 						<CopyRow key={item.id} item={item} variants={variants} />
 					))}
-				</div>
-			)}
-
-			{/* Destructive remove-all — visually separated at the bottom */}
-			{copies.length > 0 && (
-				<div className="border-t pt-3">
-					<Button
-						variant="destructive"
-						size="sm"
-						onClick={handleRemoveAll}
-						className="gap-1.5 w-full"
-						aria-label="Remove all copies"
-					>
-						<Trash2 className="h-4 w-4" aria-hidden="true" />
-						Remove all copies
-					</Button>
 				</div>
 			)}
 		</div>
