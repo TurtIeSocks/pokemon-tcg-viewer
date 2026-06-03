@@ -67,7 +67,7 @@ export function VaultOverviewInner({ tree }: { tree: NavTree }) {
 				<h1 className="font-display text-[clamp(2rem,4.5vw,2.75rem)] font-semibold leading-none tracking-tight text-[var(--ink)]">
 					Collection
 				</h1>
-				<p className="text-[15px] text-[var(--muted)]">
+				<p className="text-[15px] text-[var(--ink-muted)]">
 					Every copy you own, joined live to the corpus.
 				</p>
 			</div>
@@ -105,7 +105,7 @@ export function VaultOverviewInner({ tree }: { tree: NavTree }) {
 					</div>
 				) : (
 					<GlassPanel className="py-10 text-center">
-						<p className="text-[var(--muted)]">
+						<p className="text-[var(--ink-muted)]">
 							No cards yet —{" "}
 							<Link to="/" className="text-[var(--primary)] hover:underline">
 								browse a set
@@ -133,7 +133,7 @@ export function VaultOverviewInner({ tree }: { tree: NavTree }) {
 
 				{binders.length === 0 ? (
 					<GlassPanel className="py-10 text-center space-y-3">
-						<p className="text-[var(--muted)]">
+						<p className="text-[var(--ink-muted)]">
 							No binders yet — create one to organize your collection.
 						</p>
 						<Button
