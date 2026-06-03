@@ -5,7 +5,7 @@
 - **Scope:** Whole-app cohesive redesign (Scope A) — one design language, end to end.
 - **Governing skills:** `redesign-existing-projects`, `high-end-visual-design`, `tailwind-design-system`, `liquid-glass-design`.
 - **Supersedes:** the ad-hoc visual direction across prior docs (`2026-05-30-design-revamp`, `2026-06-01-card-detail-redesign`, `2026-05-30-home-hero-redesign`). Those remain valid for *behavior/layout*; this doc is the single source of truth for *visual language* (tokens, type, glass, motion).
-- **Visual reference mocks:** `.superpowers/brainstorm/85187-1780513603/content/` — `orientation`, `fonts`, `accent`, `palette`, `vault-hub`, `sidebar-inset`, `card-manage`.
+- **Visual reference mocks:** `.superpowers/brainstorm/85187-1780513603/content/` — `orientation`, `fonts`, `accent`, `palette`, `vault-hub`, `sidebar-inset`, `card-manage`; the source `control-room.{html,css}` (Ethereal Glass origin) lives in the same dir. (Dir is gitignored — local reference scratch.)
 
 ---
 
@@ -39,7 +39,7 @@ These are complementary, not competing: chrome-glass is **fixed-palette** (viole
 | Data/number font | **Geist Mono** (tabular) |
 | Retired fonts | **Newsreader**, **JetBrains Mono** |
 | Brand accent | **Violet** `oklch(0.70 0.19 295)` |
-| Canvas | **Whisper-violet near-neutral** `oklch(0.14 0.014 290)` (almost no chroma) — *not* flat purple |
+| Canvas | **Whisper-violet near-neutral** `oklch(0.12 0.012 290)` (almost no chroma) — *not* flat purple; darker so the inset shell's floating panels separate |
 | Completion rings / progress | **Violet** (brand) |
 | "Owned" state | **Emerald** `--success` (reserved, not violet) |
 | Shell sidebar | Adopt **shadcn `sidebar-04` (inset variant)**, re-skinned to glass; retire hand-rolled `sidebar-collapsible.tsx` |
@@ -54,13 +54,13 @@ Single source of truth: `src/app.css` `:root` (primitive values) + `@theme inlin
 ### 4.1 Surfaces
 
 ```css
---canvas:  oklch(0.14  0.014 290);  /* page base — whisper-violet near-black */
+--canvas:  oklch(0.12  0.012 290);  /* page/tray base — whisper-violet near-black */
 --bg:      oklch(0.175 0.017 290);  /* solid panel base (bezel core) */
 --card:    oklch(1 0 0 / 0.045);    /* glass fill */
 --card-2:  oklch(1 0 0 / 0.07);     /* raised glass fill */
 ```
 
-The inset shell MAY darken the outer "tray" to `oklch(0.12 0.012 290)` so floating panels separate; both values were validated in the mocks. Implementer's call.
+Canvas is the dominant surface (the whole app sits in the inset shell — §9 — so the "tray" backdrop is what you see most). Kept dark (`0.12`) so the floating glass panels separate cleanly. A rare full-bleed screen may lift its own surface toward `0.14` if it reads too dark.
 
 ### 4.2 Text
 
@@ -279,9 +279,9 @@ Ordered so each phase is independently shippable and the app never breaks visual
 - **Light mode** — app is dark-only; a light theme is a future token set, not this pass.
 - New features. (If a surface is missing a state the redesign exposes, note it; don't build new behavior here.)
 
-## 17. Open questions
+## 17. Resolved during review (2026-06-03)
 
-None blocking. Deferred, low-stakes:
+- **Fonts:** self-host **all three** (Clash Display, Space Grotesk, Geist Mono) as woff2. JetBrains Mono + Newsreader retired — no fallback hedge.
+- **Inset-tray darkness:** `--canvas: oklch(0.12 0.012 290)` — darker tray so the inset shell's floating glass panels separate. Full-bleed screens may lift their own surface toward `0.14` if needed.
 
-- Self-hosting **Geist Mono** vs keeping the already-self-hosted **JetBrains Mono** — spec says Geist (matches approved mocks); if self-hosting friction appears, JetBrains is an acceptable fallback (both tabular monos). Flag at Phase 0.
-- Exact inset-tray darkness (`--canvas` 0.14 vs 0.12 behind floating panels) — pick during Phase 2 against the real shell.
+No open questions remain.
