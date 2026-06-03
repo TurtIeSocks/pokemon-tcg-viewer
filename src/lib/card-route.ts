@@ -9,6 +9,13 @@ declare module "@tanstack/react-router" {
 		 * cold load of the canonical URL (which renders the full page instead).
 		 */
 		cardOverlay?: string;
+		/**
+		 * Set to `true` when the overlay should show the manage (collection) face
+		 * instead of card detail. URL is masked to `/$series/$set/$card/manage`.
+		 * A cold load of that URL has no state and falls through to the real
+		 * `$card_/manage` route.
+		 */
+		cardManage?: boolean;
 	}
 }
 
@@ -58,6 +65,10 @@ export function cardModalLinkPropsFor(p: CardRouteParams): LinkProps {
 		state: (prev: Record<string, unknown>) => ({
 			...prev,
 			cardOverlay: `${p.series}/${p.set}/${p.card}`,
+			// Explicitly clear the manage flag: navigating manage → detail must drop
+			// it, otherwise the spread keeps `cardManage: true` and the overlay never
+			// leaves the manage face ("Back to Pokémon" appears to do nothing).
+			cardManage: false,
 		}),
 		mask: { to: "/$series/$set/$card", params: p },
 	} as LinkProps;
@@ -70,4 +81,33 @@ export function cardModalLinkProps(
 ): LinkProps | null {
 	const p = cardRouteParams(idx, card);
 	return p ? cardModalLinkPropsFor(p) : null;
+}
+
+/**
+ * In-app overlay navigation that opens the manage (collection) face over the
+ * current page. Identical to {@link cardModalLinkPropsFor} but also sets
+ * `state.cardManage = true` and masks the URL to `/$series/$set/$card/manage`.
+ * The root overlay reads both state keys; a cold load of the masked URL falls
+ * through to the real `$card_/manage` route.
+ */
+export function cardManageLinkPropsFor(p: CardRouteParams): LinkProps {
+	return {
+		to: ".",
+		search: (prev: Record<string, unknown>) => prev,
+		state: (prev: Record<string, unknown>) => ({
+			...prev,
+			cardOverlay: `${p.series}/${p.set}/${p.card}`,
+			cardManage: true,
+		}),
+		mask: { to: "/$series/$set/$card/manage", params: p },
+	} as LinkProps;
+}
+
+/** {@link cardManageLinkPropsFor} resolved from a slug index, or null. */
+export function cardManageLinkProps(
+	idx: SlugIndex,
+	card: { id: string; setId: string },
+): LinkProps | null {
+	const p = cardRouteParams(idx, card);
+	return p ? cardManageLinkPropsFor(p) : null;
 }

@@ -1,4 +1,6 @@
+import { Pencil, Star, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { CollectionItem } from "../../store/userland/types";
 import {
@@ -27,19 +29,17 @@ function hasNonNullOptional(item: CollectionItem): boolean {
 	);
 }
 
-/** Collapsible row showing a copy summary with expand-to-edit, set-primary, and delete actions. */
+/**
+ * Card tile showing a copy's distinguishing attributes as readable badges.
+ * A filled-star Primary toggle marks the primary copy with a gold ring.
+ * An explicit Edit button (not "click row to expand") reveals the inline CopyEditForm.
+ */
 export function CopyRow({ item, variants }: CopyRowProps) {
-	const [expanded, setExpanded] = useState(false);
+	const [editOpen, setEditOpen] = useState(false);
 
-	const summary = item.grading
+	const gradingLabel = item.grading
 		? `${item.grading.company} ${item.grading.grade}`
-		: [
-				dayMsToInput(item.acquiredAt),
-				item.pricePaid != null ? `$${item.pricePaid}` : null,
-				item.condition,
-			]
-				.filter(Boolean)
-				.join(" · ");
+		: null;
 
 	function handleDelete() {
 		if (hasNonNullOptional(item)) {
@@ -48,35 +48,122 @@ export function CopyRow({ item, variants }: CopyRowProps) {
 		void removeCopy(item.id);
 	}
 
+	function handleSetPrimary() {
+		void setPrimaryCopy(item.cardId, item.id);
+	}
+
 	return (
-		<div className="border rounded p-2 flex flex-col gap-2">
-			<div className="flex items-center gap-2">
-				<button
-					type="button"
-					className="flex-1 text-left text-sm"
-					onClick={() => setExpanded((e) => !e)}
-					aria-expanded={expanded}
-				>
-					{summary || dayMsToInput(item.acquiredAt)}
-				</button>
-				{item.isPrimary ? (
-					<span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
-						★ Primary
-					</span>
-				) : (
+		<div
+			className={[
+				"rounded-lg border p-3 flex flex-col gap-3 transition-colors duration-150",
+				item.isPrimary
+					? "border-[var(--accent,#e0b341)] bg-amber-950/20 dark:bg-amber-900/10"
+					: "border-border bg-card",
+			].join(" ")}
+		>
+			{/* Tile header: badges + action row */}
+			<div className="flex items-start gap-2 flex-wrap">
+				{/* Badge cluster */}
+				<div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
+					{/* Acquired date always shown */}
+					<Badge variant="outline" className="text-xs font-normal">
+						{dayMsToInput(item.acquiredAt)}
+					</Badge>
+
+					{/* Variant */}
+					{item.variant && (
+						<Badge variant="secondary" className="text-xs">
+							{item.variant}
+						</Badge>
+					)}
+
+					{/* Grading or condition */}
+					{gradingLabel ? (
+						<Badge className="text-xs bg-amber-600 text-white hover:bg-amber-700">
+							{gradingLabel}
+						</Badge>
+					) : item.condition ? (
+						<Badge variant="outline" className="text-xs">
+							{item.condition}
+						</Badge>
+					) : null}
+
+					{/* Price paid */}
+					{item.pricePaid != null && (
+						<Badge variant="outline" className="text-xs font-mono">
+							${item.pricePaid}
+						</Badge>
+					)}
+				</div>
+
+				{/* Actions: primary star, edit, delete */}
+				<div className="flex items-center gap-1 shrink-0">
+					{/* Primary star toggle */}
+					{item.isPrimary ? (
+						<span
+							role="img"
+							aria-label="Primary copy"
+							title="Primary copy"
+							className="inline-flex items-center justify-center h-8 w-8 text-amber-400"
+						>
+							<Star className="h-4 w-4 fill-current" aria-hidden="true" />
+						</span>
+					) : (
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className="h-8 w-8 text-muted-foreground hover:text-amber-400 transition-colors duration-150"
+							aria-label="Set as primary"
+							title="Set as primary"
+							onClick={handleSetPrimary}
+						>
+							<Star className="h-4 w-4" aria-hidden="true" />
+						</Button>
+					)}
+
+					{/* Edit button — explicit, discoverable */}
 					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => void setPrimaryCopy(item.cardId, item.id)}
+						type="button"
+						variant="ghost"
+						size="icon"
+						className="h-8 w-8"
+						aria-label={editOpen ? "Close editor" : "Edit"}
+						aria-expanded={editOpen}
+						title="Edit copy details"
+						onClick={() => setEditOpen((o) => !o)}
 					>
-						Set as primary
+						<Pencil className="h-4 w-4" aria-hidden="true" />
 					</Button>
-				)}
-				<Button variant="destructive" size="sm" onClick={handleDelete}>
-					Delete
-				</Button>
+
+					{/* Delete button */}
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon"
+						className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors duration-150"
+						aria-label="Delete"
+						title="Delete this copy"
+						onClick={handleDelete}
+					>
+						<Trash2 className="h-4 w-4" aria-hidden="true" />
+					</Button>
+				</div>
 			</div>
-			{expanded && <CopyEditForm item={item} variants={variants} />}
+
+			{/* Inline editor — revealed only after Edit is clicked */}
+			{editOpen && (
+				<div className="border-t pt-3">
+					<CopyEditForm
+						mode="edit"
+						item={item}
+						cardId={item.cardId}
+						variants={variants}
+						onSaved={() => setEditOpen(false)}
+						onCancel={() => setEditOpen(false)}
+					/>
+				</div>
+			)}
 		</div>
 	);
 }

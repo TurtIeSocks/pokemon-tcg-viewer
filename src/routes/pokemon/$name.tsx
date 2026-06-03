@@ -8,18 +8,24 @@ import {
 import { useCallback } from "react";
 import type { HoloCardData } from "../../components/holo-card";
 import { CardGridIsland } from "../../components/islands/card-grid-island";
+import {
+	CardSelectionProvider,
+	useCardSelection,
+} from "../../components/islands/card-selection";
 import { SearchControls } from "../../components/islands/search-controls";
 import { ViewModeToggle } from "../../components/islands/view-mode-toggle";
+import { BulkAddMenu } from "../../components/vault/bulk-add-menu";
 import { cardModalLinkProps } from "../../lib/card-route";
 import {
 	LIST_SEARCH_DEFAULTS,
 	listSearchToUrl,
 	validateListSearch,
 } from "../../lib/list-search";
+import { toSerializedQuery } from "../../lib/serialized-query";
 import { getPokemonListFn } from "../../server/card-data";
 import { getDexCardsFn } from "../../server/corpus-server";
 import { dexByName } from "../../server/pokemon-dex";
-import { deriveFacets } from "../../server/set-facets";
+import { deriveFacets, type SetFacets } from "../../server/set-facets";
 import { useSlugIndex } from "../../store/corpus/corpus-runtime";
 
 function titleCase(slug: string): string {
@@ -87,6 +93,45 @@ function PokemonPage() {
 	);
 
 	return (
+		<CardSelectionProvider>
+			<PokemonPageInner
+				display={display}
+				dex={dex}
+				cards={cards}
+				total={total}
+				search={search}
+				onChange={onChange}
+				options={options}
+				cardHref={cardHref}
+			/>
+		</CardSelectionProvider>
+	);
+}
+
+interface PokemonPageInnerProps {
+	display: string;
+	dex: number;
+	cards: HoloCardData[];
+	total: number;
+	search: ReturnType<typeof Route.useSearch>;
+	onChange: (patch: Parameters<typeof listSearchToUrl>[0]) => void;
+	options: SetFacets;
+	cardHref: (card: HoloCardData) => LinkProps;
+}
+
+function PokemonPageInner({
+	display,
+	dex,
+	cards,
+	total,
+	search,
+	onChange,
+	options,
+	cardHref,
+}: PokemonPageInnerProps) {
+	const { active, selected, toggleActive } = useCardSelection();
+
+	return (
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
 			<div className="mb-3 flex items-center gap-3">
 				<h1 className="text-xl font-bold">
@@ -95,7 +140,20 @@ function PokemonPage() {
 						{total} cards
 					</span>
 				</h1>
-				<div className="ml-auto">
+				<div className="ml-auto flex items-center gap-2">
+					<button
+						type="button"
+						aria-pressed={active}
+						onClick={toggleActive}
+						className="rounded border px-3 py-1.5 text-sm hover:bg-secondary"
+					>
+						{active ? "Done selecting" : "Select cards"}
+					</button>
+					<BulkAddMenu
+						cardIds={cards.map((c) => c.id)}
+						ruleQuery={toSerializedQuery(search, { dexNumber: dex })}
+						selectedCardIds={active ? [...selected] : undefined}
+					/>
 					<ViewModeToggle
 						value={search.view}
 						disabled={false}

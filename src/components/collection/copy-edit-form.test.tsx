@@ -1,4 +1,4 @@
-// copy-edit-form.test.tsx
+// copy-edit-form.test.tsx — draft→Save model
 import { beforeEach, expect, test } from "bun:test";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createIdbRepos } from "../../store/userland/idb-repo";
@@ -14,207 +14,311 @@ let repos = createIdbRepos();
 beforeEach(async () => {
 	repos = createIdbRepos();
 	await repos.collection.clear();
-	await repos.goals.clear();
+	await repos.binders.clear();
 	setUserlandRepos(repos);
 	resetUserlandForTests();
 });
 
-test("editing price and blurring persists a numeric pricePaid", async () => {
-	const item = await addCopy("c");
-	render(<CopyEditForm item={useUserland.getState().items[item.id]} />);
-	const price = screen.getByLabelText(/price/i);
-	fireEvent.change(price, { target: { value: "12.5" } });
-	fireEvent.blur(price);
-	await waitFor(() =>
-		expect(useUserland.getState().items[item.id].pricePaid).toBe(12.5),
-	);
-});
+// ── edit mode: draft → Save ──────────────────────────────────────────────────
 
-test("clearing price persists null", async () => {
-	const item = await addCopy("c", { pricePaid: 5 });
-	render(<CopyEditForm item={useUserland.getState().items[item.id]} />);
-	const price = screen.getByLabelText(/price/i);
-	fireEvent.change(price, { target: { value: "" } });
-	fireEvent.blur(price);
-	await waitFor(() =>
-		expect(useUserland.getState().items[item.id].pricePaid).toBeNull(),
-	);
-});
-
-test("negative price shows error and does not persist", async () => {
+test("edit: changing price does NOT update store until Save is clicked", async () => {
 	const item = await addCopy("c");
-	render(<CopyEditForm item={useUserland.getState().items[item.id]} />);
-	const price = screen.getByLabelText(/price/i);
-	fireEvent.change(price, { target: { value: "-3" } });
+	const onSaved = () => {};
+	const onCancel = () => {};
+	render(
+		<CopyEditForm
+			mode="edit"
+			item={useUserland.getState().items[item.id]}
+			cardId="c"
+			onSaved={onSaved}
+			onCancel={onCancel}
+		/>,
+	);
+	const price = screen.getByLabelText(/price paid/i);
+	fireEvent.change(price, { target: { value: "42" } });
 	fireEvent.blur(price);
-	await screen.findByText(/≥ 0|number/i);
+	// store must NOT be updated yet
 	expect(useUserland.getState().items[item.id].pricePaid).toBeNull();
-});
 
-test("switching to graded clears condition and reveals grader controls", async () => {
-	const item = await addCopy("c", { condition: "NM" });
-	render(<CopyEditForm item={useUserland.getState().items[item.id]} />);
-	fireEvent.click(screen.getByLabelText(/graded/i));
+	// now click Save
+	fireEvent.click(screen.getByRole("button", { name: /save/i }));
 	await waitFor(() =>
-		expect(useUserland.getState().items[item.id].condition).toBeNull(),
+		expect(useUserland.getState().items[item.id].pricePaid).toBe(42),
 	);
-	expect(screen.getByLabelText(/grader|company/i)).toBeDefined();
 });
 
-test("acquiredAt field: changing date and blurring persists the new date", async () => {
+test("edit: Cancel discards changes — store unchanged", async () => {
 	const item = await addCopy("c");
-	render(<CopyEditForm item={useUserland.getState().items[item.id]} />);
-	const dateInput = screen.getByLabelText(/acquired date/i);
-	fireEvent.change(dateInput, { target: { value: "2025-06-01" } });
-	fireEvent.blur(dateInput);
-	await waitFor(() =>
-		expect(useUserland.getState().items[item.id].acquiredAt).toBeGreaterThan(0),
+	let cancelled = false;
+	render(
+		<CopyEditForm
+			mode="edit"
+			item={useUserland.getState().items[item.id]}
+			cardId="c"
+			onSaved={() => {}}
+			onCancel={() => {
+				cancelled = true;
+			}}
+		/>,
 	);
+	const price = screen.getByLabelText(/price paid/i);
+	fireEvent.change(price, { target: { value: "99" } });
+	fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+	expect(useUserland.getState().items[item.id].pricePaid).toBeNull();
+	expect(cancelled).toBe(true);
 });
 
-test("acquiredAt invalid date shows error on blur", async () => {
-	const item = await addCopy("c");
-	render(<CopyEditForm item={useUserland.getState().items[item.id]} />);
-	const dateInput = screen.getByLabelText(/acquired date/i);
-	// Focus, change to invalid value, then blur to trigger validation
-	fireEvent.focus(dateInput);
-	fireEvent.change(dateInput, { target: { value: "9999-99-99" } });
-	fireEvent.blur(dateInput);
-	await waitFor(() =>
-		expect(screen.queryByText(/invalid date/i)).toBeDefined(),
-	);
-});
-
-test("notes field: typing and blurring persists notes value", async () => {
-	const item = await addCopy("c");
-	render(<CopyEditForm item={useUserland.getState().items[item.id]} />);
-	const notes = screen.getByLabelText(/notes/i);
-	fireEvent.change(notes, { target: { value: "Great condition" } });
-	fireEvent.blur(notes);
-	await waitFor(() =>
-		expect(useUserland.getState().items[item.id].notes).toBe("Great condition"),
-	);
-});
-
-test("notes field: clearing persists null", async () => {
-	const item = await addCopy("c", { notes: "old note" });
-	render(<CopyEditForm item={useUserland.getState().items[item.id]} />);
-	const notes = screen.getByLabelText(/notes/i);
-	fireEvent.change(notes, { target: { value: "" } });
-	fireEvent.blur(notes);
-	await waitFor(() =>
-		expect(useUserland.getState().items[item.id].notes).toBeNull(),
-	);
-});
-
-test("variant Select: selecting a variant persists it", async () => {
+test("edit: invalid price shows error text (not [object Object]) and has role=alert", async () => {
 	const item = await addCopy("c");
 	render(
 		<CopyEditForm
+			mode="edit"
 			item={useUserland.getState().items[item.id]}
-			variants={["Holo", "Reverse Holo"]}
+			cardId="c"
+			onSaved={() => {}}
+			onCancel={() => {}}
 		/>,
 	);
-	// Open the variant select trigger
+	const price = screen.getByLabelText(/price paid/i);
+	fireEvent.change(price, { target: { value: "-3" } });
+	fireEvent.blur(price);
+	const errorEl = await screen.findByRole("alert");
+	expect(errorEl.textContent).not.toBe("[object Object]");
+	expect(errorEl.textContent).toMatch(/≥ 0|number/i);
+	// store not updated
+	expect(useUserland.getState().items[item.id].pricePaid).toBeNull();
+});
+
+test("edit: invalid date shows error on blur with role=alert", async () => {
+	const item = await addCopy("c");
+	render(
+		<CopyEditForm
+			mode="edit"
+			item={useUserland.getState().items[item.id]}
+			cardId="c"
+			onSaved={() => {}}
+			onCancel={() => {}}
+		/>,
+	);
+	const dateInput = screen.getByLabelText(/acquired date/i);
+	fireEvent.focus(dateInput);
+	fireEvent.change(dateInput, { target: { value: "9999-99-99" } });
+	fireEvent.blur(dateInput);
+	await waitFor(() => {
+		const alertEl = screen.queryByRole("alert");
+		expect(alertEl).not.toBeNull();
+	});
+});
+
+test("edit: switching to graded reveals grader controls", async () => {
+	const item = await addCopy("c", { condition: "NM" });
+	render(
+		<CopyEditForm
+			mode="edit"
+			item={useUserland.getState().items[item.id]}
+			cardId="c"
+			onSaved={() => {}}
+			onCancel={() => {}}
+		/>,
+	);
+	fireEvent.click(screen.getByLabelText(/graded/i));
+	expect(screen.getByLabelText(/grader|company/i)).toBeDefined();
+});
+
+test("edit: invalid grade shows error text and has role=alert", async () => {
+	const item = await addCopy("c");
+	render(
+		<CopyEditForm
+			mode="edit"
+			item={useUserland.getState().items[item.id]}
+			cardId="c"
+			onSaved={() => {}}
+			onCancel={() => {}}
+		/>,
+	);
+	fireEvent.click(screen.getByLabelText(/graded/i));
+	await screen.findByLabelText(/grader|company/i);
+	const grade = screen.getByLabelText(/^grade$/i);
+	fireEvent.change(grade, { target: { value: "15" } });
+	fireEvent.blur(grade);
+	const errorEl = await screen.findByRole("alert");
+	expect(errorEl.textContent).not.toBe("[object Object]");
+	expect(errorEl.textContent).toMatch(/0[–-]10/i);
+});
+
+test("edit: Save persists notes", async () => {
+	const item = await addCopy("c");
+	let saved = false;
+	render(
+		<CopyEditForm
+			mode="edit"
+			item={useUserland.getState().items[item.id]}
+			cardId="c"
+			onSaved={() => {
+				saved = true;
+			}}
+			onCancel={() => {}}
+		/>,
+	);
+	const notes = screen.getByLabelText(/notes/i);
+	fireEvent.change(notes, { target: { value: "Great condition" } });
+	fireEvent.click(screen.getByRole("button", { name: /save/i }));
+	await waitFor(() =>
+		expect(useUserland.getState().items[item.id].notes).toBe("Great condition"),
+	);
+	expect(saved).toBe(true);
+});
+
+test("edit: variant Select: choosing a variant only persists on Save", async () => {
+	const item = await addCopy("c");
+	render(
+		<CopyEditForm
+			mode="edit"
+			item={useUserland.getState().items[item.id]}
+			cardId="c"
+			variants={["Holo", "Reverse Holo"]}
+			onSaved={() => {}}
+			onCancel={() => {}}
+		/>,
+	);
 	const trigger = screen.getAllByRole("combobox")[0];
 	fireEvent.click(trigger);
-	// Find the Holo option in the portal
 	const holoOption = await screen.findByRole("option", { name: "Holo" });
 	fireEvent.click(holoOption);
+	// pre-Save: store unchanged
+	expect(useUserland.getState().items[item.id].variant).toBeNull();
+	// Save
+	fireEvent.click(screen.getByRole("button", { name: /save/i }));
 	await waitFor(() =>
 		expect(useUserland.getState().items[item.id].variant).toBe("Holo"),
 	);
 });
 
-test("variant Select: selecting Unspecified clears variant", async () => {
-	const item = await addCopy("c", { variant: "Holo" });
+// ── create mode ─────────────────────────────────────────────────────────────
+
+test("create: Save calls addCopy and a new copy exists", async () => {
+	let saved = false;
 	render(
 		<CopyEditForm
-			item={useUserland.getState().items[item.id]}
-			variants={["Holo"]}
+			mode="create"
+			cardId="c"
+			onSaved={() => {
+				saved = true;
+			}}
+			onCancel={() => {}}
 		/>,
 	);
-	const trigger = screen.getAllByRole("combobox")[0];
-	fireEvent.click(trigger);
-	const noneOption = await screen.findByRole("option", {
-		name: /unspecified/i,
+	// form shows blank Save button (no item pre-filled)
+	expect(screen.getByRole("button", { name: /save/i })).toBeDefined();
+	// fill price
+	const price = screen.getByLabelText(/price paid/i);
+	fireEvent.change(price, { target: { value: "25" } });
+	// Save
+	fireEvent.click(screen.getByRole("button", { name: /save/i }));
+	await waitFor(() => {
+		const copies = Object.values(useUserland.getState().items).filter(
+			(i) => i.cardId === "c",
+		);
+		expect(copies).toHaveLength(1);
+		expect(copies[0].pricePaid).toBe(25);
 	});
-	fireEvent.click(noneOption);
-	await waitFor(() =>
-		expect(useUserland.getState().items[item.id].variant).toBeNull(),
-	);
+	expect(saved).toBe(true);
 });
 
-test("condition Select: selecting NM persists condition", async () => {
-	const item = await addCopy("c");
-	render(<CopyEditForm item={useUserland.getState().items[item.id]} />);
-	// Condition select is the second combobox (after variant)
+test("create: Cancel adds nothing", async () => {
+	let cancelled = false;
+	render(
+		<CopyEditForm
+			mode="create"
+			cardId="c"
+			onSaved={() => {}}
+			onCancel={() => {
+				cancelled = true;
+			}}
+		/>,
+	);
+	const price = screen.getByLabelText(/price paid/i);
+	fireEvent.change(price, { target: { value: "10" } });
+	fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+	expect(
+		Object.values(useUserland.getState().items).filter((i) => i.cardId === "c"),
+	).toHaveLength(0);
+	expect(cancelled).toBe(true);
+});
+
+test("create: invalid input shows error and blocks Save", async () => {
+	render(
+		<CopyEditForm
+			mode="create"
+			cardId="c"
+			onSaved={() => {}}
+			onCancel={() => {}}
+		/>,
+	);
+	const price = screen.getByLabelText(/price paid/i);
+	fireEvent.change(price, { target: { value: "-5" } });
+	fireEvent.blur(price);
+	const errorEl = await screen.findByRole("alert");
+	expect(errorEl.textContent).not.toBe("[object Object]");
+	// no copy added
+	expect(
+		Object.values(useUserland.getState().items).filter((i) => i.cardId === "c"),
+	).toHaveLength(0);
+});
+
+test("create: condition Select selecting NM is persisted on Save", async () => {
+	render(
+		<CopyEditForm
+			mode="create"
+			cardId="c"
+			onSaved={() => {}}
+			onCancel={() => {}}
+		/>,
+	);
+	// default state is raw; condition select should be visible
 	const triggers = screen.getAllByRole("combobox");
-	// variant is [0], condition is next after variant — but only when state=raw
-	// find the trigger labeled "Condition"
-	const conditionTrigger = triggers.find((t) => {
-		// find the trigger whose closest label is "Condition"
-		const id = t.getAttribute("id");
-		return id === "condition";
-	});
-	if (!conditionTrigger) {
-		// fallback: use the second combobox (variant=0, condition=1)
-		fireEvent.click(triggers[1]);
-	} else {
-		fireEvent.click(conditionTrigger);
-	}
+	// find condition trigger by id
+	const conditionTrigger =
+		triggers.find((t) => t.getAttribute("id") === "condition") ?? triggers[1];
+	fireEvent.click(conditionTrigger);
 	const nmOption = await screen.findByRole("option", { name: "NM" });
 	fireEvent.click(nmOption);
-	await waitFor(() =>
-		expect(useUserland.getState().items[item.id].condition).toBe("NM"),
-	);
+	fireEvent.click(screen.getByRole("button", { name: /save/i }));
+	await waitFor(() => {
+		const copies = Object.values(useUserland.getState().items).filter(
+			(i) => i.cardId === "c",
+		);
+		expect(copies).toHaveLength(1);
+		expect(copies[0].condition).toBe("NM");
+	});
 });
 
-test("gradingCompany Select: selecting PSA persists grading with company", async () => {
-	const item = await addCopy("c");
-	render(<CopyEditForm item={useUserland.getState().items[item.id]} />);
-	// Switch to graded
+test("create: graded copy with PSA+9 is persisted on Save", async () => {
+	render(
+		<CopyEditForm
+			mode="create"
+			cardId="c"
+			onSaved={() => {}}
+			onCancel={() => {}}
+		/>,
+	);
 	fireEvent.click(screen.getByLabelText(/graded/i));
 	await screen.findByLabelText(/grader|company/i);
-	// Open the grading company select (aria-label "Grader / company")
 	const companyTrigger = screen.getByRole("combobox", {
 		name: /grader|company/i,
 	});
 	fireEvent.click(companyTrigger);
 	const psaOption = await screen.findByRole("option", { name: "PSA" });
 	fireEvent.click(psaOption);
-	// With grade empty, grading.company="PSA" but grade=0 or grading remains null
-	// The onValueChange calls updateCopy with { grading: { company: "PSA", grade: 0 } }
+	const gradeInput = screen.getByLabelText(/^grade$/i);
+	fireEvent.change(gradeInput, { target: { value: "9" } });
+	fireEvent.click(screen.getByRole("button", { name: /save/i }));
 	await waitFor(() => {
-		const g = useUserland.getState().items[item.id].grading;
-		expect(g?.company).toBe("PSA");
+		const copies = Object.values(useUserland.getState().items).filter(
+			(i) => i.cardId === "c",
+		);
+		expect(copies).toHaveLength(1);
+		expect(copies[0].grading?.company).toBe("PSA");
+		expect(copies[0].grading?.grade).toBe(9);
 	});
-});
-
-test("graded: setting grade and blurring persists grading", async () => {
-	const item = await addCopy("c");
-	render(<CopyEditForm item={useUserland.getState().items[item.id]} />);
-	// Switch to graded mode
-	fireEvent.click(screen.getByLabelText(/graded/i));
-	// Wait for grader controls to appear
-	await screen.findByLabelText(/grader|company/i);
-	const grade = screen.getByLabelText(/^grade$/i);
-	fireEvent.change(grade, { target: { value: "9" } });
-	fireEvent.blur(grade);
-	// Grade with no company → grading null (company is empty)
-	await waitFor(() =>
-		expect(useUserland.getState().items[item.id].grading).toBeNull(),
-	);
-});
-
-test("invalid grade shows error and does not persist", async () => {
-	const item = await addCopy("c");
-	render(<CopyEditForm item={useUserland.getState().items[item.id]} />);
-	fireEvent.click(screen.getByLabelText(/graded/i));
-	await screen.findByLabelText(/grader|company/i);
-	const grade = screen.getByLabelText(/^grade$/i);
-	fireEvent.change(grade, { target: { value: "15" } });
-	fireEvent.blur(grade);
-	await screen.findByText(/0[–-]10/i);
-	expect(useUserland.getState().items[item.id].grading).toBeNull();
 });

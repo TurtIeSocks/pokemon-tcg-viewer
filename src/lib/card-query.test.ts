@@ -9,6 +9,8 @@ const empty: ListSearch = {
 	subtypes: [],
 	view: "grid",
 	owned: "all",
+	yearMin: null,
+	yearMax: null,
 };
 
 describe("buildCorpusQuery", () => {
@@ -46,5 +48,31 @@ describe("buildCorpusQuery", () => {
 			supertypes: undefined,
 			subtypes: undefined,
 		});
+	});
+	test("yearMin/yearMax null → undefined in CorpusQuery", () => {
+		const q = buildCorpusQuery(empty, {});
+		expect(q.yearMin).toBeUndefined();
+		expect(q.yearMax).toBeUndefined();
+	});
+	test("yearMin/yearMax forwarded in set context", () => {
+		const q = buildCorpusQuery(
+			{ ...empty, yearMin: 2020, yearMax: 2023 },
+			{ setId: "swsh9" },
+		);
+		expect(q.yearMin).toBe(2020);
+		expect(q.yearMax).toBe(2023);
+	});
+	test("yearMin/yearMax forwarded in dex context", () => {
+		const q = buildCorpusQuery(
+			{ ...empty, yearMin: 1999, yearMax: null },
+			{ dexNumber: 6 },
+		);
+		expect(q.yearMin).toBe(1999);
+		expect(q.yearMax).toBeUndefined();
+	});
+	test("yearMin/yearMax forwarded in global context", () => {
+		const q = buildCorpusQuery({ ...empty, yearMin: null, yearMax: 2022 }, {});
+		expect(q.yearMin).toBeUndefined();
+		expect(q.yearMax).toBe(2022);
 	});
 });

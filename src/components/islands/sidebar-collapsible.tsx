@@ -1,5 +1,5 @@
-import { Link } from "@tanstack/react-router";
-import { ChevronRight, Layers } from "lucide-react";
+import { Link, useLocation } from "@tanstack/react-router";
+import { ChevronRight, Layers, Vault } from "lucide-react";
 import { useState } from "react";
 import {
 	Collapsible,
@@ -15,6 +15,63 @@ interface SidebarCollapsibleProps {
 	activeSeriesSlug: string | null;
 	activeSetSlug: string | null;
 	onNavigate?: () => void;
+}
+
+interface VaultChild {
+	label: string;
+	to: string;
+}
+
+const VAULT_CHILDREN: VaultChild[] = [
+	{ label: "Cards", to: "/vault" },
+	{ label: "Sets", to: "/vault/sets" },
+	{ label: "Binders", to: "/vault/binders" },
+];
+
+/** Collapsible sidebar section linking to the Vault sub-pages (Cards, Sets, Binders). */
+function VaultGroup({ onNavigate }: { onNavigate?: () => void }) {
+	const { pathname } = useLocation();
+	const isVaultPath = pathname.startsWith("/vault");
+	const [open, setOpen] = useState(isVaultPath);
+
+	return (
+		<Collapsible open={open} onOpenChange={setOpen}>
+			<CollapsibleTrigger
+				className={cn(
+					"flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors hover:bg-secondary",
+					isVaultPath ? "text-primary" : "text-foreground",
+				)}
+			>
+				<ChevronRight
+					className={cn(
+						"size-4 shrink-0 transition-transform",
+						open && "rotate-90",
+					)}
+				/>
+				<Vault className="size-4 shrink-0" />
+				<span className="flex-1">Vault</span>
+			</CollapsibleTrigger>
+			<CollapsibleContent className="ml-4 border-l border-border pl-3">
+				{VAULT_CHILDREN.map(({ label, to }) => (
+					<Link
+						key={to}
+						to={to}
+						onClick={() => onNavigate?.()}
+						activeOptions={{ exact: true }}
+						activeProps={{ "aria-current": "page" as const }}
+						className={cn(
+							"flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-secondary hover:text-foreground",
+							pathname === to
+								? "bg-primary text-primary-foreground"
+								: "text-muted-foreground",
+						)}
+					>
+						{label}
+					</Link>
+				))}
+			</CollapsibleContent>
+		</Collapsible>
+	);
 }
 
 function SeriesRow({
@@ -96,6 +153,7 @@ export function SidebarCollapsible({
 			>
 				Home
 			</Link>
+			<VaultGroup onNavigate={onNavigate} />
 			<div className="mt-2 flex items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
 				<Layers className="size-4" />
 				Series &amp; Sets

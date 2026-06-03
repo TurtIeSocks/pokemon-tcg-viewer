@@ -164,3 +164,67 @@ test("hydrateCard falls back to setId when set is unknown", () => {
 	expect(out.setName).toBe("unknown");
 	expect(out.setSeries).toBe("");
 });
+
+// --- year range filter tests ---
+
+const yearSet1999: PokemonSet = {
+	id: "yr1999",
+	name: "Vintage 1999",
+	series: "Base",
+	releaseDate: "1999/01/01",
+	total: 10,
+	images: { symbol: "", logo: "" },
+};
+
+const yearSet2001: PokemonSet = {
+	id: "yr2001",
+	name: "Neo 2001",
+	series: "Neo",
+	releaseDate: "2001/01/01",
+	total: 10,
+	images: { symbol: "", logo: "" },
+};
+
+const yearCorpus = buildIndex([
+	card({ id: "yr1999-1", name: "Bulbasaur", setId: "yr1999", number: "1" }),
+	card({ id: "yr2001-1", name: "Chikorita", setId: "yr2001", number: "1" }),
+]);
+
+const yearSetsById = new Map<string, PokemonSet>([
+	["yr1999", yearSet1999],
+	["yr2001", yearSet2001],
+]);
+
+test("yearMax: only cards at or before the year", () => {
+	const r = queryCorpus(
+		yearCorpus,
+		{ yearMax: 1999, relevance: false },
+		yearSetsById,
+	);
+	expect(r.map((c) => c.id)).toEqual(["yr1999-1"]);
+});
+
+test("yearMin: only cards at or after the year", () => {
+	const r = queryCorpus(
+		yearCorpus,
+		{ yearMin: 2000, relevance: false },
+		yearSetsById,
+	);
+	expect(r.map((c) => c.id)).toEqual(["yr2001-1"]);
+});
+
+test("yearMin + yearMax: inclusive range returns both", () => {
+	const r = queryCorpus(
+		yearCorpus,
+		{ yearMin: 1999, yearMax: 2001, relevance: false },
+		yearSetsById,
+	);
+	expect(r.map((c) => c.id)).toContain("yr1999-1");
+	expect(r.map((c) => c.id)).toContain("yr2001-1");
+});
+
+test("no year bounds: all cards returned unchanged", () => {
+	const r = queryCorpus(yearCorpus, { relevance: false }, yearSetsById);
+	expect(r.map((c) => c.id)).toContain("yr1999-1");
+	expect(r.map((c) => c.id)).toContain("yr2001-1");
+});

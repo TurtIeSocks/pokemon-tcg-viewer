@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useRouter } from "@tanstack/react-router";
+import { cardManageLinkPropsFor, cardRouteParams } from "../../lib/card-route";
+import { useSlugIndex } from "../../store/corpus/corpus-runtime";
 import { useIsOwned, useOwnedCount } from "../../store/userland/selectors";
 import { addCopy } from "../../store/userland/userland-store";
-import { CopyManagerDialog } from "../collection/copy-manager-dialog";
 import type { HoloCardData } from "../holo-card";
 
 interface CollectionToggleProps {
@@ -11,7 +12,8 @@ interface CollectionToggleProps {
 export function CollectionToggle({ card }: CollectionToggleProps) {
 	const owned = useIsOwned(card.id);
 	const count = useOwnedCount(card.id);
-	const [open, setOpen] = useState(false);
+	const router = useRouter();
+	const slugIndex = useSlugIndex();
 
 	const baseClasses = [
 		"inline-flex items-center justify-center",
@@ -28,28 +30,25 @@ export function CollectionToggle({ card }: CollectionToggleProps) {
 		"bg-[rgba(0,0,0,0.6)] border-[rgba(255,255,255,0.3)] hover:bg-[rgba(0,0,0,0.85)] focus-visible:bg-[rgba(0,0,0,0.85)]";
 
 	if (owned) {
+		const p = slugIndex ? cardRouteParams(slugIndex, card) : null;
+
 		return (
-			<>
-				<button
-					type="button"
-					className={`${baseClasses} ${ownedClasses}`}
-					aria-label={`Manage copies of ${card.name}`}
-					aria-pressed={true}
-					onClick={(e) => {
-						e.preventDefault();
-						setOpen(true);
-					}}
-				>
-					✓{count}
-				</button>
-				<CopyManagerDialog
-					cardId={card.id}
-					variants={card.variants}
-					name={card.name}
-					open={open}
-					onOpenChange={setOpen}
-				/>
-			</>
+			<button
+				type="button"
+				className={`${baseClasses} ${ownedClasses}`}
+				aria-label={`Manage copies of ${card.name}`}
+				aria-pressed={true}
+				onClick={(e) => {
+					e.preventDefault();
+					if (p) {
+						void router.navigate({
+							...cardManageLinkPropsFor(p),
+						});
+					}
+				}}
+			>
+				✓{count}
+			</button>
 		);
 	}
 

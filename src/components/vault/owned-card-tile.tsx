@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { cardManageLinkPropsFor, cardRouteParams } from "../../lib/card-route";
+import { useSlugIndex } from "../../store/corpus/corpus-runtime";
 import type { CardRow } from "../../store/userland/card-rows";
-import { CopyManagerDialog } from "../collection/copy-manager-dialog";
 import { HoloCardIsland } from "../islands/holo-card-island";
 
 /** Props for {@link OwnedCardTile}. */
@@ -9,43 +10,49 @@ interface OwnedCardTileProps {
 	row: CardRow;
 }
 
-/** Clickable card tile that opens the CopyManager dialog; shows a copy-count badge when > 1. */
+/**
+ * Clickable card tile that navigates to the card modal on the manage face.
+ * Shows a copy-count badge when count > 1.
+ */
 export function OwnedCardTile({ row }: OwnedCardTileProps) {
-	const [open, setOpen] = useState(false);
+	const slugIndex = useSlugIndex();
+	const p = slugIndex ? cardRouteParams(slugIndex, row.card) : null;
 
-	return (
+	const inner = (
 		<>
-			<button
-				type="button"
-				className="relative w-full text-left"
-				onClick={() => setOpen(true)}
-				aria-label={`Manage copies of ${row.card.name}`}
-			>
-				<HoloCardIsland
-					imageUrl={row.card.imageUrl}
-					imageUrlSmall={row.card.imageUrlSmall}
-					name={row.card.name}
-					rarity={row.card.rarity}
-					subtypes={row.card.subtypes}
-					supertype={row.card.supertype}
-					setId={row.card.setId}
-					series={row.card.setSeries}
-					variants={row.card.variants}
-					cardNumber={row.card.cardNumber}
-				/>
-				{row.count > 1 && (
-					<span className="absolute bottom-1 right-1 flex h-6 min-w-6 items-center justify-center rounded-full bg-black/70 px-1.5 text-xs font-bold text-white">
-						×{row.count}
-					</span>
-				)}
-			</button>
-			<CopyManagerDialog
-				cardId={row.card.id}
-				variants={row.card.variants}
+			<HoloCardIsland
+				imageUrl={row.card.imageUrl}
+				imageUrlSmall={row.card.imageUrlSmall}
 				name={row.card.name}
-				open={open}
-				onOpenChange={setOpen}
+				rarity={row.card.rarity}
+				subtypes={row.card.subtypes}
+				supertype={row.card.supertype}
+				setId={row.card.setId}
+				series={row.card.setSeries}
+				variants={row.card.variants}
+				cardNumber={row.card.cardNumber}
 			/>
+			{row.count > 1 && (
+				<span className="absolute bottom-1 right-1 flex h-6 min-w-6 items-center justify-center rounded-full bg-black/70 px-1.5 text-xs font-bold text-white">
+					×{row.count}
+				</span>
+			)}
 		</>
 	);
+
+	if (p) {
+		return (
+			<Link
+				{...cardManageLinkPropsFor(p)}
+				className="relative block w-full text-left"
+				aria-label={`Manage copies of ${row.card.name}`}
+			>
+				{inner}
+			</Link>
+		);
+	}
+
+	// Corpus not yet loaded — render a non-interactive wrapper so the tile
+	// still displays; will become a link once the slug index resolves.
+	return <div className="relative w-full text-left">{inner}</div>;
 }

@@ -14,6 +14,8 @@ interface SearchControlsProps {
 	options: SetFacets;
 	onChange: (patch: Partial<ListSearch>) => void;
 	placeholder?: string;
+	/** When true, renders the Release-year From/To inputs. Defaults to false. */
+	showYearFilter?: boolean;
 }
 
 // A single-select that maps to a string[] param (one active value at a time —
@@ -56,6 +58,7 @@ export function SearchControls({
 	options,
 	onChange,
 	placeholder = "Search cards by name",
+	showYearFilter = false,
 }: SearchControlsProps) {
 	return (
 		<div className="space-y-3">
@@ -101,10 +104,50 @@ export function SearchControls({
 					<SelectContent>
 						<SelectItem value="all">All cards</SelectItem>
 						<SelectItem value="owned">Owned</SelectItem>
-						<SelectItem value="missing">Not owned</SelectItem>
+						<SelectItem value="missing">Missing</SelectItem>
 					</SelectContent>
 				</Select>
 			</div>
+			{showYearFilter && (
+				<fieldset className="flex items-center gap-2">
+					<legend className="text-sm text-muted-foreground shrink-0">
+						Release year
+					</legend>
+					<Input
+						type="number"
+						aria-label="Release year from"
+						placeholder="From"
+						min={1996}
+						max={new Date().getFullYear()}
+						className="text-sm w-24"
+						value={value.yearMin ?? ""}
+						onChange={(e) => {
+							const n = Number(e.target.value);
+							onChange({
+								yearMin: e.target.value === "" || Number.isNaN(n) ? null : n,
+							});
+						}}
+					/>
+					<span className="text-sm text-muted-foreground" aria-hidden="true">
+						–
+					</span>
+					<Input
+						type="number"
+						aria-label="Release year to"
+						placeholder="To"
+						min={1996}
+						max={new Date().getFullYear()}
+						className="text-sm w-24"
+						value={value.yearMax ?? ""}
+						onChange={(e) => {
+							const n = Number(e.target.value);
+							onChange({
+								yearMax: e.target.value === "" || Number.isNaN(n) ? null : n,
+							});
+						}}
+					/>
+				</fieldset>
+			)}
 		</div>
 	);
 }

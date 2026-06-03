@@ -1,4 +1,8 @@
-import type { CollectionItem, CopyPatch } from "../../store/userland/types";
+import type {
+	CollectionItem,
+	CopyPatch,
+	EditableCopyFields,
+} from "../../store/userland/types";
 import type { CopyFormValues } from "./copy-form-schema";
 
 /** Converts a UTC epoch-ms timestamp to a YYYY-MM-DD string using local time. */
@@ -25,6 +29,30 @@ export function itemToForm(i: CollectionItem): CopyFormValues {
 		gradingCompany:
 			(i.grading?.company as CopyFormValues["gradingCompany"]) ?? "",
 		grade: i.grading?.grade == null ? "" : String(i.grading.grade),
+	};
+}
+
+/**
+ * Converts a complete set of form values to the full editable fields patch.
+ * Handles the raw/graded split in one place; used by the draft→Save form.
+ */
+export function formToPatch(values: CopyFormValues): EditableCopyFields {
+	return {
+		acquiredAt: inputDayToMs(values.acquiredAt),
+		pricePaid: values.pricePaid === "" ? null : Number(values.pricePaid),
+		variant: values.variant === "" ? null : values.variant,
+		notes: values.notes === "" ? null : values.notes,
+		condition:
+			values.state === "raw" && values.condition !== ""
+				? (values.condition as CollectionItem["condition"])
+				: null,
+		grading:
+			values.state === "graded" && values.gradingCompany !== ""
+				? {
+						company: values.gradingCompany,
+						grade: values.grade === "" ? 0 : Number(values.grade),
+					}
+				: null,
 	};
 }
 

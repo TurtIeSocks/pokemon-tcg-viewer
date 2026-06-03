@@ -7,6 +7,10 @@ import {
 import { useCallback, useEffect, useMemo } from "react";
 import type { HoloCardData } from "../components/holo-card";
 import { CardGridIsland } from "../components/islands/card-grid-island";
+import {
+	CardSelectionProvider,
+	useCardSelection,
+} from "../components/islands/card-selection";
 import { SearchControls } from "../components/islands/search-controls";
 import { ViewModeToggle } from "../components/islands/view-mode-toggle";
 import { BulkAddMenu } from "../components/vault/bulk-add-menu";
@@ -17,8 +21,9 @@ import {
 	listSearchToUrl,
 	validateListSearch,
 } from "../lib/list-search";
+import { toSerializedQuery } from "../lib/serialized-query";
 import { searchCardsFn } from "../server/corpus-server";
-import { deriveFacets } from "../server/set-facets";
+import { deriveFacets, type SetFacets } from "../server/set-facets";
 import { useStore } from "../store";
 import { queryCorpus, setsById } from "../store/corpus/corpus-engine";
 import { useCorpusRuntime, useSlugIndex } from "../store/corpus/corpus-runtime";
@@ -96,6 +101,45 @@ function SearchPage() {
 	);
 
 	return (
+		<CardSelectionProvider>
+			<SearchPageInner
+				q={q}
+				total={total}
+				cards={cards}
+				search={search}
+				onChange={onChange}
+				options={options}
+				bulkCardIds={bulkCardIds}
+				cardHref={cardHref}
+			/>
+		</CardSelectionProvider>
+	);
+}
+
+interface SearchPageInnerProps {
+	q: string;
+	total: number;
+	cards: HoloCardData[];
+	search: ReturnType<typeof Route.useSearch>;
+	onChange: (patch: Parameters<typeof listSearchToUrl>[0]) => void;
+	options: SetFacets;
+	bulkCardIds: string[];
+	cardHref: (card: HoloCardData) => LinkProps;
+}
+
+function SearchPageInner({
+	q,
+	total,
+	cards,
+	search,
+	onChange,
+	options,
+	bulkCardIds,
+	cardHref,
+}: SearchPageInnerProps) {
+	const { active, selected, toggleActive } = useCardSelection();
+
+	return (
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
 			<div className="mb-3 flex items-center gap-3">
 				<h1 className="text-xl font-bold">
@@ -105,7 +149,23 @@ function SearchPage() {
 					<span className="text-sm text-muted-foreground">{total} cards</span>
 				) : null}
 				<div className="ml-auto flex items-center gap-2">
-					{q ? <BulkAddMenu cardIds={bulkCardIds} /> : null}
+					{q ? (
+						<>
+							<button
+								type="button"
+								aria-pressed={active}
+								onClick={toggleActive}
+								className="rounded border px-3 py-1.5 text-sm hover:bg-secondary"
+							>
+								{active ? "Done selecting" : "Select cards"}
+							</button>
+							<BulkAddMenu
+								cardIds={bulkCardIds}
+								ruleQuery={toSerializedQuery(search, {})}
+								selectedCardIds={active ? [...selected] : undefined}
+							/>
+						</>
+					) : null}
 					<ViewModeToggle
 						value={search.view}
 						disabled={!q}
@@ -119,6 +179,7 @@ function SearchPage() {
 					options={options}
 					onChange={onChange}
 					placeholder="Search all cards"
+					showYearFilter
 				/>
 			</div>
 			<div className="min-h-0 flex-1">

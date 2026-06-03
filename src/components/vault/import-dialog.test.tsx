@@ -29,11 +29,13 @@ function makeSnapshot(
 			condition: null,
 			grading: null,
 		})),
-		goals: Array.from({ length: goalsLen }, (_, i) => ({
-			id: `goal-${i}`,
-			name: `Goal ${i}`,
+		binders: Array.from({ length: goalsLen }, (_, i) => ({
+			id: `binder-${i}`,
+			name: `Binder ${i}`,
 			description: null,
-			targets: [],
+			rules: [],
+			includeCardIds: [],
+			excludeCardIds: [],
 			createdAt: now,
 			updatedAt: now,
 		})),
@@ -49,7 +51,7 @@ let repos = createIdbRepos();
 beforeEach(async () => {
 	repos = createIdbRepos();
 	await repos.collection.clear();
-	await repos.goals.clear();
+	await repos.binders.clear();
 	setUserlandRepos(repos);
 	resetUserlandForTests();
 });
@@ -74,7 +76,7 @@ test("invalid JSON file → inline error shown, no import called", async () => {
 	expect(Object.keys(useUserland.getState().items)).toHaveLength(0);
 });
 
-test("valid snapshot → summary shown; Merge → store gains items and goals", async () => {
+test("valid snapshot → summary shown; Merge → store gains items and binders", async () => {
 	const snap = makeSnapshot(3, 2);
 	const onOpenChange = () => {};
 
@@ -88,7 +90,7 @@ test("valid snapshot → summary shown; Merge → store gains items and goals", 
 
 	// Summary appears
 	await waitFor(() => {
-		expect(screen.getByText(/3 cards · 2 goals/i)).toBeDefined();
+		expect(screen.getByText(/3 cards · 2 binders/i)).toBeDefined();
 	});
 
 	// Click Merge
@@ -98,7 +100,7 @@ test("valid snapshot → summary shown; Merge → store gains items and goals", 
 	await waitFor(() => {
 		const state = useUserland.getState();
 		expect(Object.keys(state.items)).toHaveLength(3);
-		expect(Object.keys(state.goals)).toHaveLength(2);
+		expect(Object.keys(state.binders)).toHaveLength(2);
 	});
 });
 
@@ -118,7 +120,7 @@ test("valid snapshot → Replace (confirm true) → store replaced", async () =>
 	fireEvent.change(input, { target: { files: [file] } });
 
 	await waitFor(() => {
-		expect(screen.getByText(/2 cards · 1 goals/i)).toBeDefined();
+		expect(screen.getByText(/2 cards · 1 binders/i)).toBeDefined();
 	});
 
 	const replaceBtn = screen.getByRole("button", { name: /replace/i });
@@ -127,7 +129,7 @@ test("valid snapshot → Replace (confirm true) → store replaced", async () =>
 	await waitFor(() => {
 		const state = useUserland.getState();
 		expect(Object.keys(state.items)).toHaveLength(2);
-		expect(Object.keys(state.goals)).toHaveLength(1);
+		expect(Object.keys(state.binders)).toHaveLength(1);
 	});
 });
 
@@ -146,7 +148,7 @@ test("Replace (confirm false) → no import", async () => {
 	fireEvent.change(input, { target: { files: [file] } });
 
 	await waitFor(() => {
-		expect(screen.getByText(/2 cards · 1 goals/i)).toBeDefined();
+		expect(screen.getByText(/2 cards · 1 binders/i)).toBeDefined();
 	});
 
 	const replaceBtn = screen.getByRole("button", { name: /replace/i });

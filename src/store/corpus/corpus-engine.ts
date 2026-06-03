@@ -11,6 +11,10 @@ export interface CorpusQuery {
 	setId?: string | null;
 	dexNumber?: number | null;
 	filters?: FilterClauses;
+	/** Inclusive lower bound on release year (YYYY). Null/undefined → no lower bound. */
+	yearMin?: number | null;
+	/** Inclusive upper bound on release year (YYYY). Null/undefined → no upper bound. */
+	yearMax?: number | null;
 	/** True for global name search (relevance order); false for set/dex (natural order). */
 	relevance: boolean;
 }
@@ -115,6 +119,13 @@ export function queryCorpus(
 		)
 			continue;
 		if (!passesFilters(card, filters)) continue;
+		if (q.yearMin != null || q.yearMax != null) {
+			const year = Number(setsById.get(card.setId)?.releaseDate?.slice(0, 4));
+			if (q.yearMin != null && (Number.isNaN(year) || year < q.yearMin))
+				continue;
+			if (q.yearMax != null && (Number.isNaN(year) || year > q.yearMax))
+				continue;
+		}
 		let match: NameMatch | null = null;
 		if (hasName) {
 			match = matchName(queryNorm, index.nameNorm[i], index.nameTokens[i]);

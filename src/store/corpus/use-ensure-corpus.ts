@@ -6,6 +6,8 @@ import { loadCorpus } from "./corpus-runtime";
 export function useEnsureCorpus(): void {
 	const loadSets = useStore((s) => s.loadSets);
 	useEffect(() => {
+		if (typeof process !== "undefined" && process.env.NODE_ENV === "test")
+			return;
 		void loadCorpus();
 		void loadSets();
 	}, [loadSets]);

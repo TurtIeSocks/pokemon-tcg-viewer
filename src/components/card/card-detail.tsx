@@ -1,11 +1,11 @@
 import { ClientOnly } from "@tanstack/react-router";
+import { Layers } from "lucide-react";
 import type { CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import type { FocusCardData } from "../../server/card-mappers";
 import { useIsOwned } from "../../store/userland/selectors";
 import { addCopy } from "../../store/userland/userland-store";
 import { getCardAccent, getReadableAccent } from "../../utils/card-colors";
-import { CopyManager } from "../collection/copy-manager";
 import { HoloCard } from "../holo-card";
 import { CardPrices } from "../islands/card-prices";
 import { CardCrossLinks, type CrossLink } from "../islands/cross-links";
@@ -17,13 +17,21 @@ import { toHoloCardData } from "./to-holo";
  * Rendered inside a Dialog for the in-app overlay (CardModal) and inside a page
  * layout for a cold-loaded / shared card URL ($card route). Keeping it wrapper-
  * free means both presentations share one implementation.
+ *
+ * @param onManage - Optional callback invoked when the user clicks "Manage
+ *   Collection" on an owned card. When omitted the button is rendered disabled.
+ *   CardModal supplies a replace-navigate; the cold-load $card route supplies a
+ *   push-navigate; tests pass a mock.
  */
 export function CardDetail({
 	card,
 	crossLinks,
+	onManage,
 }: {
 	card: FocusCardData;
 	crossLinks: CrossLink[];
+	/** Called when the user activates "Manage Collection". Disabled when absent. */
+	onManage?: () => void;
 }) {
 	const holo = toHoloCardData(card);
 	const accent = getReadableAccent(getCardAccent(card.types));
@@ -63,7 +71,7 @@ export function CardDetail({
 									size="focus"
 								/>
 							</ClientOnly>
-							<CollectionButton card={holo} />
+							<CollectionButton card={holo} onManage={onManage} />
 						</div>
 					</div>
 				</div>
@@ -84,13 +92,38 @@ export function CardDetail({
 
 function CollectionButton({
 	card,
+	onManage,
 }: {
 	card: ReturnType<typeof toHoloCardData>;
+	/** Callback for "Manage Collection". Disabled when absent. */
+	onManage?: () => void;
 }) {
 	const owned = useIsOwned(card.id);
 
 	if (owned) {
-		return <CopyManager cardId={card.id} variants={card.variants} />;
+		const baseClass = cn(
+			"flex w-full items-center justify-center gap-2 rounded-[10px] py-3 min-h-[44px]",
+			"font-mono text-[13px] tracking-[0.04em] transition-colors",
+			"border border-white/15 text-[#e7e3d8]",
+		);
+
+		return (
+			<button
+				type="button"
+				onClick={onManage}
+				disabled={!onManage}
+				aria-label="Manage Collection"
+				className={cn(
+					baseClass,
+					onManage
+						? "hover:border-white/30 cursor-pointer"
+						: "opacity-50 cursor-not-allowed",
+				)}
+			>
+				<Layers className="h-4 w-4 shrink-0" aria-hidden="true" />
+				Manage Collection
+			</button>
+		);
 	}
 
 	return (

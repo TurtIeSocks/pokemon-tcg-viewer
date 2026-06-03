@@ -8,21 +8,21 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 
 /**
  * Type guard: validates that v has the minimum shape of a UserDataSnapshot
- * (schemaVersion=1, collection/goals arrays with required id fields).
+ * (schemaVersion=1, collection/binders arrays with required id fields).
  */
 export function isValidSnapshot(v: unknown): v is UserDataSnapshot {
 	if (!isRecord(v)) return false;
 	if (v.schemaVersion !== 1) return false;
-	if (!Array.isArray(v.collection) || !Array.isArray(v.goals)) return false;
+	if (!Array.isArray(v.collection) || !Array.isArray(v.binders)) return false;
 	const itemsOk = v.collection.every(
 		(i) =>
 			isRecord(i) && typeof i.id === "string" && typeof i.cardId === "string",
 	);
-	const goalsOk = v.goals.every(
-		(g) =>
-			isRecord(g) && typeof g.id === "string" && typeof g.name === "string",
+	const bindersOk = v.binders.every(
+		(b) =>
+			isRecord(b) && typeof b.id === "string" && typeof b.name === "string",
 	);
-	return itemsOk && goalsOk;
+	return itemsOk && bindersOk;
 }
 
 /** Parse and validate a JSON string as a UserDataSnapshot; throws a user-readable error on failure. */

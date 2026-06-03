@@ -14,7 +14,7 @@ let repos = createIdbRepos();
 beforeEach(async () => {
 	repos = createIdbRepos();
 	await repos.collection.clear();
-	await repos.goals.clear();
+	await repos.binders.clear();
 	setUserlandRepos(repos);
 	resetUserlandForTests();
 	// Stub URL.createObjectURL so downloadSnapshot doesn't throw in happy-dom
@@ -50,7 +50,7 @@ test("exportUserData resolves a snapshot with correct shape", async () => {
 	const snapshot = await exportUserData();
 	expect(snapshot.schemaVersion).toBe(1);
 	expect(Array.isArray(snapshot.collection)).toBe(true);
-	expect(Array.isArray(snapshot.goals)).toBe(true);
+	expect(Array.isArray(snapshot.binders)).toBe(true);
 });
 
 test("clicking Export backup calls onExport without throwing", async () => {

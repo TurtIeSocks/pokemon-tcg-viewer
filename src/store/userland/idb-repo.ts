@@ -12,14 +12,19 @@ import {
 } from "idb-keyval";
 import type {
 	BackupRepo,
+	BindersRepo,
 	CollectionRepo,
-	GoalsRepo,
 	UserlandRepos,
 } from "./repo";
-import type { CollectionItem, Goal, NewCollectionItem, NewGoal } from "./types";
+import type {
+	Binder,
+	CollectionItem,
+	NewBinder,
+	NewCollectionItem,
+} from "./types";
 
 const collectionStore = createStore("ptcg-collection", "items");
-const goalsStore = createStore("ptcg-goals", "goals");
+const bindersStore = createStore("ptcg-binders", "binders");
 
 /** Assign id, createdAt, and acquiredAt defaults; null-fill optional fields. */
 function fillItem(input: NewCollectionItem): CollectionItem {
@@ -38,32 +43,36 @@ function fillItem(input: NewCollectionItem): CollectionItem {
 }
 
 /** Assign id, createdAt/updatedAt defaults, and fill optional fields. */
-function fillGoal(input: NewGoal): Goal {
+function fillBinder(input: NewBinder): Binder {
 	const now = Date.now();
 	return {
 		id: crypto.randomUUID(),
 		name: input.name,
 		description: input.description ?? null,
-		targets: input.targets ?? [],
+		rules: [],
+		includeCardIds: [],
+		excludeCardIds: [],
 		createdAt: now,
 		updatedAt: now,
 	};
 }
 
-/** Create an IndexedDB-backed GoalsRepo; uses the default goals store unless overridden (tests). */
-export function createIdbGoalsRepo(store: UseStore = goalsStore): GoalsRepo {
+/** Create an IndexedDB-backed BindersRepo; uses the default binders store unless overridden (tests). */
+export function createIdbBindersRepo(
+	store: UseStore = bindersStore,
+): BindersRepo {
 	return {
 		async list() {
-			const rows = await entries<string, Goal>(store);
+			const rows = await entries<string, Binder>(store);
 			return rows.map(([, v]) => v);
 		},
 		async create(input) {
-			const g = fillGoal(input);
-			await set(g.id, g, store);
-			return g;
+			const b = fillBinder(input);
+			await set(b.id, b, store);
+			return b;
 		},
 		async update(id, patch) {
-			const existing = await get<Goal>(id, store);
+			const existing = await get<Binder>(id, store);
 			if (!existing) return;
 			await set(id, { ...existing, ...patch, updatedAt: Date.now() }, store);
 		},
@@ -76,25 +85,25 @@ export function createIdbGoalsRepo(store: UseStore = goalsStore): GoalsRepo {
 	};
 }
 
-/** Create a BackupRepo that delegates to the provided collection + goals repos. */
+/** Create a BackupRepo that delegates to the provided collection + binders repos. */
 function createIdbBackupRepo(
 	collection: CollectionRepo,
-	goals: GoalsRepo,
+	binders: BindersRepo,
 ): BackupRepo {
 	return {
 		async exportAll() {
-			const [c, g] = await Promise.all([collection.list(), goals.list()]);
+			const [c, b] = await Promise.all([collection.list(), binders.list()]);
 			return {
 				schemaVersion: 1,
 				exportedAt: Date.now(),
 				collection: c,
-				goals: g,
+				binders: b,
 			};
 		},
 		async importAll(snapshot, mode) {
 			if (mode === "replace") {
 				await clear(collectionStore);
-				await clear(goalsStore);
+				await clear(bindersStore);
 			}
 			// Snapshot rows are full records — write verbatim to preserve ids.
 			await setMany(
@@ -102,8 +111,8 @@ function createIdbBackupRepo(
 				collectionStore,
 			);
 			await setMany(
-				snapshot.goals.map((g) => [g.id, g] as [string, Goal]),
-				goalsStore,
+				snapshot.binders.map((b) => [b.id, b] as [string, Binder]),
+				bindersStore,
 			);
 		},
 	};
@@ -112,9 +121,9 @@ function createIdbBackupRepo(
 /** Wire all three IDB-backed repos into a UserlandRepos bundle. */
 export function createIdbRepos(): UserlandRepos {
 	const collection = createIdbCollectionRepo();
-	const goals = createIdbGoalsRepo();
-	const backup = createIdbBackupRepo(collection, goals);
-	return { collection, goals, backup };
+	const binders = createIdbBindersRepo();
+	const backup = createIdbBackupRepo(collection, binders);
+	return { collection, binders, backup };
 }
 
 // The ONE swap point. Today: IDB. Later: choose by auth/config.
