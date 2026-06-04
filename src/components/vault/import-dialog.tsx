@@ -8,11 +8,15 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { useStore } from "../../store";
+import { setsById } from "../../store/corpus/corpus-engine";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
 import { parseSnapshot } from "../../store/userland/backup";
 import {
+	applyMapping,
 	type CsvImportResult,
 	csvToImport,
+	detectColumns,
 	type ImportResolver,
 	parseCsv,
 } from "../../store/userland/csv";
@@ -34,21 +38,28 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 	const [error, setError] = useState<string | null>(null);
 	const fileRef = useRef<HTMLInputElement>(null);
 	const index = useCorpusRuntime((s) => s.index);
+	const sets = useStore((s) => s.sets);
 
-	// Card matcher built from the corpus: card_id existence + a setId|number lookup.
+	// Card matcher from the corpus: card_id existence + setId|number and setName|number lookups.
 	const resolver = useMemo<ImportResolver>(() => {
 		const bySet = new Map<string, string>();
+		const bySetName = new Map<string, string>();
+		const setNames = sets ? setsById(sets) : null;
+		const norm = (s: string) => s.trim().toLowerCase();
 		if (index) {
 			for (const card of index.byId.values()) {
 				bySet.set(`${card.setId}|${card.number}`, card.id);
+				const name = setNames?.get(card.setId)?.name;
+				if (name) bySetName.set(`${norm(name)}|${card.number}`, card.id);
 			}
 		}
 		return {
 			exists: (id) => index?.byId.has(id) ?? false,
 			bySetNumber: (setId, number) => bySet.get(`${setId}|${number}`),
-			bySetNameNumber: () => undefined,
+			bySetNameNumber: (setName, number) =>
+				bySetName.get(`${norm(setName)}|${number}`),
 		};
-	}, [index]);
+	}, [index, sets]);
 
 	function resetState() {
 		setSnapshot(null);
@@ -72,7 +83,9 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 			const text = await file.text();
 			if (file.name.toLowerCase().endsWith(".csv")) {
 				const { rows } = parseCsv(text);
-				setCsv(csvToImport(rows, resolver));
+				const map = detectColumns(Object.keys(rows[0] ?? {}));
+				const canonical = rows.map((r) => applyMapping(r, map));
+				setCsv(csvToImport(canonical, resolver));
 			} else {
 				setSnapshot(parseSnapshot(text));
 			}

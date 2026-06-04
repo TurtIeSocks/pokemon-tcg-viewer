@@ -125,7 +125,13 @@ const ALIASES: Record<CanonicalField, string[]> = {
 	price_paid_unit: ["price_paid_unit", "price", "price_paid", "paid", "cost"],
 	acquired_at: ["acquired_at", "acquired", "date", "purchase_date"],
 	source: ["source", "seller", "acquired_from"],
-	storage_location: ["storage_location", "location", "binder", "box", "storage"],
+	storage_location: [
+		"storage_location",
+		"location",
+		"binder",
+		"box",
+		"storage",
+	],
 	label: ["label", "title"],
 	notes: ["notes", "note", "comment", "comments"],
 };

@@ -1,6 +1,7 @@
 // import-dialog.test.tsx
 import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { useStore } from "../../store";
 import { buildIndex } from "../../store/corpus/corpus-engine";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
 import type { CorpusCard } from "../../store/corpus/corpus-types";
@@ -76,6 +77,7 @@ beforeEach(async () => {
 
 afterEach(() => {
 	useCorpusRuntime.setState({ index: null });
+	useStore.setState({ sets: null });
 });
 
 test("invalid JSON file → inline error shown, no import called", async () => {
@@ -239,5 +241,52 @@ test("CSV import previews matched/unmatched then commits matched stacks", async 
 		expect(stacks).toHaveLength(1);
 		expect(stacks[0].cardId).toBe("base1-4");
 		expect(stacks[0].quantity).toBe(2);
+	});
+});
+
+test("CSV with foreign headers imports via auto-detect + set_name matching", async () => {
+	useCorpusRuntime.setState({
+		index: buildIndex([corpusCard("base1-4", "base1", "4")]),
+	});
+	useStore.setState({
+		sets: [
+			{
+				id: "base1",
+				name: "Base",
+				series: "Base",
+				releaseDate: "1999-01-09",
+				total: 102,
+				images: { symbol: "", logo: "" },
+			},
+		],
+	});
+	render(<ImportDialog open onOpenChange={() => {}} />);
+
+	const input = document.querySelector(
+		'input[type="file"]',
+	) as HTMLInputElement;
+	const file = new File(
+		["Name,Set,Card Number,Qty\nCharizard,Base,4,3\n"],
+		"pokellector.csv",
+		{ type: "text/csv" },
+	);
+	fireEvent.change(input, { target: { files: [file] } });
+
+	await waitFor(() => {
+		const el = screen.getByText(
+			(_, n) =>
+				n?.nodeName === "P" &&
+				(n?.textContent ?? "")
+					.replace(/\s+/g, " ")
+					.includes("1 matched · 0 unmatched"),
+		);
+		expect(el).toBeDefined();
+	});
+
+	fireEvent.click(screen.getByRole("button", { name: /import 1 stack/i }));
+	await waitFor(() => {
+		const stacks = Object.values(useUserland.getState().items);
+		expect(stacks[0]?.cardId).toBe("base1-4");
+		expect(stacks[0]?.quantity).toBe(3);
 	});
 });
