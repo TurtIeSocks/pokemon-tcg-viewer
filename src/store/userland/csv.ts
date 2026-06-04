@@ -175,6 +175,7 @@ export function applyMapping(
 export interface ImportResolver {
 	exists(cardId: string): boolean;
 	bySetNumber(setId: string, number: string): string | undefined;
+	bySetNameNumber(setName: string, number: string): string | undefined;
 }
 export interface CsvImportResult {
 	matched: NewStack[];
@@ -216,9 +217,18 @@ function resolveCardId(
 ): string | null {
 	const id = row.card_id?.trim();
 	if (id && r.exists(id)) return id;
-	const setId = row.set_id?.trim();
 	const number = row.number?.trim();
-	if (setId && number) return r.bySetNumber(setId, number) ?? null;
+	if (!number) return null;
+	const setId = row.set_id?.trim();
+	if (setId) {
+		const m = r.bySetNumber(setId, number);
+		if (m) return m;
+	}
+	const setName = row.set_name?.trim();
+	if (setName) {
+		const m = r.bySetNameNumber(setName, number);
+		if (m) return m;
+	}
 	return null;
 }
 

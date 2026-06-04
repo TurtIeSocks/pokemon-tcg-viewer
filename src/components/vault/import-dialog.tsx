@@ -46,6 +46,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 		return {
 			exists: (id) => index?.byId.has(id) ?? false,
 			bySetNumber: (setId, number) => bySet.get(`${setId}|${number}`),
+			bySetNameNumber: () => undefined,
 		};
 	}, [index]);
 

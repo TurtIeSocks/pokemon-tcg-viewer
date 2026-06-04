@@ -81,6 +81,7 @@ const importResolver = {
 	exists: (id: string) => id === "base1-4",
 	bySetNumber: (setId: string, number: string) =>
 		setId === "base1" && number === "4" ? "base1-4" : undefined,
+	bySetNameNumber: () => undefined,
 };
 
 test("parseCsv reads a header + rows into objects", () => {
@@ -178,4 +179,20 @@ test("detectColumns does not map one header to two fields", () => {
 	const map = detectColumns(["name"]);
 	expect(map.card_name).toBe("name");
 	expect(map.label).toBeUndefined();
+});
+
+test("csvToImport matches by set_name + number (normalized)", () => {
+	const r = {
+		exists: (id: string) => id === "base1-4",
+		bySetNumber: () => undefined,
+		bySetNameNumber: (setName: string, number: string) =>
+			setName.trim().toLowerCase() === "base" && number === "4"
+				? "base1-4"
+				: undefined,
+	};
+	const { matched } = csvToImport(
+		[{ set_name: "Base", number: "4", quantity: "2" }],
+		r,
+	);
+	expect(matched[0]).toMatchObject({ cardId: "base1-4", quantity: 2 });
 });
