@@ -77,15 +77,18 @@ export function CardDetail({
 				</div>
 			</div>
 
-			<CardInfo
-				card={card}
-				footer={
-					<>
-						<CardPrices card={card} />
-						<CardCrossLinks links={crossLinks} />
-					</>
-				}
-			/>
+			{/* min-w-0 lets the info column wrap instead of overflowing the dialog */}
+			<div className="min-w-0 flex-1">
+				<CardInfo
+					card={card}
+					footer={
+						<>
+							<CardPrices card={card} />
+							<CardCrossLinks links={crossLinks} />
+						</>
+					}
+				/>
+			</div>
 		</div>
 	);
 }

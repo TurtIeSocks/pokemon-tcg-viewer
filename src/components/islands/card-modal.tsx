@@ -89,16 +89,20 @@ export function CardModal({
 				 */}
 				<div
 					className={[
-						"flex w-[200%] items-start",
+						// w-full track + basis-full panels: each panel is exactly the
+						// dialog width. min-w-0 is REQUIRED — DialogContent is display:grid,
+						// so this track is a grid item (default min-width:auto) and would
+						// otherwise refuse to shrink below its content, overflowing the dialog.
+						"flex w-full min-w-0 items-start",
 						"transition-transform duration-300 ease-out",
 						"motion-reduce:transition-none",
-						isManage ? "-translate-x-1/2" : "translate-x-0",
+						isManage ? "-translate-x-full" : "translate-x-0",
 					].join(" ")}
 					aria-live="polite"
 				>
 					{/* Panel A — Card Detail */}
 					<div
-						className="w-1/2 max-h-[90vh] overflow-y-auto"
+						className="basis-full shrink-0 min-w-0 max-h-[90vh] overflow-x-hidden overflow-y-auto"
 						aria-hidden={isManage || undefined}
 						inert={isManage || undefined}
 					>
@@ -111,7 +115,7 @@ export function CardModal({
 
 					{/* Panel B — Collection Manager */}
 					<div
-						className="w-1/2 max-h-[90vh] overflow-y-auto"
+						className="basis-full shrink-0 min-w-0 max-h-[90vh] overflow-x-hidden overflow-y-auto"
 						aria-hidden={!isManage || undefined}
 						inert={!isManage || undefined}
 					>
