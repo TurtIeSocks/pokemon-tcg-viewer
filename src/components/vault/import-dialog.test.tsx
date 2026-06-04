@@ -1,6 +1,9 @@
 // import-dialog.test.tsx
-import { beforeEach, expect, spyOn, test } from "bun:test";
+import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { buildIndex } from "../../store/corpus/corpus-engine";
+import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
+import type { CorpusCard } from "../../store/corpus/corpus-types";
 import { createIdbRepos } from "../../store/userland/idb-repo";
 import type { UserDataSnapshot } from "../../store/userland/types";
 import {
@@ -49,6 +52,18 @@ function makeFile(content: string): File {
 	return new File([content], "backup.json", { type: "application/json" });
 }
 
+function corpusCard(id: string, setId: string, number: string): CorpusCard {
+	return {
+		id,
+		name: id,
+		imageUrl: "",
+		imageUrlSmall: "",
+		supertype: "Pokémon",
+		setId,
+		number,
+	};
+}
+
 let repos = createIdbRepos();
 
 beforeEach(async () => {
@@ -57,6 +72,10 @@ beforeEach(async () => {
 	await repos.binders.clear();
 	setUserlandRepos(repos);
 	resetUserlandForTests();
+});
+
+afterEach(() => {
+	useCorpusRuntime.setState({ index: null });
 });
 
 test("invalid JSON file → inline error shown, no import called", async () => {
@@ -183,4 +202,42 @@ test("Replace (confirm false) → no import", async () => {
 
 	const state = useUserland.getState();
 	expect(Object.keys(state.items)).toHaveLength(0);
+});
+
+test("CSV import previews matched/unmatched then commits matched stacks", async () => {
+	useCorpusRuntime.setState({
+		index: buildIndex([corpusCard("base1-4", "base1", "4")]),
+	});
+	render(<ImportDialog open onOpenChange={() => {}} />);
+
+	const input = document.querySelector(
+		'input[type="file"]',
+	) as HTMLInputElement;
+	const csvFile = new File(
+		["card_id,quantity\nbase1-4,2\nnope,1\n"],
+		"collection.csv",
+		{ type: "text/csv" },
+	);
+	fireEvent.change(input, { target: { files: [csvFile] } });
+
+	// Preview: 1 matched, 1 unmatched
+	await waitFor(() => {
+		const el = screen.getByText(
+			(_, node) =>
+				node?.nodeName === "P" &&
+				(node?.textContent ?? "")
+					.replace(/\s+/g, " ")
+					.includes("1 matched · 1 unmatched"),
+		);
+		expect(el).toBeDefined();
+	});
+
+	fireEvent.click(screen.getByRole("button", { name: /import 1 stack/i }));
+
+	await waitFor(() => {
+		const stacks = Object.values(useUserland.getState().items);
+		expect(stacks).toHaveLength(1);
+		expect(stacks[0].cardId).toBe("base1-4");
+		expect(stacks[0].quantity).toBe(2);
+	});
 });

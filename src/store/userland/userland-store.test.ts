@@ -5,6 +5,7 @@ import {
 	addCardsToBinder,
 	addRuleToBinder,
 	addStack,
+	addStacks,
 	bulkAddStacks,
 	clearCollection,
 	createBinder,
@@ -59,6 +60,21 @@ test("splitStack rejects count <= 0, >= quantity, or a missing id", async () => 
 	await expect(splitStack(s.id, 0)).rejects.toThrow();
 	await expect(splitStack(s.id, 2)).rejects.toThrow();
 	await expect(splitStack("missing", 1)).rejects.toThrow();
+});
+
+test("addStacks bulk-inserts NewStacks; first of each unowned card becomes primary", async () => {
+	const created = await addStacks([
+		{ cardId: "a", quantity: 3 },
+		{ cardId: "a", quantity: 1 },
+		{ cardId: "b", quantity: 2 },
+	]);
+	expect(created).toHaveLength(3);
+	const items = useUserland.getState().items;
+	expect(
+		Object.values(items).filter((i) => i.cardId === "a" && i.isPrimary),
+	).toHaveLength(1);
+	const b = created.find((c) => c.cardId === "b");
+	expect(b && items[b.id].isPrimary).toBe(true);
 });
 
 test("loadUserland hydrates items and binders from the repo", async () => {

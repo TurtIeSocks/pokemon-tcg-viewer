@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -8,9 +8,16 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
 import { parseSnapshot } from "../../store/userland/backup";
+import {
+	type CsvImportResult,
+	csvToImport,
+	type ImportResolver,
+	parseCsv,
+} from "../../store/userland/csv";
 import type { UserDataSnapshot } from "../../store/userland/types";
-import { importUserData } from "../../store/userland/userland-store";
+import { addStacks, importUserData } from "../../store/userland/userland-store";
 
 /** Props for {@link ImportDialog}. */
 interface ImportDialogProps {
@@ -20,14 +27,31 @@ interface ImportDialogProps {
 	onOpenChange: (open: boolean) => void;
 }
 
-/** Dialog for importing a JSON backup; supports merge (additive) or replace (destructive) strategies. */
+/** Dialog for importing a JSON backup (merge/replace) or a CSV file (additive, matched against the corpus). */
 export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 	const [snapshot, setSnapshot] = useState<UserDataSnapshot | null>(null);
+	const [csv, setCsv] = useState<CsvImportResult | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const fileRef = useRef<HTMLInputElement>(null);
+	const index = useCorpusRuntime((s) => s.index);
+
+	// Card matcher built from the corpus: card_id existence + a setId|number lookup.
+	const resolver = useMemo<ImportResolver>(() => {
+		const bySet = new Map<string, string>();
+		if (index) {
+			for (const card of index.byId.values()) {
+				bySet.set(`${card.setId}|${card.number}`, card.id);
+			}
+		}
+		return {
+			exists: (id) => index?.byId.has(id) ?? false,
+			bySetNumber: (setId, number) => bySet.get(`${setId}|${number}`),
+		};
+	}, [index]);
 
 	function resetState() {
 		setSnapshot(null);
+		setCsv(null);
 		setError(null);
 		if (fileRef.current) fileRef.current.value = "";
 	}
@@ -42,10 +66,15 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 		if (!file) return;
 		setError(null);
 		setSnapshot(null);
+		setCsv(null);
 		try {
 			const text = await file.text();
-			const snap = parseSnapshot(text);
-			setSnapshot(snap);
+			if (file.name.toLowerCase().endsWith(".csv")) {
+				const { rows } = parseCsv(text);
+				setCsv(csvToImport(rows, resolver));
+			} else {
+				setSnapshot(parseSnapshot(text));
+			}
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Import failed");
 		}
@@ -67,13 +96,19 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 		handleOpenChange(false);
 	}
 
+	async function onImportCsv() {
+		if (!csv || csv.matched.length === 0) return;
+		await addStacks(csv.matched);
+		handleOpenChange(false);
+	}
+
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle className="font-display">Import backup</DialogTitle>
 					<DialogDescription className="text-[var(--ink-muted)]">
-						Choose a JSON backup file to restore your collection and binders.
+						Choose a JSON backup (restore) or a CSV file (add matched cards).
 					</DialogDescription>
 				</DialogHeader>
 
@@ -81,7 +116,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 					{/* Dropzone / file picker */}
 					<label className="flex flex-col items-center justify-center gap-2 rounded-[var(--r-panel)] border border-dashed border-[var(--border)] bg-[var(--glass)] px-4 py-6 cursor-pointer text-center hover:border-[var(--primary)] transition-colors">
 						<span className="text-[10.5px] uppercase tracking-[0.18em] text-[var(--faint)] font-semibold">
-							JSON backup file
+							JSON or CSV file
 						</span>
 						<span className="text-sm text-[var(--ink-muted)]">
 							Click to browse or drop a file here
@@ -89,7 +124,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 						<input
 							ref={fileRef}
 							type="file"
-							accept="application/json"
+							accept=".json,.csv,application/json,text/csv"
 							onChange={onFileChange}
 							className="sr-only"
 						/>
@@ -110,6 +145,16 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 							binders
 						</p>
 					)}
+
+					{csv && (
+						<p className="text-sm font-mono tabular-nums text-[var(--ink-muted)]">
+							<span className="text-[var(--ink)]">{csv.matched.length}</span>{" "}
+							matched
+							{" · "}
+							<span className="text-[var(--ink)]">{csv.unmatched.length}</span>{" "}
+							unmatched
+						</p>
+					)}
 				</div>
 
 				{snapshot && (
@@ -119,6 +164,15 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 						</Button>
 						<Button variant="destructive" onClick={onReplace}>
 							Replace
+						</Button>
+					</DialogFooter>
+				)}
+
+				{csv && (
+					<DialogFooter>
+						<Button onClick={onImportCsv} disabled={csv.matched.length === 0}>
+							Import {csv.matched.length} stack
+							{csv.matched.length === 1 ? "" : "s"}
 						</Button>
 					</DialogFooter>
 				)}

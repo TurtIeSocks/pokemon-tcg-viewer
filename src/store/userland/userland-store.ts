@@ -8,6 +8,7 @@ import type {
 	BinderRule,
 	EditableStackFields,
 	NewBinder,
+	NewStack,
 	SerializedQuery,
 	Stack,
 	StackPatch,
@@ -238,6 +239,31 @@ export async function bulkAddStacks(
 		for (const it of patched) items[it.id] = it;
 		return { items };
 	});
+}
+
+/** Persist many pre-built stacks in one write (CSV import); first stack of each previously-unowned card becomes primary. */
+export async function addStacks(items: NewStack[]): Promise<Stack[]> {
+	if (items.length === 0) return [];
+	const grantedPrimary = new Set(
+		Object.values(useUserland.getState().items).map((i) => i.cardId),
+	);
+	const created = await activeRepos().collection.bulkAdd(items);
+	const patched = await Promise.all(
+		created.map(async (item) => {
+			if (!grantedPrimary.has(item.cardId)) {
+				grantedPrimary.add(item.cardId);
+				await activeRepos().collection.update(item.id, { isPrimary: true });
+				return { ...item, isPrimary: true };
+			}
+			return item;
+		}),
+	);
+	useUserland.setState((s) => {
+		const map = { ...s.items };
+		for (const it of patched) map[it.id] = it;
+		return { items: map };
+	});
+	return patched;
 }
 
 /** Erase the entire collection from storage and the store. */
