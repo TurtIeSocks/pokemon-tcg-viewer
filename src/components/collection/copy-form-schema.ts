@@ -26,6 +26,7 @@ export function isGradeOrEmpty(s: string): boolean {
 
 /** Zod schema for the copy-edit form; all fields are strings for controlled-input compatibility. */
 export const copyFormSchema = z.object({
+	label: z.string(),
 	acquiredAt: z.string().refine(isValidDateStr, "Invalid date"),
 	pricePaid: z.string().refine(isMoneyOrEmpty, "Must be a number ≥ 0"),
 	variant: z.string(),

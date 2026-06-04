@@ -9,6 +9,7 @@ import {
 } from "../../store/userland/userland-store";
 import { CopyEditForm } from "./copy-edit-form";
 import { dayMsToInput } from "./copy-form-mapping";
+import { copyDisplayLabel, isAutoLabel } from "./copy-label";
 
 /** Props for {@link CopyRow}. */
 interface CopyRowProps {
@@ -63,36 +64,33 @@ export function CopyRow({ item, variants }: CopyRowProps) {
 		>
 			{/* Tile header: badges + action row */}
 			<div className="flex items-start gap-2 flex-wrap">
-				{/* Badge cluster */}
-				<div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
-					{/* Acquired date always shown */}
-					<Badge variant="outline" className="text-xs font-normal">
-						{dayMsToInput(item.acquiredAt)}
-					</Badge>
-
-					{/* Variant */}
-					{item.variant && (
-						<Badge variant="secondary" className="text-xs">
+				{/* Name + metadata */}
+				<div className="flex flex-1 flex-wrap items-center gap-x-2.5 gap-y-1 min-w-0">
+					{/* Display name: the user's label, or auto-derived from metadata */}
+					<span className="min-w-0 truncate font-medium text-[var(--ink)]">
+						{copyDisplayLabel(item)}
+					</span>
+					{/* Acquired date */}
+					<span className="font-mono text-[11px] text-[var(--faint)]">
+						acquired {dayMsToInput(item.acquiredAt)}
+					</span>
+					{/* When the user named the copy, surface key metadata as chips —
+					    the auto-label already shows variant/grade otherwise. */}
+					{!isAutoLabel(item) && item.variant && (
+						<Badge variant="secondary" className="text-[10px]">
 							{item.variant}
 						</Badge>
 					)}
-
-					{/* Grading or condition */}
-					{gradingLabel ? (
-						<Badge variant="success" className="text-xs">
+					{!isAutoLabel(item) && gradingLabel && (
+						<Badge variant="success" className="text-[10px]">
 							{gradingLabel}
 						</Badge>
-					) : item.condition ? (
-						<Badge variant="outline" className="text-xs">
-							{item.condition}
-						</Badge>
-					) : null}
-
+					)}
 					{/* Price paid */}
 					{item.pricePaid != null && (
-						<Badge variant="outline" className="text-xs font-mono">
+						<span className="font-mono text-[11px] text-[var(--ink-muted)]">
 							${item.pricePaid}
-						</Badge>
+						</span>
 					)}
 				</div>
 

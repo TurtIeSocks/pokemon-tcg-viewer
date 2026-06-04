@@ -21,6 +21,7 @@ test("predicates", () => {
 
 test("schema accepts a valid raw copy and rejects bad price", () => {
 	const base = {
+		label: "",
 		acquiredAt: "2024-03-01",
 		pricePaid: "5",
 		variant: "",

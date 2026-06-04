@@ -124,6 +124,7 @@ interface CopyEditFormProps {
 
 /** Blank defaults for a new copy form. */
 const BLANK_DEFAULTS = {
+	label: "",
 	acquiredAt: new Date().toISOString().slice(0, 10),
 	pricePaid: "",
 	variant: "",
@@ -175,6 +176,24 @@ export function CopyEditForm({
 			}}
 			className="flex flex-col gap-4 [&_[data-slot=field-label]]:text-[var(--ink-muted)]"
 		>
+			{/* Label — optional user-given name; blank → auto metadata label (copy-label.ts) */}
+			<form.Field
+				name="label"
+				// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
+				children={(field) => (
+					<Field>
+						<FieldLabel htmlFor={field.name}>Label</FieldLabel>
+						<Input
+							id={field.name}
+							placeholder="Name this copy (optional)"
+							value={field.state.value}
+							onBlur={field.handleBlur}
+							onChange={(e) => field.handleChange(e.target.value)}
+						/>
+					</Field>
+				)}
+			/>
+
 			{/* 2-column responsive grid */}
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 				{/* Variant — segmented pill */}
