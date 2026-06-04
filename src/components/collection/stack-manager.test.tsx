@@ -19,6 +19,23 @@ beforeEach(async () => {
 	resetUserlandForTests();
 });
 
+test("Merge dupes button appears for identical stacks and merges them", async () => {
+	await addStack("c", { quantity: 2, condition: "NM" });
+	await addStack("c", { quantity: 3, condition: "NM" });
+	render(<StackManager cardId="c" />);
+	const btn = await screen.findByRole("button", {
+		name: /merge duplicate stacks/i,
+	});
+	fireEvent.click(btn);
+	await waitFor(() => {
+		const stacks = Object.values(useUserland.getState().items).filter(
+			(s) => s.cardId === "c",
+		);
+		expect(stacks).toHaveLength(1);
+		expect(stacks[0].quantity).toBe(5);
+	});
+});
+
 test("Add stack button opens create-mode form (does NOT immediately create a stack)", async () => {
 	render(<StackManager cardId="c" />);
 	const before = Object.values(useUserland.getState().items).filter(

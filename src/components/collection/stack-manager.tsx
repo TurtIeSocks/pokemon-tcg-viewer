@@ -1,9 +1,13 @@
-import { Plus, Trash2 } from "lucide-react";
+import { Combine, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useOwnedIndex } from "../../store/userland/selectors";
-import { removeAllStacksOfCard } from "../../store/userland/userland-store";
+import {
+	mergeDuplicateStacks,
+	removeAllStacksOfCard,
+	stackIdentityKey,
+} from "../../store/userland/userland-store";
 import { StackEditForm } from "./stack-edit-form";
 import { StackRow } from "./stack-row";
 
@@ -19,6 +23,8 @@ interface StackManagerProps {
 export function StackManager({ cardId, variants }: StackManagerProps) {
 	const stacks = useOwnedIndex().get(cardId) ?? [];
 	const [addOpen, setAddOpen] = useState(false);
+	const hasDuplicates =
+		new Set(stacks.map(stackIdentityKey)).size < stacks.length;
 
 	function handleRemoveAll() {
 		if (!window.confirm("Remove all stacks of this card?")) return;
@@ -36,6 +42,18 @@ export function StackManager({ cardId, variants }: StackManagerProps) {
 					</Badge>
 				</h3>
 				<div className="flex items-center gap-2">
+					{hasDuplicates && (
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => void mergeDuplicateStacks(cardId)}
+							className="gap-1.5"
+							aria-label="Merge duplicate stacks"
+						>
+							<Combine className="h-4 w-4" aria-hidden="true" />
+							Merge dupes
+						</Button>
+					)}
 					{stacks.length > 0 && (
 						<Button
 							variant="destructive"
