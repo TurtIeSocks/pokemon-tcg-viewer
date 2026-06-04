@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import type { Stack } from "../../store/userland/types";
 import { addStack, updateStack } from "../../store/userland/userland-store";
 import { formToPatch, itemToForm } from "./stack-form-mapping";
-import { CONDITIONS, stackFormSchema, GRADERS } from "./stack-form-schema";
+import { CONDITIONS, GRADERS, stackFormSchema } from "./stack-form-schema";
 
 /** Radix Select prohibits value="". Use this sentinel for the "Unspecified" item. */
 const NONE = "__none__";
@@ -125,10 +125,13 @@ interface StackEditFormProps {
 /** Blank defaults for a new stack form. */
 const BLANK_DEFAULTS = {
 	label: "",
+	quantity: "1",
 	acquiredAt: new Date().toISOString().slice(0, 10),
 	pricePaid: "",
 	variant: "",
 	notes: "",
+	source: "",
+	storageLocation: "",
 	state: "raw" as const,
 	condition: "" as const,
 	gradingCompany: "" as const,
@@ -196,6 +199,35 @@ export function StackEditForm({
 
 			{/* 2-column responsive grid */}
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+				{/* Quantity — how many identical cards in this stack */}
+				<form.Field
+					name="quantity"
+					validators={{ onBlur: stackFormSchema.shape.quantity }}
+					// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
+					children={(field) => {
+						const invalid = fieldIsInvalid(field);
+						return (
+							<Field data-invalid={invalid}>
+								<FieldLabel htmlFor={field.name}>Quantity</FieldLabel>
+								<Input
+									id={field.name}
+									type="number"
+									min={1}
+									aria-label="Quantity"
+									aria-invalid={invalid}
+									value={field.state.value}
+									onBlur={field.handleBlur}
+									onChange={(e) => field.handleChange(e.target.value)}
+									className="font-mono tabular-nums"
+								/>
+								{invalid && (
+									<FieldError errors={toFieldErrors(field.state.meta.errors)} />
+								)}
+							</Field>
+						);
+					}}
+				/>
+
 				{/* Variant — segmented pill */}
 				{variants && variants.length > 0 && (
 					<form.Field
@@ -434,6 +466,42 @@ export function StackEditForm({
 							</Field>
 						);
 					}}
+				/>
+			</div>
+
+			{/* Provenance — source + storage location */}
+			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+				<form.Field
+					name="source"
+					// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
+					children={(field) => (
+						<Field>
+							<FieldLabel htmlFor={field.name}>Source</FieldLabel>
+							<Input
+								id={field.name}
+								placeholder="Where / who from"
+								value={field.state.value}
+								onBlur={field.handleBlur}
+								onChange={(e) => field.handleChange(e.target.value)}
+							/>
+						</Field>
+					)}
+				/>
+				<form.Field
+					name="storageLocation"
+					// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
+					children={(field) => (
+						<Field>
+							<FieldLabel htmlFor={field.name}>Storage location</FieldLabel>
+							<Input
+								id={field.name}
+								placeholder="Binder / box"
+								value={field.state.value}
+								onBlur={field.handleBlur}
+								onChange={(e) => field.handleChange(e.target.value)}
+							/>
+						</Field>
+					)}
 				/>
 			</div>
 

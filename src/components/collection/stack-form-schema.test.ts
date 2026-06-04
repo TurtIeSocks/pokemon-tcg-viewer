@@ -1,9 +1,9 @@
 import { expect, test } from "bun:test";
 import {
-	stackFormSchema,
 	isGradeOrEmpty,
 	isMoneyOrEmpty,
 	isValidDateStr,
+	stackFormSchema,
 } from "./stack-form-schema";
 
 test("predicates", () => {
@@ -22,10 +22,13 @@ test("predicates", () => {
 test("schema accepts a valid raw stack and rejects bad price", () => {
 	const base = {
 		label: "",
+		quantity: "1",
 		acquiredAt: "2024-03-01",
 		pricePaid: "5",
 		variant: "",
 		notes: "",
+		source: "",
+		storageLocation: "",
 		state: "raw" as const,
 		condition: "NM" as const,
 		gradingCompany: "" as const,
@@ -33,6 +36,12 @@ test("schema accepts a valid raw stack and rejects bad price", () => {
 	};
 	expect(stackFormSchema.safeParse(base).success).toBe(true);
 	expect(stackFormSchema.safeParse({ ...base, pricePaid: "-3" }).success).toBe(
+		false,
+	);
+	expect(stackFormSchema.safeParse({ ...base, quantity: "0" }).success).toBe(
+		false,
+	);
+	expect(stackFormSchema.safeParse({ ...base, quantity: "x" }).success).toBe(
 		false,
 	);
 });

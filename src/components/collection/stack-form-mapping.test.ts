@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import type { Stack } from "../../store/userland/types";
 import {
 	formFieldToPatch,
+	formToPatch,
 	inputDayToMs,
 	itemToForm,
 } from "./stack-form-mapping";
@@ -108,4 +109,42 @@ test("formFieldToPatch: grade with empty grade → defaults to 0", () => {
 
 test("formFieldToPatch: grade with missing company → clears grading", () => {
 	expect(formFieldToPatch("grade", "9", {})).toEqual({ grading: null });
+});
+
+test("itemToForm maps quantity (string), source, storageLocation", () => {
+	const f = itemToForm(
+		item({ quantity: 7, source: "eBay", storageLocation: "Box 1" }),
+	);
+	expect(f.quantity).toBe("7");
+	expect(f.source).toBe("eBay");
+	expect(f.storageLocation).toBe("Box 1");
+});
+
+test("itemToForm: quantity defaults to '1'; null provenance → empty strings", () => {
+	const f = itemToForm(item());
+	expect(f.quantity).toBe("1");
+	expect(f.source).toBe("");
+	expect(f.storageLocation).toBe("");
+});
+
+test("formToPatch maps quantity (clamped >=1) and trims provenance to null", () => {
+	const base = itemToForm(item());
+	const patch = formToPatch({
+		...base,
+		quantity: "10",
+		source: "  ",
+		storageLocation: "Box 1",
+	});
+	expect(patch.quantity).toBe(10);
+	expect(patch.source).toBeNull();
+	expect(patch.storageLocation).toBe("Box 1");
+	expect(formToPatch({ ...base, quantity: "0" }).quantity).toBe(1);
+});
+
+test("formFieldToPatch: quantity / source / storageLocation", () => {
+	expect(formFieldToPatch("quantity", "5")).toEqual({ quantity: 5 });
+	expect(formFieldToPatch("source", "")).toEqual({ source: null });
+	expect(formFieldToPatch("storageLocation", "Box 9")).toEqual({
+		storageLocation: "Box 9",
+	});
 });

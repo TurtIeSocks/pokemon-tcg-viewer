@@ -23,14 +23,22 @@ export function isGradeOrEmpty(s: string): boolean {
 	const n = Number(s);
 	return Number.isFinite(n) && n >= 0 && n <= 10;
 }
+/** Returns true for a whole number ≥ 1 (stack quantity). */
+export function isPositiveIntStr(s: string): boolean {
+	const n = Number(s);
+	return Number.isInteger(n) && n >= 1;
+}
 
 /** Zod schema for the stack-edit form; all fields are strings for controlled-input compatibility. */
 export const stackFormSchema = z.object({
 	label: z.string(),
+	quantity: z.string().refine(isPositiveIntStr, "Whole number ≥ 1"),
 	acquiredAt: z.string().refine(isValidDateStr, "Invalid date"),
 	pricePaid: z.string().refine(isMoneyOrEmpty, "Must be a number ≥ 0"),
 	variant: z.string(),
 	notes: z.string(),
+	source: z.string(),
+	storageLocation: z.string(),
 	state: z.enum(["raw", "graded"]),
 	condition: z.enum(["", ...CONDITIONS]),
 	gradingCompany: z.enum(["", ...GRADERS]),

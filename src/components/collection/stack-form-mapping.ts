@@ -1,7 +1,7 @@
 import type {
+	EditableStackFields,
 	Stack,
 	StackPatch,
-	EditableStackFields,
 } from "../../store/userland/types";
 import type { StackFormValues } from "./stack-form-schema";
 
@@ -21,10 +21,13 @@ export function inputDayToMs(s: string): number {
 export function itemToForm(i: Stack): StackFormValues {
 	return {
 		label: i.label ?? "",
+		quantity: String(i.quantity),
 		acquiredAt: dayMsToInput(i.acquiredAt),
 		pricePaid: i.pricePaid == null ? "" : String(i.pricePaid),
 		variant: i.variant ?? "",
 		notes: i.notes ?? "",
+		source: i.source ?? "",
+		storageLocation: i.storageLocation ?? "",
 		state: i.grading ? "graded" : "raw",
 		condition: i.condition ?? "",
 		gradingCompany:
@@ -37,13 +40,19 @@ export function itemToForm(i: Stack): StackFormValues {
  * Converts a complete set of form values to the full editable fields patch.
  * Handles the raw/graded split in one place; used by the draft→Save form.
  */
-export function formToPatch(values: StackFormValues): Partial<EditableStackFields> {
+export function formToPatch(values: StackFormValues): EditableStackFields {
 	return {
 		label: values.label.trim() === "" ? null : values.label.trim(),
+		quantity: Math.max(1, Math.floor(Number(values.quantity)) || 1),
 		acquiredAt: inputDayToMs(values.acquiredAt),
 		pricePaid: values.pricePaid === "" ? null : Number(values.pricePaid),
 		variant: values.variant === "" ? null : values.variant,
 		notes: values.notes === "" ? null : values.notes,
+		source: values.source.trim() === "" ? null : values.source.trim(),
+		storageLocation:
+			values.storageLocation.trim() === ""
+				? null
+				: values.storageLocation.trim(),
 		condition:
 			values.state === "raw" && values.condition !== ""
 				? (values.condition as Stack["condition"])
@@ -66,10 +75,18 @@ export function formFieldToPatch(
 	ctx?: { gradingCompany?: string; grade?: string },
 ): StackPatch {
 	switch (field) {
+		case "quantity":
+			return { quantity: Math.max(1, Math.floor(Number(value)) || 1) };
 		case "acquiredAt":
 			return { acquiredAt: inputDayToMs(value) };
 		case "pricePaid":
 			return { pricePaid: value === "" ? null : Number(value) };
+		case "source":
+			return { source: value.trim() === "" ? null : value.trim() };
+		case "storageLocation":
+			return {
+				storageLocation: value.trim() === "" ? null : value.trim(),
+			};
 		case "variant":
 			return { variant: value === "" ? null : value };
 		case "notes":
