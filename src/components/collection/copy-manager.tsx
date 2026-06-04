@@ -28,8 +28,8 @@ export function CopyManager({ cardId, variants }: CopyManagerProps) {
 	return (
 		<div className="flex flex-col gap-4">
 			{/* Header: copy count + prominent Add button */}
-			<div className="flex items-center justify-between gap-2">
-				<h3 className="flex items-center gap-2 text-sm font-semibold text-[var(--ink)]">
+			<div className="flex flex-wrap items-center justify-between gap-2">
+				<h3 className="flex items-center gap-2 font-display text-[19px] font-medium text-[var(--ink)]">
 					Your copies
 					<Badge variant="default" className="font-mono text-[11px]">
 						{copies.length}

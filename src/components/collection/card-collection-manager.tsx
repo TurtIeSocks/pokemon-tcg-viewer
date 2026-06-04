@@ -194,17 +194,9 @@ export function CardCollectionManager({
 					</div>
 				) : null}
 
-				{/* ── RIGHT: copy manager ─────────────────────────────────────── */}
-				<GlassPanel className="overflow-hidden">
-					{/* Manager header */}
-					<div className="flex items-center justify-between px-5 py-4 border-b border-[var(--hairline)]">
-						<h2 className="font-display text-[19px] font-medium text-[var(--ink)] flex items-center gap-2">
-							Your copies
-						</h2>
-					</div>
-					<div className="p-5">
-						<CopyManager cardId={cardId} variants={resolvedVariants} />
-					</div>
+				{/* ── RIGHT: copy manager (min-w-0 lets the 1fr track shrink to fit) ── */}
+				<GlassPanel className="min-w-0 overflow-hidden p-5">
+					<CopyManager cardId={cardId} variants={resolvedVariants} />
 				</GlassPanel>
 			</div>
 		</div>

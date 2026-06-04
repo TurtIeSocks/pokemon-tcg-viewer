@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ChevronRight, Vault } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { useState } from "react";
 import {
 	Collapsible,
@@ -57,56 +57,33 @@ function NavDot({ active }: { active: boolean }) {
 	);
 }
 
+/** Flat Vault items under the "Vault" group label (matches the mock — no nested
+ *  collapsible, no redundant "Vault" parent). */
 function VaultGroup() {
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
 	const { setOpenMobile } = useSidebar();
-	const isVaultPath = pathname.startsWith("/vault");
-	const [open, setOpen] = useState(isVaultPath);
 
 	return (
-		<Collapsible open={open} onOpenChange={setOpen}>
-			<SidebarMenuItem>
-				<CollapsibleTrigger asChild>
-					<SidebarMenuButton isActive={isVaultPath} tooltip="Vault">
-						<NavDot active={isVaultPath} />
-						<ChevronRight
-							className={cn(
-								"size-4 shrink-0 transition-transform",
-								open && "rotate-90",
-							)}
-						/>
-						<Vault className="size-4 shrink-0" />
-						<span className="flex-1">Vault</span>
-					</SidebarMenuButton>
-				</CollapsibleTrigger>
-				<CollapsibleContent>
-					<SidebarMenuSub>
-						{VAULT_CHILDREN.map(({ label, to }) => {
-							const isActive = pathname === to;
-							return (
-								<SidebarMenuSubItem key={to}>
-									<SidebarMenuSubButton
-										asChild
-										isActive={isActive}
-										aria-current={isActive ? "page" : undefined}
-									>
-										<Link
-											to={to}
-											activeOptions={{ exact: true }}
-											activeProps={{}}
-											onClick={() => setOpenMobile(false)}
-										>
-											<NavDot active={isActive} />
-											{label}
-										</Link>
-									</SidebarMenuSubButton>
-								</SidebarMenuSubItem>
-							);
-						})}
-					</SidebarMenuSub>
-				</CollapsibleContent>
-			</SidebarMenuItem>
-		</Collapsible>
+		<>
+			{VAULT_CHILDREN.map(({ label, to }) => {
+				const isActive = pathname === to;
+				return (
+					<SidebarMenuItem key={to}>
+						<SidebarMenuButton asChild isActive={isActive} tooltip={label}>
+							<Link
+								to={to}
+								activeOptions={{ exact: true }}
+								onClick={() => setOpenMobile(false)}
+								aria-current={isActive ? "page" : undefined}
+							>
+								<NavDot active={isActive} />
+								<span>{label}</span>
+							</Link>
+						</SidebarMenuButton>
+					</SidebarMenuItem>
+				);
+			})}
+		</>
 	);
 }
 
