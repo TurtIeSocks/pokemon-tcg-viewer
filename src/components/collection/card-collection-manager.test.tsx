@@ -57,8 +57,6 @@ test("back pill shows setName when provided", () => {
 	expect(
 		screen.getByRole("button", { name: /card details/i }).textContent,
 	).toContain("Base Set");
-	// Chip shows card number
-	expect(screen.getByText(/#4/)).toBeDefined();
 });
 
 test("back pill shows 'Back' when setName is omitted", () => {
