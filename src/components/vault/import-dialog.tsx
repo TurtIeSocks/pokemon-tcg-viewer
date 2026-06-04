@@ -22,7 +22,10 @@ import {
 	parseCsv,
 } from "../../store/userland/csv";
 import type { UserDataSnapshot } from "../../store/userland/types";
-import { addStacks, importUserData } from "../../store/userland/userland-store";
+import {
+	importStacks,
+	importUserData,
+} from "../../store/userland/userland-store";
 
 /** Props for {@link ImportDialog}. */
 interface ImportDialogProps {
@@ -36,6 +39,7 @@ interface ImportDialogProps {
 export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 	const [snapshot, setSnapshot] = useState<UserDataSnapshot | null>(null);
 	const [csv, setCsv] = useState<CsvImportResult | null>(null);
+	const [merge, setMerge] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const fileRef = useRef<HTMLInputElement>(null);
 	const index = useCorpusRuntime((s) => s.index);
@@ -113,7 +117,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 
 	async function onImportCsv() {
 		if (!csv || csv.matched.length === 0) return;
-		await addStacks(csv.matched);
+		await importStacks(csv.matched, merge);
 		handleOpenChange(false);
 	}
 
@@ -185,6 +189,14 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 
 				{csv && (
 					<DialogFooter>
+						<label className="mr-auto flex items-center gap-2 text-sm text-[var(--ink-muted)]">
+							<input
+								type="checkbox"
+								checked={merge}
+								onChange={(e) => setMerge(e.target.checked)}
+							/>
+							Merge duplicate stacks
+						</label>
 						<Button onClick={onImportCsv} disabled={csv.matched.length === 0}>
 							Import {csv.matched.length} stack
 							{csv.matched.length === 1 ? "" : "s"}

@@ -328,3 +328,26 @@ test("CSV set name 'Base Set' fuzzy-matches corpus set 'Base'", async () => {
 		expect(el).toBeDefined();
 	});
 });
+
+test("CSV import with Merge on collapses duplicate rows into one stack", async () => {
+	useCorpusRuntime.setState({
+		index: buildIndex([corpusCard("base1-4", "base1", "4")]),
+	});
+	render(<ImportDialog open onOpenChange={() => {}} />);
+	const input = document.querySelector(
+		'input[type="file"]',
+	) as HTMLInputElement;
+	const file = new File(
+		["card_id,quantity\nbase1-4,2\nbase1-4,2\n"],
+		"dupes.csv",
+		{ type: "text/csv" },
+	);
+	fireEvent.change(input, { target: { files: [file] } });
+	await screen.findByRole("button", { name: /import 2 stacks/i });
+	fireEvent.click(screen.getByRole("button", { name: /import 2 stacks/i }));
+	await waitFor(() => {
+		const stacks = Object.values(useUserland.getState().items);
+		expect(stacks).toHaveLength(1);
+		expect(stacks[0].quantity).toBe(4);
+	});
+});
