@@ -37,7 +37,7 @@ export function itemToForm(i: Stack): StackFormValues {
  * Converts a complete set of form values to the full editable fields patch.
  * Handles the raw/graded split in one place; used by the draft→Save form.
  */
-export function formToPatch(values: StackFormValues): EditableStackFields {
+export function formToPatch(values: StackFormValues): Partial<EditableStackFields> {
 	return {
 		label: values.label.trim() === "" ? null : values.label.trim(),
 		acquiredAt: inputDayToMs(values.acquiredAt),

@@ -32,6 +32,7 @@ function fillStack(input: NewStack): Stack {
 	return {
 		id: crypto.randomUUID(),
 		cardId: input.cardId,
+		quantity: input.quantity ?? 1,
 		createdAt: now,
 		acquiredAt: input.acquiredAt ?? now,
 		label: input.label ?? null,
@@ -40,6 +41,22 @@ function fillStack(input: NewStack): Stack {
 		notes: input.notes ?? null,
 		condition: input.condition ?? null,
 		grading: input.grading ?? null,
+		source: input.source ?? null,
+		storageLocation: input.storageLocation ?? null,
+	};
+}
+
+/**
+ * Backfill fields absent on legacy (pre-Phase-0.1a) records read from storage.
+ * Exported for direct unit testing. `quantity` defaults to 1; provenance to null.
+ */
+export function normalizeStack(raw: Stack): Stack {
+	return {
+		...raw,
+		quantity:
+			typeof raw.quantity === "number" && raw.quantity >= 1 ? raw.quantity : 1,
+		source: raw.source ?? null,
+		storageLocation: raw.storageLocation ?? null,
 	};
 }
 
@@ -142,7 +159,7 @@ export function createIdbCollectionRepo(
 	return {
 		async list() {
 			const rows = await entries<string, Stack>(store);
-			return rows.map(([, v]) => v);
+			return rows.map(([, v]) => normalizeStack(v));
 		},
 		async add(input) {
 			const item = fillStack(input);

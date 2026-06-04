@@ -13,6 +13,9 @@ function item(
 	return {
 		id,
 		cardId,
+		quantity: 1,
+		source: null,
+		storageLocation: null,
 		acquiredAt: 0,
 		createdAt: 0,
 		pricePaid: null,

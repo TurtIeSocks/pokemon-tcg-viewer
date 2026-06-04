@@ -13,14 +13,17 @@ export interface CardGrading {
 export interface Stack {
 	id: string; // stack uuid = future DB PK
 	cardId: string; // corpus card id (FK)
+	quantity: number; // ≥ 1; count of identical cards in this stack (legacy records normalize to 1)
 	acquiredAt: number; // ms epoch; default = add time; editable
 	createdAt: number; // ms epoch; record creation; immutable
 	label?: string | null; // user-given name; absent/null = derive from metadata (stacks persisted before this field lack the key)
-	pricePaid: number | null; // null = unknown (≠ 0 = free)
+	pricePaid: number | null; // PER-UNIT price; null = unknown (≠ 0 = free). Total cost = quantity × pricePaid.
 	variant: string | null; // printing key, seeded from corpus card.variants
 	notes: string | null;
 	condition: CardCondition | null; // raw state
 	grading: CardGrading | null; // null, or a COMPLETE { company, grade }
+	source: string | null; // seller / where acquired
+	storageLocation: string | null; // binder / box location
 	isPrimary?: boolean; // user-designated sort key stack; absent = not primary
 }
 
@@ -28,12 +31,15 @@ export interface Stack {
 export type EditableStackFields = Pick<
 	Stack,
 	| "label"
+	| "quantity"
 	| "acquiredAt"
 	| "pricePaid"
 	| "variant"
 	| "notes"
 	| "condition"
 	| "grading"
+	| "source"
+	| "storageLocation"
 >;
 
 /** add() input: cardId + any editable fields; repo assigns id/createdAt, defaults acquiredAt, null-fills the rest. */

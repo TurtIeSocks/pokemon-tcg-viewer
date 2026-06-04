@@ -62,6 +62,9 @@ function makeItem(id: string, cardId: string): Stack {
 	return {
 		id,
 		cardId,
+		quantity: 1,
+		source: null,
+		storageLocation: null,
 		acquiredAt: 1000,
 		createdAt: 1000,
 		pricePaid: null,

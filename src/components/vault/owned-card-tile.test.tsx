@@ -45,6 +45,9 @@ function makeRow(stacks: number): CardRow {
 	const primary = {
 		id: "copy-1",
 		cardId: testCard.id,
+		quantity: 1,
+		source: null,
+		storageLocation: null,
 		acquiredAt: 0,
 		createdAt: 0,
 		pricePaid: null,

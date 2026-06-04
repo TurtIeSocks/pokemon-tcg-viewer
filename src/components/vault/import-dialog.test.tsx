@@ -21,6 +21,9 @@ function makeSnapshot(
 		collection: Array.from({ length: collectionLen }, (_, i) => ({
 			id: `item-${i}`,
 			cardId: `card-${i}`,
+			quantity: 1,
+			source: null,
+			storageLocation: null,
 			acquiredAt: now,
 			createdAt: now,
 			pricePaid: null,

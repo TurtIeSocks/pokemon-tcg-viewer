@@ -166,6 +166,9 @@ test("importAll replace clears then writes, preserving ids", async () => {
 			{
 				id: "fixed-1",
 				cardId: "new",
+				quantity: 1,
+				source: null,
+				storageLocation: null,
 				acquiredAt: 1,
 				createdAt: 1,
 				pricePaid: null,
@@ -193,6 +196,9 @@ test("importAll merge upserts by id without clearing", async () => {
 			{
 				id: "added-1",
 				cardId: "added",
+				quantity: 1,
+				source: null,
+				storageLocation: null,
 				acquiredAt: 1,
 				createdAt: 1,
 				pricePaid: null,
@@ -251,4 +257,50 @@ test("backup round-trips a binder with rule + includeCardIds + excludeCardIds, p
 	expect(got.rules).toEqual([rule]);
 	expect(got.includeCardIds).toEqual(["base1-4"]);
 	expect(got.excludeCardIds).toEqual(["xy7-11"]);
+});
+
+// --- Phase 0.1a: quantity + provenance fields ---
+import { createStore } from "idb-keyval";
+import { normalizeStack } from "./idb-repo";
+import type { Stack } from "./types";
+
+/** A repo on a unique store so these are fully isolated. */
+function freshCollectionRepo() {
+	return createIdbCollectionRepo(createStore(`test-${crypto.randomUUID()}`, "items"));
+}
+
+test("add() defaults quantity to 1", async () => {
+	const s = await freshCollectionRepo().add({ cardId: "base1-4" });
+	expect(s.quantity).toBe(1);
+});
+
+test("add() preserves an explicit quantity", async () => {
+	const s = await freshCollectionRepo().add({ cardId: "base1-4", quantity: 10 });
+	expect(s.quantity).toBe(10);
+});
+
+test("add() null-fills source + storageLocation; persists given values", async () => {
+	const repo2 = freshCollectionRepo();
+	const bare = await repo2.add({ cardId: "base1-4" });
+	expect(bare.source).toBeNull();
+	expect(bare.storageLocation).toBeNull();
+	const filled = await repo2.add({
+		cardId: "base1-4",
+		source: "eBay",
+		storageLocation: "Binder A",
+	});
+	expect(filled.source).toBe("eBay");
+	expect(filled.storageLocation).toBe("Binder A");
+});
+
+test("normalizeStack backfills legacy records (missing quantity/source/storageLocation)", () => {
+	const legacy = {
+		id: "a", cardId: "base1-4", acquiredAt: 0, createdAt: 0, label: null,
+		pricePaid: null, variant: null, notes: null, condition: null, grading: null,
+	} as unknown as Stack;
+	const n = normalizeStack(legacy);
+	expect(n.quantity).toBe(1);
+	expect(n.source).toBeNull();
+	expect(n.storageLocation).toBeNull();
+	expect(normalizeStack({ ...legacy, quantity: 5 } as Stack).quantity).toBe(5);
 });

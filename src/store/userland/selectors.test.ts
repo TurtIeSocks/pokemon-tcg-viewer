@@ -10,6 +10,9 @@ function item(id: string, cardId: string): Stack {
 	return {
 		id,
 		cardId,
+		quantity: 1,
+		source: null,
+		storageLocation: null,
 		acquiredAt: 1,
 		createdAt: 1,
 		pricePaid: null,

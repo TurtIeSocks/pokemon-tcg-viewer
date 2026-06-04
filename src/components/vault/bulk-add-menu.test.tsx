@@ -177,6 +177,9 @@ test("collection item is disabled when all cards are owned", async () => {
 			"copy-1": {
 				id: "copy-1",
 				cardId: "base1-1",
+				quantity: 1,
+				source: null,
+				storageLocation: null,
 				acquiredAt: 0,
 				createdAt: 0,
 				pricePaid: null,
@@ -188,6 +191,9 @@ test("collection item is disabled when all cards are owned", async () => {
 			"copy-2": {
 				id: "copy-2",
 				cardId: "base1-2",
+				quantity: 1,
+				source: null,
+				storageLocation: null,
 				acquiredAt: 0,
 				createdAt: 0,
 				pricePaid: null,

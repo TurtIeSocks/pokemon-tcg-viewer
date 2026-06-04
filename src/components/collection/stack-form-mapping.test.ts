@@ -10,6 +10,9 @@ function item(over: Partial<Stack> = {}): Stack {
 	return {
 		id: "1",
 		cardId: "c",
+		quantity: 1,
+		source: null,
+		storageLocation: null,
 		acquiredAt: inputDayToMs("2024-03-01"),
 		createdAt: 0,
 		pricePaid: null,
