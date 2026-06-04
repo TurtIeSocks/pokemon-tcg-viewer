@@ -6,11 +6,11 @@ import type {
 	Binder,
 	BinderPatch,
 	BinderRule,
-	Stack,
-	StackPatch,
 	EditableStackFields,
 	NewBinder,
 	SerializedQuery,
+	Stack,
+	StackPatch,
 	UserDataSnapshot,
 } from "./types";
 
@@ -118,13 +118,41 @@ export async function addStack(
 }
 
 /** Persist a patch to an existing stack and update the store optimistically. */
-export async function updateStack(id: string, patch: StackPatch): Promise<void> {
+export async function updateStack(
+	id: string,
+	patch: StackPatch,
+): Promise<void> {
 	await activeRepos().collection.update(id, patch);
 	useUserland.setState((s) => {
 		const existing = s.items[id];
 		if (!existing) return s;
 		return { items: { ...s.items, [id]: { ...existing, ...patch } } };
 	});
+}
+
+/**
+ * Split `count` cards off the stack `id` into a new sibling stack (same fields).
+ * The original keeps `quantity - count`; the peeled stack is never primary.
+ * Throws if `count` is not a whole number in [1, quantity - 1].
+ */
+export async function splitStack(id: string, count: number): Promise<string> {
+	const src = useUserland.getState().items[id];
+	if (!src) throw new Error("Stack not found");
+	if (!Number.isInteger(count) || count < 1 || count >= src.quantity) {
+		throw new Error(
+			"Split count must be a whole number between 1 and quantity - 1",
+		);
+	}
+	const { id: _id, createdAt: _c, isPrimary: _p, quantity: _q, ...rest } = src;
+	const peeled = await activeRepos().collection.add({
+		...rest,
+		quantity: count,
+	});
+	await updateStack(id, { quantity: src.quantity - count });
+	useUserland.setState((s) => ({
+		items: { ...s.items, [peeled.id]: peeled },
+	}));
+	return peeled.id;
 }
 
 /** Delete a single stack by id from the repo and the store. */

@@ -3,8 +3,8 @@ import { beforeEach, expect, test } from "bun:test";
 import { createIdbRepos } from "./idb-repo";
 import {
 	addCardsToBinder,
-	addStack,
 	addRuleToBinder,
+	addStack,
 	bulkAddStacks,
 	clearCollection,
 	createBinder,
@@ -14,12 +14,13 @@ import {
 	removeAllStacksOfCard,
 	removeBinder,
 	removeCardFromBinder,
-	removeStack,
 	removeRuleFromBinder,
+	removeStack,
 	resetUserlandForTests,
 	restoreCardToBinder,
 	setPrimaryStack,
 	setUserlandRepos,
+	splitStack,
 	toggleCardOwned,
 	updateStack,
 	useUserland,
@@ -40,6 +41,24 @@ test("starts empty and not hydrated", () => {
 	expect(s.items).toEqual({});
 	expect(s.binders).toEqual({});
 	expect(s.hydrated).toBe(false);
+});
+
+test("splitStack peels count into a new sibling stack and reduces the original", async () => {
+	const created = await addStack("base1-4", { quantity: 10, condition: "NM" });
+	const newId = await splitStack(created.id, 3);
+	const items = useUserland.getState().items;
+	expect(items[created.id].quantity).toBe(7);
+	expect(items[newId].quantity).toBe(3);
+	expect(items[newId].condition).toBe("NM");
+	expect(items[newId].cardId).toBe("base1-4");
+	expect(items[newId].isPrimary).toBeFalsy(); // primary stays on the original
+});
+
+test("splitStack rejects count <= 0, >= quantity, or a missing id", async () => {
+	const s = await addStack("base1-4", { quantity: 2 });
+	await expect(splitStack(s.id, 0)).rejects.toThrow();
+	await expect(splitStack(s.id, 2)).rejects.toThrow();
+	await expect(splitStack("missing", 1)).rejects.toThrow();
 });
 
 test("loadUserland hydrates items and binders from the repo", async () => {
