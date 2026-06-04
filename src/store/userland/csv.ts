@@ -229,7 +229,8 @@ function num(v: string | undefined): number | null {
 	return Number.isFinite(n) ? n : null;
 }
 
-function resolveCardId(
+/** Resolve a canonical-keyed CSV row to a corpus cardId (card_id → set_id+number → fuzzy set_name+number), or null. */
+export function matchRow(
 	row: Record<string, string>,
 	r: ImportResolver,
 ): string | null {
@@ -250,7 +251,11 @@ function resolveCardId(
 	return null;
 }
 
-function rowToNewStack(cardId: string, row: Record<string, string>): NewStack {
+/** Build a NewStack from a matched cardId + a canonical-keyed CSV row. */
+export function rowToNewStack(
+	cardId: string,
+	row: Record<string, string>,
+): NewStack {
 	const qty = num(row.quantity);
 	const company = row.grading_company?.trim();
 	const grade = num(row.grading_grade);
@@ -279,7 +284,7 @@ export function csvToImport(
 	const matched: NewStack[] = [];
 	const unmatched: CsvImportResult["unmatched"] = [];
 	for (const row of rows) {
-		const cardId = resolveCardId(row, resolve);
+		const cardId = matchRow(row, resolve);
 		if (!cardId) {
 			unmatched.push({ row, reason: "No matching card" });
 			continue;

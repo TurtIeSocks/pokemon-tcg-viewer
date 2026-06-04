@@ -5,8 +5,10 @@ import {
 	csvFilename,
 	csvToImport,
 	detectColumns,
+	matchRow,
 	normalizeSetName,
 	parseCsv,
+	rowToNewStack,
 	stacksToCsv,
 } from "./csv";
 import type { Stack } from "./types";
@@ -202,4 +204,12 @@ test("normalizeSetName collapses noise so 'Base' and 'Base Set' match", () => {
 	expect(normalizeSetName("Base Set")).toBe(normalizeSetName("Base"));
 	expect(normalizeSetName("Sword & Shield")).toBe("sword and shield");
 	expect(normalizeSetName("XY: Evolutions")).toBe("xy evolutions");
+});
+
+test("matchRow + rowToNewStack expose the per-row import pieces", () => {
+	expect(matchRow({ card_id: "base1-4" }, importResolver)).toBe("base1-4");
+	expect(matchRow({ card_id: "nope" }, importResolver)).toBeNull();
+	expect(
+		rowToNewStack("base1-4", { quantity: "3", condition: "NM" }),
+	).toMatchObject({ cardId: "base1-4", quantity: 3, condition: "NM" });
 });
