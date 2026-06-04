@@ -1,5 +1,11 @@
 import { expect, test } from "bun:test";
-import { CSV_COLUMNS, csvFilename, stacksToCsv } from "./csv";
+import {
+	CSV_COLUMNS,
+	csvFilename,
+	csvToImport,
+	parseCsv,
+	stacksToCsv,
+} from "./csv";
 import type { Stack } from "./types";
 
 function stack(over: Partial<Stack>): Stack {
@@ -67,4 +73,80 @@ test("csvFilename includes the date and mode", () => {
 	expect(csvFilename(new Date("2026-06-04T00:00:00Z"), "copy")).toBe(
 		"cardstack-collection-2026-06-04-copy.csv",
 	);
+});
+
+const importResolver = {
+	exists: (id: string) => id === "base1-4",
+	bySetNumber: (setId: string, number: string) =>
+		setId === "base1" && number === "4" ? "base1-4" : undefined,
+};
+
+test("parseCsv reads a header + rows into objects", () => {
+	const { rows } = parseCsv("card_id,quantity\nbase1-4,3\n");
+	expect(rows[0]).toEqual({ card_id: "base1-4", quantity: "3" });
+});
+
+test("csvToImport matches by card_id and builds a NewStack", () => {
+	const { matched, unmatched } = csvToImport(
+		[
+			{
+				card_id: "base1-4",
+				quantity: "3",
+				condition: "NM",
+				price_paid_unit: "2.5",
+				acquired_at: "2024-03-01",
+			},
+		],
+		importResolver,
+	);
+	expect(unmatched).toHaveLength(0);
+	expect(matched[0]).toMatchObject({
+		cardId: "base1-4",
+		quantity: 3,
+		condition: "NM",
+		pricePaid: 2.5,
+	});
+});
+
+test("csvToImport falls back to set_id + number", () => {
+	const { matched } = csvToImport(
+		[{ set_id: "base1", number: "4", quantity: "1" }],
+		importResolver,
+	);
+	expect(matched[0].cardId).toBe("base1-4");
+});
+
+test("csvToImport reports unmatched rows", () => {
+	const { matched, unmatched } = csvToImport(
+		[{ card_id: "nope", quantity: "1" }],
+		importResolver,
+	);
+	expect(matched).toHaveLength(0);
+	expect(unmatched).toHaveLength(1);
+});
+
+test("round-trip: export → parse → import preserves cardId + quantity", () => {
+	const csv = stacksToCsv(
+		[
+			{
+				id: "1",
+				cardId: "base1-4",
+				quantity: 4,
+				acquiredAt: 0,
+				createdAt: 0,
+				label: null,
+				pricePaid: null,
+				variant: null,
+				notes: null,
+				condition: null,
+				grading: null,
+				source: null,
+				storageLocation: null,
+			},
+		],
+		"stack",
+	);
+	const { rows } = parseCsv(csv);
+	const { matched } = csvToImport(rows, importResolver);
+	expect(matched[0]).toMatchObject({ cardId: "base1-4", quantity: 4 });
 });

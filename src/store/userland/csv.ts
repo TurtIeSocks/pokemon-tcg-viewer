@@ -1,4 +1,5 @@
-import type { Stack } from "./types";
+import Papa from "papaparse";
+import type { CardCondition, NewStack, Stack } from "./types";
 
 /** Canonical Cardstack CSV column order (v1). */
 export const CSV_COLUMNS = [
@@ -103,4 +104,96 @@ export function downloadCsv(csv: string, filename: string): void {
 	a.click();
 	a.remove();
 	URL.revokeObjectURL(url);
+}
+
+// --- Import ---
+
+/** Resolves a CSV row to a corpus cardId. Built from the corpus index in the UI; faked in tests. */
+export interface ImportResolver {
+	exists(cardId: string): boolean;
+	bySetNumber(setId: string, number: string): string | undefined;
+}
+export interface CsvImportResult {
+	matched: NewStack[];
+	unmatched: { row: Record<string, string>; reason: string }[];
+}
+
+const CONDITIONS = new Set(["NM", "LP", "MP", "HP", "DMG"]);
+
+/** YYYY-MM-DD → local-midnight ms (mirrors the form's inputDayToMs); null when malformed. */
+function ymdToMs(s: string): number | null {
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+	const [y, m, d] = s.split("-").map(Number);
+	const t = new Date(y, m - 1, d).getTime();
+	return Number.isNaN(t) ? null : t;
+}
+
+/** Parse a CSV string into header-keyed row objects (trims headers, skips blank lines). */
+export function parseCsv(text: string): {
+	rows: Record<string, string>[];
+	errors: string[];
+} {
+	const out = Papa.parse<Record<string, string>>(text, {
+		header: true,
+		skipEmptyLines: true,
+		transformHeader: (h) => h.trim(),
+	});
+	return { rows: out.data, errors: out.errors.map((e) => e.message) };
+}
+
+function num(v: string | undefined): number | null {
+	if (v == null || v.trim() === "") return null;
+	const n = Number(v);
+	return Number.isFinite(n) ? n : null;
+}
+
+function resolveCardId(
+	row: Record<string, string>,
+	r: ImportResolver,
+): string | null {
+	const id = row.card_id?.trim();
+	if (id && r.exists(id)) return id;
+	const setId = row.set_id?.trim();
+	const number = row.number?.trim();
+	if (setId && number) return r.bySetNumber(setId, number) ?? null;
+	return null;
+}
+
+function rowToNewStack(cardId: string, row: Record<string, string>): NewStack {
+	const qty = num(row.quantity);
+	const company = row.grading_company?.trim();
+	const grade = num(row.grading_grade);
+	const cond = row.condition?.trim();
+	const acquired = row.acquired_at ? ymdToMs(row.acquired_at) : null;
+	return {
+		cardId,
+		quantity: qty && qty >= 1 ? Math.floor(qty) : 1,
+		...(acquired != null ? { acquiredAt: acquired } : {}),
+		pricePaid: num(row.price_paid_unit),
+		variant: row.variant?.trim() || null,
+		notes: row.notes?.trim() || null,
+		condition: cond && CONDITIONS.has(cond) ? (cond as CardCondition) : null,
+		grading: company ? { company, grade: grade ?? 0 } : null,
+		source: row.source?.trim() || null,
+		storageLocation: row.storage_location?.trim() || null,
+		label: row.label?.trim() || null,
+	};
+}
+
+/** Map parsed CSV rows to NewStacks via the resolver; collect unmatched rows. */
+export function csvToImport(
+	rows: Record<string, string>[],
+	resolve: ImportResolver,
+): CsvImportResult {
+	const matched: NewStack[] = [];
+	const unmatched: CsvImportResult["unmatched"] = [];
+	for (const row of rows) {
+		const cardId = resolveCardId(row, resolve);
+		if (!cardId) {
+			unmatched.push({ row, reason: "No matching card" });
+			continue;
+		}
+		matched.push(rowToNewStack(cardId, row));
+	}
+	return { matched, unmatched };
 }
