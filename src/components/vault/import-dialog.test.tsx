@@ -290,3 +290,41 @@ test("CSV with foreign headers imports via auto-detect + set_name matching", asy
 		expect(stacks[0]?.quantity).toBe(3);
 	});
 });
+
+test("CSV set name 'Base Set' fuzzy-matches corpus set 'Base'", async () => {
+	useCorpusRuntime.setState({
+		index: buildIndex([corpusCard("base1-4", "base1", "4")]),
+	});
+	useStore.setState({
+		sets: [
+			{
+				id: "base1",
+				name: "Base",
+				series: "Base",
+				releaseDate: "1999-01-09",
+				total: 102,
+				images: { symbol: "", logo: "" },
+			},
+		],
+	});
+	render(<ImportDialog open onOpenChange={() => {}} />);
+	const input = document.querySelector(
+		'input[type="file"]',
+	) as HTMLInputElement;
+	const file = new File(
+		["Name,Set,Card Number,Qty\nCharizard,Base Set,4,1\n"],
+		"x.csv",
+		{ type: "text/csv" },
+	);
+	fireEvent.change(input, { target: { files: [file] } });
+	await waitFor(() => {
+		const el = screen.getByText(
+			(_, n) =>
+				n?.nodeName === "P" &&
+				(n?.textContent ?? "")
+					.replace(/\s+/g, " ")
+					.includes("1 matched · 0 unmatched"),
+		);
+		expect(el).toBeDefined();
+	});
+});

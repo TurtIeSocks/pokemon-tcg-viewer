@@ -18,6 +18,7 @@ import {
 	csvToImport,
 	detectColumns,
 	type ImportResolver,
+	normalizeSetName,
 	parseCsv,
 } from "../../store/userland/csv";
 import type { UserDataSnapshot } from "../../store/userland/types";
@@ -45,19 +46,19 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 		const bySet = new Map<string, string>();
 		const bySetName = new Map<string, string>();
 		const setNames = sets ? setsById(sets) : null;
-		const norm = (s: string) => s.trim().toLowerCase();
 		if (index) {
 			for (const card of index.byId.values()) {
 				bySet.set(`${card.setId}|${card.number}`, card.id);
 				const name = setNames?.get(card.setId)?.name;
-				if (name) bySetName.set(`${norm(name)}|${card.number}`, card.id);
+				if (name)
+					bySetName.set(`${normalizeSetName(name)}|${card.number}`, card.id);
 			}
 		}
 		return {
 			exists: (id) => index?.byId.has(id) ?? false,
 			bySetNumber: (setId, number) => bySet.get(`${setId}|${number}`),
 			bySetNameNumber: (setName, number) =>
-				bySetName.get(`${norm(setName)}|${number}`),
+				bySetName.get(`${normalizeSetName(setName)}|${number}`),
 		};
 	}, [index, sets]);
 

@@ -175,6 +175,18 @@ export function applyMapping(
 	return out;
 }
 
+/** Normalize a set name for fuzzy matching: lowercase, &→and, strip punctuation + filler words (the/set/expansion). */
+export function normalizeSetName(s: string): string {
+	return s
+		.trim()
+		.toLowerCase()
+		.replace(/&/g, " and ")
+		.replace(/[^a-z0-9]+/g, " ")
+		.replace(/\b(the|set|expansion)\b/g, " ")
+		.replace(/\s+/g, " ")
+		.trim();
+}
+
 // --- Import ---
 
 /** Resolves a CSV row to a corpus cardId. Built from the corpus index in the UI; faked in tests. */

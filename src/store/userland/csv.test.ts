@@ -5,6 +5,7 @@ import {
 	csvFilename,
 	csvToImport,
 	detectColumns,
+	normalizeSetName,
 	parseCsv,
 	stacksToCsv,
 } from "./csv";
@@ -195,4 +196,10 @@ test("csvToImport matches by set_name + number (normalized)", () => {
 		r,
 	);
 	expect(matched[0]).toMatchObject({ cardId: "base1-4", quantity: 2 });
+});
+
+test("normalizeSetName collapses noise so 'Base' and 'Base Set' match", () => {
+	expect(normalizeSetName("Base Set")).toBe(normalizeSetName("Base"));
+	expect(normalizeSetName("Sword & Shield")).toBe("sword and shield");
+	expect(normalizeSetName("XY: Evolutions")).toBe("xy evolutions");
 });
