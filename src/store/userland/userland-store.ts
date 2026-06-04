@@ -266,6 +266,63 @@ export async function addStacks(items: NewStack[]): Promise<Stack[]> {
 	return patched;
 }
 
+type DedupeFields = Pick<
+	NewStack,
+	| "cardId"
+	| "variant"
+	| "condition"
+	| "grading"
+	| "source"
+	| "pricePaid"
+	| "label"
+>;
+/** Identity key for "the same physical stack" — used to merge duplicates on import. */
+function dedupeKey(f: DedupeFields): string {
+	return [
+		f.cardId,
+		f.variant ?? "",
+		f.condition ?? "",
+		f.grading ? `${f.grading.company}/${f.grading.grade}` : "",
+		f.source ?? "",
+		f.pricePaid ?? "",
+		f.label ?? "",
+	].join("");
+}
+
+/** Commit imported stacks. merge=true sums quantity into an identical existing stack (and dedups the batch). */
+export async function importStacks(
+	items: NewStack[],
+	merge: boolean,
+): Promise<void> {
+	if (!merge || items.length === 0) {
+		await addStacks(items);
+		return;
+	}
+	const existing = new Map<string, Stack>();
+	for (const s of Object.values(useUserland.getState().items)) {
+		existing.set(dedupeKey(s), s);
+	}
+	const bumps = new Map<string, number>(); // existing stack id → quantity to add
+	const fresh = new Map<string, NewStack>(); // key → accumulated new stack
+	for (const item of items) {
+		const k = dedupeKey(item);
+		const ex = existing.get(k);
+		const q = item.quantity ?? 1;
+		if (ex) {
+			bumps.set(ex.id, (bumps.get(ex.id) ?? 0) + q);
+		} else {
+			const f = fresh.get(k);
+			if (f) f.quantity = (f.quantity ?? 1) + q;
+			else fresh.set(k, { ...item, quantity: q });
+		}
+	}
+	for (const [id, add] of bumps) {
+		const ex = useUserland.getState().items[id];
+		if (ex) await updateStack(id, { quantity: ex.quantity + add });
+	}
+	await addStacks([...fresh.values()]);
+}
+
 /** Erase the entire collection from storage and the store. */
 export async function clearCollection(): Promise<void> {
 	await activeRepos().collection.clear();

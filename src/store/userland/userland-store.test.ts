@@ -10,6 +10,7 @@ import {
 	clearCollection,
 	createBinder,
 	exportUserData,
+	importStacks,
 	importUserData,
 	loadUserland,
 	removeAllStacksOfCard,
@@ -75,6 +76,33 @@ test("addStacks bulk-inserts NewStacks; first of each unowned card becomes prima
 	).toHaveLength(1);
 	const b = created.find((c) => c.cardId === "b");
 	expect(b && items[b.id].isPrimary).toBe(true);
+});
+
+test("importStacks merge sums into an existing identical stack + dedups the batch", async () => {
+	await addStack("a", { quantity: 2, condition: "NM" });
+	await importStacks(
+		[
+			{ cardId: "a", quantity: 3, condition: "NM" }, // merges into existing → 5
+			{ cardId: "a", quantity: 1, condition: "LP" }, // new
+			{ cardId: "a", quantity: 1, condition: "LP" }, // dedups with prev → 2
+		],
+		true,
+	);
+	const items = Object.values(useUserland.getState().items);
+	expect(items.find((i) => i.condition === "NM")?.quantity).toBe(5);
+	expect(items.find((i) => i.condition === "LP")?.quantity).toBe(2);
+	expect(items).toHaveLength(2);
+});
+
+test("importStacks without merge adds every row", async () => {
+	await importStacks(
+		[
+			{ cardId: "a", quantity: 1 },
+			{ cardId: "a", quantity: 1 },
+		],
+		false,
+	);
+	expect(Object.values(useUserland.getState().items)).toHaveLength(2);
 });
 
 test("loadUserland hydrates items and binders from the repo", async () => {
