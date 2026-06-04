@@ -276,8 +276,8 @@ type DedupeFields = Pick<
 	| "pricePaid"
 	| "label"
 >;
-/** Identity key for "the same physical stack" — used to merge duplicates on import. */
-function dedupeKey(f: DedupeFields): string {
+/** Identity key for "the same physical stack" (card + variant + condition + grading + source + price + label). */
+export function stackIdentityKey(f: DedupeFields): string {
 	return [
 		f.cardId,
 		f.variant ?? "",
@@ -300,12 +300,12 @@ export async function importStacks(
 	}
 	const existing = new Map<string, Stack>();
 	for (const s of Object.values(useUserland.getState().items)) {
-		existing.set(dedupeKey(s), s);
+		existing.set(stackIdentityKey(s), s);
 	}
 	const bumps = new Map<string, number>(); // existing stack id → quantity to add
 	const fresh = new Map<string, NewStack>(); // key → accumulated new stack
 	for (const item of items) {
-		const k = dedupeKey(item);
+		const k = stackIdentityKey(item);
 		const ex = existing.get(k);
 		const q = item.quantity ?? 1;
 		if (ex) {
@@ -321,6 +321,33 @@ export async function importStacks(
 		if (ex) await updateStack(id, { quantity: ex.quantity + add });
 	}
 	await addStacks([...fresh.values()]);
+}
+
+/** Merge every group of identical stacks (same identity key) for a card into one, summing quantities. */
+export async function mergeDuplicateStacks(cardId: string): Promise<void> {
+	const stacks = Object.values(useUserland.getState().items).filter(
+		(s) => s.cardId === cardId,
+	);
+	const groups = new Map<string, Stack[]>();
+	for (const s of stacks) {
+		const k = stackIdentityKey(s);
+		const g = groups.get(k);
+		if (g) g.push(s);
+		else groups.set(k, [s]);
+	}
+	for (const group of groups.values()) {
+		if (group.length < 2) continue;
+		const keep = group.find((s) => s.isPrimary) ?? group[0];
+		const total = group.reduce((n, s) => n + s.quantity, 0);
+		const removeIds = group.filter((s) => s.id !== keep.id).map((s) => s.id);
+		await updateStack(keep.id, { quantity: total });
+		await activeRepos().collection.removeMany(removeIds);
+		useUserland.setState((st) => {
+			const items = { ...st.items };
+			for (const id of removeIds) delete items[id];
+			return { items };
+		});
+	}
 }
 
 /** Erase the entire collection from storage and the store. */

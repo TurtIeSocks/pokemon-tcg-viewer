@@ -13,6 +13,7 @@ import {
 	importStacks,
 	importUserData,
 	loadUserland,
+	mergeDuplicateStacks,
 	removeAllStacksOfCard,
 	removeBinder,
 	removeCardFromBinder,
@@ -103,6 +104,20 @@ test("importStacks without merge adds every row", async () => {
 		false,
 	);
 	expect(Object.values(useUserland.getState().items)).toHaveLength(2);
+});
+
+test("mergeDuplicateStacks combines identical stacks of a card, summing quantity", async () => {
+	const a = await addStack("c", { quantity: 2, condition: "NM" });
+	await addStack("c", { quantity: 3, condition: "NM" }); // identical → mergeable
+	await addStack("c", { quantity: 1, condition: "LP" }); // different → kept apart
+	await mergeDuplicateStacks("c");
+	const stacks = Object.values(useUserland.getState().items).filter(
+		(s) => s.cardId === "c",
+	);
+	expect(stacks).toHaveLength(2);
+	const nm = stacks.find((s) => s.condition === "NM");
+	expect(nm?.quantity).toBe(5);
+	expect(nm?.id).toBe(a.id); // kept the primary/first
 });
 
 test("loadUserland hydrates items and binders from the repo", async () => {
