@@ -4,9 +4,9 @@ import type { PokemonSet } from "../../server/card-mappers";
 import { buildIndex } from "../corpus/corpus-engine";
 import type { CorpusCard } from "../corpus/corpus-types";
 import { groupByCardId, joinOwnedViews } from "./selectors";
-import type { CollectionItem } from "./types";
+import type { Stack } from "./types";
 
-function item(id: string, cardId: string): CollectionItem {
+function item(id: string, cardId: string): Stack {
 	return {
 		id,
 		cardId,
@@ -39,7 +39,7 @@ const base1: PokemonSet = {
 	images: { symbol: "", logo: "" },
 };
 
-test("groupByCardId groups copies by cardId", () => {
+test("groupByCardId groups stacks by cardId", () => {
 	const map = groupByCardId([item("1", "a"), item("2", "a"), item("3", "b")]);
 	expect(map.get("a")).toHaveLength(2);
 	expect(map.get("b")).toHaveLength(1);

@@ -1,12 +1,12 @@
 import { expect, test } from "bun:test";
-import type { CollectionItem } from "../../store/userland/types";
+import type { Stack } from "../../store/userland/types";
 import {
 	formFieldToPatch,
 	inputDayToMs,
 	itemToForm,
-} from "./copy-form-mapping";
+} from "./stack-form-mapping";
 
-function item(over: Partial<CollectionItem> = {}): CollectionItem {
+function item(over: Partial<Stack> = {}): Stack {
 	return {
 		id: "1",
 		cardId: "c",

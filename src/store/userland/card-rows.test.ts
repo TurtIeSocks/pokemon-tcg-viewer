@@ -3,13 +3,13 @@ import type { PokemonSet } from "../../server/card-mappers";
 import { buildIndex } from "../corpus/corpus-engine";
 import type { CorpusCard } from "../corpus/corpus-types";
 import { buildCardRows, sortCardRows } from "./card-rows";
-import type { CollectionItem } from "./types";
+import type { Stack } from "./types";
 
 function item(
 	id: string,
 	cardId: string,
-	over: Partial<CollectionItem> = {},
-): CollectionItem {
+	over: Partial<Stack> = {},
+): Stack {
 	return {
 		id,
 		cardId,

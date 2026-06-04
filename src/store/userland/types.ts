@@ -3,30 +3,30 @@
 /** Raw (ungraded) condition, TCGplayer scale. */
 export type CardCondition = "NM" | "LP" | "MP" | "HP" | "DMG";
 
-/** Third-party grading label for a physical copy. */
+/** Third-party grading label for a physical stack. */
 export interface CardGrading {
 	company: string; // "PSA" | "BGS" | "CGC" | "TAG" | "SGC" | … (UI offers a common set)
 	grade: number; // e.g. 9.5, 10
 }
 
-/** One physical copy a user owns. Dead value is null; every key is always present. */
-export interface CollectionItem {
-	id: string; // copy uuid = future DB PK
+/** One physical stack a user owns. Dead value is null; every key is always present. */
+export interface Stack {
+	id: string; // stack uuid = future DB PK
 	cardId: string; // corpus card id (FK)
 	acquiredAt: number; // ms epoch; default = add time; editable
 	createdAt: number; // ms epoch; record creation; immutable
-	label?: string | null; // user-given name; absent/null = derive from metadata (copies persisted before this field lack the key)
+	label?: string | null; // user-given name; absent/null = derive from metadata (stacks persisted before this field lack the key)
 	pricePaid: number | null; // null = unknown (≠ 0 = free)
 	variant: string | null; // printing key, seeded from corpus card.variants
 	notes: string | null;
 	condition: CardCondition | null; // raw state
 	grading: CardGrading | null; // null, or a COMPLETE { company, grade }
-	isPrimary?: boolean; // user-designated sort key copy; absent = not primary
+	isPrimary?: boolean; // user-designated sort key stack; absent = not primary
 }
 
-/** The user-editable fields of a copy. */
-export type EditableCopyFields = Pick<
-	CollectionItem,
+/** The user-editable fields of a stack. */
+export type EditableStackFields = Pick<
+	Stack,
 	| "label"
 	| "acquiredAt"
 	| "pricePaid"
@@ -37,13 +37,13 @@ export type EditableCopyFields = Pick<
 >;
 
 /** add() input: cardId + any editable fields; repo assigns id/createdAt, defaults acquiredAt, null-fills the rest. */
-export type NewCollectionItem = {
+export type NewStack = {
 	cardId: string;
-} & Partial<EditableCopyFields>;
+} & Partial<EditableStackFields>;
 
 /** update() patch: field: null clears; omitted key leaves untouched. */
-export type CopyPatch = Partial<
-	EditableCopyFields & Pick<CollectionItem, "isPrimary">
+export type StackPatch = Partial<
+	EditableStackFields & Pick<Stack, "isPrimary">
 >;
 
 /** A serialized search/filter query that defines the dynamic membership of a Binder rule. */
@@ -101,6 +101,6 @@ export type BinderPatch = Partial<
 export interface UserDataSnapshot {
 	schemaVersion: 1;
 	exportedAt: number;
-	collection: CollectionItem[];
+	collection: Stack[];
 	binders: Binder[];
 }

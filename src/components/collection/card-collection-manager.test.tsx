@@ -3,7 +3,7 @@ import { beforeEach, expect, test } from "bun:test";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { createIdbRepos } from "../../store/userland/idb-repo";
 import {
-	addCopy,
+	addStack,
 	resetUserlandForTests,
 	setUserlandRepos,
 } from "../../store/userland/userland-store";
@@ -72,8 +72,8 @@ test("back pill shows 'Back' when setName is omitted", () => {
 	).toContain("Back");
 });
 
-test("renders the CopyManager (Add copy control + a seeded copy)", async () => {
-	await addCopy("base1-4");
+test("renders the StackManager (Add stack control + a seeded stack)", async () => {
+	await addStack("base1-4");
 	render(
 		<CardCollectionManager
 			cardId="base1-4"
@@ -81,9 +81,9 @@ test("renders the CopyManager (Add copy control + a seeded copy)", async () => {
 			onBack={() => {}}
 		/>,
 	);
-	// Multiple "Your copies" elements exist (panel header + CopyManager h3)
-	expect(screen.getAllByText(/your copies/i).length).toBeGreaterThan(0);
-	expect(screen.getByRole("button", { name: /add copy/i })).toBeDefined();
+	// Multiple "Your stacks" elements exist (panel header + StackManager h3)
+	expect(screen.getAllByText(/your stacks/i).length).toBeGreaterThan(0);
+	expect(screen.getByRole("button", { name: /add stack/i })).toBeDefined();
 });
 
 test("thumbnail renders only when imageUrl is provided (no full card data)", () => {

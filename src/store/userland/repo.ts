@@ -2,28 +2,28 @@
 import type {
 	Binder,
 	BinderPatch,
-	CollectionItem,
-	CopyPatch,
+	Stack,
+	StackPatch,
 	NewBinder,
-	NewCollectionItem,
+	NewStack,
 	UserDataSnapshot,
 } from "./types";
 
-/** Persistence contract for owned card copies. */
+/** Persistence contract for owned card stacks. */
 export interface CollectionRepo {
-	/** Returns all stored copies in insertion order. */
-	list(): Promise<CollectionItem[]>;
-	/** Persist a new copy and return the fully-filled record. */
-	add(item: NewCollectionItem): Promise<CollectionItem>;
-	/** Persist multiple new copies in a single write. */
-	bulkAdd(items: NewCollectionItem[]): Promise<CollectionItem[]>;
-	/** Merge patch into an existing copy; null fields clear, omitted fields stay. */
-	update(id: string, patch: CopyPatch): Promise<void>; // null clears; absent leaves
-	/** Delete a single copy by id. */
+	/** Returns all stored stacks in insertion order. */
+	list(): Promise<Stack[]>;
+	/** Persist a new stack and return the fully-filled record. */
+	add(item: NewStack): Promise<Stack>;
+	/** Persist multiple new stacks in a single write. */
+	bulkAdd(items: NewStack[]): Promise<Stack[]>;
+	/** Merge patch into an existing stack; null fields clear, omitted fields stay. */
+	update(id: string, patch: StackPatch): Promise<void>; // null clears; absent leaves
+	/** Delete a single stack by id. */
 	remove(id: string): Promise<void>;
-	/** Delete multiple copies by id in one operation. */
+	/** Delete multiple stacks by id in one operation. */
 	removeMany(ids: string[]): Promise<void>;
-	/** Delete every copy in the store. */
+	/** Delete every stack in the store. */
 	clear(): Promise<void>;
 }
 

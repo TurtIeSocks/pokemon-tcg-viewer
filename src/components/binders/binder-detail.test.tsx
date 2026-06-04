@@ -19,7 +19,7 @@ import type { CorpusCard } from "../../store/corpus/corpus-types";
 import { createIdbRepos } from "../../store/userland/idb-repo";
 import type { Binder } from "../../store/userland/types";
 import {
-	addCopy,
+	addStack,
 	addRuleToBinder,
 	createBinder,
 	resetUserlandForTests,
@@ -90,7 +90,7 @@ beforeEach(async () => {
 		loading: false,
 	});
 	// owned card is in the user's collection; missing card is not
-	await addCopy(ownedCard.id);
+	await addStack(ownedCard.id);
 });
 
 // ---------------------------------------------------------------------------
@@ -340,10 +340,10 @@ test("clicking a member card toggles ownership via toggleCardOwned", async () =>
 	});
 
 	await waitFor(() => {
-		const copies = Object.values(useUserland.getState().items).filter(
+		const stacks = Object.values(useUserland.getState().items).filter(
 			(i) => i.cardId === ownedCard.id,
 		);
-		expect(copies).toHaveLength(0);
+		expect(stacks).toHaveLength(0);
 	});
 });
 
@@ -378,9 +378,9 @@ test("clicking an unowned member card adds it via toggleCardOwned", async () => 
 	});
 
 	await waitFor(() => {
-		const copies = Object.values(useUserland.getState().items).filter(
+		const stacks = Object.values(useUserland.getState().items).filter(
 			(i) => i.cardId === missingCard.id,
 		);
-		expect(copies).toHaveLength(1);
+		expect(stacks).toHaveLength(1);
 	});
 });

@@ -6,7 +6,7 @@ import { buildIndex } from "../../store/corpus/corpus-engine";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
 import type { CorpusCard } from "../../store/corpus/corpus-types";
 import { createIdbRepos } from "../../store/userland/idb-repo";
-import type { Binder, CollectionItem } from "../../store/userland/types";
+import type { Binder, Stack } from "../../store/userland/types";
 import {
 	resetUserlandForTests,
 	setUserlandRepos,
@@ -58,7 +58,7 @@ function makeBinder(overrides: Partial<Binder> = {}): Binder {
 	};
 }
 
-function makeItem(id: string, cardId: string): CollectionItem {
+function makeItem(id: string, cardId: string): Stack {
 	return {
 		id,
 		cardId,
@@ -94,8 +94,8 @@ beforeEach(async () => {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function seedStore(binder: Binder, items: CollectionItem[] = []) {
-	const itemsMap: Record<string, CollectionItem> = {};
+function seedStore(binder: Binder, items: Stack[] = []) {
+	const itemsMap: Record<string, Stack> = {};
 	for (const item of items) itemsMap[item.id] = item;
 	useUserland.setState((s) => ({
 		binders: { ...s.binders, [binder.id]: binder },

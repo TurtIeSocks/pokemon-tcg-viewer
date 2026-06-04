@@ -24,8 +24,8 @@ export function isGradeOrEmpty(s: string): boolean {
 	return Number.isFinite(n) && n >= 0 && n <= 10;
 }
 
-/** Zod schema for the copy-edit form; all fields are strings for controlled-input compatibility. */
-export const copyFormSchema = z.object({
+/** Zod schema for the stack-edit form; all fields are strings for controlled-input compatibility. */
+export const stackFormSchema = z.object({
 	label: z.string(),
 	acquiredAt: z.string().refine(isValidDateStr, "Invalid date"),
 	pricePaid: z.string().refine(isMoneyOrEmpty, "Must be a number ≥ 0"),
@@ -36,5 +36,5 @@ export const copyFormSchema = z.object({
 	gradingCompany: z.enum(["", ...GRADERS]),
 	grade: z.string().refine(isGradeOrEmpty, "0–10"),
 });
-/** Inferred form-value type from {@link copyFormSchema}. */
-export type CopyFormValues = z.infer<typeof copyFormSchema>;
+/** Inferred form-value type from {@link stackFormSchema}. */
+export type StackFormValues = z.infer<typeof stackFormSchema>;

@@ -41,7 +41,7 @@ function useCompletionPct(countBySet: Map<string, number>): number {
 }
 
 /**
- * Est. value = sum of pricePaid over all copies where pricePaid is non-null.
+ * Est. value = sum of pricePaid over all stacks where pricePaid is non-null.
  * CorpusCard has no market-price field, so this is the user's own cost data only.
  */
 function useEstValue(): number | null {

@@ -3,46 +3,46 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useOwnedIndex } from "../../store/userland/selectors";
-import { removeAllCopiesOfCard } from "../../store/userland/userland-store";
-import { CopyEditForm } from "./copy-edit-form";
-import { CopyRow } from "./copy-row";
+import { removeAllStacksOfCard } from "../../store/userland/userland-store";
+import { StackEditForm } from "./stack-edit-form";
+import { StackRow } from "./stack-row";
 
-/** Props for {@link CopyManager}. */
-interface CopyManagerProps {
-	/** The card ID whose copies are managed. */
+/** Props for {@link StackManager}. */
+interface StackManagerProps {
+	/** The card ID whose stacks are managed. */
 	cardId: string;
-	/** Optional known variant strings for the card; forwarded to each CopyRow. */
+	/** Optional known variant strings for the card; forwarded to each StackRow. */
 	variants?: string[];
 }
 
-/** Lists all owned copies of a card with add/remove-all controls and per-copy tile editing. */
-export function CopyManager({ cardId, variants }: CopyManagerProps) {
-	const copies = useOwnedIndex().get(cardId) ?? [];
+/** Lists all owned stacks of a card with add/remove-all controls and per-stack tile editing. */
+export function StackManager({ cardId, variants }: StackManagerProps) {
+	const stacks = useOwnedIndex().get(cardId) ?? [];
 	const [addOpen, setAddOpen] = useState(false);
 
 	function handleRemoveAll() {
-		if (!window.confirm("Remove all copies of this card?")) return;
-		void removeAllCopiesOfCard(cardId);
+		if (!window.confirm("Remove all stacks of this card?")) return;
+		void removeAllStacksOfCard(cardId);
 	}
 
 	return (
 		<div className="flex flex-col gap-4">
-			{/* Header: copy count + prominent Add button */}
+			{/* Header: stack count + prominent Add button */}
 			<div className="flex flex-wrap items-center justify-between gap-2">
 				<h3 className="flex items-center gap-2 font-display text-[19px] font-medium text-[var(--ink)]">
-					Your copies
+					Your stacks
 					<Badge variant="default" className="font-mono text-[11px]">
-						{copies.length}
+						{stacks.length}
 					</Badge>
 				</h3>
 				<div className="flex items-center gap-2">
-					{copies.length > 0 && (
+					{stacks.length > 0 && (
 						<Button
 							variant="destructive"
 							size="sm"
 							onClick={handleRemoveAll}
 							className="gap-1.5"
-							aria-label="Remove all copies"
+							aria-label="Remove all stacks"
 						>
 							<Trash2 className="h-4 w-4" aria-hidden="true" />
 							Remove all
@@ -53,20 +53,20 @@ export function CopyManager({ cardId, variants }: CopyManagerProps) {
 							size="sm"
 							onClick={() => setAddOpen(true)}
 							className="gap-1.5"
-							aria-label="Add copy"
+							aria-label="Add stack"
 						>
 							<Plus className="h-4 w-4" aria-hidden="true" />
-							Add copy
+							Add stack
 						</Button>
 					)}
 				</div>
 			</div>
 
-			{/* Create-mode form — shown when Add copy is clicked */}
+			{/* Create-mode form — shown when Add stack is clicked */}
 			{addOpen && (
 				<div className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--glass)] p-4">
-					<p className="text-xs text-[var(--faint)] mb-3">New copy</p>
-					<CopyEditForm
+					<p className="text-xs text-[var(--faint)] mb-3">New stack</p>
+					<StackEditForm
 						mode="create"
 						cardId={cardId}
 						variants={variants}
@@ -76,15 +76,15 @@ export function CopyManager({ cardId, variants }: CopyManagerProps) {
 				</div>
 			)}
 
-			{/* Copy tiles */}
-			{copies.length === 0 && !addOpen ? (
+			{/* Stack tiles */}
+			{stacks.length === 0 && !addOpen ? (
 				<p className="text-sm text-[var(--ink-muted)] py-4 text-center">
-					No copies yet — add one above.
+					No stacks yet — add one above.
 				</p>
 			) : (
 				<div className="flex flex-col gap-2">
-					{copies.map((item) => (
-						<CopyRow key={item.id} item={item} variants={variants} />
+					{stacks.map((item) => (
+						<StackRow key={item.id} item={item} variants={variants} />
 					))}
 				</div>
 			)}

@@ -14,7 +14,7 @@ import { clearCorpus } from "../../store/corpus/corpus-store";
 import type { CorpusCard } from "../../store/corpus/corpus-types";
 import { createIdbRepos } from "../../store/userland/idb-repo";
 import {
-	addCopy,
+	addStack,
 	resetUserlandForTests,
 	setUserlandRepos,
 } from "../../store/userland/userland-store";
@@ -82,20 +82,20 @@ test("renders without crashing", async () => {
 test("renders a tile when a card is owned with seeded corpus + sets", async () => {
 	useCorpusRuntime.setState({ index: buildIndex([testCard]), loading: false });
 	useStore.setState({ sets: [testSet], setsFetchedAt: Date.now() });
-	await addCopy(testCard.id);
+	await addStack(testCard.id);
 
 	await renderGrid();
 	// Owned tile is now a Link to the card's manage face.
 	expect(
-		screen.getByRole("link", { name: "Manage copies of Charizard" }),
+		screen.getByRole("link", { name: "Manage stacks of Charizard" }),
 	).toBeDefined();
 });
 
-test("renders ×2 badge when two copies are owned", async () => {
+test("renders ×2 badge when two stacks are owned", async () => {
 	useCorpusRuntime.setState({ index: buildIndex([testCard]), loading: false });
 	useStore.setState({ sets: [testSet], setsFetchedAt: Date.now() });
-	await addCopy(testCard.id);
-	await addCopy(testCard.id);
+	await addStack(testCard.id);
+	await addStack(testCard.id);
 
 	await renderGrid();
 	expect(screen.getByText("×2")).toBeDefined();
@@ -104,7 +104,7 @@ test("renders ×2 badge when two copies are owned", async () => {
 test("changing sort key re-renders grid without crashing", async () => {
 	useCorpusRuntime.setState({ index: buildIndex([testCard]), loading: false });
 	useStore.setState({ sets: [testSet], setsFetchedAt: Date.now() });
-	await addCopy(testCard.id);
+	await addStack(testCard.id);
 
 	await renderGrid();
 	// The sort select trigger shows the current value; click it then change option
@@ -115,14 +115,14 @@ test("changing sort key re-renders grid without crashing", async () => {
 	fireEvent.click(option);
 	// Grid still shows the card
 	expect(
-		screen.getByRole("link", { name: "Manage copies of Charizard" }),
+		screen.getByRole("link", { name: "Manage stacks of Charizard" }),
 	).toBeDefined();
 });
 
 test("clicking asc/desc toggle re-renders grid without crashing", async () => {
 	useCorpusRuntime.setState({ index: buildIndex([testCard]), loading: false });
 	useStore.setState({ sets: [testSet], setsFetchedAt: Date.now() });
-	await addCopy(testCard.id);
+	await addStack(testCard.id);
 
 	await renderGrid();
 	const toggleBtn = screen.getByRole("button", { name: /sort descending/i });
@@ -131,6 +131,6 @@ test("clicking asc/desc toggle re-renders grid without crashing", async () => {
 	expect(screen.getByRole("button", { name: /sort ascending/i })).toBeDefined();
 	// Card still present
 	expect(
-		screen.getByRole("link", { name: "Manage copies of Charizard" }),
+		screen.getByRole("link", { name: "Manage stacks of Charizard" }),
 	).toBeDefined();
 });

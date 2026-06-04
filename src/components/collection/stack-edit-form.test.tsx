@@ -1,14 +1,14 @@
-// copy-edit-form.test.tsx — draft→Save model
+// stack-edit-form.test.tsx — draft→Save model
 import { beforeEach, expect, test } from "bun:test";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createIdbRepos } from "../../store/userland/idb-repo";
 import {
-	addCopy,
+	addStack,
 	resetUserlandForTests,
 	setUserlandRepos,
 	useUserland,
 } from "../../store/userland/userland-store";
-import { CopyEditForm } from "./copy-edit-form";
+import { StackEditForm } from "./stack-edit-form";
 
 let repos = createIdbRepos();
 beforeEach(async () => {
@@ -22,11 +22,11 @@ beforeEach(async () => {
 // ── edit mode: draft → Save ──────────────────────────────────────────────────
 
 test("edit: changing price does NOT update store until Save is clicked", async () => {
-	const item = await addCopy("c");
+	const item = await addStack("c");
 	const onSaved = () => {};
 	const onCancel = () => {};
 	render(
-		<CopyEditForm
+		<StackEditForm
 			mode="edit"
 			item={useUserland.getState().items[item.id]}
 			cardId="c"
@@ -48,10 +48,10 @@ test("edit: changing price does NOT update store until Save is clicked", async (
 });
 
 test("edit: Cancel discards changes — store unchanged", async () => {
-	const item = await addCopy("c");
+	const item = await addStack("c");
 	let cancelled = false;
 	render(
-		<CopyEditForm
+		<StackEditForm
 			mode="edit"
 			item={useUserland.getState().items[item.id]}
 			cardId="c"
@@ -69,9 +69,9 @@ test("edit: Cancel discards changes — store unchanged", async () => {
 });
 
 test("edit: invalid price shows error text (not [object Object]) and has role=alert", async () => {
-	const item = await addCopy("c");
+	const item = await addStack("c");
 	render(
-		<CopyEditForm
+		<StackEditForm
 			mode="edit"
 			item={useUserland.getState().items[item.id]}
 			cardId="c"
@@ -90,9 +90,9 @@ test("edit: invalid price shows error text (not [object Object]) and has role=al
 });
 
 test("edit: invalid date shows error on blur with role=alert", async () => {
-	const item = await addCopy("c");
+	const item = await addStack("c");
 	render(
-		<CopyEditForm
+		<StackEditForm
 			mode="edit"
 			item={useUserland.getState().items[item.id]}
 			cardId="c"
@@ -111,9 +111,9 @@ test("edit: invalid date shows error on blur with role=alert", async () => {
 });
 
 test("edit: switching to graded reveals grader controls", async () => {
-	const item = await addCopy("c", { condition: "NM" });
+	const item = await addStack("c", { condition: "NM" });
 	render(
-		<CopyEditForm
+		<StackEditForm
 			mode="edit"
 			item={useUserland.getState().items[item.id]}
 			cardId="c"
@@ -126,9 +126,9 @@ test("edit: switching to graded reveals grader controls", async () => {
 });
 
 test("edit: invalid grade shows error text and has role=alert", async () => {
-	const item = await addCopy("c");
+	const item = await addStack("c");
 	render(
-		<CopyEditForm
+		<StackEditForm
 			mode="edit"
 			item={useUserland.getState().items[item.id]}
 			cardId="c"
@@ -147,10 +147,10 @@ test("edit: invalid grade shows error text and has role=alert", async () => {
 });
 
 test("edit: Save persists notes", async () => {
-	const item = await addCopy("c");
+	const item = await addStack("c");
 	let saved = false;
 	render(
-		<CopyEditForm
+		<StackEditForm
 			mode="edit"
 			item={useUserland.getState().items[item.id]}
 			cardId="c"
@@ -170,9 +170,9 @@ test("edit: Save persists notes", async () => {
 });
 
 test("edit: variant pill: choosing a variant only persists on Save", async () => {
-	const item = await addCopy("c");
+	const item = await addStack("c");
 	render(
-		<CopyEditForm
+		<StackEditForm
 			mode="edit"
 			item={useUserland.getState().items[item.id]}
 			cardId="c"
@@ -195,10 +195,10 @@ test("edit: variant pill: choosing a variant only persists on Save", async () =>
 
 // ── create mode ─────────────────────────────────────────────────────────────
 
-test("create: Save calls addCopy and a new copy exists", async () => {
+test("create: Save calls addStack and a new stack exists", async () => {
 	let saved = false;
 	render(
-		<CopyEditForm
+		<StackEditForm
 			mode="create"
 			cardId="c"
 			onSaved={() => {
@@ -215,11 +215,11 @@ test("create: Save calls addCopy and a new copy exists", async () => {
 	// Save
 	fireEvent.click(screen.getByRole("button", { name: /save/i }));
 	await waitFor(() => {
-		const copies = Object.values(useUserland.getState().items).filter(
+		const stacks = Object.values(useUserland.getState().items).filter(
 			(i) => i.cardId === "c",
 		);
-		expect(copies).toHaveLength(1);
-		expect(copies[0].pricePaid).toBe(25);
+		expect(stacks).toHaveLength(1);
+		expect(stacks[0].pricePaid).toBe(25);
 	});
 	expect(saved).toBe(true);
 });
@@ -227,7 +227,7 @@ test("create: Save calls addCopy and a new copy exists", async () => {
 test("create: Cancel adds nothing", async () => {
 	let cancelled = false;
 	render(
-		<CopyEditForm
+		<StackEditForm
 			mode="create"
 			cardId="c"
 			onSaved={() => {}}
@@ -247,7 +247,7 @@ test("create: Cancel adds nothing", async () => {
 
 test("create: invalid input shows error and blocks Save", async () => {
 	render(
-		<CopyEditForm
+		<StackEditForm
 			mode="create"
 			cardId="c"
 			onSaved={() => {}}
@@ -259,7 +259,7 @@ test("create: invalid input shows error and blocks Save", async () => {
 	fireEvent.blur(price);
 	const errorEl = await screen.findByRole("alert");
 	expect(errorEl.textContent).not.toBe("[object Object]");
-	// no copy added
+	// no stack added
 	expect(
 		Object.values(useUserland.getState().items).filter((i) => i.cardId === "c"),
 	).toHaveLength(0);
@@ -267,7 +267,7 @@ test("create: invalid input shows error and blocks Save", async () => {
 
 test("create: condition Select selecting NM is persisted on Save", async () => {
 	render(
-		<CopyEditForm
+		<StackEditForm
 			mode="create"
 			cardId="c"
 			onSaved={() => {}}
@@ -284,17 +284,17 @@ test("create: condition Select selecting NM is persisted on Save", async () => {
 	fireEvent.click(nmOption);
 	fireEvent.click(screen.getByRole("button", { name: /save/i }));
 	await waitFor(() => {
-		const copies = Object.values(useUserland.getState().items).filter(
+		const stacks = Object.values(useUserland.getState().items).filter(
 			(i) => i.cardId === "c",
 		);
-		expect(copies).toHaveLength(1);
-		expect(copies[0].condition).toBe("NM");
+		expect(stacks).toHaveLength(1);
+		expect(stacks[0].condition).toBe("NM");
 	});
 });
 
-test("create: graded copy with PSA+9 is persisted on Save", async () => {
+test("create: graded stack with PSA+9 is persisted on Save", async () => {
 	render(
-		<CopyEditForm
+		<StackEditForm
 			mode="create"
 			cardId="c"
 			onSaved={() => {}}
@@ -313,11 +313,11 @@ test("create: graded copy with PSA+9 is persisted on Save", async () => {
 	fireEvent.change(gradeInput, { target: { value: "9" } });
 	fireEvent.click(screen.getByRole("button", { name: /save/i }));
 	await waitFor(() => {
-		const copies = Object.values(useUserland.getState().items).filter(
+		const stacks = Object.values(useUserland.getState().items).filter(
 			(i) => i.cardId === "c",
 		);
-		expect(copies).toHaveLength(1);
-		expect(copies[0].grading?.company).toBe("PSA");
-		expect(copies[0].grading?.grade).toBe(9);
+		expect(stacks).toHaveLength(1);
+		expect(stacks[0].grading?.company).toBe("PSA");
+		expect(stacks[0].grading?.grade).toBe(9);
 	});
 });

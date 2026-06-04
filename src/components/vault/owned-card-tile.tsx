@@ -45,7 +45,7 @@ export function OwnedCardTile({ row }: OwnedCardTileProps) {
 			<Link
 				{...cardManageLinkPropsFor(p)}
 				className="relative block w-full text-left rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-wash)]"
-				aria-label={`Manage copies of ${row.card.name}`}
+				aria-label={`Manage stacks of ${row.card.name}`}
 			>
 				{inner}
 			</Link>

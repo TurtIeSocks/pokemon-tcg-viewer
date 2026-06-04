@@ -7,13 +7,13 @@ import { getCardAccent, getReadableAccent } from "../../utils/card-colors";
 import { toHoloCardData } from "../card/to-holo";
 import { HoloCard } from "../holo-card";
 import { CardPrices } from "../islands/card-prices";
-import { CopyManager } from "./copy-manager";
+import { StackManager } from "./stack-manager";
 
 /**
  * Props for {@link CardCollectionManager}.
  */
 export interface CardCollectionManagerProps {
-	/** The ID of the card whose copies are managed. */
+	/** The ID of the card whose stacks are managed. */
 	cardId: string;
 	/** Display name shown in the panel heading. */
 	cardName: string;
@@ -23,7 +23,7 @@ export interface CardCollectionManagerProps {
 	cardNumber?: string;
 	/** Card thumbnail URL shown beside the heading for context (fallback when card not provided). */
 	imageUrl?: string;
-	/** Known printing variant strings forwarded to {@link CopyManager}. */
+	/** Known printing variant strings forwarded to {@link StackManager}. */
 	variants?: string[];
 	/**
 	 * Full card data — when provided, renders the holo hero + prices in the
@@ -36,10 +36,10 @@ export interface CardCollectionManagerProps {
 }
 
 /**
- * Full-width 2-column panel for managing all owned copies of one card.
+ * Full-width 2-column panel for managing all owned stacks of one card.
  *
  * - Left: sticky holo hero + card meta + TCGplayer prices (when `card` provided).
- * - Right: CopyManager (header "Your copies N" + Add copy, copies list, edit form).
+ * - Right: StackManager (header "Your stacks N" + Add stack, stacks list, edit form).
  * - Collapses to 1-column below `md` breakpoint.
  * - Top bar: back pill + card name + `#N` chip.
  *
@@ -183,9 +183,9 @@ export function CardCollectionManager({
 					</div>
 				) : null}
 
-				{/* ── RIGHT: copy manager (min-w-0 lets the 1fr track shrink to fit) ── */}
+				{/* ── RIGHT: stack manager (min-w-0 lets the 1fr track shrink to fit) ── */}
 				<GlassPanel className="min-w-0 overflow-hidden p-5">
-					<CopyManager cardId={cardId} variants={resolvedVariants} />
+					<StackManager cardId={cardId} variants={resolvedVariants} />
 				</GlassPanel>
 			</div>
 		</div>

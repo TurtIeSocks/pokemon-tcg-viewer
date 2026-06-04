@@ -74,7 +74,7 @@ const emptyRule = {
 
 // Spy references — set in beforeEach, restored in afterEach.
 let spyBulkAddCopies: ReturnType<
-	typeof spyOn<typeof userlandStore, "bulkAddCopies">
+	typeof spyOn<typeof userlandStore, "bulkAddStacks">
 >;
 let spyAddCardsToBinder: ReturnType<
 	typeof spyOn<typeof userlandStore, "addCardsToBinder">
@@ -102,7 +102,7 @@ beforeEach(async () => {
 	useUserland.setState({ hydrated: true });
 
 	// Spy on store actions used by the menu; all others remain real.
-	spyBulkAddCopies = spyOn(userlandStore, "bulkAddCopies").mockImplementation(
+	spyBulkAddCopies = spyOn(userlandStore, "bulkAddStacks").mockImplementation(
 		mock(async () => {}),
 	);
 	spyAddCardsToBinder = spyOn(
@@ -155,7 +155,7 @@ test("shows 'Add 2 to collection' when nothing is owned", async () => {
 	);
 });
 
-test("collection-add calls bulkAddCopies with unowned cards", async () => {
+test("collection-add calls bulkAddStacks with unowned cards", async () => {
 	spyOn(globalThis, "confirm").mockImplementation(() => true);
 	spyOn(globalThis, "alert").mockImplementation(() => {});
 

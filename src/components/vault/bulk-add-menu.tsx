@@ -7,7 +7,7 @@ import type { Binder, SerializedQuery } from "../../store/userland/types";
 import {
 	addCardsToBinder,
 	addRuleToBinder,
-	bulkAddCopies,
+	bulkAddStacks,
 	useUserland,
 } from "../../store/userland/userland-store";
 import { BinderFormDialog } from "../binders/binder-form-dialog";
@@ -105,7 +105,7 @@ export function BulkAddMenu({
 			);
 			if (!ok) return;
 		}
-		await bulkAddCopies(toAdd);
+		await bulkAddStacks(toAdd);
 		window.alert(
 			`Added ${toAdd.length}${skipped ? ` · skipped ${skipped} already owned` : ""}`,
 		);

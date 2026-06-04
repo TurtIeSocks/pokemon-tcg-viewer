@@ -3,24 +3,24 @@ import type { PokemonSet } from "../../server/card-mappers";
 import { type CorpusIndex, hydrateCard } from "../corpus/corpus-engine";
 import { compareCardNumber } from "../corpus/natural-compare";
 import { groupByCardId } from "./selectors";
-import type { CollectionItem } from "./types";
+import type { Stack } from "./types";
 
 /** Column the collection table is sorted by. */
 export type SortKey = "set" | "acquired" | "price" | "year";
 /** Sort direction for the collection table. */
 export type SortDir = "asc" | "desc";
-/** One row in the collection table: the display card, all copies, and the representative copy used for sorting. */
+/** One row in the collection table: the display card, all stacks, and the representative stack used for sorting. */
 export interface CardRow {
 	/** Corpus card data for display (image, name, set info). */
 	card: HoloCardData;
-	/** Every owned copy for this card. */
-	copies: CollectionItem[];
+	/** Every owned stack for this card. */
+	stacks: Stack[];
 	/**
-	 * The copy used for sort keys (acquiredAt, pricePaid).
-	 * isPrimary wins; otherwise the earliest createdAt copy.
+	 * The stack used for sort keys (acquiredAt, pricePaid).
+	 * isPrimary wins; otherwise the earliest createdAt stack.
 	 */
-	primary: CollectionItem;
-	/** Number of owned copies (= copies.length). */
+	primary: Stack;
+	/** Number of owned stacks (= stacks.length). */
 	count: number;
 }
 
@@ -29,23 +29,23 @@ export interface CardRow {
  * Cards whose id is not found in the corpus index are silently dropped.
  */
 export function buildCardRows(
-	items: CollectionItem[],
+	items: Stack[],
 	index: CorpusIndex,
 	setsById: Map<string, PokemonSet>,
 ): CardRow[] {
 	const byCard = groupByCardId(items);
 	const rows: CardRow[] = [];
-	for (const [cardId, copies] of byCard) {
+	for (const [cardId, stacks] of byCard) {
 		const cc = index.byId.get(cardId);
 		if (!cc) continue;
 		const primary =
-			copies.find((c) => c.isPrimary) ??
-			copies.reduce((a, b) => (b.createdAt < a.createdAt ? b : a));
+			stacks.find((c) => c.isPrimary) ??
+			stacks.reduce((a, b) => (b.createdAt < a.createdAt ? b : a));
 		rows.push({
 			card: hydrateCard(cc, setsById),
-			copies,
+			stacks,
 			primary,
-			count: copies.length,
+			count: stacks.length,
 		});
 	}
 	return rows;

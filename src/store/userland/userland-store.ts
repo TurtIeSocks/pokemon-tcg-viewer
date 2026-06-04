@@ -6,9 +6,9 @@ import type {
 	Binder,
 	BinderPatch,
 	BinderRule,
-	CollectionItem,
-	CopyPatch,
-	EditableCopyFields,
+	Stack,
+	StackPatch,
+	EditableStackFields,
 	NewBinder,
 	SerializedQuery,
 	UserDataSnapshot,
@@ -16,8 +16,8 @@ import type {
 
 /** Shape of the Zustand userland store slice. */
 interface UserlandState {
-	/** All owned copies, keyed by copy id. */
-	items: Record<string, CollectionItem>;
+	/** All owned stacks, keyed by stack id. */
+	items: Record<string, Stack>;
 	/** All user binders, keyed by binder id. */
 	binders: Record<string, Binder>;
 	/** True once the first load from the repo has completed. */
@@ -33,7 +33,7 @@ const initial: UserlandState = {
 	loading: false,
 };
 
-/** Zustand store holding all user-owned copies and binders. Subscribe via selectors. */
+/** Zustand store holding all user-owned stacks and binders. Subscribe via selectors. */
 export const useUserland = create<UserlandState>(() => ({ ...initial }));
 
 // --- Repo wiring (the swap point; overridable in tests) ---
@@ -57,7 +57,7 @@ async function fetchAll(
 		r.collection.list(),
 		r.binders.list(),
 	]);
-	const items: Record<string, CollectionItem> = {};
+	const items: Record<string, Stack> = {};
 	for (const it of itemList) items[it.id] = it;
 	const binders: Record<string, Binder> = {};
 	for (const b of binderList) binders[b.id] = b;
@@ -89,12 +89,12 @@ export function resetUserlandForTests(): void {
 }
 
 // --- Collection actions ---
-/** Persist a new copy for the given card and update the store. */
-export async function addCopy(
+/** Persist a new stack for the given card and update the store. */
+export async function addStack(
 	cardId: string,
-	fields: Partial<EditableCopyFields> = {},
-): Promise<CollectionItem> {
-	// Auto-primary: first copy of this card becomes primary.
+	fields: Partial<EditableStackFields> = {},
+): Promise<Stack> {
+	// Auto-primary: first stack of this card becomes primary.
 	const existingCount = Object.values(useUserland.getState().items).filter(
 		(i) => i.cardId === cardId,
 	).length;
@@ -104,7 +104,7 @@ export async function addCopy(
 		...fields,
 		...(isPrimary !== undefined ? { isPrimary } : {}),
 	});
-	// If repo did not persist isPrimary (fillItem doesn't), patch it now.
+	// If repo did not persist isPrimary (fillStack doesn't), patch it now.
 	if (isPrimary && !item.isPrimary) {
 		await activeRepos().collection.update(item.id, { isPrimary: true });
 		const patched = { ...item, isPrimary: true };
@@ -117,8 +117,8 @@ export async function addCopy(
 	return item;
 }
 
-/** Persist a patch to an existing copy and update the store optimistically. */
-export async function updateCopy(id: string, patch: CopyPatch): Promise<void> {
+/** Persist a patch to an existing stack and update the store optimistically. */
+export async function updateStack(id: string, patch: StackPatch): Promise<void> {
 	await activeRepos().collection.update(id, patch);
 	useUserland.setState((s) => {
 		const existing = s.items[id];
@@ -127,30 +127,30 @@ export async function updateCopy(id: string, patch: CopyPatch): Promise<void> {
 	});
 }
 
-/** Delete a single copy by id from the repo and the store. */
-export async function removeCopy(id: string): Promise<void> {
+/** Delete a single stack by id from the repo and the store. */
+export async function removeStack(id: string): Promise<void> {
 	const state = useUserland.getState();
-	const copy = state.items[id];
+	const stack = state.items[id];
 	await activeRepos().collection.remove(id);
 	useUserland.setState((s) => {
 		const items = { ...s.items };
 		delete items[id];
 		return { items };
 	});
-	// Promote-on-delete: if removed copy was primary, promote earliest-createdAt survivor.
-	if (copy?.isPrimary) {
+	// Promote-on-delete: if removed stack was primary, promote earliest-createdAt survivor.
+	if (stack?.isPrimary) {
 		const survivors = Object.values(useUserland.getState().items)
-			.filter((i) => i.cardId === copy.cardId)
+			.filter((i) => i.cardId === stack.cardId)
 			.sort((a, b) => a.createdAt - b.createdAt);
 		if (survivors.length > 0) {
-			await setPrimaryCopy(copy.cardId, survivors[0].id);
+			await setPrimaryStack(stack.cardId, survivors[0].id);
 		}
 	}
 }
 
 /**
- * Toggle ownership of a card: if ≥1 copy exists, remove all of them;
- * if 0 copies, add one (auto-marked primary by addCopy).
+ * Toggle ownership of a card: if ≥1 stack exists, remove all of them;
+ * if 0 stacks, add one (auto-marked primary by addStack).
  */
 export async function toggleCardOwned(cardId: string): Promise<void> {
 	const ids = Object.values(useUserland.getState().items)
@@ -164,12 +164,12 @@ export async function toggleCardOwned(cardId: string): Promise<void> {
 			return { items };
 		});
 	} else {
-		await addCopy(cardId);
+		await addStack(cardId);
 	}
 }
 
-/** Delete every copy owned for a given cardId in one batched operation. */
-export async function removeAllCopiesOfCard(cardId: string): Promise<void> {
+/** Delete every stack owned for a given cardId in one batched operation. */
+export async function removeAllStacksOfCard(cardId: string): Promise<void> {
 	const ids = Object.values(useUserland.getState().items)
 		.filter((i) => i.cardId === cardId)
 		.map((i) => i.id);
@@ -182,19 +182,19 @@ export async function removeAllCopiesOfCard(cardId: string): Promise<void> {
 	});
 }
 
-/** Persist one copy per cardId in a single write; useful for bulk import flows. */
-export async function bulkAddCopies(
+/** Persist one stack per cardId in a single write; useful for bulk import flows. */
+export async function bulkAddStacks(
 	cardIds: string[],
-	fields: Partial<EditableCopyFields> = {},
+	fields: Partial<EditableStackFields> = {},
 ): Promise<void> {
-	// Seed with already-owned cardIds; only the FIRST newly-added copy of each
+	// Seed with already-owned cardIds; only the FIRST newly-added stack of each
 	// previously-unowned cardId in this batch becomes primary.
 	const existing = useUserland.getState().items;
 	const grantedPrimary = new Set(Object.values(existing).map((i) => i.cardId));
 	const created = await activeRepos().collection.bulkAdd(
 		cardIds.map((cardId) => ({ cardId, ...fields })),
 	);
-	// Patch primary flag for the first newly-owned copy of each card.
+	// Patch primary flag for the first newly-owned stack of each card.
 	const patched = await Promise.all(
 		created.map(async (item) => {
 			if (!grantedPrimary.has(item.cardId)) {
@@ -219,28 +219,28 @@ export async function clearCollection(): Promise<void> {
 }
 
 /**
- * Mark `copyId` as the primary copy for `cardId`; clears isPrimary on all other
- * copies of that card atomically (parallel repo writes, then a single state update).
+ * Mark `stackId` as the primary stack for `cardId`; clears isPrimary on all other
+ * stacks of that card atomically (parallel repo writes, then a single state update).
  */
-export async function setPrimaryCopy(
+export async function setPrimaryStack(
 	cardId: string,
-	copyId: string,
+	stackId: string,
 ): Promise<void> {
-	const copies = Object.values(useUserland.getState().items).filter(
+	const stacks = Object.values(useUserland.getState().items).filter(
 		(i) => i.cardId === cardId,
 	);
 	await Promise.all(
-		copies.map((c) =>
-			activeRepos().collection.update(c.id, { isPrimary: c.id === copyId }),
+		stacks.map((c) =>
+			activeRepos().collection.update(c.id, { isPrimary: c.id === stackId }),
 		),
 	);
 	useUserland.setState((s) => {
 		const items = { ...s.items };
-		// Re-derive from fresh state (not the pre-await `copies` snapshot) so a
-		// concurrent add/delete can't resurrect a removed copy as a bogus entry.
+		// Re-derive from fresh state (not the pre-await `stacks` snapshot) so a
+		// concurrent add/delete can't resurrect a removed stack as a bogus entry.
 		for (const it of Object.values(items)) {
 			if (it.cardId === cardId)
-				items[it.id] = { ...it, isPrimary: it.id === copyId };
+				items[it.id] = { ...it, isPrimary: it.id === stackId };
 		}
 		return { items };
 	});

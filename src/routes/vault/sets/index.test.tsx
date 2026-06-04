@@ -11,7 +11,7 @@ import { buildIndex } from "../../../store/corpus/corpus-engine";
 import { useCorpusRuntime } from "../../../store/corpus/corpus-runtime";
 import type { CorpusCard } from "../../../store/corpus/corpus-types";
 import { createIdbRepos } from "../../../store/userland/idb-repo";
-import type { CollectionItem } from "../../../store/userland/types";
+import type { Stack } from "../../../store/userland/types";
 import {
 	resetUserlandForTests,
 	setUserlandRepos,
@@ -55,7 +55,7 @@ const cards = [
 	cc("jungle1-2", "Oddish", "jungle1"),
 ];
 
-function makeItem(id: string, cardId: string): CollectionItem {
+function makeItem(id: string, cardId: string): Stack {
 	return {
 		id,
 		cardId,
@@ -76,8 +76,8 @@ function makeItem(id: string, cardId: string): CollectionItem {
 // Instead, we supply a loader that returns the tree.
 import { deriveNavTree } from "../../../lib/nav-tree";
 
-async function renderSetsInner(items: CollectionItem[] = []) {
-	const itemsRecord: Record<string, CollectionItem> = {};
+async function renderSetsInner(items: Stack[] = []) {
+	const itemsRecord: Record<string, Stack> = {};
 	for (const item of items) {
 		itemsRecord[item.id] = item;
 	}

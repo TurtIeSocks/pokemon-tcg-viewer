@@ -1,6 +1,6 @@
 // src/store/userland/share.ts
 import { deflateSync, inflateSync, strFromU8, strToU8 } from "fflate";
-import type { Binder, CollectionItem } from "./types";
+import type { Binder, Stack } from "./types";
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -26,7 +26,7 @@ export interface BuildSnapshotInput {
 	binder: Binder;
 	members: Set<string>;
 	ownedCardIds: Set<string>;
-	copiesByCard: Map<string, CollectionItem[]>;
+	stacksByCard: Map<string, Stack[]>;
 	scope: "all" | "owned" | "needed";
 	includeGrades: boolean;
 	sharedAt: number;
@@ -36,12 +36,12 @@ export interface BuildSnapshotInput {
 // Build
 // ---------------------------------------------------------------------------
 
-/** Pick the "best" copy for a card: primary copy first, else earliest createdAt. */
-function bestCopy(copies: CollectionItem[]): CollectionItem | undefined {
-	if (!copies.length) return undefined;
-	const primary = copies.find((c) => c.isPrimary);
+/** Pick the "best" stack for a card: primary stack first, else earliest createdAt. */
+function bestStack(stacks: Stack[]): Stack | undefined {
+	if (!stacks.length) return undefined;
+	const primary = stacks.find((c) => c.isPrimary);
 	if (primary) return primary;
-	return copies.reduce((a, b) => (a.createdAt <= b.createdAt ? a : b));
+	return stacks.reduce((a, b) => (a.createdAt <= b.createdAt ? a : b));
 }
 
 /** Builds a serialisable snapshot of a binder's cards for URL sharing. */
@@ -50,7 +50,7 @@ export function buildSnapshot(input: BuildSnapshotInput): BinderSnapshot {
 		binder,
 		members,
 		ownedCardIds,
-		copiesByCard,
+		stacksByCard,
 		scope,
 		includeGrades,
 		sharedAt,
@@ -71,16 +71,16 @@ export function buildSnapshot(input: BuildSnapshotInput): BinderSnapshot {
 		const card: SnapshotCard = { cardId, owned };
 
 		if (includeGrades && owned) {
-			const copies = copiesByCard.get(cardId);
-			const copy = copies ? bestCopy(copies) : undefined;
-			if (copy) {
+			const stacks = stacksByCard.get(cardId);
+			const stack = stacks ? bestStack(stacks) : undefined;
+			if (stack) {
 				// condition — omit key when null
-				if (copy.condition != null) {
-					card.condition = copy.condition;
+				if (stack.condition != null) {
+					card.condition = stack.condition;
 				}
 				// grade — omit key when no grading
-				if (copy.grading != null) {
-					card.grade = `${copy.grading.company} ${copy.grading.grade}`;
+				if (stack.grading != null) {
+					card.grade = `${stack.grading.company} ${stack.grading.grade}`;
 				}
 			}
 		}

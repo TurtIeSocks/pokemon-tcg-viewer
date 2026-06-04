@@ -52,7 +52,7 @@ export function ShareDialog({ open, onOpenChange, binder }: ShareDialogProps) {
 
 	// Copies by card — derive from flat items map
 	const items = useUserland((s) => s.items);
-	const copiesByCard = useMemo(
+	const stacksByCard = useMemo(
 		() => groupByCardId(Object.values(items)),
 		[items],
 	);
@@ -65,7 +65,7 @@ export function ShareDialog({ open, onOpenChange, binder }: ShareDialogProps) {
 			binder,
 			members,
 			ownedCardIds,
-			copiesByCard,
+			stacksByCard,
 			scope,
 			includeGrades,
 			sharedAt,
@@ -76,7 +76,7 @@ export function ShareDialog({ open, onOpenChange, binder }: ShareDialogProps) {
 		binder,
 		members,
 		ownedCardIds,
-		copiesByCard,
+		stacksByCard,
 		scope,
 		includeGrades,
 		sharedAt,

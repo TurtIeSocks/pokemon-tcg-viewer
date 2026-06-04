@@ -13,7 +13,7 @@ import { buildIndex } from "../../../store/corpus/corpus-engine";
 import { useCorpusRuntime } from "../../../store/corpus/corpus-runtime";
 import type { CorpusCard } from "../../../store/corpus/corpus-types";
 import { createIdbRepos } from "../../../store/userland/idb-repo";
-import type { CollectionItem } from "../../../store/userland/types";
+import type { Stack } from "../../../store/userland/types";
 import {
 	resetUserlandForTests,
 	setUserlandRepos,
@@ -51,7 +51,7 @@ const cards = [
 	cc("base1-2", "Ivysaur", "base1", "2"),
 ];
 
-function makeItem(id: string, cardId: string): CollectionItem {
+function makeItem(id: string, cardId: string): Stack {
 	return {
 		id,
 		cardId,
@@ -66,8 +66,8 @@ function makeItem(id: string, cardId: string): CollectionItem {
 	};
 }
 
-async function renderSetDetail(setId: string, items: CollectionItem[] = []) {
-	const itemsRecord: Record<string, CollectionItem> = {};
+async function renderSetDetail(setId: string, items: Stack[] = []) {
+	const itemsRecord: Record<string, Stack> = {};
 	for (const item of items) {
 		itemsRecord[item.id] = item;
 	}

@@ -3,25 +3,25 @@ import { beforeEach, expect, test } from "bun:test";
 import { createIdbRepos } from "./idb-repo";
 import {
 	addCardsToBinder,
-	addCopy,
+	addStack,
 	addRuleToBinder,
-	bulkAddCopies,
+	bulkAddStacks,
 	clearCollection,
 	createBinder,
 	exportUserData,
 	importUserData,
 	loadUserland,
-	removeAllCopiesOfCard,
+	removeAllStacksOfCard,
 	removeBinder,
 	removeCardFromBinder,
-	removeCopy,
+	removeStack,
 	removeRuleFromBinder,
 	resetUserlandForTests,
 	restoreCardToBinder,
-	setPrimaryCopy,
+	setPrimaryStack,
 	setUserlandRepos,
 	toggleCardOwned,
-	updateCopy,
+	updateStack,
 	useUserland,
 } from "./userland-store";
 
@@ -65,36 +65,36 @@ test("loadUserland is idempotent once hydrated", async () => {
 
 // --- collection basics ---
 
-test("addCopy persists and commits to the cache", async () => {
-	const item = await addCopy("base1-4", { pricePaid: 10 });
+test("addStack persists and commits to the cache", async () => {
+	const item = await addStack("base1-4", { pricePaid: 10 });
 	expect(useUserland.getState().items[item.id]?.pricePaid).toBe(10);
 	expect(await activeReposList()).toContain(item.id);
 });
 
-test("updateCopy patches cache and repo (null clears)", async () => {
-	const item = await addCopy("a", { pricePaid: 5 });
-	await updateCopy(item.id, { pricePaid: null });
+test("updateStack patches cache and repo (null clears)", async () => {
+	const item = await addStack("a", { pricePaid: 5 });
+	await updateStack(item.id, { pricePaid: null });
 	expect(useUserland.getState().items[item.id]?.pricePaid).toBeNull();
 });
 
-test("removeCopy removes one copy", async () => {
-	const item = await addCopy("a");
-	await removeCopy(item.id);
+test("removeStack removes one stack", async () => {
+	const item = await addStack("a");
+	await removeStack(item.id);
 	expect(useUserland.getState().items[item.id]).toBeUndefined();
 });
 
-test("removeAllCopiesOfCard removes every copy of a card", async () => {
-	await addCopy("dup");
-	await addCopy("dup");
-	await addCopy("other");
-	await removeAllCopiesOfCard("dup");
+test("removeAllStacksOfCard removes every stack of a card", async () => {
+	await addStack("dup");
+	await addStack("dup");
+	await addStack("other");
+	await removeAllStacksOfCard("dup");
 	const remaining = Object.values(useUserland.getState().items);
 	expect(remaining.every((i) => i.cardId === "other")).toBe(true);
 	expect(remaining).toHaveLength(1);
 });
 
-test("bulkAddCopies adds many; clearCollection empties", async () => {
-	await bulkAddCopies(["a", "b", "c"]);
+test("bulkAddStacks adds many; clearCollection empties", async () => {
+	await bulkAddStacks(["a", "b", "c"]);
 	expect(Object.keys(useUserland.getState().items)).toHaveLength(3);
 	await clearCollection();
 	expect(useUserland.getState().items).toEqual({});
@@ -108,36 +108,36 @@ async function activeReposList(): Promise<string[]> {
 
 // --- auto-primary ---
 
-test("addCopy: first copy of an unowned card becomes primary", async () => {
-	const item = await addCopy("card-x");
+test("addStack: first stack of an unowned card becomes primary", async () => {
+	const item = await addStack("card-x");
 	expect(useUserland.getState().items[item.id]?.isPrimary).toBe(true);
 });
 
-test("addCopy: second copy of an already-owned card is not primary; first stays primary", async () => {
-	const first = await addCopy("card-x");
-	const second = await addCopy("card-x");
+test("addStack: second stack of an already-owned card is not primary; first stays primary", async () => {
+	const first = await addStack("card-x");
+	const second = await addStack("card-x");
 	expect(useUserland.getState().items[first.id]?.isPrimary).toBe(true);
 	expect(useUserland.getState().items[second.id]?.isPrimary).toBeFalsy();
 });
 
-test("bulkAddCopies: each new card's copy is primary; already-owned cards' new copies are not", async () => {
+test("bulkAddStacks: each new card's stack is primary; already-owned cards' new stacks are not", async () => {
 	// pre-own card "a"
-	await addCopy("a");
+	await addStack("a");
 	// bulk-add "a" (already owned) and "b" (new)
-	await bulkAddCopies(["a", "b"]);
+	await bulkAddStacks(["a", "b"]);
 	const allItems = Object.values(useUserland.getState().items);
 	const aCopies = allItems.filter((i) => i.cardId === "a");
 	const bCopies = allItems.filter((i) => i.cardId === "b");
-	// "a" already had a primary; the bulk-added copy of "a" must not be primary
+	// "a" already had a primary; the bulk-added stack of "a" must not be primary
 	const aPrimaries = aCopies.filter((i) => i.isPrimary);
 	expect(aPrimaries).toHaveLength(1); // still exactly one primary
-	// "b" was brand new — its copy must be primary
+	// "b" was brand new — its stack must be primary
 	expect(bCopies).toHaveLength(1);
 	expect(bCopies[0]?.isPrimary).toBe(true);
 });
 
-test("bulkAddCopies: same unowned cardId twice in one batch → exactly one primary", async () => {
-	await bulkAddCopies(["x", "x"]);
+test("bulkAddStacks: same unowned cardId twice in one batch → exactly one primary", async () => {
+	await bulkAddStacks(["x", "x"]);
 	const xCopies = Object.values(useUserland.getState().items).filter(
 		(i) => i.cardId === "x",
 	);
@@ -145,8 +145,8 @@ test("bulkAddCopies: same unowned cardId twice in one batch → exactly one prim
 	expect(xCopies.filter((i) => i.isPrimary)).toHaveLength(1);
 });
 
-test("bulkAddCopies: two brand-new cards both get primary copies", async () => {
-	await bulkAddCopies(["alpha", "beta"]);
+test("bulkAddStacks: two brand-new cards both get primary stacks", async () => {
+	await bulkAddStacks(["alpha", "beta"]);
 	const items = Object.values(useUserland.getState().items);
 	expect(items.find((i) => i.cardId === "alpha")?.isPrimary).toBe(true);
 	expect(items.find((i) => i.cardId === "beta")?.isPrimary).toBe(true);
@@ -154,44 +154,44 @@ test("bulkAddCopies: two brand-new cards both get primary copies", async () => {
 
 // --- promote-on-delete ---
 
-test("removeCopy: removing the only copy leaves nothing to promote — no error", async () => {
-	const item = await addCopy("solo-card");
-	await removeCopy(item.id);
+test("removeStack: removing the only stack leaves nothing to promote — no error", async () => {
+	const item = await addStack("solo-card");
+	await removeStack(item.id);
 	expect(Object.values(useUserland.getState().items)).toHaveLength(0);
 });
 
-test("removeCopy: removing the primary copy promotes the earliest-createdAt survivor", async () => {
-	const first = await addCopy("card-z"); // isPrimary = true (first copy)
+test("removeStack: removing the primary stack promotes the earliest-createdAt survivor", async () => {
+	const first = await addStack("card-z"); // isPrimary = true (first stack)
 	await new Promise((r) => setTimeout(r, 2)); // ensure distinct createdAt
-	const second = await addCopy("card-z"); // not primary
+	const second = await addStack("card-z"); // not primary
 	await new Promise((r) => setTimeout(r, 2));
-	const third = await addCopy("card-z"); // not primary
+	const third = await addStack("card-z"); // not primary
 
 	// Remove the primary; second (earliest survivor) should be promoted.
-	await removeCopy(first.id);
+	await removeStack(first.id);
 	const items = useUserland.getState().items;
 	expect(items[second.id]?.isPrimary).toBe(true);
 	expect(items[third.id]?.isPrimary).toBe(false);
 });
 
-test("removeCopy: removing a non-primary copy does not change primary", async () => {
-	const first = await addCopy("card-w"); // primary
+test("removeStack: removing a non-primary stack does not change primary", async () => {
+	const first = await addStack("card-w"); // primary
 	await new Promise((r) => setTimeout(r, 2));
-	const second = await addCopy("card-w"); // not primary
+	const second = await addStack("card-w"); // not primary
 
-	await removeCopy(second.id); // remove non-primary
+	await removeStack(second.id); // remove non-primary
 	expect(useUserland.getState().items[first.id]?.isPrimary).toBe(true);
 });
 
-// --- setPrimaryCopy ---
+// --- setPrimaryStack ---
 
-test("setPrimaryCopy marks one copy primary and clears its siblings", async () => {
-	const a = await addCopy("c");
-	const b = await addCopy("c");
-	await setPrimaryCopy("c", b.id);
+test("setPrimaryStack marks one stack primary and clears its siblings", async () => {
+	const a = await addStack("c");
+	const b = await addStack("c");
+	await setPrimaryStack("c", b.id);
 	expect(useUserland.getState().items[b.id].isPrimary).toBe(true);
 	expect(useUserland.getState().items[a.id].isPrimary).toBe(false);
-	await setPrimaryCopy("c", a.id);
+	await setPrimaryStack("c", a.id);
 	expect(useUserland.getState().items[a.id].isPrimary).toBe(true);
 	expect(useUserland.getState().items[b.id].isPrimary).toBe(false);
 });
@@ -303,7 +303,7 @@ test("removeBinder deletes the binder from store", async () => {
 // --- import / export ---
 
 test("export then import (replace) round-trips through the cache", async () => {
-	await addCopy("a", { pricePaid: 7 });
+	await addStack("a", { pricePaid: 7 });
 	await createBinder({ name: "G" });
 	const snap = await exportUserData();
 
@@ -318,36 +318,36 @@ test("export then import (replace) round-trips through the cache", async () => {
 
 // --- toggleCardOwned ---
 
-test("toggleCardOwned: unowned card → 1 copy added (owned)", async () => {
+test("toggleCardOwned: unowned card → 1 stack added (owned)", async () => {
 	await toggleCardOwned("card-toggle");
-	const copies = Object.values(useUserland.getState().items).filter(
+	const stacks = Object.values(useUserland.getState().items).filter(
 		(i) => i.cardId === "card-toggle",
 	);
-	expect(copies).toHaveLength(1);
-	expect(copies[0]?.isPrimary).toBe(true);
+	expect(stacks).toHaveLength(1);
+	expect(stacks[0]?.isPrimary).toBe(true);
 });
 
-test("toggleCardOwned: owned card → all copies removed (unowned)", async () => {
+test("toggleCardOwned: owned card → all stacks removed (unowned)", async () => {
 	await toggleCardOwned("card-toggle");
 	await toggleCardOwned("card-toggle");
-	const copies = Object.values(useUserland.getState().items).filter(
+	const stacks = Object.values(useUserland.getState().items).filter(
 		(i) => i.cardId === "card-toggle",
 	);
-	expect(copies).toHaveLength(0);
+	expect(stacks).toHaveLength(0);
 });
 
-test("toggleCardOwned: card with 2 copies → all removed", async () => {
-	await addCopy("multi-copy");
-	await addCopy("multi-copy");
+test("toggleCardOwned: card with 2 stacks → all removed", async () => {
+	await addStack("multi-stack");
+	await addStack("multi-stack");
 	expect(
 		Object.values(useUserland.getState().items).filter(
-			(i) => i.cardId === "multi-copy",
+			(i) => i.cardId === "multi-stack",
 		),
 	).toHaveLength(2);
-	await toggleCardOwned("multi-copy");
+	await toggleCardOwned("multi-stack");
 	expect(
 		Object.values(useUserland.getState().items).filter(
-			(i) => i.cardId === "multi-copy",
+			(i) => i.cardId === "multi-stack",
 		),
 	).toHaveLength(0);
 });

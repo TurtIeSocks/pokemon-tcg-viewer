@@ -2,7 +2,7 @@ import { useRouter } from "@tanstack/react-router";
 import { cardManageLinkPropsFor, cardRouteParams } from "../../lib/card-route";
 import { useSlugIndex } from "../../store/corpus/corpus-runtime";
 import { useIsOwned, useOwnedCount } from "../../store/userland/selectors";
-import { addCopy } from "../../store/userland/userland-store";
+import { addStack } from "../../store/userland/userland-store";
 import type { HoloCardData } from "../holo-card";
 
 interface CollectionToggleProps {
@@ -36,7 +36,7 @@ export function CollectionToggle({ card }: CollectionToggleProps) {
 			<button
 				type="button"
 				className={`${baseClasses} ${ownedClasses}`}
-				aria-label={`Manage copies of ${card.name}`}
+				aria-label={`Manage stacks of ${card.name}`}
 				aria-pressed={true}
 				onClick={(e) => {
 					e.preventDefault();
@@ -60,7 +60,7 @@ export function CollectionToggle({ card }: CollectionToggleProps) {
 			aria-pressed={false}
 			onClick={(e) => {
 				e.preventDefault();
-				void addCopy(card.id);
+				void addStack(card.id);
 			}}
 		>
 			+

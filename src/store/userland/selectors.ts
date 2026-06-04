@@ -21,14 +21,14 @@ import {
 	type SortKey,
 	sortCardRows,
 } from "./card-rows";
-import type { CollectionItem } from "./types";
+import type { Stack } from "./types";
 import { loadUserland, useUserland } from "./userland-store";
 
 // --- Pure helpers (unit-tested) ---
 
 /** Distinct owned cardIds from the items map. */
 export function ownedCardIdSet(
-	items: Record<string, CollectionItem>,
+	items: Record<string, Stack>,
 ): Set<string> {
 	return new Set(Object.values(items).map((i) => i.cardId));
 }
@@ -41,11 +41,11 @@ export function useOwnedCardIdSet(): Set<string> {
 	return new Set(useOwnedIndex().keys());
 }
 
-/** Group a flat list of copies into a map keyed by cardId. */
+/** Group a flat list of stacks into a map keyed by cardId. */
 export function groupByCardId(
-	items: CollectionItem[],
-): Map<string, CollectionItem[]> {
-	const map = new Map<string, CollectionItem[]>();
+	items: Stack[],
+): Map<string, Stack[]> {
+	const map = new Map<string, Stack[]>();
 	for (const item of items) {
 		const arr = map.get(item.cardId);
 		if (arr) arr.push(item);
@@ -55,11 +55,11 @@ export function groupByCardId(
 }
 
 /**
- * Join owned copies with corpus card data; returns one HoloCardData per distinct cardId.
+ * Join owned stacks with corpus card data; returns one HoloCardData per distinct cardId.
  * Cards not found in the corpus index are silently skipped.
  */
 export function joinOwnedViews(
-	items: CollectionItem[],
+	items: Stack[],
 	index: CorpusIndex,
 	setsById: Map<string, PokemonSet>,
 ): HoloCardData[] {
@@ -82,19 +82,19 @@ export function useEnsureUserland(): void {
 	}, []);
 }
 
-/** Hook: returns all copies grouped by cardId; triggers hydration as a side-effect. */
-export function useOwnedIndex(): Map<string, CollectionItem[]> {
+/** Hook: returns all stacks grouped by cardId; triggers hydration as a side-effect. */
+export function useOwnedIndex(): Map<string, Stack[]> {
 	useEnsureUserland();
 	const items = useUserland((s) => s.items);
 	return useMemo(() => groupByCardId(Object.values(items)), [items]);
 }
 
-/** Hook: true if the user owns at least one copy of the given card. */
+/** Hook: true if the user owns at least one stack of the given card. */
 export function useIsOwned(cardId: string): boolean {
 	return useOwnedIndex().has(cardId);
 }
 
-/** Hook: number of copies owned for the given card (0 if none). */
+/** Hook: number of stacks owned for the given card (0 if none). */
 export function useOwnedCount(cardId: string): number {
 	return useOwnedIndex().get(cardId)?.length ?? 0;
 }

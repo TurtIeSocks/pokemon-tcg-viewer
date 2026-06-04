@@ -40,7 +40,7 @@ const testSet: PokemonSet = {
 
 const setsById = new Map([[testSet.id, testSet]]);
 
-function makeRow(copies: number): CardRow {
+function makeRow(stacks: number): CardRow {
 	const card = hydrateCard(testCard, setsById);
 	const primary = {
 		id: "copy-1",
@@ -53,11 +53,11 @@ function makeRow(copies: number): CardRow {
 		condition: null,
 		grading: null,
 	};
-	const copyList = Array.from({ length: copies }, (_, i) => ({
+	const copyList = Array.from({ length: stacks }, (_, i) => ({
 		...primary,
 		id: `copy-${i + 1}`,
 	}));
-	return { card, copies: copyList, primary, count: copies };
+	return { card, stacks: copyList, primary, count: stacks };
 }
 
 async function renderInRouter(ui: React.ReactNode) {
@@ -93,7 +93,7 @@ test("shows ×2 badge when count=2", async () => {
 test("renders a link targeting the manage face (href contains /manage)", async () => {
 	await renderInRouter(<OwnedCardTile row={makeRow(1)} />);
 	const link = screen.getByRole("link", {
-		name: /manage copies of Charizard/i,
+		name: /manage stacks of Charizard/i,
 	});
 	expect(link).not.toBeNull();
 	const href = (link as HTMLAnchorElement).href ?? "";

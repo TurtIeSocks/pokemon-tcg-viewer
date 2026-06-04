@@ -7,7 +7,7 @@ import {
 	encodeSnapshot,
 	isValidSnapshot,
 } from "./share";
-import type { Binder, CollectionItem } from "./types";
+import type { Binder, Stack } from "./types";
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -25,10 +25,10 @@ const baseBinder: Binder = {
 };
 
 function makeItem(
-	overrides: Partial<CollectionItem> & { cardId: string },
-): CollectionItem {
+	overrides: Partial<Stack> & { cardId: string },
+): Stack {
 	return {
-		id: `copy-${overrides.cardId}`,
+		id: `stack-${overrides.cardId}`,
 		acquiredAt: 1000,
 		createdAt: 1000,
 		pricePaid: null,
@@ -93,14 +93,14 @@ describe("buildSnapshot scope", () => {
 	// members: a(owned), b(missing), c(owned)
 	const members = new Set(["a", "b", "c"]);
 	const ownedCardIds = new Set(["a", "c"]);
-	const copiesByCard = new Map<string, CollectionItem[]>();
+	const stacksByCard = new Map<string, Stack[]>();
 
 	it('scope:"all" includes all three with correct owned flags', () => {
 		const snap = buildSnapshot({
 			binder: baseBinder,
 			members,
 			ownedCardIds,
-			copiesByCard,
+			stacksByCard,
 			scope: "all",
 			includeGrades: false,
 			sharedAt: 1,
@@ -116,7 +116,7 @@ describe("buildSnapshot scope", () => {
 			binder: baseBinder,
 			members,
 			ownedCardIds,
-			copiesByCard,
+			stacksByCard,
 			scope: "owned",
 			includeGrades: false,
 			sharedAt: 1,
@@ -130,7 +130,7 @@ describe("buildSnapshot scope", () => {
 			binder: baseBinder,
 			members,
 			ownedCardIds,
-			copiesByCard,
+			stacksByCard,
 			scope: "needed",
 			includeGrades: false,
 			sharedAt: 1,
@@ -146,7 +146,7 @@ describe("buildSnapshot scope", () => {
 			binder: baseBinder,
 			members: revMembers,
 			ownedCardIds,
-			copiesByCard,
+			stacksByCard,
 			scope: "all",
 			includeGrades: false,
 			sharedAt: 1,
@@ -176,7 +176,7 @@ describe("buildSnapshot includeGrades", () => {
 		createdAt: 600,
 	});
 
-	const copiesByCard = new Map([
+	const stacksByCard = new Map([
 		["graded", [gradedCopy]],
 		["condOnly", [condOnlyCopy]],
 	]);
@@ -186,7 +186,7 @@ describe("buildSnapshot includeGrades", () => {
 			binder: baseBinder,
 			members,
 			ownedCardIds,
-			copiesByCard,
+			stacksByCard,
 			scope: "all",
 			includeGrades: false,
 			sharedAt: 1,
@@ -202,7 +202,7 @@ describe("buildSnapshot includeGrades", () => {
 			binder: baseBinder,
 			members,
 			ownedCardIds,
-			copiesByCard,
+			stacksByCard,
 			scope: "all",
 			includeGrades: true,
 			sharedAt: 1,
@@ -217,7 +217,7 @@ describe("buildSnapshot includeGrades", () => {
 			binder: baseBinder,
 			members,
 			ownedCardIds,
-			copiesByCard,
+			stacksByCard,
 			scope: "all",
 			includeGrades: true,
 			sharedAt: 1,
@@ -232,7 +232,7 @@ describe("buildSnapshot includeGrades", () => {
 			binder: baseBinder,
 			members,
 			ownedCardIds,
-			copiesByCard,
+			stacksByCard,
 			scope: "all",
 			includeGrades: true,
 			sharedAt: 1,
@@ -243,7 +243,7 @@ describe("buildSnapshot includeGrades", () => {
 		expect(miss).not.toHaveProperty("grade");
 	});
 
-	it("isPrimary copy is preferred over earliest-createdAt", () => {
+	it("isPrimary stack is preferred over earliest-createdAt", () => {
 		const early = makeItem({
 			cardId: "multi",
 			condition: "DMG",
@@ -260,7 +260,7 @@ describe("buildSnapshot includeGrades", () => {
 			binder: baseBinder,
 			members: new Set(["multi"]),
 			ownedCardIds: new Set(["multi"]),
-			copiesByCard: new Map([["multi", [early, primary]]]),
+			stacksByCard: new Map([["multi", [early, primary]]]),
 			scope: "all",
 			includeGrades: true,
 			sharedAt: 1,
@@ -270,7 +270,7 @@ describe("buildSnapshot includeGrades", () => {
 		expect(card.grade).toBe("BGS 9.5");
 	});
 
-	it("earliest-createdAt copy used when no isPrimary", () => {
+	it("earliest-createdAt stack used when no isPrimary", () => {
 		const later = makeItem({
 			cardId: "multi2",
 			condition: "LP",
@@ -285,7 +285,7 @@ describe("buildSnapshot includeGrades", () => {
 			binder: baseBinder,
 			members: new Set(["multi2"]),
 			ownedCardIds: new Set(["multi2"]),
-			copiesByCard: new Map([["multi2", [later, earlier]]]),
+			stacksByCard: new Map([["multi2", [later, earlier]]]),
 			scope: "all",
 			includeGrades: true,
 			sharedAt: 1,
@@ -311,7 +311,7 @@ describe("privacy — pricePaid and notes never appear", () => {
 			binder: baseBinder,
 			members: new Set(["secret"]),
 			ownedCardIds: new Set(["secret"]),
-			copiesByCard: new Map([["secret", [sensitiveItem]]]),
+			stacksByCard: new Map([["secret", [sensitiveItem]]]),
 			scope: "all",
 			includeGrades: true,
 			sharedAt: 1,

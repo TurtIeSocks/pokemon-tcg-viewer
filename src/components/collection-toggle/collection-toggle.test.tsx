@@ -85,21 +85,21 @@ describe("<CollectionToggle />", () => {
 				(await repos.collection.list()).some((i) => i.cardId === card.id),
 			).toBe(true),
 		);
-		await screen.findByRole("button", { name: /copies|manage|collection/i });
+		await screen.findByRole("button", { name: /stacks|manage|collection/i });
 	});
 
-	test("owned: renders manage-copies button (no dialog)", async () => {
+	test("owned: renders manage-stacks button (no dialog)", async () => {
 		await repos.collection.add({ cardId: card.id });
 		resetUserlandForTests();
 		await renderInRouter(<CollectionToggle card={card} />);
 		const btn = await screen.findByRole("button", {
-			name: /manage copies/i,
+			name: /manage stacks/i,
 		});
 		expect(btn).not.toBeNull();
-		// Clicking must not open a dialog (no "Your copies" text)
+		// Clicking must not open a dialog (no "Your stacks" text)
 		fireEvent.click(btn);
 		// After click the button is still present (navigate fires), no modal text
-		expect(screen.queryByText(/your copies/i)).toBeNull();
+		expect(screen.queryByText(/your stacks/i)).toBeNull();
 		// Collection is unchanged — button never triggered a delete
 		expect(await repos.collection.list()).toHaveLength(1);
 	});

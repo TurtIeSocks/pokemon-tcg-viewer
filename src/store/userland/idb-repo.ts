@@ -18,16 +18,16 @@ import type {
 } from "./repo";
 import type {
 	Binder,
-	CollectionItem,
+	Stack,
 	NewBinder,
-	NewCollectionItem,
+	NewStack,
 } from "./types";
 
 const collectionStore = createStore("ptcg-collection", "items");
 const bindersStore = createStore("ptcg-binders", "binders");
 
 /** Assign id, createdAt, and acquiredAt defaults; null-fill optional fields. */
-function fillItem(input: NewCollectionItem): CollectionItem {
+function fillStack(input: NewStack): Stack {
 	const now = Date.now();
 	return {
 		id: crypto.randomUUID(),
@@ -108,7 +108,7 @@ function createIdbBackupRepo(
 			}
 			// Snapshot rows are full records — write verbatim to preserve ids.
 			await setMany(
-				snapshot.collection.map((i) => [i.id, i] as [string, CollectionItem]),
+				snapshot.collection.map((i) => [i.id, i] as [string, Stack]),
 				collectionStore,
 			);
 			await setMany(
@@ -141,24 +141,24 @@ export function createIdbCollectionRepo(
 ): CollectionRepo {
 	return {
 		async list() {
-			const rows = await entries<string, CollectionItem>(store);
+			const rows = await entries<string, Stack>(store);
 			return rows.map(([, v]) => v);
 		},
 		async add(input) {
-			const item = fillItem(input);
+			const item = fillStack(input);
 			await set(item.id, item, store);
 			return item;
 		},
 		async bulkAdd(inputs) {
-			const items = inputs.map(fillItem);
+			const items = inputs.map(fillStack);
 			await setMany(
-				items.map((i) => [i.id, i] as [string, CollectionItem]),
+				items.map((i) => [i.id, i] as [string, Stack]),
 				store,
 			);
 			return items;
 		},
 		async update(id, patch) {
-			const existing = await get<CollectionItem>(id, store);
+			const existing = await get<Stack>(id, store);
 			if (!existing) return;
 			await set(id, { ...existing, ...patch }, store);
 		},

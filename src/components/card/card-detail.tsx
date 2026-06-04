@@ -4,7 +4,7 @@ import type { CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import type { FocusCardData } from "../../server/card-mappers";
 import { useIsOwned } from "../../store/userland/selectors";
-import { addCopy } from "../../store/userland/userland-store";
+import { addStack } from "../../store/userland/userland-store";
 import { getCardAccent, getReadableAccent } from "../../utils/card-colors";
 import { HoloCard } from "../holo-card";
 import { CardPrices } from "../islands/card-prices";
@@ -132,7 +132,7 @@ function CollectionButton({
 	return (
 		<button
 			type="button"
-			onClick={() => void addCopy(card.id)}
+			onClick={() => void addStack(card.id)}
 			className={cn(
 				"w-full rounded-[10px] py-2.5 text-center font-mono text-[13px] tracking-[0.04em] transition-colors",
 				"border border-white/15 text-[var(--ink)] hover:border-white/30",

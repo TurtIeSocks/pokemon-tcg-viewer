@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test";
 import {
-	copyFormSchema,
+	stackFormSchema,
 	isGradeOrEmpty,
 	isMoneyOrEmpty,
 	isValidDateStr,
-} from "./copy-form-schema";
+} from "./stack-form-schema";
 
 test("predicates", () => {
 	expect(isValidDateStr("2024-03-01")).toBe(true);
@@ -19,7 +19,7 @@ test("predicates", () => {
 	expect(isGradeOrEmpty("11")).toBe(false);
 });
 
-test("schema accepts a valid raw copy and rejects bad price", () => {
+test("schema accepts a valid raw stack and rejects bad price", () => {
 	const base = {
 		label: "",
 		acquiredAt: "2024-03-01",
@@ -31,8 +31,8 @@ test("schema accepts a valid raw copy and rejects bad price", () => {
 		gradingCompany: "" as const,
 		grade: "",
 	};
-	expect(copyFormSchema.safeParse(base).success).toBe(true);
-	expect(copyFormSchema.safeParse({ ...base, pricePaid: "-3" }).success).toBe(
+	expect(stackFormSchema.safeParse(base).success).toBe(true);
+	expect(stackFormSchema.safeParse({ ...base, pricePaid: "-3" }).success).toBe(
 		false,
 	);
 });

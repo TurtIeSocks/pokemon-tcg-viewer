@@ -12,10 +12,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { fieldErrorText } from "@/lib/field-error";
 import { cn } from "@/lib/utils";
-import type { CollectionItem } from "../../store/userland/types";
-import { addCopy, updateCopy } from "../../store/userland/userland-store";
-import { formToPatch, itemToForm } from "./copy-form-mapping";
-import { CONDITIONS, copyFormSchema, GRADERS } from "./copy-form-schema";
+import type { Stack } from "../../store/userland/types";
+import { addStack, updateStack } from "../../store/userland/userland-store";
+import { formToPatch, itemToForm } from "./stack-form-mapping";
+import { CONDITIONS, stackFormSchema, GRADERS } from "./stack-form-schema";
 
 /** Radix Select prohibits value="". Use this sentinel for the "Unspecified" item. */
 const NONE = "__none__";
@@ -103,16 +103,16 @@ function SegmentedControl<T extends string>({
 }
 
 /**
- * Props for {@link CopyEditForm}.
+ * Props for {@link StackEditForm}.
  *
- * - `mode="edit"`: editing an existing copy; `item` is required.
- * - `mode="create"`: adding a new copy; `item` is omitted; uses blank defaults.
+ * - `mode="edit"`: editing an existing stack; `item` is required.
+ * - `mode="create"`: adding a new stack; `item` is omitted; uses blank defaults.
  */
-interface CopyEditFormProps {
+interface StackEditFormProps {
 	mode: "edit" | "create";
 	/** Required in edit mode; the item to prefill and update on Save. */
-	item?: CollectionItem;
-	/** Required in create mode; the card the new copy belongs to. */
+	item?: Stack;
+	/** Required in create mode; the card the new stack belongs to. */
 	cardId: string;
 	/** Optional list of known variant strings for this card (from the corpus). */
 	variants?: string[];
@@ -122,7 +122,7 @@ interface CopyEditFormProps {
 	onCancel: () => void;
 }
 
-/** Blank defaults for a new copy form. */
+/** Blank defaults for a new stack form. */
 const BLANK_DEFAULTS = {
 	label: "",
 	acquiredAt: new Date().toISOString().slice(0, 10),
@@ -136,31 +136,31 @@ const BLANK_DEFAULTS = {
 };
 
 /**
- * Draft→Save form for creating or editing a single copy's metadata.
+ * Draft→Save form for creating or editing a single stack's metadata.
  * No per-field auto-save: all changes are committed atomically when Save is clicked.
  *
  * Variant and State are rendered as segmented pill controls matching the mock.
  */
-export function CopyEditForm({
+export function StackEditForm({
 	mode,
 	item,
 	cardId,
 	variants,
 	onSaved,
 	onCancel,
-}: CopyEditFormProps) {
+}: StackEditFormProps) {
 	const defaultValues =
 		mode === "edit" && item ? itemToForm(item) : BLANK_DEFAULTS;
 
 	const form = useForm({
 		defaultValues,
-		validators: { onSubmit: copyFormSchema },
+		validators: { onSubmit: stackFormSchema },
 		onSubmit: async ({ value }) => {
 			const patch = formToPatch(value);
 			if (mode === "edit" && item) {
-				await updateCopy(item.id, patch);
+				await updateStack(item.id, patch);
 			} else {
-				await addCopy(cardId, patch);
+				await addStack(cardId, patch);
 			}
 			onSaved();
 		},
@@ -176,7 +176,7 @@ export function CopyEditForm({
 			}}
 			className="flex flex-col gap-4 [&_[data-slot=field-label]]:text-[var(--ink-muted)]"
 		>
-			{/* Label — optional user-given name; blank → auto metadata label (copy-label.ts) */}
+			{/* Label — optional user-given name; blank → auto metadata label (stack-label.ts) */}
 			<form.Field
 				name="label"
 				// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
@@ -185,7 +185,7 @@ export function CopyEditForm({
 						<FieldLabel htmlFor={field.name}>Label</FieldLabel>
 						<Input
 							id={field.name}
-							placeholder="Name this copy (optional)"
+							placeholder="Name this stack (optional)"
 							value={field.state.value}
 							onBlur={field.handleBlur}
 							onChange={(e) => field.handleChange(e.target.value)}
@@ -200,7 +200,7 @@ export function CopyEditForm({
 				{variants && variants.length > 0 && (
 					<form.Field
 						name="variant"
-						validators={{ onBlur: copyFormSchema.shape.variant }}
+						validators={{ onBlur: stackFormSchema.shape.variant }}
 						// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 						children={(field) => (
 							<Field className="sm:col-span-2">
@@ -247,7 +247,7 @@ export function CopyEditForm({
 						state === "raw" ? (
 							<form.Field
 								name="condition"
-								validators={{ onBlur: copyFormSchema.shape.condition }}
+								validators={{ onBlur: stackFormSchema.shape.condition }}
 								// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 								children={(field) => {
 									const invalid = fieldIsInvalid(field);
@@ -292,7 +292,7 @@ export function CopyEditForm({
 								{/* Grader / company Select */}
 								<form.Field
 									name="gradingCompany"
-									validators={{ onBlur: copyFormSchema.shape.gradingCompany }}
+									validators={{ onBlur: stackFormSchema.shape.gradingCompany }}
 									// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 									children={(field) => {
 										const invalid = fieldIsInvalid(field);
@@ -378,7 +378,7 @@ export function CopyEditForm({
 				{/* Acquired date */}
 				<form.Field
 					name="acquiredAt"
-					validators={{ onBlur: copyFormSchema.shape.acquiredAt }}
+					validators={{ onBlur: stackFormSchema.shape.acquiredAt }}
 					// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 					children={(field) => {
 						const invalid = fieldIsInvalid(field);
@@ -440,7 +440,7 @@ export function CopyEditForm({
 			{/* Notes — full width */}
 			<form.Field
 				name="notes"
-				validators={{ onBlur: copyFormSchema.shape.notes }}
+				validators={{ onBlur: stackFormSchema.shape.notes }}
 				// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 				children={(field) => {
 					const invalid = fieldIsInvalid(field);

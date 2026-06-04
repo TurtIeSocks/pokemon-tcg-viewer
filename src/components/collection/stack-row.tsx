@@ -2,25 +2,25 @@ import { Pencil, Star, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { CollectionItem } from "../../store/userland/types";
+import type { Stack } from "../../store/userland/types";
 import {
-	removeCopy,
-	setPrimaryCopy,
+	removeStack,
+	setPrimaryStack,
 } from "../../store/userland/userland-store";
-import { CopyEditForm } from "./copy-edit-form";
-import { dayMsToInput } from "./copy-form-mapping";
-import { copyDisplayLabel, isAutoLabel } from "./copy-label";
+import { StackEditForm } from "./stack-edit-form";
+import { dayMsToInput } from "./stack-form-mapping";
+import { stackDisplayLabel, isAutoLabel } from "./stack-label";
 
-/** Props for {@link CopyRow}. */
-interface CopyRowProps {
+/** Props for {@link StackRow}. */
+interface StackRowProps {
 	/** The individual collection item this row represents. */
-	item: CollectionItem;
-	/** Optional known variant strings for this card; forwarded to CopyEditForm. */
+	item: Stack;
+	/** Optional known variant strings for this card; forwarded to StackEditForm. */
 	variants?: string[];
 }
 
 /** Returns true if any optional field on the item is non-null; used to gate the delete confirmation prompt. */
-function hasNonNullOptional(item: CollectionItem): boolean {
+function hasNonNullOptional(item: Stack): boolean {
 	return (
 		item.pricePaid != null ||
 		item.variant != null ||
@@ -31,11 +31,11 @@ function hasNonNullOptional(item: CollectionItem): boolean {
 }
 
 /**
- * Card tile showing a copy's distinguishing attributes as readable badges.
- * A filled-star Primary toggle marks the primary copy with a gold ring.
- * An explicit Edit button (not "click row to expand") reveals the inline CopyEditForm.
+ * Card tile showing a stack's distinguishing attributes as readable badges.
+ * A filled-star Primary toggle marks the primary stack with a gold ring.
+ * An explicit Edit button (not "click row to expand") reveals the inline StackEditForm.
  */
-export function CopyRow({ item, variants }: CopyRowProps) {
+export function StackRow({ item, variants }: StackRowProps) {
 	const [editOpen, setEditOpen] = useState(false);
 
 	const gradingLabel = item.grading
@@ -44,13 +44,13 @@ export function CopyRow({ item, variants }: CopyRowProps) {
 
 	function handleDelete() {
 		if (hasNonNullOptional(item)) {
-			if (!window.confirm("Delete this copy?")) return;
+			if (!window.confirm("Delete this stack?")) return;
 		}
-		void removeCopy(item.id);
+		void removeStack(item.id);
 	}
 
 	function handleSetPrimary() {
-		void setPrimaryCopy(item.cardId, item.id);
+		void setPrimaryStack(item.cardId, item.id);
 	}
 
 	return (
@@ -68,13 +68,13 @@ export function CopyRow({ item, variants }: CopyRowProps) {
 				<div className="flex flex-1 flex-wrap items-center gap-x-2.5 gap-y-1 min-w-0">
 					{/* Display name: the user's label, or auto-derived from metadata */}
 					<span className="min-w-0 truncate font-medium text-[var(--ink)]">
-						{copyDisplayLabel(item)}
+						{stackDisplayLabel(item)}
 					</span>
 					{/* Acquired date */}
 					<span className="font-mono text-[11px] text-[var(--faint)]">
 						acquired {dayMsToInput(item.acquiredAt)}
 					</span>
-					{/* When the user named the copy, surface key metadata as chips —
+					{/* When the user named the stack, surface key metadata as chips —
 					    the auto-label already shows variant/grade otherwise. */}
 					{!isAutoLabel(item) && item.variant && (
 						<Badge variant="secondary" className="text-[10px]">
@@ -100,8 +100,8 @@ export function CopyRow({ item, variants }: CopyRowProps) {
 					{item.isPrimary ? (
 						<span
 							role="img"
-							aria-label="Primary copy"
-							title="Primary copy"
+							aria-label="Primary stack"
+							title="Primary stack"
 							className="inline-flex items-center justify-center h-8 w-8 text-[var(--primary)]"
 						>
 							<Star className="h-4 w-4 fill-current" aria-hidden="true" />
@@ -128,7 +128,7 @@ export function CopyRow({ item, variants }: CopyRowProps) {
 						className="h-8 w-8"
 						aria-label={editOpen ? "Close editor" : "Edit"}
 						aria-expanded={editOpen}
-						title="Edit copy details"
+						title="Edit stack details"
 						onClick={() => setEditOpen((o) => !o)}
 					>
 						<Pencil className="h-4 w-4" aria-hidden="true" />
@@ -141,7 +141,7 @@ export function CopyRow({ item, variants }: CopyRowProps) {
 						size="icon"
 						className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors duration-150"
 						aria-label="Delete"
-						title="Delete this copy"
+						title="Delete this stack"
 						onClick={handleDelete}
 					>
 						<Trash2 className="h-4 w-4" aria-hidden="true" />
@@ -152,7 +152,7 @@ export function CopyRow({ item, variants }: CopyRowProps) {
 			{/* Inline editor — revealed only after Edit is clicked */}
 			{editOpen && (
 				<div className="border-t pt-3">
-					<CopyEditForm
+					<StackEditForm
 						mode="edit"
 						item={item}
 						cardId={item.cardId}

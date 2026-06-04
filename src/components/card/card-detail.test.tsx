@@ -11,7 +11,7 @@ import { buildIndex } from "../../store/corpus/corpus-engine";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
 import { createIdbRepos } from "../../store/userland/idb-repo";
 import {
-	addCopy,
+	addStack,
 	resetUserlandForTests,
 	setUserlandRepos,
 } from "../../store/userland/userland-store";
@@ -73,7 +73,7 @@ test("unowned card renders '＋ Add to collection' button", async () => {
 
 test("owned card renders 'Manage Collection' button (not 'Add to collection')", async () => {
 	// Seed a copy so the card is owned.
-	await addCopy("base1-4");
+	await addStack("base1-4");
 
 	await renderInRouter(<CardDetail card={CARD} crossLinks={[]} />);
 
@@ -88,7 +88,7 @@ test("owned card renders 'Manage Collection' button (not 'Add to collection')", 
 });
 
 test("owned card with onManage: clicking 'Manage Collection' invokes the callback", async () => {
-	await addCopy("base1-4");
+	await addStack("base1-4");
 	const onManage = mock(() => {});
 
 	await renderInRouter(

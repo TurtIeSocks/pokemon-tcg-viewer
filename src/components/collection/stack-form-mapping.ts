@@ -1,9 +1,9 @@
 import type {
-	CollectionItem,
-	CopyPatch,
-	EditableCopyFields,
+	Stack,
+	StackPatch,
+	EditableStackFields,
 } from "../../store/userland/types";
-import type { CopyFormValues } from "./copy-form-schema";
+import type { StackFormValues } from "./stack-form-schema";
 
 /** Converts a UTC epoch-ms timestamp to a YYYY-MM-DD string using local time. */
 export function dayMsToInput(ms: number): string {
@@ -17,8 +17,8 @@ export function inputDayToMs(s: string): number {
 	return new Date(y, m - 1, d).getTime(); // local midnight
 }
 
-/** Converts a store CollectionItem into the flat string-keyed form values shape. */
-export function itemToForm(i: CollectionItem): CopyFormValues {
+/** Converts a store Stack into the flat string-keyed form values shape. */
+export function itemToForm(i: Stack): StackFormValues {
 	return {
 		label: i.label ?? "",
 		acquiredAt: dayMsToInput(i.acquiredAt),
@@ -28,7 +28,7 @@ export function itemToForm(i: CollectionItem): CopyFormValues {
 		state: i.grading ? "graded" : "raw",
 		condition: i.condition ?? "",
 		gradingCompany:
-			(i.grading?.company as CopyFormValues["gradingCompany"]) ?? "",
+			(i.grading?.company as StackFormValues["gradingCompany"]) ?? "",
 		grade: i.grading?.grade == null ? "" : String(i.grading.grade),
 	};
 }
@@ -37,7 +37,7 @@ export function itemToForm(i: CollectionItem): CopyFormValues {
  * Converts a complete set of form values to the full editable fields patch.
  * Handles the raw/graded split in one place; used by the draft→Save form.
  */
-export function formToPatch(values: CopyFormValues): EditableCopyFields {
+export function formToPatch(values: StackFormValues): EditableStackFields {
 	return {
 		label: values.label.trim() === "" ? null : values.label.trim(),
 		acquiredAt: inputDayToMs(values.acquiredAt),
@@ -46,7 +46,7 @@ export function formToPatch(values: CopyFormValues): EditableCopyFields {
 		notes: values.notes === "" ? null : values.notes,
 		condition:
 			values.state === "raw" && values.condition !== ""
-				? (values.condition as CollectionItem["condition"])
+				? (values.condition as Stack["condition"])
 				: null,
 		grading:
 			values.state === "graded" && values.gradingCompany !== ""
@@ -59,12 +59,12 @@ export function formToPatch(values: CopyFormValues): EditableCopyFields {
 }
 
 /** Map a single changed field to a store patch. Caller supplies the form's current
- *  grading sub-values when persisting gradingCompany/grade (see notes in CopyEditForm). */
+ *  grading sub-values when persisting gradingCompany/grade (see notes in StackEditForm). */
 export function formFieldToPatch(
-	field: keyof CopyFormValues,
+	field: keyof StackFormValues,
 	value: string,
 	ctx?: { gradingCompany?: string; grade?: string },
-): CopyPatch {
+): StackPatch {
 	switch (field) {
 		case "acquiredAt":
 			return { acquiredAt: inputDayToMs(value) };
@@ -76,7 +76,7 @@ export function formFieldToPatch(
 			return { notes: value === "" ? null : value };
 		case "condition":
 			return {
-				condition: value === "" ? null : (value as CollectionItem["condition"]),
+				condition: value === "" ? null : (value as Stack["condition"]),
 			};
 		case "state":
 			return value === "raw" ? { grading: null } : { condition: null };
