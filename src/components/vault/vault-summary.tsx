@@ -41,8 +41,8 @@ function useCompletionPct(countBySet: Map<string, number>): number {
 }
 
 /**
- * Est. value = sum of pricePaid over all stacks where pricePaid is non-null.
- * CorpusCard has no market-price field, so this is the user's own cost data only.
+ * Est. value = sum of (pricePaid × quantity) over all stacks where pricePaid is non-null.
+ * pricePaid is per-unit; CorpusCard has no market-price field, so this is the user's own cost data only.
  */
 function useEstValue(): number | null {
 	const items = useUserland((s) => s.items);
@@ -50,7 +50,7 @@ function useEstValue(): number | null {
 	let any = false;
 	for (const item of Object.values(items)) {
 		if (item.pricePaid !== null) {
-			sum += item.pricePaid;
+			sum += item.pricePaid * item.quantity;
 			any = true;
 		}
 	}

@@ -2,7 +2,7 @@ import type { HoloCardData } from "../../components/holo-card";
 import type { PokemonSet } from "../../server/card-mappers";
 import { type CorpusIndex, hydrateCard } from "../corpus/corpus-engine";
 import { compareCardNumber } from "../corpus/natural-compare";
-import { groupByCardId } from "./selectors";
+import { groupByCardId, sumQuantity } from "./selectors";
 import type { Stack } from "./types";
 
 /** Column the collection table is sorted by. */
@@ -20,7 +20,7 @@ export interface CardRow {
 	 * isPrimary wins; otherwise the earliest createdAt stack.
 	 */
 	primary: Stack;
-	/** Number of owned stacks (= stacks.length). */
+	/** Total cards owned for this card (= sum of stack quantities). */
 	count: number;
 }
 
@@ -45,7 +45,7 @@ export function buildCardRows(
 			card: hydrateCard(cc, setsById),
 			stacks,
 			primary,
-			count: stacks.length,
+			count: sumQuantity(stacks),
 		});
 	}
 	return rows;

@@ -26,6 +26,19 @@ function item(
 		...over,
 	};
 }
+
+test("buildCardRows count sums quantity across a card's stacks", () => {
+	const index = buildIndex([cc("base1-1", "base1", "1")]);
+	const rows = buildCardRows(
+		[item("a", "base1-1", { quantity: 3 }), item("b", "base1-1", { quantity: 2 })],
+		index,
+		sets,
+	);
+	expect(rows).toHaveLength(1);
+	expect(rows[0].count).toBe(5);
+	expect(rows[0].stacks).toHaveLength(2);
+});
+
 function cc(id: string, setId: string, number: string): CorpusCard {
 	return {
 		id,

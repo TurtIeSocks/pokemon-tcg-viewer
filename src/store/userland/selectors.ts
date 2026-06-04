@@ -54,6 +54,11 @@ export function groupByCardId(
 	return map;
 }
 
+/** Total physical cards across stacks (sums quantity). */
+export function sumQuantity(stacks: Stack[]): number {
+	return stacks.reduce((n, s) => n + s.quantity, 0);
+}
+
 /**
  * Join owned stacks with corpus card data; returns one HoloCardData per distinct cardId.
  * Cards not found in the corpus index are silently skipped.
@@ -94,9 +99,10 @@ export function useIsOwned(cardId: string): boolean {
 	return useOwnedIndex().has(cardId);
 }
 
-/** Hook: number of stacks owned for the given card (0 if none). */
+/** Hook: total cards owned for the given card across its stacks (0 if none). */
 export function useOwnedCount(cardId: string): number {
-	return useOwnedIndex().get(cardId)?.length ?? 0;
+	const stacks = useOwnedIndex().get(cardId);
+	return stacks ? sumQuantity(stacks) : 0;
 }
 
 /** Distinct owned cards joined with the corpus. [] until corpus + sets load. */

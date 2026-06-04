@@ -3,7 +3,7 @@ import { expect, test } from "bun:test";
 import type { PokemonSet } from "../../server/card-mappers";
 import { buildIndex } from "../corpus/corpus-engine";
 import type { CorpusCard } from "../corpus/corpus-types";
-import { groupByCardId, joinOwnedViews } from "./selectors";
+import { groupByCardId, joinOwnedViews, sumQuantity } from "./selectors";
 import type { Stack } from "./types";
 
 function item(id: string, cardId: string): Stack {
@@ -22,6 +22,12 @@ function item(id: string, cardId: string): Stack {
 		grading: null,
 	};
 }
+
+test("sumQuantity totals quantity across stacks", () => {
+	expect(sumQuantity([{ quantity: 3 } as Stack, { quantity: 2 } as Stack])).toBe(5);
+	expect(sumQuantity([])).toBe(0);
+});
+
 function corpusCard(id: string, setId = "base1"): CorpusCard {
 	return {
 		id,
