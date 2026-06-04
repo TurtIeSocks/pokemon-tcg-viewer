@@ -2,10 +2,10 @@
 import type {
 	Binder,
 	BinderPatch,
-	Stack,
-	StackPatch,
 	NewBinder,
 	NewStack,
+	Stack,
+	StackPatch,
 	UserDataSnapshot,
 } from "./types";
 

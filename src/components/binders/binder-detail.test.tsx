@@ -19,8 +19,8 @@ import type { CorpusCard } from "../../store/corpus/corpus-types";
 import { createIdbRepos } from "../../store/userland/idb-repo";
 import type { Binder } from "../../store/userland/types";
 import {
-	addStack,
 	addRuleToBinder,
+	addStack,
 	createBinder,
 	resetUserlandForTests,
 	setUserlandRepos,

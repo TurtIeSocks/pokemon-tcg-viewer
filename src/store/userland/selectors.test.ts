@@ -24,7 +24,9 @@ function item(id: string, cardId: string): Stack {
 }
 
 test("sumQuantity totals quantity across stacks", () => {
-	expect(sumQuantity([{ quantity: 3 } as Stack, { quantity: 2 } as Stack])).toBe(5);
+	expect(
+		sumQuantity([{ quantity: 3 } as Stack, { quantity: 2 } as Stack]),
+	).toBe(5);
 	expect(sumQuantity([])).toBe(0);
 });
 

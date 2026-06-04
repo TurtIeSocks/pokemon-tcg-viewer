@@ -27,9 +27,7 @@ import { loadUserland, useUserland } from "./userland-store";
 // --- Pure helpers (unit-tested) ---
 
 /** Distinct owned cardIds from the items map. */
-export function ownedCardIdSet(
-	items: Record<string, Stack>,
-): Set<string> {
+export function ownedCardIdSet(items: Record<string, Stack>): Set<string> {
 	return new Set(Object.values(items).map((i) => i.cardId));
 }
 
@@ -42,9 +40,7 @@ export function useOwnedCardIdSet(): Set<string> {
 }
 
 /** Group a flat list of stacks into a map keyed by cardId. */
-export function groupByCardId(
-	items: Stack[],
-): Map<string, Stack[]> {
+export function groupByCardId(items: Stack[]): Map<string, Stack[]> {
 	const map = new Map<string, Stack[]>();
 	for (const item of items) {
 		const arr = map.get(item.cardId);

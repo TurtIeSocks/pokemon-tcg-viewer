@@ -93,9 +93,12 @@ test("valid snapshot → summary shown; Merge → store gains items and binders"
 
 	// Summary appears (counts are in child spans so we match on combined textContent)
 	await waitFor(() => {
-		const el = screen.getByText((_, node) =>
-			node?.nodeName === "P" &&
-			(node?.textContent ?? "").replace(/\s+/g, " ").includes("3 cards · 2 binders"),
+		const el = screen.getByText(
+			(_, node) =>
+				node?.nodeName === "P" &&
+				(node?.textContent ?? "")
+					.replace(/\s+/g, " ")
+					.includes("3 cards · 2 binders"),
 		);
 		expect(el).toBeDefined();
 	});
@@ -127,9 +130,12 @@ test("valid snapshot → Replace (confirm true) → store replaced", async () =>
 	fireEvent.change(input, { target: { files: [file] } });
 
 	await waitFor(() => {
-		const el = screen.getByText((_, node) =>
-			node?.nodeName === "P" &&
-			(node?.textContent ?? "").replace(/\s+/g, " ").includes("2 cards · 1 binders"),
+		const el = screen.getByText(
+			(_, node) =>
+				node?.nodeName === "P" &&
+				(node?.textContent ?? "")
+					.replace(/\s+/g, " ")
+					.includes("2 cards · 1 binders"),
 		);
 		expect(el).toBeDefined();
 	});
@@ -159,9 +165,12 @@ test("Replace (confirm false) → no import", async () => {
 	fireEvent.change(input, { target: { files: [file] } });
 
 	await waitFor(() => {
-		const el = screen.getByText((_, node) =>
-			node?.nodeName === "P" &&
-			(node?.textContent ?? "").replace(/\s+/g, " ").includes("2 cards · 1 binders"),
+		const el = screen.getByText(
+			(_, node) =>
+				node?.nodeName === "P" &&
+				(node?.textContent ?? "")
+					.replace(/\s+/g, " ")
+					.includes("2 cards · 1 binders"),
 		);
 		expect(el).toBeDefined();
 	});

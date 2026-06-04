@@ -24,9 +24,7 @@ const baseBinder: Binder = {
 	updatedAt: 2000,
 };
 
-function makeItem(
-	overrides: Partial<Stack> & { cardId: string },
-): Stack {
+function makeItem(overrides: Partial<Stack> & { cardId: string }): Stack {
 	return {
 		id: `stack-${overrides.cardId}`,
 		acquiredAt: 1000,

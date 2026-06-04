@@ -16,12 +16,7 @@ import type {
 	CollectionRepo,
 	UserlandRepos,
 } from "./repo";
-import type {
-	Binder,
-	Stack,
-	NewBinder,
-	NewStack,
-} from "./types";
+import type { Binder, NewBinder, NewStack, Stack } from "./types";
 
 const collectionStore = createStore("ptcg-collection", "items");
 const bindersStore = createStore("ptcg-binders", "binders");

@@ -188,7 +188,7 @@ export function StackRow({ item, variants }: StackRowProps) {
 			{/* Inline split panel — peel cards into a new stack */}
 			{splitOpen && (
 				<div className="border-t pt-3 flex items-end gap-2 flex-wrap">
-					<label className="flex flex-col gap-1 text-[11px] text-[var(--ink-muted)]">
+					<div className="flex flex-col gap-1 text-[11px] text-[var(--ink-muted)]">
 						Quantity to split off
 						<Input
 							type="number"
@@ -199,7 +199,7 @@ export function StackRow({ item, variants }: StackRowProps) {
 							onChange={(e) => setSplitN(Number(e.target.value))}
 							className="w-24 font-mono tabular-nums"
 						/>
-					</label>
+					</div>
 					<Button type="button" size="sm" onClick={handleSplit}>
 						Split off
 					</Button>

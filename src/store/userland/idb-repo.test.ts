@@ -266,7 +266,9 @@ import type { Stack } from "./types";
 
 /** A repo on a unique store so these are fully isolated. */
 function freshCollectionRepo() {
-	return createIdbCollectionRepo(createStore(`test-${crypto.randomUUID()}`, "items"));
+	return createIdbCollectionRepo(
+		createStore(`test-${crypto.randomUUID()}`, "items"),
+	);
 }
 
 test("add() defaults quantity to 1", async () => {
@@ -275,7 +277,10 @@ test("add() defaults quantity to 1", async () => {
 });
 
 test("add() preserves an explicit quantity", async () => {
-	const s = await freshCollectionRepo().add({ cardId: "base1-4", quantity: 10 });
+	const s = await freshCollectionRepo().add({
+		cardId: "base1-4",
+		quantity: 10,
+	});
 	expect(s.quantity).toBe(10);
 });
 
@@ -295,8 +300,16 @@ test("add() null-fills source + storageLocation; persists given values", async (
 
 test("normalizeStack backfills legacy records (missing quantity/source/storageLocation)", () => {
 	const legacy = {
-		id: "a", cardId: "base1-4", acquiredAt: 0, createdAt: 0, label: null,
-		pricePaid: null, variant: null, notes: null, condition: null, grading: null,
+		id: "a",
+		cardId: "base1-4",
+		acquiredAt: 0,
+		createdAt: 0,
+		label: null,
+		pricePaid: null,
+		variant: null,
+		notes: null,
+		condition: null,
+		grading: null,
 	} as unknown as Stack;
 	const n = normalizeStack(legacy);
 	expect(n.quantity).toBe(1);
