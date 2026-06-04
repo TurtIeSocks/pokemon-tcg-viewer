@@ -1,8 +1,10 @@
 import { expect, test } from "bun:test";
 import {
+	applyMapping,
 	CSV_COLUMNS,
 	csvFilename,
 	csvToImport,
+	detectColumns,
 	parseCsv,
 	stacksToCsv,
 } from "./csv";
@@ -149,4 +151,31 @@ test("round-trip: export → parse → import preserves cardId + quantity", () =
 	const { rows } = parseCsv(csv);
 	const { matched } = csvToImport(rows, importResolver);
 	expect(matched[0]).toMatchObject({ cardId: "base1-4", quantity: 4 });
+});
+
+test("detectColumns maps common foreign headers to canonical fields", () => {
+	const map = detectColumns(["Name", "Set", "Card Number", "Qty", "Condition"]);
+	expect(map.card_name).toBe("Name");
+	expect(map.set_name).toBe("Set");
+	expect(map.number).toBe("Card Number");
+	expect(map.quantity).toBe("Qty");
+	expect(map.condition).toBe("Condition");
+});
+
+test("applyMapping rewrites a raw row to canonical keys", () => {
+	const map = detectColumns(["Name", "Set", "Card Number", "Qty"]);
+	const row = applyMapping(
+		{ Name: "Charizard", Set: "Base", "Card Number": "4", Qty: "3" },
+		map,
+	);
+	expect(row.card_name).toBe("Charizard");
+	expect(row.set_name).toBe("Base");
+	expect(row.number).toBe("4");
+	expect(row.quantity).toBe("3");
+});
+
+test("detectColumns does not map one header to two fields", () => {
+	const map = detectColumns(["name"]);
+	expect(map.card_name).toBe("name");
+	expect(map.label).toBeUndefined();
 });

@@ -106,6 +106,69 @@ export function downloadCsv(csv: string, filename: string): void {
 	URL.revokeObjectURL(url);
 }
 
+// --- Column mapping (universal import) ---
+
+export type CanonicalField = (typeof CSV_COLUMNS)[number];
+export type ColumnMap = Partial<Record<CanonicalField, string>>;
+
+const ALIASES: Record<CanonicalField, string[]> = {
+	card_id: ["card_id", "id", "cardstack_id"],
+	card_name: ["card_name", "name", "card"],
+	set_id: ["set_id", "set_code"],
+	set_name: ["set_name", "set", "expansion", "series"],
+	number: ["number", "card_number", "no", "collector_number", "card_no"],
+	variant: ["variant", "printing", "foil", "finish", "edition"],
+	quantity: ["quantity", "qty", "count", "amount", "have", "haves", "owned"],
+	condition: ["condition", "cond"],
+	grading_company: ["grading_company", "grader", "grading"],
+	grading_grade: ["grading_grade", "grade"],
+	price_paid_unit: ["price_paid_unit", "price", "price_paid", "paid", "cost"],
+	acquired_at: ["acquired_at", "acquired", "date", "purchase_date"],
+	source: ["source", "seller", "acquired_from"],
+	storage_location: ["storage_location", "location", "binder", "box", "storage"],
+	label: ["label", "title"],
+	notes: ["notes", "note", "comment", "comments"],
+};
+
+function normalizeHeader(h: string): string {
+	return h
+		.trim()
+		.toLowerCase()
+		.replace(/[\s\-.]+/g, "_")
+		.replace(/[()]/g, "");
+}
+
+/** Auto-map source headers to canonical fields by alias; never maps one header to two fields. */
+export function detectColumns(headers: string[]): ColumnMap {
+	const norm = headers.map((h) => ({ raw: h, n: normalizeHeader(h) }));
+	const used = new Set<string>();
+	const map: ColumnMap = {};
+	for (const field of CSV_COLUMNS) {
+		for (const alias of ALIASES[field]) {
+			const hit = norm.find((h) => h.n === alias && !used.has(h.raw));
+			if (hit) {
+				map[field] = hit.raw;
+				used.add(hit.raw);
+				break;
+			}
+		}
+	}
+	return map;
+}
+
+/** Rewrite a raw CSV row into canonical-keyed values using a column map. */
+export function applyMapping(
+	row: Record<string, string>,
+	map: ColumnMap,
+): Record<CanonicalField, string> {
+	const out = {} as Record<CanonicalField, string>;
+	for (const field of CSV_COLUMNS) {
+		const src = map[field];
+		out[field] = src ? (row[src] ?? "") : "";
+	}
+	return out;
+}
+
 // --- Import ---
 
 /** Resolves a CSV row to a corpus cardId. Built from the corpus index in the UI; faked in tests. */
