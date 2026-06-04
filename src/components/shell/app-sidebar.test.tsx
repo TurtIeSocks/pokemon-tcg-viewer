@@ -168,16 +168,16 @@ test("Sets child is aria-current=page at /vault/sets", async () => {
 	expect(setsLink.getAttribute("aria-current")).toBe("page");
 });
 
-test("Vault group is collapsed when path is /", async () => {
+test("Vault items are always visible (flat group, matches mock)", async () => {
 	await renderInRouter(
 		<AppSidebar tree={tree} activeSeriesSlug={null} activeSetSlug={null} />,
 		{ initialPath: "/" },
 	);
-	// None of the vault children should be visible when collapsed
-	expect(screen.queryByRole("link", { name: "Overview" })).toBeNull();
-	expect(screen.queryByRole("link", { name: "All cards" })).toBeNull();
-	expect(screen.queryByRole("link", { name: "Sets" })).toBeNull();
-	expect(screen.queryByRole("link", { name: "Binders" })).toBeNull();
+	// Flat group (no collapsible parent): vault children render regardless of path
+	expect(screen.getByRole("link", { name: "Overview" })).toBeDefined();
+	expect(screen.getByRole("link", { name: "All cards" })).toBeDefined();
+	expect(screen.getByRole("link", { name: "Sets" })).toBeDefined();
+	expect(screen.getByRole("link", { name: "Binders" })).toBeDefined();
 });
 
 test("About and RepoLink are present in sidebar footer", async () => {
