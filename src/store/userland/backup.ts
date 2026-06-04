@@ -6,13 +6,28 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 	return typeof v === "object" && v !== null;
 }
 
+/** Snapshot shape accepted on import, before upgrade to the current version. */
+interface RawSnapshot {
+	schemaVersion: number;
+	exportedAt?: unknown;
+	collection: Record<string, unknown>[];
+	binders: Record<string, unknown>[];
+}
+
+/** Schema versions this build can read (and upgrade from). */
+const SUPPORTED_VERSIONS = new Set([1, 2]);
+
 /**
- * Type guard: validates that v has the minimum shape of a UserDataSnapshot
- * (schemaVersion=1, collection/binders arrays with required id fields).
+ * Type guard: validates that v has the minimum shape of a supported snapshot
+ * (schemaVersion in {1,2}; collection/binders arrays with required id fields).
  */
-export function isValidSnapshot(v: unknown): v is UserDataSnapshot {
+export function isValidSnapshot(v: unknown): v is RawSnapshot {
 	if (!isRecord(v)) return false;
-	if (v.schemaVersion !== 1) return false;
+	if (
+		typeof v.schemaVersion !== "number" ||
+		!SUPPORTED_VERSIONS.has(v.schemaVersion)
+	)
+		return false;
 	if (!Array.isArray(v.collection) || !Array.isArray(v.binders)) return false;
 	const itemsOk = v.collection.every(
 		(i) =>
@@ -25,7 +40,24 @@ export function isValidSnapshot(v: unknown): v is UserDataSnapshot {
 	return itemsOk && bindersOk;
 }
 
-/** Parse and validate a JSON string as a UserDataSnapshot; throws a user-readable error on failure. */
+/** Upgrade any supported snapshot to the current v2 shape (backfills quantity=1, null provenance). */
+function upgrade(snap: RawSnapshot): UserDataSnapshot {
+	const collection = snap.collection.map((c) => ({
+		...c,
+		quantity:
+			typeof c.quantity === "number" && c.quantity >= 1 ? c.quantity : 1,
+		source: (c.source as string | null | undefined) ?? null,
+		storageLocation: (c.storageLocation as string | null | undefined) ?? null,
+	})) as unknown as UserDataSnapshot["collection"];
+	return {
+		schemaVersion: 2,
+		exportedAt: typeof snap.exportedAt === "number" ? snap.exportedAt : 0,
+		collection,
+		binders: snap.binders as unknown as UserDataSnapshot["binders"],
+	};
+}
+
+/** Parse, validate, and upgrade a JSON string to the current snapshot; throws a user-readable error on failure. */
 export function parseSnapshot(json: string): UserDataSnapshot {
 	let data: unknown;
 	try {
@@ -36,7 +68,7 @@ export function parseSnapshot(json: string): UserDataSnapshot {
 	if (!isValidSnapshot(data)) {
 		throw new Error("Unrecognized or unsupported backup format.");
 	}
-	return data;
+	return upgrade(data);
 }
 
 /** Build the suggested download filename using the current date (ISO YYYY-MM-DD suffix). */

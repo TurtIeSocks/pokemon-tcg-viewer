@@ -103,9 +103,9 @@ export type BinderPatch = Partial<
 	>
 >;
 
-/** Import/export envelope. */
+/** Import/export envelope. v2 added Stack.quantity + source + storageLocation; v1 backups upgrade on import. */
 export interface UserDataSnapshot {
-	schemaVersion: 1;
+	schemaVersion: 2;
 	exportedAt: number;
 	collection: Stack[];
 	binders: Binder[];

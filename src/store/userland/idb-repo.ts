@@ -112,7 +112,7 @@ function createIdbBackupRepo(
 		async exportAll() {
 			const [c, b] = await Promise.all([collection.list(), binders.list()]);
 			return {
-				schemaVersion: 1,
+				schemaVersion: 2,
 				exportedAt: Date.now(),
 				collection: c,
 				binders: b,

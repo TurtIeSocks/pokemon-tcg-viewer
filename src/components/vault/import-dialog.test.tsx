@@ -16,7 +16,7 @@ function makeSnapshot(
 ): UserDataSnapshot {
 	const now = Date.now();
 	return {
-		schemaVersion: 1,
+		schemaVersion: 2,
 		exportedAt: now,
 		collection: Array.from({ length: collectionLen }, (_, i) => ({
 			id: `item-${i}`,
