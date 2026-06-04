@@ -20,6 +20,7 @@ export function inputDayToMs(s: string): number {
 /** Converts a store CollectionItem into the flat string-keyed form values shape. */
 export function itemToForm(i: CollectionItem): CopyFormValues {
 	return {
+		label: i.label ?? "",
 		acquiredAt: dayMsToInput(i.acquiredAt),
 		pricePaid: i.pricePaid == null ? "" : String(i.pricePaid),
 		variant: i.variant ?? "",
@@ -38,6 +39,7 @@ export function itemToForm(i: CollectionItem): CopyFormValues {
  */
 export function formToPatch(values: CopyFormValues): EditableCopyFields {
 	return {
+		label: values.label.trim() === "" ? null : values.label.trim(),
 		acquiredAt: inputDayToMs(values.acquiredAt),
 		pricePaid: values.pricePaid === "" ? null : Number(values.pricePaid),
 		variant: values.variant === "" ? null : values.variant,

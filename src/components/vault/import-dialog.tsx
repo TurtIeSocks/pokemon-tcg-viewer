@@ -71,25 +71,42 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>Import backup</DialogTitle>
-					<DialogDescription>
+					<DialogTitle className="font-display">Import backup</DialogTitle>
+					<DialogDescription className="text-[var(--ink-muted)]">
 						Choose a JSON backup file to restore your collection and binders.
 					</DialogDescription>
 				</DialogHeader>
 
 				<div className="flex flex-col gap-3">
-					<input
-						ref={fileRef}
-						type="file"
-						accept="application/json"
-						onChange={onFileChange}
-					/>
+					{/* Dropzone / file picker */}
+					<label className="flex flex-col items-center justify-center gap-2 rounded-[var(--r-panel)] border border-dashed border-[var(--border)] bg-[var(--glass)] px-4 py-6 cursor-pointer text-center hover:border-[var(--primary)] transition-colors">
+						<span className="text-[10.5px] uppercase tracking-[0.18em] text-[var(--faint)] font-semibold">
+							JSON backup file
+						</span>
+						<span className="text-sm text-[var(--ink-muted)]">
+							Click to browse or drop a file here
+						</span>
+						<input
+							ref={fileRef}
+							type="file"
+							accept="application/json"
+							onChange={onFileChange}
+							className="sr-only"
+						/>
+					</label>
 
-					{error && <p className="text-destructive text-sm">{error}</p>}
+					{error && <p className="text-sm text-[var(--danger)]">{error}</p>}
 
 					{snapshot && (
-						<p className="text-sm">
-							{snapshot.collection.length} cards · {snapshot.binders.length}{" "}
+						<p className="text-sm font-mono tabular-nums text-[var(--ink-muted)]">
+							<span className="text-[var(--ink)]">
+								{snapshot.collection.length}
+							</span>{" "}
+							cards
+							{" · "}
+							<span className="text-[var(--ink)]">
+								{snapshot.binders.length}
+							</span>{" "}
 							binders
 						</p>
 					)}
@@ -97,7 +114,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 
 				{snapshot && (
 					<DialogFooter>
-						<Button variant="outline" onClick={onMerge}>
+						<Button variant="ghost" onClick={onMerge}>
 							Merge
 						</Button>
 						<Button variant="destructive" onClick={onReplace}>

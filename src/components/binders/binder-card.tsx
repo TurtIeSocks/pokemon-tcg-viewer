@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { Share2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { GlassPanel } from "@/components/ui/glass";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { useBinderProgress } from "../../store/userland/selectors";
 import type { Binder } from "../../store/userland/types";
@@ -26,49 +27,74 @@ export function BinderCard({ binder }: BinderCardProps) {
 		[binder.rules.length, binder.includeCardIds.length],
 	);
 
+	const pct =
+		progress && progress.total > 0
+			? Math.round((progress.owned / progress.total) * 100)
+			: 0;
+
 	return (
 		<>
-			<div className="relative">
-				<Link
-					to="/vault/binders/$binderId"
-					params={{ binderId: binder.id }}
-					className="block rounded-lg border bg-card p-4 hover:bg-accent/50 transition-colors"
+			<div className="relative group">
+				<GlassPanel
+					interactive
+					className="block p-0 focus-within:ring-2 focus-within:ring-[var(--primary)]"
 				>
-					<h3 className="font-semibold truncate pr-8">{binder.name}</h3>
+					<Link
+						to="/vault/binders/$binderId"
+						params={{ binderId: binder.id }}
+						className="block p-5 rounded-[var(--r-panel)] outline-none"
+					>
+						{/* Name */}
+						<h3 className="font-semibold text-[var(--ink)] truncate pr-8 leading-snug">
+							{binder.name}
+						</h3>
 
-					{binder.description && (
-						<p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-							{binder.description}
+						{/* Description */}
+						{binder.description && (
+							<p className="text-sm text-[var(--ink-muted)] mt-1 line-clamp-2">
+								{binder.description}
+							</p>
+						)}
+
+						{/* Meta: rules + card count */}
+						<p className="mt-2 font-mono text-[11px] text-[var(--faint)] tabular-nums">
+							{countLine}
 						</p>
-					)}
 
-					{progress ? (
-						<div className="mt-3 space-y-1">
-							<div className="flex justify-between text-xs text-muted-foreground">
-								<span>
-									{progress.total > 0
-										? Math.round((progress.owned / progress.total) * 100)
-										: 0}
-									% complete
+						{/* Progress bar + owned/total */}
+						<div className="mt-3 space-y-1.5">
+							<ProgressBar
+								value={progress?.owned ?? 0}
+								total={progress?.total ?? 0}
+							/>
+							<div className="flex items-baseline justify-between">
+								<span className="text-[11px] text-[var(--faint)] uppercase tracking-wide">
+									progress
 								</span>
-								<span>
-									{progress.owned}/{progress.total}
+								<span className="font-mono text-xs tabular-nums text-[var(--ink)]">
+									{progress ? (
+										<>
+											{progress.owned}/{progress.total}
+											{pct > 0 && (
+												<span className="ml-1.5 text-[var(--faint)]">
+													{pct}%
+												</span>
+											)}
+										</>
+									) : (
+										"—"
+									)}
 								</span>
 							</div>
-							<ProgressBar value={progress.owned} total={progress.total} />
 						</div>
-					) : (
-						<div className="mt-3 h-2 rounded-full bg-muted" />
-					)}
-
-					<p className="text-xs text-muted-foreground mt-2">{countLine}</p>
-				</Link>
+					</Link>
+				</GlassPanel>
 
 				{/* Share button — outside the Link so clicks don't navigate */}
 				<Button
 					variant="ghost"
 					size="icon"
-					className="absolute top-3 right-3 h-7 w-7"
+					className="absolute top-3.5 right-3.5 h-7 w-7 text-[var(--faint)] hover:text-[var(--ink)]"
 					aria-label="Share binder"
 					onClick={(e) => {
 						e.stopPropagation();

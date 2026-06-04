@@ -1,55 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import type { ReactNode } from "react";
 import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import type { NavSet } from "../../lib/nav-tree";
-
-/**
- * Circular completion ring. Renders an accent-stroked arc proportional to `pct`
- * over a faint track, with `children` (the set symbol) centered inside.
- */
-function ProgressRing({ pct, children }: { pct: number; children: ReactNode }) {
-	const size = 46;
-	const stroke = 4;
-	const r = (size - stroke) / 2;
-	const circ = 2 * Math.PI * r;
-	const offset = circ * (1 - Math.min(100, Math.max(0, pct)) / 100);
-	return (
-		<span
-			className="relative inline-flex shrink-0 items-center justify-center"
-			style={{ width: size, height: size }}
-		>
-			<svg
-				width={size}
-				height={size}
-				className="absolute inset-0 -rotate-90"
-				aria-hidden="true"
-			>
-				<circle
-					cx={size / 2}
-					cy={size / 2}
-					r={r}
-					fill="none"
-					strokeWidth={stroke}
-					className="stroke-white/15"
-				/>
-				<circle
-					cx={size / 2}
-					cy={size / 2}
-					r={r}
-					fill="none"
-					strokeWidth={stroke}
-					strokeLinecap="round"
-					strokeDasharray={circ}
-					strokeDashoffset={offset}
-					className="stroke-[var(--accent,#e0b341)] transition-[stroke-dashoffset] duration-500 ease-out"
-				/>
-			</svg>
-			<span className="relative z-10 flex items-center justify-center">
-				{children}
-			</span>
-		</span>
-	);
-}
+import { ProgressRing } from "../ui/progress-ring";
 
 /**
  * Liquid-glass set tile. Four elements:
@@ -96,7 +48,7 @@ export function SetTile({
 	return (
 		<Link
 			{...linkProps}
-			className="group relative block aspect-[4/5] w-full max-w-full overflow-hidden rounded-2xl transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-8px_rgba(0,0,0,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent,#e0b341)] focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+			className="group relative block aspect-[4/5] w-full max-w-full overflow-hidden rounded-2xl transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-8px_rgba(0,0,0,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none motion-reduce:hover:translate-y-0"
 		>
 			{/* ── Backdrop: the set logo, blurred + saturated → per-set color field ── */}
 			<img

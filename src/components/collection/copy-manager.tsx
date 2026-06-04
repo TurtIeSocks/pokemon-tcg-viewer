@@ -1,5 +1,6 @@
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useOwnedIndex } from "../../store/userland/selectors";
 import { removeAllCopiesOfCard } from "../../store/userland/userland-store";
@@ -27,9 +28,12 @@ export function CopyManager({ cardId, variants }: CopyManagerProps) {
 	return (
 		<div className="flex flex-col gap-4">
 			{/* Header: copy count + prominent Add button */}
-			<div className="flex items-center justify-between gap-2">
-				<h3 className="text-sm font-semibold text-muted-foreground">
-					Your copies ({copies.length})
+			<div className="flex flex-wrap items-center justify-between gap-2">
+				<h3 className="flex items-center gap-2 font-display text-[19px] font-medium text-[var(--ink)]">
+					Your copies
+					<Badge variant="default" className="font-mono text-[11px]">
+						{copies.length}
+					</Badge>
 				</h3>
 				<div className="flex items-center gap-2">
 					{copies.length > 0 && (
@@ -60,8 +64,8 @@ export function CopyManager({ cardId, variants }: CopyManagerProps) {
 
 			{/* Create-mode form — shown when Add copy is clicked */}
 			{addOpen && (
-				<div className="rounded-lg border border-dashed border-border p-4">
-					<p className="text-xs text-muted-foreground mb-3">New copy</p>
+				<div className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--glass)] p-4">
+					<p className="text-xs text-[var(--faint)] mb-3">New copy</p>
 					<CopyEditForm
 						mode="create"
 						cardId={cardId}
@@ -74,7 +78,7 @@ export function CopyManager({ cardId, variants }: CopyManagerProps) {
 
 			{/* Copy tiles */}
 			{copies.length === 0 && !addOpen ? (
-				<p className="text-sm text-muted-foreground py-4 text-center">
+				<p className="text-sm text-[var(--ink-muted)] py-4 text-center">
 					No copies yet — add one above.
 				</p>
 			) : (

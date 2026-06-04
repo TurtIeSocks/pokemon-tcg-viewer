@@ -148,7 +148,7 @@ export function BulkAddMenu({
 				>
 					＋ New binder…
 				</DropdownMenuItem>
-				<DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+				<DropdownMenuLabel className="text-xs text-[var(--ink-muted)] font-normal">
 					Matching cards always appear in this binder, including ones from
 					future sets.
 				</DropdownMenuLabel>
@@ -162,7 +162,7 @@ export function BulkAddMenu({
 				<DropdownMenuTrigger asChild>
 					<button
 						type="button"
-						className="rounded border px-3 py-1.5 text-sm hover:bg-secondary"
+						className="rounded-[var(--r-pill)] border border-[var(--border)] bg-[var(--glass)] px-3 py-1.5 text-sm text-[var(--ink)] hover:bg-white/[0.09] transition-colors"
 					>
 						{label ?? "Add all"}
 					</button>

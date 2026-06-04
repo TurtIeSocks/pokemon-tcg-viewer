@@ -59,14 +59,13 @@ beforeEach(async () => {
 
 // Dialog renders into a portal — query document.body, not container.
 function getTrack(): Element | null {
-	// The track has both `w-[200%]` and `flex` classes.
-	// Tailwind generates `w-\[200\%\]` as literal classname "w-[200%]"
-	return document.body.querySelector('[class*="w-[200%]"]');
+	// The slide track is the only element carrying `transition-transform`.
+	return document.body.querySelector('[class*="transition-transform"]');
 }
 
 function getPanels(): NodeListOf<Element> {
-	// Each panel has exactly the class "w-1/2"
-	return document.body.querySelectorAll('[class*="w-1/2"]');
+	// Each panel is a flex item with `basis-full`.
+	return document.body.querySelectorAll('[class*="basis-full"]');
 }
 
 test("manage=false: card detail face is active (track has translate-x-0)", async () => {
@@ -77,17 +76,17 @@ test("manage=false: card detail face is active (track has translate-x-0)", async
 	const track = getTrack();
 	expect(track).not.toBeNull();
 	expect(track?.className).toContain("translate-x-0");
-	expect(track?.className).not.toContain("-translate-x-1/2");
+	expect(track?.className).not.toContain("-translate-x-full");
 });
 
-test("manage=true: manager face is active (track has -translate-x-1/2)", async () => {
+test("manage=true: manager face is active (track has -translate-x-full)", async () => {
 	await renderInRouter(
 		<CardModal card={CARD} crossLinks={[]} onClose={() => {}} manage={true} />,
 	);
 
 	const track = getTrack();
 	expect(track).not.toBeNull();
-	expect(track?.className).toContain("-translate-x-1/2");
+	expect(track?.className).toContain("-translate-x-full");
 	expect(track?.className).not.toContain("translate-x-0");
 });
 

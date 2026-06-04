@@ -63,7 +63,9 @@ export function PackDialog({
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
-				<DialogTitle>{`Open a ${art.name} pack`}</DialogTitle>
+				<DialogTitle className="font-display text-[var(--ink)]">
+					{`Open a ${art.name} pack`}
+				</DialogTitle>
 				{!pack ? (
 					<div className="flex justify-center py-6">
 						<BoosterPack art={art} ripped={ripped} onRip={onRip} />
@@ -91,7 +93,9 @@ export function PackDialog({
 							))}
 						</div>
 						<div className="flex justify-center pt-4">
-							<Button onClick={onReroll}>Open another pack</Button>
+							<Button onClick={onReroll} variant="soft">
+								Open another pack
+							</Button>
 						</div>
 					</>
 				)}

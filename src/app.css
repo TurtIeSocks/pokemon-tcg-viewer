@@ -3,102 +3,100 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Self-hosted variable fonts */
+/* ── Self-hosted fonts ──────────────────────────────────────────────
+   Clash Display: Fontshare, ITF Free License. The woff2 is NOT bundled
+   (Fontshare is unreachable from CI) — drop a variable `clash-display.woff2`
+   (wght 400–700) into public/fonts. Until present, --font-display falls back
+   to Space Grotesk gracefully. */
 @font-face {
-	font-family: "Newsreader";
+	font-family: "Clash Display";
+	font-style: normal;
+	font-weight: 400 700;
+	font-display: swap;
+	src: url("/fonts/clash-display.woff2") format("woff2");
+}
+/* Space Grotesk — UI/body. OFL. */
+@font-face {
+	font-family: "Space Grotesk";
 	font-style: normal;
 	font-weight: 300 700;
 	font-display: swap;
-	src: url("/fonts/newsreader-latin-ext.woff2") format("woff2");
-	unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
-		U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
-		U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
-		U+A720-A7FF;
+	src: url("/fonts/space-grotesk.woff2") format("woff2");
 }
+/* Geist Mono — data/numbers. OFL. */
 @font-face {
-	font-family: "Newsreader";
+	font-family: "Geist Mono";
 	font-style: normal;
-	font-weight: 300 700;
+	font-weight: 100 900;
 	font-display: swap;
-	src: url("/fonts/newsreader.woff2") format("woff2");
-	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
-		U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
-		U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-@font-face {
-	font-family: "Newsreader";
-	font-style: italic;
-	font-weight: 300 700;
-	font-display: swap;
-	src: url("/fonts/newsreader-italic-latin-ext.woff2") format("woff2");
-	unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
-		U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
-		U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
-		U+A720-A7FF;
-}
-@font-face {
-	font-family: "Newsreader";
-	font-style: italic;
-	font-weight: 300 700;
-	font-display: swap;
-	src: url("/fonts/newsreader-italic.woff2") format("woff2");
-	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
-		U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
-		U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-@font-face {
-	font-family: "JetBrains Mono";
-	font-style: normal;
-	font-weight: 100 800;
-	font-display: swap;
-	src: url("/fonts/jetbrains-mono-latin-ext.woff2") format("woff2");
-	unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
-		U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
-		U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
-		U+A720-A7FF;
-}
-@font-face {
-	font-family: "JetBrains Mono";
-	font-style: normal;
-	font-weight: 100 800;
-	font-display: swap;
-	src: url("/fonts/jetbrains-mono.woff2") format("woff2");
-	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
-		U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
-		U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+	src: url("/fonts/geist-mono.woff2") format("woff2");
 }
 
 :root {
-	--font-serif: "Newsreader", Georgia, serif;
-	--font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-	--background: oklch(0.12 0.04 290);
-	--foreground: oklch(0.95 0.012 290);
-	--card: oklch(0.16 0.04 290);
-	--card-foreground: oklch(0.95 0.012 290);
-	--popover: oklch(0.15 0.04 290);
-	--popover-foreground: oklch(0.95 0.012 290);
-	--primary: oklch(0.62 0.22 295);
-	--primary-foreground: oklch(0.98 0.01 290);
-	--secondary: oklch(0.22 0.04 290);
-	--secondary-foreground: oklch(0.92 0.012 290);
-	--muted: oklch(0.2 0.03 290);
-	--muted-foreground: oklch(0.68 0.03 290);
-	--accent: oklch(0.72 0.14 200);
-	--accent-foreground: oklch(0.14 0.03 290);
-	--destructive: oklch(0.58 0.22 25);
-	--destructive-foreground: oklch(0.98 0.01 290);
-	--border: oklch(0.27 0.03 290);
-	--input: oklch(0.24 0.03 290);
-	--ring: oklch(0.62 0.22 295);
-	--radius: 0.75rem;
-	--sidebar: oklch(0.14 0.04 290);
-	--sidebar-foreground: oklch(0.95 0.012 290);
-	--sidebar-primary: oklch(0.62 0.22 295);
-	--sidebar-primary-foreground: oklch(0.98 0.01 290);
-	--sidebar-accent: oklch(0.22 0.04 290);
-	--sidebar-accent-foreground: oklch(0.92 0.012 290);
-	--sidebar-border: oklch(0.27 0.03 290);
-	--sidebar-ring: oklch(0.62 0.22 295);
+	/* fonts */
+	--font-display: "Clash Display", "Space Grotesk", system-ui, sans-serif;
+	--font-sans: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+	--font-serif: var(--font-display); /* transitional alias — existing `font-serif` usages render in Clash */
+	--font-mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+
+	/* ── Liquid Glass primitives (additive, namespaced to avoid shadcn collisions) ── */
+	--canvas: oklch(0.12 0.012 290); /* page/tray base */
+	--bg: oklch(0.175 0.017 290); /* solid panel / bezel core */
+	--glass: oklch(1 0 0 / 0.045); /* translucent glass fill */
+	--glass-2: oklch(1 0 0 / 0.07); /* raised glass fill */
+	--ink: oklch(0.97 0.006 290); /* primary text */
+	--ink-muted: oklch(0.71 0.016 290); /* secondary text */
+	--faint: oklch(0.57 0.018 290); /* tertiary text / labels */
+	--primary-strong: oklch(0.79 0.15 295); /* accent hover */
+	--primary-ink: oklch(0.16 0.03 295); /* text/icon on filled violet */
+	--primary-wash: oklch(0.7 0.19 295 / 0.18); /* active rows, soft buttons */
+	--success: oklch(0.78 0.15 162);
+	--warning: oklch(0.82 0.13 78);
+	--danger: oklch(0.7 0.19 18);
+	--hairline: oklch(1 0 0 / 0.06);
+	--r-panel: 18px;
+	--r-control: 12px;
+	--r-pill: 999px;
+	--shadow: 0 24px 60px -24px oklch(0 0 0 / 0.7), inset 0 1px 0 oklch(1 0 0 / 0.09);
+	--shadow-lift: 0 32px 80px -28px oklch(0 0 0 / 0.85), 0 0 0 1px var(--primary-wash),
+		inset 0 1px 0 oklch(1 0 0 / 0.12);
+	--ease: cubic-bezier(0.32, 0.72, 0, 1);
+	--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+	--ambient: radial-gradient(60% 50% at 14% 0%, oklch(0.7 0.19 295 / 0.15), transparent 70%),
+		radial-gradient(50% 45% at 96% 6%, oklch(0.62 0.16 320 / 0.11), transparent 70%),
+		radial-gradient(55% 55% at 80% 100%, oklch(0.58 0.14 270 / 0.09), transparent 70%);
+
+	/* ── shadcn semantic tokens, re-pointed to the violet system ── */
+	--background: var(--canvas);
+	--foreground: var(--ink);
+	--card: var(--bg); /* opaque panel; glass surfaces use --glass via GlassPanel */
+	--card-foreground: var(--ink);
+	--popover: var(--bg);
+	--popover-foreground: var(--ink);
+	--primary: oklch(0.7 0.19 295);
+	--primary-foreground: var(--primary-ink);
+	--secondary: oklch(1 0 0 / 0.06);
+	--secondary-foreground: var(--ink);
+	--muted: oklch(0.24 0.02 290); /* dark surface for bg-muted */
+	--muted-foreground: var(--ink-muted);
+	--accent: var(--primary); /* cyan retired → violet (also fixes set-tile ring var(--accent,…)) */
+	--accent-foreground: var(--primary-ink);
+	--destructive: var(--danger);
+	--destructive-foreground: oklch(0.99 0 0);
+	--border: oklch(1 0 0 / 0.09);
+	--input: oklch(1 0 0 / 0.09);
+	--ring: var(--primary);
+	--radius: 1rem;
+
+	/* sidebar (glass) — consumed once sidebar-04 lands in Phase 2 */
+	--sidebar: var(--glass);
+	--sidebar-foreground: var(--ink);
+	--sidebar-primary: var(--primary);
+	--sidebar-primary-foreground: var(--primary-ink);
+	--sidebar-accent: var(--primary-wash);
+	--sidebar-accent-foreground: var(--ink);
+	--sidebar-border: var(--hairline);
+	--sidebar-ring: var(--primary);
 }
 
 @theme inline {
@@ -118,6 +116,9 @@
 	--color-accent-foreground: var(--accent-foreground);
 	--color-destructive: var(--destructive);
 	--color-destructive-foreground: var(--destructive-foreground);
+	--color-success: var(--success);
+	--color-warning: var(--warning);
+	--color-danger: var(--danger);
 	--color-border: var(--border);
 	--color-input: var(--input);
 	--color-ring: var(--ring);
@@ -133,6 +134,8 @@
 	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
 	--color-sidebar-border: var(--sidebar-border);
 	--color-sidebar-ring: var(--sidebar-ring);
+	--font-display: var(--font-display);
+	--font-sans: var(--font-sans);
 	--font-serif: var(--font-serif);
 	--font-mono: var(--font-mono);
 }
@@ -150,8 +153,68 @@
 	}
 	body {
 		@apply bg-background text-foreground;
-		font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+		font-family: var(--font-sans);
+		-webkit-font-smoothing: antialiased;
+		text-rendering: optimizeLegibility;
+		position: relative;
 	}
+	/* Ambient violet mesh — fixed so it never repaints on scroll; sits behind content. */
+	body::before {
+		content: "";
+		position: fixed;
+		inset: 0;
+		z-index: 0;
+		pointer-events: none;
+		background: var(--ambient);
+	}
+	#root {
+		position: relative;
+		z-index: 1;
+	}
+}
+
+/* ── Shell: two floating glass plates ───────────────────────────────
+   The SidebarProvider wrapper (data-slot=sidebar-wrapper) is the canvas.
+   Its `has-data-[variant=inset]:bg-sidebar` would paint a solid fill —
+   clear it so the ambient mesh shows through.
+   The sidebar inner container and the inset main become the two glass plates. */
+
+/* Canvas: transparent so the ambient mesh (body::before) shows through */
+[data-slot="sidebar-wrapper"] {
+	background: transparent !important;
+}
+
+/* Plate 1: floating sidebar inner — glass panel with 12px all-side float */
+[data-slot="sidebar-container"] {
+	padding: 12px !important;
+}
+[data-slot="sidebar-inner"] {
+	border-radius: 20px !important;
+	border: 1px solid var(--border) !important;
+	background: var(--glass) !important;
+	box-shadow: var(--shadow) !important;
+	backdrop-filter: blur(22px) saturate(1.4) !important;
+	-webkit-backdrop-filter: blur(22px) saturate(1.4) !important;
+}
+
+/* Plate 2: SidebarInset — matching glass panel with 12px gap on all sides
+   (the peer-based margins from the primitive give right/bottom/top gap;
+    we also add left margin when sidebar is visible for the inter-plate gap) */
+[data-slot="sidebar-inset"] {
+	margin: 12px !important;
+	margin-left: 0 !important;
+	border-radius: 20px !important;
+	border: 1px solid var(--border) !important;
+	background: oklch(1 0 0 / 0.022) !important;
+	box-shadow: var(--shadow) !important;
+	backdrop-filter: blur(20px) saturate(1.3) !important;
+	-webkit-backdrop-filter: blur(20px) saturate(1.3) !important;
+	overflow: hidden !important;
+}
+
+/* When sidebar is collapsed (icon mode), give inset a left margin too */
+.peer[data-variant="inset"][data-state="collapsed"] ~ [data-slot="sidebar-inset"] {
+	margin-left: 12px !important;
 }
 
 /* Home hero backdrop: float via `translate` so it composes with Tailwind v4
@@ -172,5 +235,58 @@
 	::view-transition-old(*),
 	::view-transition-new(*) {
 		animation: none !important;
+	}
+}
+
+/* ── Liquid Glass motion ──────────────────────────────────────────── */
+@keyframes lg-rise {
+	to {
+		opacity: 1;
+		transform: none;
+		filter: blur(0);
+	}
+}
+@keyframes lg-shimmer {
+	100% {
+		transform: translateX(100%);
+	}
+}
+/* Entrance choreography: add `.stagger` to a parent; direct children rise in sequence. */
+.stagger > * {
+	opacity: 0;
+	transform: translateY(18px);
+	filter: blur(6px);
+	animation: lg-rise 0.8s var(--ease) forwards;
+}
+.stagger > *:nth-child(1) { animation-delay: 0.04s; }
+.stagger > *:nth-child(2) { animation-delay: 0.12s; }
+.stagger > *:nth-child(3) { animation-delay: 0.2s; }
+.stagger > *:nth-child(4) { animation-delay: 0.28s; }
+.stagger > *:nth-child(5) { animation-delay: 0.36s; }
+.stagger > *:nth-child(6) { animation-delay: 0.44s; }
+/* Loading: shimmer sweep, never a spinner. */
+.skel {
+	position: relative;
+	overflow: hidden;
+	background: var(--glass-2);
+	border-radius: 8px;
+}
+.skel::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	transform: translateX(-100%);
+	background: linear-gradient(90deg, transparent, var(--primary-wash), transparent);
+	animation: lg-shimmer 1.8s var(--ease) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+	.stagger > * {
+		opacity: 1;
+		transform: none;
+		filter: none;
+		animation: none;
+	}
+	.skel::after {
+		animation: none;
 	}
 }

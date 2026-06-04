@@ -9,6 +9,7 @@ import {
 } from "../../store/userland/userland-store";
 import { CopyEditForm } from "./copy-edit-form";
 import { dayMsToInput } from "./copy-form-mapping";
+import { copyDisplayLabel, isAutoLabel } from "./copy-label";
 
 /** Props for {@link CopyRow}. */
 interface CopyRowProps {
@@ -57,42 +58,39 @@ export function CopyRow({ item, variants }: CopyRowProps) {
 			className={[
 				"rounded-lg border p-3 flex flex-col gap-3 transition-colors duration-150",
 				item.isPrimary
-					? "border-[var(--accent,#e0b341)] bg-amber-950/20 dark:bg-amber-900/10"
-					: "border-border bg-card",
+					? "border-[var(--primary)] bg-[var(--primary-wash)] shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--primary)_25%,transparent)]"
+					: "border-[var(--border)] bg-[var(--glass)]",
 			].join(" ")}
 		>
 			{/* Tile header: badges + action row */}
 			<div className="flex items-start gap-2 flex-wrap">
-				{/* Badge cluster */}
-				<div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
-					{/* Acquired date always shown */}
-					<Badge variant="outline" className="text-xs font-normal">
-						{dayMsToInput(item.acquiredAt)}
-					</Badge>
-
-					{/* Variant */}
-					{item.variant && (
-						<Badge variant="secondary" className="text-xs">
+				{/* Name + metadata */}
+				<div className="flex flex-1 flex-wrap items-center gap-x-2.5 gap-y-1 min-w-0">
+					{/* Display name: the user's label, or auto-derived from metadata */}
+					<span className="min-w-0 truncate font-medium text-[var(--ink)]">
+						{copyDisplayLabel(item)}
+					</span>
+					{/* Acquired date */}
+					<span className="font-mono text-[11px] text-[var(--faint)]">
+						acquired {dayMsToInput(item.acquiredAt)}
+					</span>
+					{/* When the user named the copy, surface key metadata as chips —
+					    the auto-label already shows variant/grade otherwise. */}
+					{!isAutoLabel(item) && item.variant && (
+						<Badge variant="secondary" className="text-[10px]">
 							{item.variant}
 						</Badge>
 					)}
-
-					{/* Grading or condition */}
-					{gradingLabel ? (
-						<Badge className="text-xs bg-amber-600 text-white hover:bg-amber-700">
+					{!isAutoLabel(item) && gradingLabel && (
+						<Badge variant="success" className="text-[10px]">
 							{gradingLabel}
 						</Badge>
-					) : item.condition ? (
-						<Badge variant="outline" className="text-xs">
-							{item.condition}
-						</Badge>
-					) : null}
-
+					)}
 					{/* Price paid */}
 					{item.pricePaid != null && (
-						<Badge variant="outline" className="text-xs font-mono">
+						<span className="font-mono text-[11px] text-[var(--ink-muted)]">
 							${item.pricePaid}
-						</Badge>
+						</span>
 					)}
 				</div>
 
@@ -104,7 +102,7 @@ export function CopyRow({ item, variants }: CopyRowProps) {
 							role="img"
 							aria-label="Primary copy"
 							title="Primary copy"
-							className="inline-flex items-center justify-center h-8 w-8 text-amber-400"
+							className="inline-flex items-center justify-center h-8 w-8 text-[var(--primary)]"
 						>
 							<Star className="h-4 w-4 fill-current" aria-hidden="true" />
 						</span>
@@ -113,7 +111,7 @@ export function CopyRow({ item, variants }: CopyRowProps) {
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="h-8 w-8 text-muted-foreground hover:text-amber-400 transition-colors duration-150"
+							className="h-8 w-8 text-[var(--ink-muted)] hover:text-[var(--primary)] transition-colors duration-150"
 							aria-label="Set as primary"
 							title="Set as primary"
 							onClick={handleSetPrimary}

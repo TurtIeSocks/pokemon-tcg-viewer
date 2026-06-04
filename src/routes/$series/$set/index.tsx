@@ -18,6 +18,7 @@ import {
 } from "../../../components/islands/card-selection";
 import { PackDialog } from "../../../components/islands/pack-dialog";
 import { SearchControls } from "../../../components/islands/search-controls";
+import { Eyebrow } from "../../../components/ui/eyebrow";
 import { BulkAddMenu } from "../../../components/vault/bulk-add-menu";
 import { cardModalLinkPropsFor } from "../../../lib/card-route";
 import { buildSetCardSlugs } from "../../../lib/card-slugs";
@@ -123,8 +124,13 @@ function SetPageInner({
 	return (
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
 			<div className="mb-3 flex items-center gap-3">
-				<h1 className="text-xl font-bold">{set.name}</h1>
-				<span className="text-sm text-muted-foreground">
+				<div className="flex flex-col gap-0.5">
+					<Eyebrow>Card Set</Eyebrow>
+					<h1 className="text-xl font-[var(--font-display)] font-bold leading-tight">
+						{set.name}
+					</h1>
+				</div>
+				<span className="text-sm text-[var(--ink-muted)]">
 					{cards.length} cards
 				</span>
 				<ClientOnly fallback={null}>

@@ -17,7 +17,7 @@ beforeEach(async () => {
 	resetUserlandForTests();
 });
 
-test("renders the card-name heading with 'Your Collection'", () => {
+test("renders the card name in the top bar", () => {
 	render(
 		<CardCollectionManager
 			cardId="base1-4"
@@ -25,11 +25,10 @@ test("renders the card-name heading with 'Your Collection'", () => {
 			onBack={() => {}}
 		/>,
 	);
-	expect(screen.getByText(/Your Collection/i)).toBeDefined();
 	expect(screen.getByText("Charizard")).toBeDefined();
 });
 
-test("Back to Pokémon button calls onBack", () => {
+test("Back button calls onBack", () => {
 	let backCalls = 0;
 	render(
 		<CardCollectionManager
@@ -44,8 +43,8 @@ test("Back to Pokémon button calls onBack", () => {
 	expect(backCalls).toBe(1);
 });
 
-test("subtitle shows set + number when provided, omitted otherwise", () => {
-	const { unmount } = render(
+test("back pill shows setName when provided", () => {
+	render(
 		<CardCollectionManager
 			cardId="base1-4"
 			cardName="Charizard"
@@ -54,9 +53,13 @@ test("subtitle shows set + number when provided, omitted otherwise", () => {
 			onBack={() => {}}
 		/>,
 	);
-	expect(screen.getByText(/Base Set · #4/)).toBeDefined();
-	unmount();
+	// Back button contains set name
+	expect(
+		screen.getByRole("button", { name: /card details/i }).textContent,
+	).toContain("Base Set");
+});
 
+test("back pill shows 'Back' when setName is omitted", () => {
 	render(
 		<CardCollectionManager
 			cardId="base1-4"
@@ -64,7 +67,9 @@ test("subtitle shows set + number when provided, omitted otherwise", () => {
 			onBack={() => {}}
 		/>,
 	);
-	expect(screen.queryByText(/Base Set/)).toBeNull();
+	expect(
+		screen.getByRole("button", { name: /card details/i }).textContent,
+	).toContain("Back");
 });
 
 test("renders the CopyManager (Add copy control + a seeded copy)", async () => {
@@ -76,11 +81,12 @@ test("renders the CopyManager (Add copy control + a seeded copy)", async () => {
 			onBack={() => {}}
 		/>,
 	);
-	expect(screen.getByText(/your copies/i)).toBeDefined();
+	// Multiple "Your copies" elements exist (panel header + CopyManager h3)
+	expect(screen.getAllByText(/your copies/i).length).toBeGreaterThan(0);
 	expect(screen.getByRole("button", { name: /add copy/i })).toBeDefined();
 });
 
-test("thumbnail renders only when imageUrl is provided", () => {
+test("thumbnail renders only when imageUrl is provided (no full card data)", () => {
 	// Decorative thumbnail (alt="", aria-hidden) → query the DOM, not by role.
 	const withImg = render(
 		<CardCollectionManager

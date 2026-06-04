@@ -37,15 +37,15 @@ export function CardDetail({
 	const accent = getReadableAccent(getCardAccent(card.types));
 	return (
 		<div
-			className="flex flex-col gap-6 p-6 md:flex-row md:items-stretch md:gap-8 md:p-8"
+			className="flex flex-col gap-6 p-6 md:flex-row md:items-start md:gap-8 md:p-8"
 			style={{ "--accent": accent } as CSSProperties}
 		>
-			<div className="shrink-0 self-stretch">
+			<div className="shrink-0">
 				<div
-					className="h-full rounded-2xl border border-white/[0.06] p-5"
+					className="rounded-2xl border border-white/[0.06] p-5"
 					style={{
 						background:
-							"radial-gradient(120% 60% at 50% 0%, color-mix(in oklab, var(--accent,#c9a86a) 8%, transparent), transparent 55%), #131215",
+							"radial-gradient(120% 60% at 50% 0%, color-mix(in oklab, var(--primary) 8%, transparent), transparent 55%), var(--bg)",
 					}}
 				>
 					<div className="flex flex-col items-center md:sticky md:top-8">
@@ -77,15 +77,18 @@ export function CardDetail({
 				</div>
 			</div>
 
-			<CardInfo
-				card={card}
-				footer={
-					<>
-						<CardPrices card={card} />
-						<CardCrossLinks links={crossLinks} />
-					</>
-				}
-			/>
+			{/* min-w-0 lets the info column wrap instead of overflowing the dialog */}
+			<div className="min-w-0 flex-1">
+				<CardInfo
+					card={card}
+					footer={
+						<>
+							<CardPrices card={card} />
+							<CardCrossLinks links={crossLinks} />
+						</>
+					}
+				/>
+			</div>
 		</div>
 	);
 }
@@ -104,7 +107,7 @@ function CollectionButton({
 		const baseClass = cn(
 			"flex w-full items-center justify-center gap-2 rounded-[10px] py-3 min-h-[44px]",
 			"font-mono text-[13px] tracking-[0.04em] transition-colors",
-			"border border-white/15 text-[#e7e3d8]",
+			"border border-white/15 text-[var(--ink)]",
 		);
 
 		return (
@@ -132,7 +135,7 @@ function CollectionButton({
 			onClick={() => void addCopy(card.id)}
 			className={cn(
 				"w-full rounded-[10px] py-2.5 text-center font-mono text-[13px] tracking-[0.04em] transition-colors",
-				"border border-white/15 text-[#e7e3d8] hover:border-white/30",
+				"border border-white/15 text-[var(--ink)] hover:border-white/30",
 			)}
 		>
 			＋ Add to collection

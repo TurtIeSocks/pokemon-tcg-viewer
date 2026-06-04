@@ -34,6 +34,7 @@ function fillItem(input: NewCollectionItem): CollectionItem {
 		cardId: input.cardId,
 		createdAt: now,
 		acquiredAt: input.acquiredAt ?? now,
+		label: input.label ?? null,
 		pricePaid: input.pricePaid ?? null,
 		variant: input.variant ?? null,
 		notes: input.notes ?? null,

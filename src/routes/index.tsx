@@ -1,5 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Search } from "lucide-react";
 import { HomeRecents } from "../components/islands/home-recents";
+import { Button } from "../components/ui/button";
+import { Eyebrow } from "../components/ui/eyebrow";
+import { Stagger } from "../components/ui/motion";
 import { LIST_SEARCH_DEFAULTS } from "../lib/list-search";
 
 const POPULAR = ["Pikachu", "Charizard", "Eevee", "Mewtwo", "Gengar"];
@@ -15,6 +19,7 @@ export function HomeHero() {
 	return (
 		<div className="mx-auto flex w-full max-w-2xl flex-col px-4">
 			<div className="relative flex flex-col items-center overflow-hidden py-16 text-center">
+				{/* Floating card backdrop */}
 				<div
 					aria-hidden="true"
 					className="pointer-events-none absolute inset-0 flex items-center justify-center gap-8 opacity-15"
@@ -28,41 +33,56 @@ export function HomeHero() {
 					))}
 				</div>
 
-				<img src="/logo-64.png" alt="" className="relative size-14" />
-				<h1 className="relative mt-3 text-2xl font-bold">
-					Pokémon TCG Holo Playground
-				</h1>
-				<p className="relative mt-1 text-sm text-muted-foreground">
-					Search the catalog · admire the holo
-				</p>
+				{/* Staggered hero content */}
+				<Stagger className="relative flex flex-col items-center gap-0">
+					<img src="/logo-64.png" alt="" className="size-14" />
 
-				{/* Native GET form: works without JS, TanStack intercepts when hydrated. */}
-				<form
-					action="/search"
-					method="get"
-					className="relative mt-5 w-full max-w-md"
-				>
-					<input
-						type="search"
-						name="q"
-						placeholder="Search cards by name…"
-						aria-label="Search cards by name"
-						className="w-full rounded-lg border border-border bg-card px-4 py-2 text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary"
-					/>
-				</form>
+					<Eyebrow className="mt-5">Browse · collect · admire the holo</Eyebrow>
 
-				<div className="relative mt-4 flex flex-wrap justify-center gap-2">
-					{POPULAR.map((name) => (
-						<Link
-							key={name}
-							to="/search"
-							search={{ ...LIST_SEARCH_DEFAULTS, q: name }}
-							className="rounded-full border border-border bg-secondary px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-secondary/80"
-						>
-							{name}
-						</Link>
-					))}
-				</div>
+					<h1
+						className="mt-4 text-5xl font-semibold tracking-[-0.01em] text-balance md:text-6xl"
+						style={{ fontFamily: "var(--font-display)" }}
+					>
+						Pokémon TCG
+						<br />
+						Holo Playground
+					</h1>
+
+					<p className="mt-3 text-base text-[var(--ink-muted)]">
+						Search the catalog · admire the holo
+					</p>
+
+					{/* Glass pill search form */}
+					<form action="/search" method="get" className="mt-6 w-full max-w-md">
+						<div className="relative flex items-center rounded-[var(--r-pill)] border border-[var(--border)] bg-[var(--glass)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl transition-[box-shadow] focus-within:border-[var(--primary)] focus-within:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_0_3px_var(--primary-wash)]">
+							<Search
+								className="pointer-events-none ml-4 mr-1 size-4 shrink-0 text-[var(--faint)]"
+								aria-hidden="true"
+							/>
+							<input
+								type="search"
+								name="q"
+								placeholder="Search cards by name…"
+								aria-label="Search cards by name"
+								className="h-11 w-full bg-transparent px-3 text-sm text-[var(--ink)] outline-none placeholder:text-[var(--faint)]"
+							/>
+						</div>
+					</form>
+
+					{/* Quick-search pills */}
+					<div className="mt-4 flex flex-wrap justify-center gap-2">
+						{POPULAR.map((name) => (
+							<Button key={name} variant="soft" size="sm" asChild>
+								<Link
+									to="/search"
+									search={{ ...LIST_SEARCH_DEFAULTS, q: name }}
+								>
+									{name}
+								</Link>
+							</Button>
+						))}
+					</div>
+				</Stagger>
 			</div>
 
 			<HomeRecents />

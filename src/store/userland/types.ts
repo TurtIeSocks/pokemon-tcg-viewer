@@ -15,6 +15,7 @@ export interface CollectionItem {
 	cardId: string; // corpus card id (FK)
 	acquiredAt: number; // ms epoch; default = add time; editable
 	createdAt: number; // ms epoch; record creation; immutable
+	label?: string | null; // user-given name; absent/null = derive from metadata (copies persisted before this field lack the key)
 	pricePaid: number | null; // null = unknown (≠ 0 = free)
 	variant: string | null; // printing key, seeded from corpus card.variants
 	notes: string | null;
@@ -26,7 +27,13 @@ export interface CollectionItem {
 /** The user-editable fields of a copy. */
 export type EditableCopyFields = Pick<
 	CollectionItem,
-	"acquiredAt" | "pricePaid" | "variant" | "notes" | "condition" | "grading"
+	| "label"
+	| "acquiredAt"
+	| "pricePaid"
+	| "variant"
+	| "notes"
+	| "condition"
+	| "grading"
 >;
 
 /** add() input: cardId + any editable fields; repo assigns id/createdAt, defaults acquiredAt, null-fills the rest. */

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Badge } from "@/components/ui/badge";
 import type { FocusCardData } from "../../server/card-mappers";
 import { EnergyIcon } from "./energy-icon";
 
@@ -21,8 +22,9 @@ function describe(card: FocusCardData): string {
 }
 
 const SECTION =
-	"mt-4 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#6a665c]";
-const CAPTION = "mt-1.5 font-mono text-[11px] leading-relaxed text-[#88857b]";
+	"mt-4 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--faint)]";
+const CAPTION =
+	"mt-1.5 font-mono text-[11px] leading-relaxed text-[var(--ink-muted)]";
 
 function EnergyRow({ cost, label }: { cost: string[]; label: string }) {
 	return (
@@ -47,10 +49,10 @@ function AbilityRow({
 	return (
 		<div className="border-t border-white/[0.07] py-3">
 			<div className="flex items-center gap-2">
-				<span className="rounded border border-[#f85888]/40 px-1.5 py-px font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-[#f85888]">
+				<span className="rounded border border-[var(--primary)]/40 px-1.5 py-px font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--primary)]">
 					{ability.type}
 				</span>
-				<span className="font-serif text-base">{ability.name}</span>
+				<span className="font-display text-base">{ability.name}</span>
 			</div>
 			{ability.text ? <p className={CAPTION}>{ability.text}</p> : null}
 		</div>
@@ -65,14 +67,14 @@ function AttackRow({
 	return (
 		<div className="border-t border-white/[0.07] py-3 last:border-b">
 			<div className="flex items-center justify-between gap-3">
-				<span className="inline-flex items-center font-serif text-base">
+				<span className="inline-flex items-center font-display text-base">
 					{attack.name}
 					{attack.cost?.length ? (
 						<EnergyRow cost={attack.cost} label="Cost" />
 					) : null}
 				</span>
 				{attack.damage ? (
-					<span className="shrink-0 font-mono text-[17px] font-bold text-[color:var(--accent,#c9a86a)]">
+					<span className="shrink-0 font-mono text-[17px] font-bold text-[color:var(--primary)]">
 						{attack.damage}
 					</span>
 				) : null}
@@ -88,11 +90,11 @@ function StatStrip({ card }: { card: FocusCardData }) {
 	const hasRetreat = !!card.retreatCost?.length;
 	if (!hasWeak && !hasResist && !hasRetreat && !card.artist) return null;
 	return (
-		<div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.07] pt-3.5 font-mono text-[11px] uppercase tracking-[0.05em] text-[#7d7a70]">
+		<div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.07] pt-3.5 font-mono text-[11px] uppercase tracking-[0.05em] text-[var(--ink-muted)]">
 			{hasWeak ? (
 				<span>
 					Weak{" "}
-					<b className="font-medium text-[#cfcabd]">
+					<b className="font-medium text-[var(--ink-muted)]">
 						{card.weaknesses?.map((w) => `${w.type} ${w.value}`).join(", ")}
 					</b>
 				</span>
@@ -100,7 +102,7 @@ function StatStrip({ card }: { card: FocusCardData }) {
 			{hasResist ? (
 				<span>
 					Resist{" "}
-					<b className="font-medium text-[#cfcabd]">
+					<b className="font-medium text-[var(--ink-muted)]">
 						{card.resistances?.map((r) => `${r.type} ${r.value}`).join(", ")}
 					</b>
 				</span>
@@ -113,7 +115,8 @@ function StatStrip({ card }: { card: FocusCardData }) {
 			) : null}
 			{card.artist ? (
 				<span>
-					Illus. <b className="font-medium text-[#cfcabd]">{card.artist}</b>
+					Illus.{" "}
+					<b className="font-medium text-[var(--ink-muted)]">{card.artist}</b>
 				</span>
 			) : null}
 		</div>
@@ -137,26 +140,34 @@ export function CardInfo({
 	const hasAttacks = !!card.attacks?.length;
 	const hasRules = !!card.rules?.length;
 	return (
-		<div className="flex min-w-0 flex-1 flex-col text-[#e7e3d8]">
-			<div className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#7d7a70]">
+		<div className="flex min-w-0 flex-1 flex-col text-[var(--ink)]">
+			<div className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--ink-muted)]">
 				{card.setName} · #{card.cardNumber}
-				{card.rarity ? ` · ${card.rarity}` : ""}
 			</div>
 
 			<div className="mt-1.5 flex items-baseline justify-between gap-3.5">
-				<h2 className="font-serif text-[2.5rem] font-light leading-none tracking-[-0.01em]">
+				<h2 className="font-display text-[2.5rem] font-light leading-none tracking-[-0.01em]">
 					{card.name}
 				</h2>
 				{card.hp ? (
-					<span className="shrink-0 whitespace-nowrap font-mono text-sm text-[#7d7a70]">
-						<b className="text-[1.4rem] font-bold text-[color:var(--accent,#c9a86a)]">
+					<span className="shrink-0 whitespace-nowrap font-mono text-sm text-[var(--ink-muted)]">
+						<b className="text-[1.4rem] font-bold text-[color:var(--primary)]">
 							{card.hp}
 						</b>{" "}
 						HP
 					</span>
 				) : null}
 			</div>
-			<div className="font-serif text-sm text-[#9c988c]">{describe(card)}</div>
+			<div className="mt-1 flex items-center justify-between gap-3">
+				<div className="font-display text-sm text-[var(--ink-muted)]">
+					{describe(card)}
+				</div>
+				{card.rarity ? (
+					<Badge variant="default" className="shrink-0">
+						✦ {card.rarity}
+					</Badge>
+				) : null}
+			</div>
 
 			<div className="flex-1">
 				{hasAbilities ? (

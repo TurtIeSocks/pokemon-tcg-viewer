@@ -62,7 +62,7 @@ export function SearchControls({
 	showYearFilter = false,
 }: SearchControlsProps) {
 	return (
-		<div className="space-y-3">
+		<div className="rounded-[var(--r-panel)] border border-[var(--border)] bg-[var(--glass)] backdrop-blur-xl p-3 space-y-3">
 			<div className="flex flex-wrap items-center gap-2">
 				<Input
 					type="search"

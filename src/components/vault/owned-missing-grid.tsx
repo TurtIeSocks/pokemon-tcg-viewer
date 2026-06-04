@@ -82,7 +82,7 @@ export function OwnedMissingGrid({
 								aria-label={owned ? "owned" : "missing"}
 								className={cn(
 									"absolute bottom-1 right-1 h-3 w-3 rounded-full border border-white/80",
-									owned ? "bg-green-500" : "bg-gray-400",
+									owned ? "bg-[var(--success)]" : "bg-[var(--faint)]",
 								)}
 							/>
 						</div>

@@ -1,4 +1,12 @@
+import { ClientOnly } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { GlassPanel } from "@/components/ui/glass";
+import type { FocusCardData } from "../../server/card-mappers";
+import { getCardAccent, getReadableAccent } from "../../utils/card-colors";
+import { toHoloCardData } from "../card/to-holo";
+import { HoloCard } from "../holo-card";
+import { CardPrices } from "../islands/card-prices";
 import { CopyManager } from "./copy-manager";
 
 /**
@@ -13,33 +21,34 @@ export interface CardCollectionManagerProps {
 	setName?: string;
 	/** Collector number shown as subtitle; omitted when unavailable. */
 	cardNumber?: string;
-	/** Card thumbnail URL shown beside the heading for context. */
+	/** Card thumbnail URL shown beside the heading for context (fallback when card not provided). */
 	imageUrl?: string;
 	/** Known printing variant strings forwarded to {@link CopyManager}. */
 	variants?: string[];
-	/** Called when the user presses "← Back to Pokémon". */
+	/**
+	 * Full card data — when provided, renders the holo hero + prices in the
+	 * left column. When absent (legacy / test), falls back to the compact
+	 * single-column layout.
+	 */
+	card?: FocusCardData;
+	/** Called when the user presses "← Back". */
 	onBack: () => void;
 }
 
 /**
- * Full-width, roomy panel for managing all owned copies of one card.
+ * Full-width 2-column panel for managing all owned copies of one card.
  *
- * Renders a top bar (back button + card identity), an optional thumbnail,
- * and the existing {@link CopyManager} (copies list / add / edit / remove-all)
- * with generous whitespace so the 2-column edit form can breathe.
- *
- * Designed to fill a wide slide-in panel or a standalone route; it does NOT
- * own the outer scroll container — the parent must provide that.
+ * - Left: sticky holo hero + card meta + TCGplayer prices (when `card` provided).
+ * - Right: CopyManager (header "Your copies N" + Add copy, copies list, edit form).
+ * - Collapses to 1-column below `md` breakpoint.
+ * - Top bar: back pill + card name + `#N` chip.
  *
  * @example
  * ```tsx
  * <CardCollectionManager
  *   cardId={card.id}
  *   cardName={card.name}
- *   setName={card.setName}
- *   cardNumber={card.cardNumber}
- *   imageUrl={card.imageUrl}
- *   variants={card.variants}
+ *   card={card}
  *   onBack={() => navigate({ to: ".." })}
  * />
  * ```
@@ -48,82 +57,136 @@ export function CardCollectionManager({
 	cardId,
 	cardName,
 	setName,
-	cardNumber,
 	imageUrl,
 	variants,
+	card,
 	onBack,
 }: CardCollectionManagerProps) {
-	const subtitle = [setName, cardNumber ? `#${cardNumber}` : undefined]
-		.filter(Boolean)
-		.join(" · ");
+	const holo = card ? toHoloCardData(card) : null;
+
+	// Use card-derived accent when full data is available.
+	const accent = card
+		? getReadableAccent(getCardAccent(card.types))
+		: undefined;
+
+	const resolvedSetName = setName ?? card?.setName;
+	const resolvedVariants = variants ?? holo?.variants;
 
 	return (
-		<div className="flex flex-col gap-0 w-full">
+		<div
+			className="flex flex-col gap-0 w-full"
+			style={
+				accent ? ({ "--accent": accent } as React.CSSProperties) : undefined
+			}
+		>
 			{/* ── Top bar ─────────────────────────────────────────────────────── */}
 			<div
 				className={[
-					"flex items-center gap-4 px-6 py-4",
-					"border-b border-border bg-card/60 backdrop-blur-sm",
+					"sticky top-0 z-30 flex items-center gap-3 px-5 py-3",
+					"border-b border-[var(--hairline)] bg-[oklch(0.13_0.013_290/0.72)] backdrop-blur-[22px] backdrop-saturate-[1.4]",
 				].join(" ")}
 			>
-				{/* Back button — ≥44px tap target */}
+				{/* Back pill */}
 				<button
 					type="button"
 					onClick={onBack}
 					aria-label="Card details"
 					className={[
 						"inline-flex items-center gap-2 shrink-0",
-						"min-h-[44px] min-w-[44px] px-3 -ml-3 rounded-lg",
-						"text-sm font-medium text-muted-foreground",
-						"hover:text-foreground hover:bg-muted/60",
-						"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent,#e0b341)]",
+						"min-h-[44px] px-3 rounded-full",
+						"text-[13px] text-[var(--ink-muted)] border border-[var(--border)] bg-white/[0.03]",
+						"hover:text-[var(--ink)] hover:bg-white/[0.06]",
+						"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]",
 						"transition-colors duration-150",
 					].join(" ")}
 				>
-					<ArrowLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
-					<span>Card Details</span>
+					<ArrowLeft className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+					{resolvedSetName ?? "Back"}
 				</button>
+
+				{/* Card name */}
+				<span className="text-[13px] text-[var(--faint)]">
+					<b className="text-[var(--ink)] font-semibold">{cardName}</b>
+				</span>
 			</div>
 
-			{/* ── Card identity + thumbnail ─────────────────────────────────── */}
+			{/* ── 2-column body ────────────────────────────────────────────────── */}
 			<div
 				className={[
-					"flex items-center gap-5 px-6 py-5",
-					"border-b border-border",
+					"relative z-10",
+					"grid gap-6 p-5 md:p-7",
+					// 2-column on md+: fixed left ~330px, right fills remaining space
+					"grid-cols-1 md:grid-cols-[minmax(180px,220px)_1fr]",
+					"items-start",
 				].join(" ")}
 			>
-				{imageUrl && (
-					/* Thumbnail — modest size; big art lives in the parent modal */
-					<img
-						src={imageUrl}
-						alt=""
-						aria-hidden="true"
-						className="h-16 w-auto rounded-lg shrink-0 object-contain shadow-md"
-					/>
-				)}
+				{/* ── LEFT: holo hero + meta + prices ─────────────────────────── */}
+				{holo && card ? (
+					<div className="md:sticky md:top-[72px] flex flex-col gap-4">
+						{/* Holo card hero */}
+						<ClientOnly
+							fallback={
+								<img
+									src={card.imageUrl}
+									alt={card.name}
+									className="w-full rounded-xl"
+								/>
+							}
+						>
+							<HoloCard
+								imageUrl={card.imageUrl}
+								name={card.name}
+								rarity={card.rarity}
+								subtypes={card.subtypes}
+								supertype={card.supertype}
+								setId={card.setId}
+								series={card.setSeries}
+								cardNumber={card.cardNumber}
+								size="focus"
+								className="w-full"
+							/>
+						</ClientOnly>
 
-				<div className="flex flex-col gap-1 min-w-0">
-					<h2
-						className="text-xl font-semibold leading-tight"
-						aria-label={`${cardName} — Your Collection`}
-					>
-						{cardName}{" "}
-						<span className="text-base font-normal text-muted-foreground">
-							— Your Collection
-						</span>
-					</h2>
-					{subtitle && (
-						<p className="text-sm text-muted-foreground leading-snug">
-							{subtitle}
-						</p>
-					)}
-				</div>
-			</div>
+						{/* Card meta */}
+						<div className="flex flex-col gap-2">
+							<div className="font-display text-[22px] font-semibold leading-tight text-[var(--ink)]">
+								{card.name}
+							</div>
+							<div className="font-mono text-[12px] text-[var(--ink-muted)]">
+								{[
+									card.setName,
+									card.cardNumber ? `#${card.cardNumber}` : undefined,
+									card.types?.join(" / "),
+								]
+									.filter(Boolean)
+									.join(" · ")}
+							</div>
+							{card.rarity && (
+								<Badge variant="default" className="self-start">
+									✦ {card.rarity}
+								</Badge>
+							)}
+						</div>
 
-			{/* ── Copies section ───────────────────────────────────────────────
-			    CopyManager handles its own empty state; no duplication needed. */}
-			<div className="flex flex-col gap-0 flex-1 px-6 py-6">
-				<CopyManager cardId={cardId} variants={variants} />
+						{/* Prices */}
+						<CardPrices card={card} />
+					</div>
+				) : /* Fallback left col: thumbnail only (legacy / no full card data) */
+				imageUrl ? (
+					<div className="md:sticky md:top-[72px]">
+						<img
+							src={imageUrl}
+							alt=""
+							aria-hidden="true"
+							className="w-full rounded-xl shadow-md object-contain"
+						/>
+					</div>
+				) : null}
+
+				{/* ── RIGHT: copy manager (min-w-0 lets the 1fr track shrink to fit) ── */}
+				<GlassPanel className="min-w-0 overflow-hidden p-5">
+					<CopyManager cardId={cardId} variants={resolvedVariants} />
+				</GlassPanel>
 			</div>
 		</div>
 	);
