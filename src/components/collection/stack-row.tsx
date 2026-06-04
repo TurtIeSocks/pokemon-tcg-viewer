@@ -1,15 +1,17 @@
-import { Pencil, Star, Trash2 } from "lucide-react";
+import { Pencil, Split, Star, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { Stack } from "../../store/userland/types";
 import {
 	removeStack,
 	setPrimaryStack,
+	splitStack,
 } from "../../store/userland/userland-store";
 import { StackEditForm } from "./stack-edit-form";
 import { dayMsToInput } from "./stack-form-mapping";
-import { stackDisplayLabel, isAutoLabel } from "./stack-label";
+import { isAutoLabel, stackDisplayLabel } from "./stack-label";
 
 /** Props for {@link StackRow}. */
 interface StackRowProps {
@@ -37,6 +39,8 @@ function hasNonNullOptional(item: Stack): boolean {
  */
 export function StackRow({ item, variants }: StackRowProps) {
 	const [editOpen, setEditOpen] = useState(false);
+	const [splitOpen, setSplitOpen] = useState(false);
+	const [splitN, setSplitN] = useState(1);
 
 	const gradingLabel = item.grading
 		? `${item.grading.company} ${item.grading.grade}`
@@ -51,6 +55,14 @@ export function StackRow({ item, variants }: StackRowProps) {
 
 	function handleSetPrimary() {
 		void setPrimaryStack(item.cardId, item.id);
+	}
+
+	async function handleSplit() {
+		const n = Math.floor(splitN);
+		if (n < 1 || n >= item.quantity) return;
+		await splitStack(item.id, n);
+		setSplitOpen(false);
+		setSplitN(1);
 	}
 
 	return (
@@ -70,6 +82,14 @@ export function StackRow({ item, variants }: StackRowProps) {
 					<span className="min-w-0 truncate font-medium text-[var(--ink)]">
 						{stackDisplayLabel(item)}
 					</span>
+					{item.quantity > 1 && (
+						<Badge
+							variant="secondary"
+							className="font-mono text-[10px] tabular-nums"
+						>
+							×{item.quantity}
+						</Badge>
+					)}
 					{/* Acquired date */}
 					<span className="font-mono text-[11px] text-[var(--faint)]">
 						acquired {dayMsToInput(item.acquiredAt)}
@@ -120,6 +140,22 @@ export function StackRow({ item, variants }: StackRowProps) {
 						</Button>
 					)}
 
+					{/* Split button — only when the stack holds more than one card */}
+					{item.quantity > 1 && (
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className="h-8 w-8"
+							aria-label="Split stack"
+							aria-expanded={splitOpen}
+							title="Split stack"
+							onClick={() => setSplitOpen((o) => !o)}
+						>
+							<Split className="h-4 w-4" aria-hidden="true" />
+						</Button>
+					)}
+
 					{/* Edit button — explicit, discoverable */}
 					<Button
 						type="button"
@@ -148,6 +184,35 @@ export function StackRow({ item, variants }: StackRowProps) {
 					</Button>
 				</div>
 			</div>
+
+			{/* Inline split panel — peel cards into a new stack */}
+			{splitOpen && (
+				<div className="border-t pt-3 flex items-end gap-2 flex-wrap">
+					<label className="flex flex-col gap-1 text-[11px] text-[var(--ink-muted)]">
+						Quantity to split off
+						<Input
+							type="number"
+							min={1}
+							max={item.quantity - 1}
+							aria-label="Quantity to split off"
+							value={splitN}
+							onChange={(e) => setSplitN(Number(e.target.value))}
+							className="w-24 font-mono tabular-nums"
+						/>
+					</label>
+					<Button type="button" size="sm" onClick={handleSplit}>
+						Split off
+					</Button>
+					<Button
+						type="button"
+						size="sm"
+						variant="ghost"
+						onClick={() => setSplitOpen(false)}
+					>
+						Cancel
+					</Button>
+				</div>
+			)}
 
 			{/* Inline editor — revealed only after Edit is clicked */}
 			{editOpen && (

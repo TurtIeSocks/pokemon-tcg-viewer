@@ -165,3 +165,35 @@ test("primary stack tile: primary tile shows filled star (no set-primary button)
 	render(<StackRow item={useUserland.getState().items[item.id]} />);
 	expect(screen.queryByRole("button", { name: /set as primary/i })).toBeNull();
 });
+
+test("split: a stack with quantity > 1 shows a ×N badge and a Split button", async () => {
+	const item = await addStack("c", { quantity: 5 });
+	render(<StackRow item={useUserland.getState().items[item.id]} />);
+	expect(screen.getByText("×5")).toBeDefined();
+	expect(screen.getByRole("button", { name: /split stack/i })).toBeDefined();
+});
+
+test("split: peeling 2 off a stack of 5 → original 3 + sibling 2 (fields copied)", async () => {
+	const item = await addStack("c", { quantity: 5, condition: "NM" });
+	render(<StackRow item={useUserland.getState().items[item.id]} />);
+	fireEvent.click(screen.getByRole("button", { name: /split stack/i }));
+	const input = await screen.findByLabelText(/quantity to split off/i);
+	fireEvent.change(input, { target: { value: "2" } });
+	fireEvent.click(screen.getByRole("button", { name: /split off/i }));
+	await waitFor(() =>
+		expect(useUserland.getState().items[item.id].quantity).toBe(3),
+	);
+	const cStacks = Object.values(useUserland.getState().items).filter(
+		(s) => s.cardId === "c",
+	);
+	expect(cStacks).toHaveLength(2);
+	expect(cStacks.some((s) => s.quantity === 2 && s.condition === "NM")).toBe(
+		true,
+	);
+});
+
+test("split: no Split button for a single-card stack (quantity 1)", async () => {
+	const item = await addStack("c");
+	render(<StackRow item={useUserland.getState().items[item.id]} />);
+	expect(screen.queryByRole("button", { name: /split stack/i })).toBeNull();
+});
