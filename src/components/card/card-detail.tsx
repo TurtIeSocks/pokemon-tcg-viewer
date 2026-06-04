@@ -37,12 +37,12 @@ export function CardDetail({
 	const accent = getReadableAccent(getCardAccent(card.types));
 	return (
 		<div
-			className="flex flex-col gap-6 p-6 md:flex-row md:items-stretch md:gap-8 md:p-8"
+			className="flex flex-col gap-6 p-6 md:flex-row md:items-start md:gap-8 md:p-8"
 			style={{ "--accent": accent } as CSSProperties}
 		>
-			<div className="shrink-0 self-stretch">
+			<div className="shrink-0">
 				<div
-					className="h-full rounded-2xl border border-white/[0.06] p-5"
+					className="rounded-2xl border border-white/[0.06] p-5"
 					style={{
 						background:
 							"radial-gradient(120% 60% at 50% 0%, color-mix(in oklab, var(--primary) 8%, transparent), transparent 55%), var(--bg)",

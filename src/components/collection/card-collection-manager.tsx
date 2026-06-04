@@ -57,7 +57,6 @@ export function CardCollectionManager({
 	cardId,
 	cardName,
 	setName,
-	cardNumber,
 	imageUrl,
 	variants,
 	card,
@@ -71,7 +70,6 @@ export function CardCollectionManager({
 		: undefined;
 
 	const resolvedSetName = setName ?? card?.setName;
-	const resolvedCardNumber = cardNumber ?? card?.cardNumber;
 	const resolvedVariants = variants ?? holo?.variants;
 
 	return (
@@ -110,15 +108,6 @@ export function CardCollectionManager({
 				<span className="text-[13px] text-[var(--faint)]">
 					<b className="text-[var(--ink)] font-semibold">{cardName}</b>
 				</span>
-
-				<span className="flex-1" />
-
-				{/* #N chip */}
-				{resolvedCardNumber && (
-					<span className="font-mono text-[11px] text-[var(--ink-muted)] px-2.5 py-1 rounded-full border border-[var(--hairline)]">
-						#{resolvedCardNumber}
-					</span>
-				)}
 			</div>
 
 			{/* ── 2-column body ────────────────────────────────────────────────── */}
@@ -127,7 +116,7 @@ export function CardCollectionManager({
 					"relative z-10",
 					"grid gap-6 p-5 md:p-7",
 					// 2-column on md+: fixed left ~330px, right fills remaining space
-					"grid-cols-1 md:grid-cols-[minmax(300px,340px)_1fr]",
+					"grid-cols-1 md:grid-cols-[minmax(180px,220px)_1fr]",
 					"items-start",
 				].join(" ")}
 			>

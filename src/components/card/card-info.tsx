@@ -158,14 +158,16 @@ export function CardInfo({
 					</span>
 				) : null}
 			</div>
-			<div className="mt-0.5 font-display text-sm text-[var(--ink-muted)]">
-				{describe(card)}
-			</div>
-			{card.rarity ? (
-				<div className="mt-2">
-					<Badge variant="default">✦ {card.rarity}</Badge>
+			<div className="mt-1 flex items-center justify-between gap-3">
+				<div className="font-display text-sm text-[var(--ink-muted)]">
+					{describe(card)}
 				</div>
-			) : null}
+				{card.rarity ? (
+					<Badge variant="default" className="shrink-0">
+						✦ {card.rarity}
+					</Badge>
+				) : null}
+			</div>
 
 			<div className="flex-1">
 				{hasAbilities ? (
