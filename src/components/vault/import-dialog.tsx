@@ -26,6 +26,7 @@ interface ImportDialogProps {
 export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 	const [snapshot, setSnapshot] = useState<UserDataSnapshot | null>(null);
 	const [csvRows, setCsvRows] = useState<Record<string, string>[] | null>(null);
+	const [csvKey, setCsvKey] = useState(0);
 	const [error, setError] = useState<string | null>(null);
 	const fileRef = useRef<HTMLInputElement>(null);
 
@@ -51,6 +52,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 			const text = await file.text();
 			if (file.name.toLowerCase().endsWith(".csv")) {
 				setCsvRows(parseCsv(text).rows);
+				setCsvKey((k) => k + 1);
 			} else {
 				setSnapshot(parseSnapshot(text));
 			}
@@ -121,6 +123,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 
 					{csvRows && (
 						<CsvImportPanel
+							key={csvKey}
 							rows={csvRows}
 							onClose={() => handleOpenChange(false)}
 						/>

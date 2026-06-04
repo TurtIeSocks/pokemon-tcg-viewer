@@ -413,3 +413,72 @@ test("manual column-remap: fixing a missed header makes the row match + import",
 		expect(stacks[0]?.quantity).toBe(2);
 	});
 });
+
+test("review queue: search-pick a card for an unmatched name-only row → import", async () => {
+	useCorpusRuntime.setState({
+		index: buildIndex([
+			{
+				id: "base1-4",
+				name: "Charizard",
+				imageUrl: "",
+				imageUrlSmall: "",
+				supertype: "Pokémon",
+				setId: "base1",
+				number: "4",
+			},
+		]),
+	});
+	useStore.setState({
+		sets: [
+			{
+				id: "base1",
+				name: "Base",
+				series: "Base",
+				releaseDate: "1999-01-09",
+				total: 102,
+				images: { symbol: "", logo: "" },
+			},
+		],
+	});
+	render(<ImportDialog open onOpenChange={() => {}} />);
+	const input = document.querySelector(
+		'input[type="file"]',
+	) as HTMLInputElement;
+	// name only → no number/set/card_id → can't auto-match
+	const file = new File(["card_name\nCharizard\n"], "names.csv", {
+		type: "text/csv",
+	});
+	fireEvent.change(input, { target: { files: [file] } });
+
+	await waitFor(() => {
+		const el = screen.getByText(
+			(_, n) =>
+				n?.nodeName === "P" &&
+				(n?.textContent ?? "")
+					.replace(/\s+/g, " ")
+					.includes("0 matched · 1 unmatched"),
+		);
+		expect(el).toBeDefined();
+	});
+
+	// pick the candidate from the review queue
+	const candidate = await screen.findByRole("button", { name: /charizard/i });
+	fireEvent.click(candidate);
+
+	await waitFor(() => {
+		const el = screen.getByText(
+			(_, n) =>
+				n?.nodeName === "P" &&
+				(n?.textContent ?? "")
+					.replace(/\s+/g, " ")
+					.includes("1 matched · 0 unmatched"),
+		);
+		expect(el).toBeDefined();
+	});
+
+	fireEvent.click(screen.getByRole("button", { name: /import 1 stack/i }));
+	await waitFor(() => {
+		const stacks = Object.values(useUserland.getState().items);
+		expect(stacks[0]?.cardId).toBe("base1-4");
+	});
+});
