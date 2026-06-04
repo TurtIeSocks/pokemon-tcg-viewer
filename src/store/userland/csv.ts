@@ -86,3 +86,21 @@ export function stacksToCsv(
 	}
 	return `${lines.join("\n")}\n`;
 }
+
+/** Suggested CSV download filename, e.g. cardstack-collection-2026-06-04-stack.csv. */
+export function csvFilename(now: Date, mode: CsvMode): string {
+	return `cardstack-collection-${now.toISOString().slice(0, 10)}-${mode}.csv`;
+}
+
+/** Trigger a browser download of a CSV string. DOM-only; not unit-tested. */
+export function downloadCsv(csv: string, filename: string): void {
+	const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement("a");
+	a.href = url;
+	a.download = filename;
+	document.body.appendChild(a);
+	a.click();
+	a.remove();
+	URL.revokeObjectURL(url);
+}

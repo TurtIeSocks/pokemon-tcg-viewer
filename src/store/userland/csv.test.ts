@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { CSV_COLUMNS, stacksToCsv } from "./csv";
+import { CSV_COLUMNS, csvFilename, stacksToCsv } from "./csv";
 import type { Stack } from "./types";
 
 function stack(over: Partial<Stack>): Stack {
@@ -61,4 +61,10 @@ test("nulls render as empty cells; acquired_at as YYYY-MM-DD", () => {
 	);
 	const row = csv.trim().split("\n")[1];
 	expect(row).toContain("2024-03-01");
+});
+
+test("csvFilename includes the date and mode", () => {
+	expect(csvFilename(new Date("2026-06-04T00:00:00Z"), "copy")).toBe(
+		"cardstack-collection-2026-06-04-copy.csv",
+	);
 });
