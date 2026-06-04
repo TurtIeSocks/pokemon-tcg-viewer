@@ -351,3 +351,65 @@ test("CSV import with Merge on collapses duplicate rows into one stack", async (
 		expect(stacks[0].quantity).toBe(4);
 	});
 });
+
+test("manual column-remap: fixing a missed header makes the row match + import", async () => {
+	useCorpusRuntime.setState({
+		index: buildIndex([corpusCard("base1-4", "base1", "4")]),
+	});
+	useStore.setState({
+		sets: [
+			{
+				id: "base1",
+				name: "Base",
+				series: "Base",
+				releaseDate: "1999-01-09",
+				total: 102,
+				images: { symbol: "", logo: "" },
+			},
+		],
+	});
+	render(<ImportDialog open onOpenChange={() => {}} />);
+	const input = document.querySelector(
+		'input[type="file"]',
+	) as HTMLInputElement;
+	// "Expansion Name" is not an auto-detected alias for set_name.
+	const file = new File(
+		["Card,Expansion Name,Number,Count\nCharizard,Base,4,2\n"],
+		"weird.csv",
+		{ type: "text/csv" },
+	);
+	fireEvent.change(input, { target: { files: [file] } });
+
+	await waitFor(() => {
+		const el = screen.getByText(
+			(_, n) =>
+				n?.nodeName === "P" &&
+				(n?.textContent ?? "")
+					.replace(/\s+/g, " ")
+					.includes("0 matched · 1 unmatched"),
+		);
+		expect(el).toBeDefined();
+	});
+
+	// Remap set_name → "Expansion Name"; the row should now match.
+	fireEvent.change(screen.getByLabelText("set_name"), {
+		target: { value: "Expansion Name" },
+	});
+	await waitFor(() => {
+		const el = screen.getByText(
+			(_, n) =>
+				n?.nodeName === "P" &&
+				(n?.textContent ?? "")
+					.replace(/\s+/g, " ")
+					.includes("1 matched · 0 unmatched"),
+		);
+		expect(el).toBeDefined();
+	});
+
+	fireEvent.click(screen.getByRole("button", { name: /import 1 stack/i }));
+	await waitFor(() => {
+		const stacks = Object.values(useUserland.getState().items);
+		expect(stacks[0]?.cardId).toBe("base1-4");
+		expect(stacks[0]?.quantity).toBe(2);
+	});
+});
