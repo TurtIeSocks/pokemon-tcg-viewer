@@ -87,5 +87,5 @@ export function sortCardRows(
 			}
 		}
 	};
-	return [...rows].sort(cmp);
+	return rows.toSorted(cmp);
 }

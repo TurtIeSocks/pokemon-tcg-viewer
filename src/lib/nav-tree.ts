@@ -1,5 +1,5 @@
 import type { PokemonSet } from "../server/card-mappers";
-import { buildSlugIndex, slugify } from "./slug";
+import { buildSlugIndex } from "./slug";
 
 export interface NavSet {
 	id: string;
@@ -37,7 +37,11 @@ export function deriveNavTree(sets: PokemonSet[]): NavTree {
 	const bySlug = new Map<string, NavSeries>();
 	const order: NavSeries[] = [];
 	for (const set of sets) {
-		const seriesSlug = slugify(set.series);
+		// Reuse the slug index's series slug instead of re-running slugify() so the
+		// nav-tree can't drift from the router's slug resolution.
+		const loc = idx.setSlugById.get(set.id);
+		if (!loc) continue;
+		const seriesSlug = loc.seriesSlug;
 		let series = bySlug.get(seriesSlug);
 		if (!series) {
 			series = {
@@ -49,8 +53,6 @@ export function deriveNavTree(sets: PokemonSet[]): NavTree {
 			bySlug.set(seriesSlug, series);
 			order.push(series);
 		}
-		const loc = idx.setSlugById.get(set.id);
-		if (!loc) continue;
 		series.sets.push({
 			id: set.id,
 			name: set.name,

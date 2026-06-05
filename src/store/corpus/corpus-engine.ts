@@ -38,14 +38,20 @@ export function setsById(
 
 /** Build the in-memory search index from a flat card list (normalised names + token arrays). */
 export function buildIndex(cards: CorpusCard[]): CorpusIndex {
-	const nameNorm = cards.map((c) => normalize(c.name));
-	const nameTokens = cards.map((c) =>
-		c.name
-			.split(/[\s-]+/)
-			.map(normalize)
-			.filter(Boolean),
-	);
-	const byId = new Map(cards.map((c) => [c.id, c]));
+	// Single pass over the (large) card list builds all three structures at once.
+	const nameNorm: string[] = [];
+	const nameTokens: string[][] = [];
+	const byId = new Map<string, CorpusCard>();
+	for (const c of cards) {
+		nameNorm.push(normalize(c.name));
+		nameTokens.push(
+			c.name.split(/[\s-]+/).flatMap((t) => {
+				const n = normalize(t);
+				return n ? [n] : [];
+			}),
+		);
+		byId.set(c.id, c);
+	}
 	return { cards, byId, nameNorm, nameTokens };
 }
 

@@ -58,7 +58,7 @@ export function buildSlugIndex(
 	};
 
 	// Series + sets (sorted by id for deterministic collision suffixes).
-	const setsSorted = [...sets].sort((a, b) => a.id.localeCompare(b.id));
+	const setsSorted = sets.toSorted((a, b) => a.id.localeCompare(b.id));
 	for (const set of setsSorted) {
 		const seriesSlug = slugify(set.series);
 		idx.seriesBySlug.set(seriesSlug, set.series);
@@ -71,7 +71,7 @@ export function buildSlugIndex(
 	}
 
 	// Cards (sorted by id for deterministic collision suffixes).
-	const cardsSorted = [...cards].sort((a, b) => a.id.localeCompare(b.id));
+	const cardsSorted = cards.toSorted((a, b) => a.id.localeCompare(b.id));
 	for (const card of cardsSorted) {
 		const loc = idx.setSlugById.get(card.setId);
 		if (!loc) continue; // card whose set isn't in the sets list — skip

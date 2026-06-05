@@ -52,21 +52,24 @@ function useEstValue(): number | null {
 	return any ? sum : null;
 }
 
-/** Copies acquired within the last 7 days. */
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+/** Copies acquired within the last 7 days (cutoff frozen at mount; no Date.now in render). */
 function useThisWeekCount(): number {
 	const items = useUserland((s) => s.items);
-	const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+	const [cutoff] = useState(() => Date.now() - WEEK_MS);
 	return Object.values(items).filter((i) => i.acquiredAt >= cutoff).length;
 }
 
+// Built once — constructing an Intl.NumberFormat per call is expensive.
+const USD_FORMAT = new Intl.NumberFormat("en-US", {
+	style: "currency",
+	currency: "USD",
+	minimumFractionDigits: 0,
+	maximumFractionDigits: 0,
+});
 function formatDollars(cents: number): string {
 	// pricePaid is stored as a number; treat as dollars (consistent with edit UI)
-	return new Intl.NumberFormat("en-US", {
-		style: "currency",
-		currency: "USD",
-		minimumFractionDigits: 0,
-		maximumFractionDigits: 0,
-	}).format(cents);
+	return USD_FORMAT.format(cents);
 }
 
 /**
