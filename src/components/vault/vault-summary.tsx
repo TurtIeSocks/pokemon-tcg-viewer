@@ -15,11 +15,6 @@ import {
 } from "../../store/userland/selectors";
 import { useUserland } from "../../store/userland/userland-store";
 
-/** Count of distinct owned cards (≥1 copy). */
-export function useOwnedCardCount(): number {
-	return useOwnedIndex().size;
-}
-
 /**
  * Compute overall collection completion %.
  * Denominator = sum of set.total for every set the user has touched (≥1 owned card).

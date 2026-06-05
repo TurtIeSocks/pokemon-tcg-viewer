@@ -25,7 +25,7 @@ export function isAutoLabel(item: Stack): boolean {
  * variant + condition/grade, e.g. "Holo · NM" or "1st Edition · PSA 8" —
  * falling back to the acquired date when nothing distinguishing is set.
  */
-export function autoStackLabel(item: Stack): string {
+function autoStackLabel(item: Stack): string {
 	const gradeOrCondition = item.grading
 		? `${item.grading.company} ${item.grading.grade}`
 		: (item.condition ?? null);

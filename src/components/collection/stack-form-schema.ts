@@ -24,7 +24,7 @@ export function isGradeOrEmpty(s: string): boolean {
 	return Number.isFinite(n) && n >= 0 && n <= 10;
 }
 /** Returns true for a whole number ≥ 1 (stack quantity). */
-export function isPositiveIntStr(s: string): boolean {
+function isPositiveIntStr(s: string): boolean {
 	const n = Number(s);
 	return Number.isInteger(n) && n >= 1;
 }

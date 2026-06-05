@@ -155,7 +155,7 @@ const slugIndexCache = new WeakMap<CorpusIndex, Map<PokemonSet[], SlugIndex>>();
  * card-detail links (/$series/$set/$card) with no server round trip. Null until
  * both the corpus and sets have loaded.
  */
-export function getSlugIndex(): SlugIndex | null {
+function getSlugIndex(): SlugIndex | null {
 	const index = useCorpusRuntime.getState().index;
 	const sets = useStore.getState().sets;
 	if (!index || !sets) return null;
