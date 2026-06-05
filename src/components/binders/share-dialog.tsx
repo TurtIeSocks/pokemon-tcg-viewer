@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -38,11 +38,9 @@ export function ShareDialog({ open, onOpenChange, binder }: ShareDialogProps) {
 	const [scope, setScope] = useState<"all" | "owned" | "needed">("all");
 	const [includeGrades, setIncludeGrades] = useState(true);
 	const [copied, setCopied] = useState(false);
-	// Freeze the timestamp when the dialog opens so the memo is pure.
-	const [sharedAt, setSharedAt] = useState(() => Date.now());
-	useEffect(() => {
-		if (open) setSharedAt(Date.now());
-	}, [open]);
+	// Timestamp frozen at mount keeps the snapshot memo pure (no Date.now in
+	// render, no setState-in-effect). Each binder detail mounts its own dialog.
+	const [sharedAt] = useState(() => Date.now());
 
 	// Resolve members via corpus + sets
 	const members = useBinderMembers(binder.id);

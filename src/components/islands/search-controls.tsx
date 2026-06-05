@@ -10,6 +10,10 @@ import type { SetFacets } from "@/server/set-facets";
 import type { ListSearch, OwnedMode } from "../../lib/card-query";
 import { MatchModeToggle } from "./match-mode-toggle";
 
+// Computed once at module load (client island) — avoids a `new Date()` on every
+// render (impure under React Compiler) and a server/client hydration mismatch.
+const CURRENT_YEAR = new Date().getFullYear();
+
 interface SearchControlsProps {
 	value: ListSearch;
 	options: SetFacets;
@@ -126,7 +130,7 @@ export function SearchControls({
 						aria-label="Release year from"
 						placeholder="From"
 						min={1996}
-						max={new Date().getFullYear()}
+						max={CURRENT_YEAR}
 						className="text-sm w-24"
 						value={value.yearMin ?? ""}
 						onChange={(e) => {
@@ -144,7 +148,7 @@ export function SearchControls({
 						aria-label="Release year to"
 						placeholder="To"
 						min={1996}
-						max={new Date().getFullYear()}
+						max={CURRENT_YEAR}
 						className="text-sm w-24"
 						value={value.yearMax ?? ""}
 						onChange={(e) => {

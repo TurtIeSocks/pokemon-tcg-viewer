@@ -23,6 +23,7 @@ import type { NavTree } from "../lib/nav-tree";
 import { getNavTreeFn } from "../server/nav-tree";
 
 export const Route = createRootRoute({
+	loader: () => getNavTreeFn(),
 	head: () => ({
 		meta: [
 			{ charSet: "utf-8" },
@@ -78,7 +79,6 @@ export const Route = createRootRoute({
 			{ rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
 		],
 	}),
-	loader: () => getNavTreeFn(),
 	component: RootComponent,
 });
 
@@ -117,6 +117,14 @@ function useBreadcrumb(tree: NavTree): string[] {
 
 function ShellHeader({ tree }: { tree: NavTree }) {
 	const crumbs = useBreadcrumb(tree);
+	// Pair each label with a cumulative-path key so duplicate labels (e.g. a base
+	// set sharing its series name) stay distinct without an array-index key.
+	const crumbItems = crumbs.map((label, i) => ({
+		label,
+		key: crumbs.slice(0, i + 1).join(" / "),
+		isFirst: i === 0,
+		isLast: i === crumbs.length - 1,
+	}));
 	const navigate = useNavigate();
 	const [q, setQ] = useState("");
 
@@ -139,24 +147,21 @@ function ShellHeader({ tree }: { tree: NavTree }) {
 
 			{/* Breadcrumb */}
 			<div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
-				{crumbs.map((crumb, i) => (
-					<span
-						key={`${i}-${crumb}`}
-						className="flex items-center gap-1.5 min-w-0"
-					>
-						{i > 0 && (
+				{crumbItems.map((item) => (
+					<span key={item.key} className="flex items-center gap-1.5 min-w-0">
+						{!item.isFirst && (
 							<span className="font-mono text-[var(--faint)] text-xs opacity-60 shrink-0">
 								›
 							</span>
 						)}
 						<span
 							className={
-								i === crumbs.length - 1
+								item.isLast
 									? "truncate text-sm font-semibold text-[var(--ink)]"
 									: "truncate text-sm text-[var(--faint)] hidden sm:block"
 							}
 						>
-							{crumb}
+							{item.label}
 						</span>
 					</span>
 				))}
@@ -167,6 +172,7 @@ function ShellHeader({ tree }: { tree: NavTree }) {
 				<Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-[var(--faint)] pointer-events-none" />
 				<input
 					type="search"
+					aria-label="Search cards"
 					value={q}
 					onChange={(e) => setQ(e.target.value)}
 					placeholder="Search 20,000 cards…"
