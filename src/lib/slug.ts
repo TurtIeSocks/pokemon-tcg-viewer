@@ -86,6 +86,7 @@ export function buildSlugIndex(
 	return idx;
 }
 
+/** Resolve a set id from its series + set slug pair; undefined if unknown. */
 export function resolveSet(
 	idx: SlugIndex,
 	seriesSlug: string,
@@ -94,6 +95,7 @@ export function resolveSet(
 	return idx.setIdBySlug.get(`${seriesSlug}/${setSlug}`);
 }
 
+/** Resolve a card id from its series/set/card slug triple; undefined if unknown. */
 export function resolveCard(
 	idx: SlugIndex,
 	seriesSlug: string,
@@ -103,6 +105,7 @@ export function resolveCard(
 	return idx.cardIdBySlug.get(`${seriesSlug}/${setSlug}/${cardSlug}`);
 }
 
+/** Resolve the canonical series name from its slug; undefined if unknown. */
 export function resolveSeries(
 	idx: SlugIndex,
 	seriesSlug: string,
@@ -110,11 +113,13 @@ export function resolveSeries(
 	return idx.seriesBySlug.get(seriesSlug);
 }
 
+/** URL path for a set (`/series/set`); undefined if the set isn't in the index. */
 export function setPath(idx: SlugIndex, setId: string): string | undefined {
 	const loc = idx.setSlugById.get(setId);
 	return loc ? `/${loc.seriesSlug}/${loc.setSlug}` : undefined;
 }
 
+/** URL path for a card (`/series/set/card`); undefined if unknown. */
 export function cardPath(idx: SlugIndex, cardId: string): string | undefined {
 	const cardSlug = idx.cardSlugById.get(cardId);
 	if (!cardSlug) return undefined;
