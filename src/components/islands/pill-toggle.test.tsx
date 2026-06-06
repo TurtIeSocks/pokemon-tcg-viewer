@@ -51,3 +51,16 @@ test("PillToggle: disabled click does NOT call onChange", () => {
 	fireEvent.click(screen.getByRole("button", { name: "Exact" }));
 	expect(called).toBe(false);
 });
+
+test("PillToggle: renders a leading icon without changing the accessible name", () => {
+	render(
+		<PillToggle
+			value={false}
+			onChange={() => {}}
+			label="Exact"
+			icon={<svg data-testid="pill-icon" aria-hidden="true" />}
+		/>,
+	);
+	expect(screen.getByTestId("pill-icon")).toBeTruthy();
+	expect(screen.getByRole("button", { name: "Exact" })).toBeTruthy();
+});

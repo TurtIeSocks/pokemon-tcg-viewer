@@ -1,3 +1,4 @@
+import { TargetIcon } from "lucide-react";
 import { PillToggle } from "./pill-toggle";
 
 interface MatchModeToggleProps {
@@ -22,6 +23,7 @@ export function MatchModeToggle({
 			value={value}
 			onChange={onChange}
 			label="Exact"
+			icon={<TargetIcon className="size-4" aria-hidden="true" />}
 			title="Exact name match (off = fuzzy)"
 			disabled={disabled}
 		/>

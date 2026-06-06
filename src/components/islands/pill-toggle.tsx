@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export type ToggleButtonProps = React.ComponentProps<"button">;
@@ -8,7 +9,7 @@ export function ToggleButton({ className, ...props }: ToggleButtonProps) {
 		<button
 			type="button"
 			className={cn(
-				"px-3 py-1.5 rounded-(--r-pill) border text-sm cursor-pointer transition-[background,color,border-color] duration-120 ease-out disabled:opacity-40 disabled:cursor-not-allowed",
+				"inline-flex items-center gap-1.5 px-3 py-1.5 rounded-(--r-pill) border text-sm cursor-pointer transition-[background,color,border-color] duration-120 ease-out disabled:opacity-40 disabled:cursor-not-allowed",
 				props["aria-pressed"]
 					? "bg-primary border-transparent text-white font-semibold"
 					: "bg-(--glass) border-border text-(--ink-muted) hover:text-(--ink)",
@@ -24,6 +25,8 @@ export interface PillToggleProps {
 	onChange: (next: boolean) => void;
 	/** Pill text; names the ON state ("Exact", "Timeline"). */
 	label: string;
+	/** Optional leading icon. Decorative — the label is the accessible name. */
+	icon?: ReactNode;
 	/** Tooltip + fuller a11y context when the label alone is ambiguous. */
 	title?: string;
 	disabled?: boolean;
@@ -37,6 +40,7 @@ export function PillToggle({
 	value,
 	onChange,
 	label,
+	icon,
 	title,
 	disabled = false,
 }: PillToggleProps) {
@@ -47,6 +51,7 @@ export function PillToggle({
 			title={title}
 			onClick={() => onChange(!value)}
 		>
+			{icon}
 			{label}
 		</ToggleButton>
 	);
