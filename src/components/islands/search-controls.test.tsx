@@ -178,7 +178,7 @@ test("existing controls (q input + filter selects + owned) still render", () => 
 
 // ─── Match-mode (fuzzy/exact) toggle ──────────────────────────────────────────
 
-test("match-mode toggle renders, reflecting exact=false as Fuzzy active", () => {
+test("match-mode toggle renders, reflecting exact=false as Exact pill off", () => {
 	render(
 		<SearchControls
 			value={defaultValue}
@@ -186,9 +186,6 @@ test("match-mode toggle renders, reflecting exact=false as Fuzzy active", () => 
 			onChange={() => {}}
 		/>,
 	);
-	expect(
-		screen.getByRole("button", { name: "Fuzzy" }).getAttribute("aria-pressed"),
-	).toBe("true");
 	expect(
 		screen.getByRole("button", { name: "Exact" }).getAttribute("aria-pressed"),
 	).toBe("false");
@@ -207,7 +204,7 @@ test("clicking Exact fires onChange with exact:true", () => {
 	expect(onChange).toHaveBeenCalledWith({ exact: true });
 });
 
-test("clicking Fuzzy fires onChange with exact:false", () => {
+test("clicking the Exact pill when on fires onChange with exact:false", () => {
 	const onChange = mock(() => {});
 	render(
 		<SearchControls
@@ -216,7 +213,7 @@ test("clicking Fuzzy fires onChange with exact:false", () => {
 			onChange={onChange}
 		/>,
 	);
-	fireEvent.click(screen.getByRole("button", { name: "Fuzzy" }));
+	fireEvent.click(screen.getByRole("button", { name: "Exact" }));
 	expect(onChange).toHaveBeenCalledWith({ exact: false });
 });
 
