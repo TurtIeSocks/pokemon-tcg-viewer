@@ -18,7 +18,7 @@ export interface SetCardSlugs {
 export function buildSetCardSlugs(cards: HoloCardData[]): SetCardSlugs {
 	const idBySlug = new Map<string, string>();
 	const slugById = new Map<string, string>();
-	for (const card of [...cards].sort((a, b) => a.id.localeCompare(b.id))) {
+	for (const card of cards.toSorted((a, b) => a.id.localeCompare(b.id))) {
 		const base = slugify(card.name);
 		const num = slugify(card.cardNumber);
 		let slug = num ? `${base}-${num}` : base;

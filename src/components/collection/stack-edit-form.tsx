@@ -19,14 +19,22 @@ import { CONDITIONS, GRADERS, stackFormSchema } from "./stack-form-schema";
 
 /** Radix Select prohibits value="". Use this sentinel for the "Unspecified" item. */
 const NONE = "__none__";
-function toSelectVal(v: string) {
-	return v === "" ? NONE : v;
-}
-function fromSelectVal(v: string) {
-	return v === NONE ? "" : v;
+
+/**
+ * The subset of a TanStack Form field API the field helpers below use. Every
+ * field in this form is string-valued, so `T` defaults to the field's value type.
+ */
+interface FormFieldApi<T extends string> {
+	name: string;
+	state: {
+		value: T;
+		meta: { isTouched: boolean; isValid: boolean; errors: unknown[] };
+	};
+	handleBlur: () => void;
+	handleChange: (value: T) => void;
 }
 
-/** Returns true when a TanStack Form field has been touched and is currently invalid. */
+/** True when a TanStack Form field has been touched and is currently invalid. */
 function fieldIsInvalid(field: {
 	state: { meta: { isTouched: boolean; isValid: boolean } };
 }): boolean {
@@ -44,6 +52,120 @@ function toFieldErrors(
 		const msg = fieldErrorText(e);
 		return msg ? { message: msg } : undefined;
 	});
+}
+
+interface TextFieldProps {
+	field: FormFieldApi<string>;
+	label: string;
+	type?: "text" | "number" | "date";
+	placeholder?: string;
+	/** aria-label for inputs whose visible label needs reinforcing (e.g. numeric). */
+	ariaLabel?: string;
+	min?: number;
+	/** Render a multi-line <Textarea> instead of <Input>. */
+	multiline?: boolean;
+	/** Monospace + tabular-nums styling, for numeric fields. */
+	mono?: boolean;
+}
+
+/**
+ * Labeled text/number/date input (or textarea) bound to a string-valued form field.
+ * The error region only renders once the field is touched-and-invalid, so fields
+ * without validators (which are never invalid) show no error.
+ */
+function TextField({
+	field,
+	label,
+	type = "text",
+	placeholder,
+	ariaLabel,
+	min,
+	multiline,
+	mono,
+}: TextFieldProps) {
+	const invalid = fieldIsInvalid(field);
+	return (
+		<Field data-invalid={invalid || undefined}>
+			<FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+			{multiline ? (
+				<Textarea
+					id={field.name}
+					aria-invalid={invalid}
+					value={field.state.value}
+					onBlur={field.handleBlur}
+					onChange={(e) => field.handleChange(e.target.value)}
+				/>
+			) : (
+				<Input
+					id={field.name}
+					type={type}
+					min={min}
+					placeholder={placeholder}
+					aria-label={ariaLabel}
+					aria-invalid={invalid}
+					value={field.state.value}
+					onBlur={field.handleBlur}
+					onChange={(e) => field.handleChange(e.target.value)}
+					className={mono ? "font-mono tabular-nums" : undefined}
+				/>
+			)}
+			{invalid && (
+				<FieldError errors={toFieldErrors(field.state.meta.errors)} />
+			)}
+		</Field>
+	);
+}
+
+interface SelectFieldProps<T extends string> {
+	field: FormFieldApi<T>;
+	label: string;
+	ariaLabel?: string;
+	placeholder: string;
+	/** Non-empty option values; the "Unspecified" (empty) item is added automatically. */
+	options: readonly string[];
+}
+
+/**
+ * Labeled Select bound to a string-valued form field, with an "Unspecified"
+ * sentinel item (Radix Select forbids value=""), generic over the field's value type.
+ */
+function SelectField<T extends string>({
+	field,
+	label,
+	ariaLabel,
+	placeholder,
+	options,
+}: SelectFieldProps<T>) {
+	const invalid = fieldIsInvalid(field);
+	return (
+		<Field data-invalid={invalid || undefined}>
+			<FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+			<Select
+				value={field.state.value === "" ? NONE : field.state.value}
+				onValueChange={(v) => field.handleChange((v === NONE ? "" : v) as T)}
+			>
+				<SelectTrigger
+					id={field.name}
+					aria-label={ariaLabel}
+					aria-invalid={invalid}
+					onBlur={field.handleBlur}
+				>
+					<SelectValue placeholder={placeholder} />
+				</SelectTrigger>
+				<SelectContent>
+					<SelectItem value={NONE}>Unspecified</SelectItem>
+					{options.map((o) => (
+						<SelectItem key={o} value={o}>
+							{o}
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
+			{invalid && (
+				<FieldError errors={toFieldErrors(field.state.meta.errors)} />
+			)}
+		</Field>
+	);
 }
 
 /**
@@ -184,16 +306,11 @@ export function StackEditForm({
 				name="label"
 				// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 				children={(field) => (
-					<Field>
-						<FieldLabel htmlFor={field.name}>Label</FieldLabel>
-						<Input
-							id={field.name}
-							placeholder="Name this stack (optional)"
-							value={field.state.value}
-							onBlur={field.handleBlur}
-							onChange={(e) => field.handleChange(e.target.value)}
-						/>
-					</Field>
+					<TextField
+						field={field}
+						label="Label"
+						placeholder="Name this stack (optional)"
+					/>
 				)}
 			/>
 
@@ -204,28 +321,16 @@ export function StackEditForm({
 					name="quantity"
 					validators={{ onBlur: stackFormSchema.shape.quantity }}
 					// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
-					children={(field) => {
-						const invalid = fieldIsInvalid(field);
-						return (
-							<Field data-invalid={invalid}>
-								<FieldLabel htmlFor={field.name}>Quantity</FieldLabel>
-								<Input
-									id={field.name}
-									type="number"
-									min={1}
-									aria-label="Quantity"
-									aria-invalid={invalid}
-									value={field.state.value}
-									onBlur={field.handleBlur}
-									onChange={(e) => field.handleChange(e.target.value)}
-									className="font-mono tabular-nums"
-								/>
-								{invalid && (
-									<FieldError errors={toFieldErrors(field.state.meta.errors)} />
-								)}
-							</Field>
-						);
-					}}
+					children={(field) => (
+						<TextField
+							field={field}
+							label="Quantity"
+							type="number"
+							min={1}
+							mono
+							ariaLabel="Quantity"
+						/>
+					)}
 				/>
 
 				{/* Variant — segmented pill */}
@@ -271,7 +376,7 @@ export function StackEditForm({
 					)}
 				/>
 
-				{/* Conditional: raw → condition Select */}
+				{/* Conditional: raw → condition Select; graded → grader + grade */}
 				<form.Subscribe
 					selector={(s) => s.values.state}
 					// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
@@ -281,94 +386,32 @@ export function StackEditForm({
 								name="condition"
 								validators={{ onBlur: stackFormSchema.shape.condition }}
 								// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
-								children={(field) => {
-									const invalid = fieldIsInvalid(field);
-									return (
-										<Field data-invalid={invalid}>
-											<FieldLabel htmlFor={field.name}>Condition</FieldLabel>
-											<Select
-												value={toSelectVal(field.state.value)}
-												onValueChange={(v) => {
-													field.handleChange(
-														fromSelectVal(v) as typeof field.state.value,
-													);
-												}}
-											>
-												<SelectTrigger
-													id={field.name}
-													aria-invalid={invalid}
-													onBlur={field.handleBlur}
-												>
-													<SelectValue placeholder="Select condition..." />
-												</SelectTrigger>
-												<SelectContent>
-													<SelectItem value={NONE}>Unspecified</SelectItem>
-													{CONDITIONS.map((c) => (
-														<SelectItem key={c} value={c}>
-															{c}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-											{invalid && (
-												<FieldError
-													errors={toFieldErrors(field.state.meta.errors)}
-												/>
-											)}
-										</Field>
-									);
-								}}
+								children={(field) => (
+									<SelectField
+										field={field}
+										label="Condition"
+										placeholder="Select condition..."
+										options={CONDITIONS}
+									/>
+								)}
 							/>
 						) : (
 							<>
-								{/* Grader / company Select */}
 								<form.Field
 									name="gradingCompany"
 									validators={{ onBlur: stackFormSchema.shape.gradingCompany }}
 									// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
-									children={(field) => {
-										const invalid = fieldIsInvalid(field);
-										return (
-											<Field data-invalid={invalid}>
-												<FieldLabel htmlFor={field.name}>
-													Grader / company
-												</FieldLabel>
-												<Select
-													value={toSelectVal(field.state.value)}
-													onValueChange={(v) => {
-														field.handleChange(
-															fromSelectVal(v) as typeof field.state.value,
-														);
-													}}
-												>
-													<SelectTrigger
-														id={field.name}
-														aria-label="Grader / company"
-														aria-invalid={invalid}
-														onBlur={field.handleBlur}
-													>
-														<SelectValue placeholder="Select grader..." />
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value={NONE}>Unspecified</SelectItem>
-														{GRADERS.map((g) => (
-															<SelectItem key={g} value={g}>
-																{g}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
-												{invalid && (
-													<FieldError
-														errors={toFieldErrors(field.state.meta.errors)}
-													/>
-												)}
-											</Field>
-										);
-									}}
+									children={(field) => (
+										<SelectField
+											field={field}
+											label="Grader / company"
+											ariaLabel="Grader / company"
+											placeholder="Select grader..."
+											options={GRADERS}
+										/>
+									)}
 								/>
 
-								{/* Grade Input */}
 								<form.Field
 									name="grade"
 									validators={{
@@ -380,27 +423,9 @@ export function StackEditForm({
 										},
 									}}
 									// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
-									children={(field) => {
-										const invalid = fieldIsInvalid(field);
-										return (
-											<Field data-invalid={invalid}>
-												<FieldLabel htmlFor={field.name}>Grade</FieldLabel>
-												<Input
-													id={field.name}
-													type="number"
-													aria-invalid={invalid}
-													value={field.state.value}
-													onBlur={field.handleBlur}
-													onChange={(e) => field.handleChange(e.target.value)}
-												/>
-												{invalid && (
-													<FieldError
-														errors={toFieldErrors(field.state.meta.errors)}
-													/>
-												)}
-											</Field>
-										);
-									}}
+									children={(field) => (
+										<TextField field={field} label="Grade" type="number" />
+									)}
 								/>
 							</>
 						)
@@ -412,25 +437,9 @@ export function StackEditForm({
 					name="acquiredAt"
 					validators={{ onBlur: stackFormSchema.shape.acquiredAt }}
 					// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
-					children={(field) => {
-						const invalid = fieldIsInvalid(field);
-						return (
-							<Field data-invalid={invalid}>
-								<FieldLabel htmlFor={field.name}>Acquired date</FieldLabel>
-								<Input
-									id={field.name}
-									type="date"
-									aria-invalid={invalid}
-									value={field.state.value}
-									onBlur={field.handleBlur}
-									onChange={(e) => field.handleChange(e.target.value)}
-								/>
-								{invalid && (
-									<FieldError errors={toFieldErrors(field.state.meta.errors)} />
-								)}
-							</Field>
-						);
-					}}
+					children={(field) => (
+						<TextField field={field} label="Acquired date" type="date" />
+					)}
 				/>
 
 				{/* Price paid */}
@@ -445,27 +454,15 @@ export function StackEditForm({
 						},
 					}}
 					// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
-					children={(field) => {
-						const invalid = fieldIsInvalid(field);
-						return (
-							<Field data-invalid={invalid}>
-								<FieldLabel htmlFor={field.name}>Price paid</FieldLabel>
-								<Input
-									id={field.name}
-									type="number"
-									aria-label="Price paid"
-									aria-invalid={invalid}
-									value={field.state.value}
-									onBlur={field.handleBlur}
-									onChange={(e) => field.handleChange(e.target.value)}
-									className="font-mono tabular-nums"
-								/>
-								{invalid && (
-									<FieldError errors={toFieldErrors(field.state.meta.errors)} />
-								)}
-							</Field>
-						);
-					}}
+					children={(field) => (
+						<TextField
+							field={field}
+							label="Price paid"
+							type="number"
+							mono
+							ariaLabel="Price paid"
+						/>
+					)}
 				/>
 			</div>
 
@@ -475,32 +472,22 @@ export function StackEditForm({
 					name="source"
 					// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 					children={(field) => (
-						<Field>
-							<FieldLabel htmlFor={field.name}>Source</FieldLabel>
-							<Input
-								id={field.name}
-								placeholder="Where / who from"
-								value={field.state.value}
-								onBlur={field.handleBlur}
-								onChange={(e) => field.handleChange(e.target.value)}
-							/>
-						</Field>
+						<TextField
+							field={field}
+							label="Source"
+							placeholder="Where / who from"
+						/>
 					)}
 				/>
 				<form.Field
 					name="storageLocation"
 					// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 					children={(field) => (
-						<Field>
-							<FieldLabel htmlFor={field.name}>Storage location</FieldLabel>
-							<Input
-								id={field.name}
-								placeholder="Binder / box"
-								value={field.state.value}
-								onBlur={field.handleBlur}
-								onChange={(e) => field.handleChange(e.target.value)}
-							/>
-						</Field>
+						<TextField
+							field={field}
+							label="Storage location"
+							placeholder="Binder / box"
+						/>
 					)}
 				/>
 			</div>
@@ -510,24 +497,9 @@ export function StackEditForm({
 				name="notes"
 				validators={{ onBlur: stackFormSchema.shape.notes }}
 				// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
-				children={(field) => {
-					const invalid = fieldIsInvalid(field);
-					return (
-						<Field data-invalid={invalid}>
-							<FieldLabel htmlFor={field.name}>Notes</FieldLabel>
-							<Textarea
-								id={field.name}
-								aria-invalid={invalid}
-								value={field.state.value}
-								onBlur={field.handleBlur}
-								onChange={(e) => field.handleChange(e.target.value)}
-							/>
-							{invalid && (
-								<FieldError errors={toFieldErrors(field.state.meta.errors)} />
-							)}
-						</Field>
-					);
-				}}
+				children={(field) => (
+					<TextField field={field} label="Notes" multiline />
+				)}
 			/>
 
 			{/* Save / Cancel */}

@@ -1,5 +1,5 @@
 // src/store/userland/backup.ts
-import type { UserDataSnapshot } from "./types";
+import type { Stack, UserDataSnapshot } from "./types";
 
 /** Type guard: true when v is a non-null object. */
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -42,13 +42,27 @@ export function isValidSnapshot(v: unknown): v is RawSnapshot {
 
 /** Upgrade any supported snapshot to the current v2 shape (backfills quantity=1, null provenance). */
 function upgrade(snap: RawSnapshot): UserDataSnapshot {
-	const collection = snap.collection.map((c) => ({
-		...c,
-		quantity:
-			typeof c.quantity === "number" && c.quantity >= 1 ? c.quantity : 1,
-		source: (c.source as string | null | undefined) ?? null,
-		storageLocation: (c.storageLocation as string | null | undefined) ?? null,
-	})) as unknown as UserDataSnapshot["collection"];
+	const collection = snap.collection.map((c) => {
+		// Older/hand-edited backups may omit fields Stack requires non-null. Backfill
+		// every one so import can't inject a malformed Stack (isValidSnapshot only
+		// guarantees id + cardId are strings).
+		const createdAt =
+			typeof c.createdAt === "number" ? c.createdAt : Date.now();
+		return {
+			...c,
+			quantity:
+				typeof c.quantity === "number" && c.quantity >= 1 ? c.quantity : 1,
+			createdAt,
+			acquiredAt: typeof c.acquiredAt === "number" ? c.acquiredAt : createdAt,
+			pricePaid: typeof c.pricePaid === "number" ? c.pricePaid : null,
+			variant: (c.variant as string | null | undefined) ?? null,
+			notes: (c.notes as string | null | undefined) ?? null,
+			condition: (c.condition as Stack["condition"] | undefined) ?? null,
+			grading: (c.grading as Stack["grading"] | undefined) ?? null,
+			source: (c.source as string | null | undefined) ?? null,
+			storageLocation: (c.storageLocation as string | null | undefined) ?? null,
+		};
+	}) as unknown as UserDataSnapshot["collection"];
 	return {
 		schemaVersion: 2,
 		exportedAt: typeof snap.exportedAt === "number" ? snap.exportedAt : 0,

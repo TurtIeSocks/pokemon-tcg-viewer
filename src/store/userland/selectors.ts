@@ -21,6 +21,7 @@ import {
 	type SortKey,
 	sortCardRows,
 } from "./card-rows";
+import { groupByCardId, sumQuantity } from "./group";
 import type { Stack } from "./types";
 import { loadUserland, useUserland } from "./userland-store";
 
@@ -39,21 +40,9 @@ export function useOwnedCardIdSet(): Set<string> {
 	return new Set(useOwnedIndex().keys());
 }
 
-/** Group a flat list of stacks into a map keyed by cardId. */
-export function groupByCardId(items: Stack[]): Map<string, Stack[]> {
-	const map = new Map<string, Stack[]>();
-	for (const item of items) {
-		const arr = map.get(item.cardId);
-		if (arr) arr.push(item);
-		else map.set(item.cardId, [item]);
-	}
-	return map;
-}
-
-/** Total physical cards across stacks (sums quantity). */
-export function sumQuantity(stacks: Stack[]): number {
-	return stacks.reduce((n, s) => n + s.quantity, 0);
-}
+// groupByCardId + sumQuantity moved to ./group to break the card-rows↔selectors
+// import cycle; re-exported here so existing `from "./selectors"` importers keep working.
+export { groupByCardId, sumQuantity };
 
 /**
  * Join owned stacks with corpus card data; returns one HoloCardData per distinct cardId.
@@ -77,7 +66,7 @@ export function joinOwnedViews(
 
 // --- Hooks ---
 /** Idempotently hydrate the userland cache. Safe to call from many components. */
-export function useEnsureUserland(): void {
+function useEnsureUserland(): void {
 	useEffect(() => {
 		void loadUserland();
 	}, []);

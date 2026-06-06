@@ -129,6 +129,27 @@ test("parseSnapshot upgrades a v1 snapshot to v2 (quantity=1, null provenance)",
 	expect(snap.collection[0].storageLocation).toBeNull();
 });
 
+test("upgrade backfills required Stack fields on a minimal collection item", () => {
+	// isValidSnapshot only guarantees id + cardId; everything else may be absent.
+	const minimal = JSON.stringify({
+		schemaVersion: 2,
+		exportedAt: 0,
+		collection: [{ id: "x", cardId: "base1-4" }],
+		binders: [],
+	});
+	const s = parseSnapshot(minimal).collection[0];
+	expect(s.quantity).toBe(1);
+	expect(typeof s.createdAt).toBe("number");
+	expect(s.acquiredAt).toBe(s.createdAt);
+	expect(s.pricePaid).toBeNull();
+	expect(s.variant).toBeNull();
+	expect(s.notes).toBeNull();
+	expect(s.condition).toBeNull();
+	expect(s.grading).toBeNull();
+	expect(s.source).toBeNull();
+	expect(s.storageLocation).toBeNull();
+});
+
 test("isValidSnapshot accepts both v1 and v2; rejects other versions", () => {
 	expect(isValidSnapshot({ ...good, schemaVersion: 1 })).toBe(true);
 	expect(isValidSnapshot({ ...good, schemaVersion: 2 })).toBe(true);

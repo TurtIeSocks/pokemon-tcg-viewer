@@ -23,6 +23,7 @@ import type { NavTree } from "../lib/nav-tree";
 import { getNavTreeFn } from "../server/nav-tree";
 
 export const Route = createRootRoute({
+	loader: () => getNavTreeFn(),
 	head: () => ({
 		meta: [
 			{ charSet: "utf-8" },
@@ -41,9 +42,10 @@ export const Route = createRootRoute({
 					"Browse the Pokémon TCG catalog with interactive holographic card effects.",
 			},
 			{ property: "og:type", content: "website" },
-			// og:url omitted: prod domain isn't committed (self-hosted; nginx
-			// server_name is a placeholder) and OG requires an absolute URL. The old
-			// GitHub Pages URL is dead. Add the canonical absolute URL here once known.
+			// Site-level OG url (homepage). Per-page routes can override in their own
+			// head(); intentionally NOT a site-wide rel=canonical (a static one would
+			// point every set/card page at the homepage and de-index them).
+			{ property: "og:url", content: "https://ptcg.turtlesocks.dev" },
 			{ name: "twitter:card", content: "summary_large_image" },
 		],
 		links: [
@@ -78,7 +80,6 @@ export const Route = createRootRoute({
 			{ rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
 		],
 	}),
-	loader: () => getNavTreeFn(),
 	component: RootComponent,
 });
 
@@ -117,6 +118,14 @@ function useBreadcrumb(tree: NavTree): string[] {
 
 function ShellHeader({ tree }: { tree: NavTree }) {
 	const crumbs = useBreadcrumb(tree);
+	// Pair each label with a cumulative-path key so duplicate labels (e.g. a base
+	// set sharing its series name) stay distinct without an array-index key.
+	const crumbItems = crumbs.map((label, i) => ({
+		label,
+		key: crumbs.slice(0, i + 1).join(" / "),
+		isFirst: i === 0,
+		isLast: i === crumbs.length - 1,
+	}));
 	const navigate = useNavigate();
 	const [q, setQ] = useState("");
 
@@ -139,24 +148,21 @@ function ShellHeader({ tree }: { tree: NavTree }) {
 
 			{/* Breadcrumb */}
 			<div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
-				{crumbs.map((crumb, i) => (
-					<span
-						key={`${i}-${crumb}`}
-						className="flex items-center gap-1.5 min-w-0"
-					>
-						{i > 0 && (
+				{crumbItems.map((item) => (
+					<span key={item.key} className="flex items-center gap-1.5 min-w-0">
+						{!item.isFirst && (
 							<span className="font-mono text-[var(--faint)] text-xs opacity-60 shrink-0">
 								›
 							</span>
 						)}
 						<span
 							className={
-								i === crumbs.length - 1
+								item.isLast
 									? "truncate text-sm font-semibold text-[var(--ink)]"
 									: "truncate text-sm text-[var(--faint)] hidden sm:block"
 							}
 						>
-							{crumb}
+							{item.label}
 						</span>
 					</span>
 				))}
@@ -167,6 +173,7 @@ function ShellHeader({ tree }: { tree: NavTree }) {
 				<Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-[var(--faint)] pointer-events-none" />
 				<input
 					type="search"
+					aria-label="Search cards"
 					value={q}
 					onChange={(e) => setQ(e.target.value)}
 					placeholder="Search 20,000 cards…"

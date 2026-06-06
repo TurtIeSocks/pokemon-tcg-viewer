@@ -2,7 +2,7 @@ import type { HoloCardData } from "../../components/holo-card";
 import type { PokemonSet } from "../../server/card-mappers";
 import { type CorpusIndex, hydrateCard } from "../corpus/corpus-engine";
 import { compareCardNumber } from "../corpus/natural-compare";
-import { groupByCardId, sumQuantity } from "./selectors";
+import { groupByCardId, sumQuantity } from "./group";
 import type { Stack } from "./types";
 
 /** Column the collection table is sorted by. */
@@ -87,5 +87,5 @@ export function sortCardRows(
 			}
 		}
 	};
-	return [...rows].sort(cmp);
+	return rows.toSorted(cmp);
 }

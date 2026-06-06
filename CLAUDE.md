@@ -15,6 +15,7 @@ Skipping either leaves the dev server broken in confusing, partial ways.
 - Tests: `bun test` (Bun runner; `fake-indexeddb` + happy-dom preloaded via `bunfig.toml`).
 - Typecheck: `bunx tsc -b`.
 - Lint: `bunx biome check --write <files>`. Note: `bun run lint` can fail on a nested `biome.json` inside a worktree — pass explicit file paths (or `--config-path=.`).
+- Health scan (React): `npx react-doctor@latest --verbose .` — a perf/a11y/correctness + dead-code lens (not installed; run via npx). Accepted-deviation rules to **ignore**: `react-compiler-no-manual-memoization` (manual memo is intentional), route `only-export-components`, TanStack-Form `noChildrenProp`/`no-prevent-default`. `role="img"`+`aria-label` on meaningful icons is correct (not a `prefer-tag-over-role` bug).
 
 ## User-land ("Vault") architecture — `src/store/userland/`
 
@@ -23,7 +24,7 @@ The Vault (collection + **Binders**) is local-first but **DB-ready**. (Binders =
 - **Per-stack model.** `Stack` = a quantity of identical physical copies of a card (`cardId` + `quantity` + `acquiredAt`, `pricePaid` (per-unit), `variant`, `condition` **or** `grading`, `notes`, `source`, `storageLocation`, `isPrimary`). `quantity` 1 = a single card; split a stack to differentiate copies. The unit is still a "card" ("you own N cards across M stacks"). Optional fields are **`null`, never `undefined`** (IDB/JSON/SQL all agree; `0` ≠ unknown). Card render data is never stored — it's joined from the in-memory corpus (`hydrateCard` + `index.byId`).
 - **Repository port.** UI/store talk to `CollectionRepo`/`BindersRepo`/`BackupRepo` (`repo.ts`), implemented by the IndexedDB adapter (`idb-repo.ts`, `getRepos()`). To add a hosted DB later, write a remote adapter + swap the factory — don't scatter storage calls in features.
 - **`useUserland`** (`userland-store.ts`) is a **non-persisted** Zustand cache hydrated from the repo (`loadUserland`); actions await the repo then commit. Tests inject a fake repo via `setUserlandRepos()` + `resetUserlandForTests()`.
-- **Selectors** (`selectors.ts`) join the corpus: `useOwnedIndex`, `useOwnedCardViews`, `useOwnedCountBySet`, `useOwnedCardRows`, `useBinderProgress`/`useBinderMembers`. Shared helpers: `setsById()` (corpus-engine), `ownedCardIdSet()`/`useOwnedCardIdSet()`, `groupByCardId()`. Shared UI: `<ProgressBar>`, `<OwnedMissingGrid>`, `useEnsureCorpus()`.
+- **Selectors** (`selectors.ts`) join the corpus: `useOwnedIndex`, `useOwnedCardViews`, `useOwnedCountBySet`, `useOwnedCardRows`, `useBinderProgress`/`useBinderMembers`. Shared helpers: `setsById()` (corpus-engine), `ownedCardIdSet()`/`useOwnedCardIdSet()`, `groupByCardId()`/`sumQuantity()` (defined in `group.ts`, re-exported from selectors — keep them there to avoid the card-rows↔selectors import cycle). Shared UI: `<ProgressBar>`, `<OwnedMissingGrid>`, `useEnsureCorpus()`.
 - **Stack management is unified on `/{series}/{set}/{card}/manage`.** The card modal swipes between a detail face and a roomy `CardCollectionManager` (the old `CopyManagerDialog` is retired). In-app it's a history-state masked overlay (`card-overlay.tsx` + `card-route.ts` `cardOverlay`/`cardManage`); a cold load hits the real `$card_/manage` route. `cardModalLinkPropsFor` (detail face) clears `cardManage`; `cardManageLinkPropsFor` sets it.
 
 ## Conventions + gotchas (save yourself time)

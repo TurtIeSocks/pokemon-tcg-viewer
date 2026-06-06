@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { isRuleCapturable } from "../../lib/serialized-query";
 import { useOwnedCardIdSet } from "../../store/userland/selectors";
 import type { Binder, SerializedQuery } from "../../store/userland/types";
@@ -78,23 +78,25 @@ export function BulkAddMenu({
 		? "Clear your selection to save a rule"
 		: "Apply a filter/search to save it as a rule";
 
-	// BinderFormDialog state + pending action.
+	// BinderFormDialog open state + the pending action. `pending` is only read
+	// inside handlers (never rendered), so a ref avoids two wasted re-renders.
 	const [newBinderOpen, setNewBinderOpen] = useState(false);
-	const [pending, setPending] = useState<PendingAction | null>(null);
+	const pendingRef = useRef<PendingAction | null>(null);
 
 	function openNewBinder(action: PendingAction) {
-		setPending(action);
+		pendingRef.current = action;
 		setNewBinderOpen(true);
 	}
 
 	function handleNewBinderSaved(b: Binder) {
+		const pending = pendingRef.current;
 		if (!pending) return;
 		if (pending.kind === "cards") {
 			void addCardsToBinder(b.id, pending.targetIds);
 		} else {
 			void addRuleToBinder(b.id, pending.query);
 		}
-		setPending(null);
+		pendingRef.current = null;
 	}
 
 	async function handleCollectionAdd() {

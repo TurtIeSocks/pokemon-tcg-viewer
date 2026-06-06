@@ -45,7 +45,8 @@ export function validateListSearch(
 
 	const toYear = (v: unknown): number | null => {
 		const n = Number(v);
-		return typeof v === "string" && v !== "" && !Number.isNaN(n) ? n : null;
+		// Number.isFinite (not !isNaN) so "Infinity"/"-Infinity" are rejected too.
+		return typeof v === "string" && v !== "" && Number.isFinite(n) ? n : null;
 	};
 
 	return {

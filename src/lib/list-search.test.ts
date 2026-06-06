@@ -42,6 +42,13 @@ test("yearMin/yearMax: full round-trip serialize → parse", () => {
 	expect(parsed.yearMax).toBe(2006);
 });
 
+test("yearMin/yearMax: rejects non-finite values (Infinity, overflow)", () => {
+	expect(validateListSearch({ yearMin: "Infinity" }).yearMin).toBeNull();
+	expect(validateListSearch({ yearMax: "-Infinity" }).yearMax).toBeNull();
+	// Number("1e999") overflows to Infinity — must also be rejected.
+	expect(validateListSearch({ yearMin: "1e999" }).yearMin).toBeNull();
+});
+
 test("exact: defaults to false", () => {
 	expect(validateListSearch({}).exact).toBe(false);
 });

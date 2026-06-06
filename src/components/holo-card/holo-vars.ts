@@ -1,5 +1,5 @@
 export const DEFAULT_POINTER = 50;
-export const TILT_DIVISOR = 3.5;
+const TILT_DIVISOR = 3.5;
 
 /**
  * Background-position remap bands. simey maps the raw pointer percentage into
@@ -7,10 +7,10 @@ export const TILT_DIVISOR = 3.5;
  * shine drifts subtly rather than sweeping the full 0–100% range. The X and Y
  * bands differ (Card.svelte interact(): adjust(x,…,37,63) / adjust(y,…,33,67)).
  */
-export const BG_X_MIN = 37;
-export const BG_X_MAX = 63;
-export const BG_Y_MIN = 33;
-export const BG_Y_MAX = 67;
+const BG_X_MIN = 37;
+const BG_X_MAX = 63;
+const BG_Y_MIN = 33;
+const BG_Y_MAX = 67;
 
 export interface HoloState {
 	x: number;

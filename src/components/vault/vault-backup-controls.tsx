@@ -17,16 +17,17 @@ import { ImportDialog } from "./import-dialog";
 
 const BTN = "rounded border px-3 py-1.5 text-sm hover:bg-secondary";
 
+/** Export the full collection as a downloadable JSON backup. */
+async function exportBackup(): Promise<void> {
+	downloadSnapshot(await exportUserData());
+}
+
 /** Toolbar: JSON backup export, CSV export (per-stack + per-card), and import. */
 export function VaultBackupControls() {
 	const [importOpen, setImportOpen] = useState(false);
 	const items = useUserland((s) => s.items);
 	const index = useCorpusRuntime((s) => s.index);
 	const sets = useStore((s) => s.sets);
-
-	async function onExport() {
-		downloadSnapshot(await exportUserData());
-	}
 
 	function exportCsv(mode: CsvMode) {
 		const byId = sets ? setsById(sets) : null;
@@ -49,7 +50,7 @@ export function VaultBackupControls() {
 
 	return (
 		<div className="flex flex-wrap gap-2">
-			<button type="button" onClick={onExport} className={BTN}>
+			<button type="button" onClick={exportBackup} className={BTN}>
 				Export backup
 			</button>
 			<button type="button" onClick={() => exportCsv("stack")} className={BTN}>

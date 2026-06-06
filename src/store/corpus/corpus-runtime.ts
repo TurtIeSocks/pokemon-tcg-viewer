@@ -60,8 +60,8 @@ export function loadCorpus(): Promise<void> {
 	if (inFlight) return inFlight;
 	useCorpusRuntime.setState({ loading: true });
 	inFlight = (async () => {
-		const meta = await readMeta();
-		const stored = await readGz();
+		// Independent IDB reads — run them together, not in a waterfall.
+		const [meta, stored] = await Promise.all([readMeta(), readGz()]);
 		const fresh = meta && Date.now() - meta.fetchedAt < ONE_DAY;
 		if (stored && fresh) {
 			await setIndexFromGz(stored);
@@ -155,7 +155,7 @@ const slugIndexCache = new WeakMap<CorpusIndex, Map<PokemonSet[], SlugIndex>>();
  * card-detail links (/$series/$set/$card) with no server round trip. Null until
  * both the corpus and sets have loaded.
  */
-export function getSlugIndex(): SlugIndex | null {
+function getSlugIndex(): SlugIndex | null {
 	const index = useCorpusRuntime.getState().index;
 	const sets = useStore.getState().sets;
 	if (!index || !sets) return null;

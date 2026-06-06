@@ -1,19 +1,27 @@
-import * as React from "react"
+import * as React from "react";
 
-const MOBILE_BREAKPOINT = 768
+const MOBILE_BREAKPOINT = 768;
+const QUERY = `(max-width: ${MOBILE_BREAKPOINT - 1}px)`;
 
-export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
+function subscribe(onChange: () => void): () => void {
+	const mql = window.matchMedia(QUERY);
+	mql.addEventListener("change", onChange);
+	return () => mql.removeEventListener("change", onChange);
+}
 
-  React.useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
-    const onChange = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
-    }
-    mql.addEventListener("change", onChange)
-    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
-    return () => mql.removeEventListener("change", onChange)
-  }, [])
+function getSnapshot(): boolean {
+	return window.matchMedia(QUERY).matches;
+}
 
-  return !!isMobile
+function getServerSnapshot(): boolean {
+	return false;
+}
+
+/**
+ * True when the viewport is below the mobile breakpoint (768px).
+ * Uses useSyncExternalStore so there's no mount-only setState (no extra render)
+ * and it hydrates SSR-safe (server snapshot = false).
+ */
+export function useIsMobile(): boolean {
+	return React.useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
