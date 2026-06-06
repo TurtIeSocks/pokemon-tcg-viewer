@@ -128,7 +128,7 @@ export function SearchControls({
 				/>
 				<ButtonGroupText
 					aria-hidden="true"
-					className="bg-[var(--glass)] border-[var(--border)] text-[var(--ink-muted)]"
+					className="rounded-r-[var(--r-control)] bg-[var(--glass)] border-[var(--border)] text-[var(--ink-muted)]"
 				>
 					<Search className="size-4" />
 				</ButtonGroupText>
