@@ -298,7 +298,7 @@ test("addRuleToBinder pushes a rule", async () => {
 		subtypes: [],
 		yearMin: null,
 		yearMax: null,
-		exact: false,
+		mode: "fuzzy" as const,
 	};
 	await addRuleToBinder(b.id, query);
 	const stored = useUserland.getState().binders[b.id];
@@ -364,7 +364,7 @@ test("removeRuleFromBinder drops the rule", async () => {
 		subtypes: [],
 		yearMin: null,
 		yearMax: null,
-		exact: false,
+		mode: "fuzzy" as const,
 	};
 	await addRuleToBinder(b.id, query);
 	const ruleId = useUserland.getState().binders[b.id]?.rules[0]?.id as string;

@@ -120,9 +120,10 @@ export function SearchControls({
 					onChange={(e) => onChange({ q: e.target.value })}
 					className="min-w-0 flex-1"
 				/>
+				{/* TODO(task2): replace with SearchModeMenu */}
 				<MatchModeToggle
-					value={value.exact}
-					onChange={(exact) => onChange({ exact })}
+					value={value.mode !== "fuzzy"}
+					onChange={(on) => onChange({ mode: on ? "contains" : "fuzzy" })}
 				/>
 			</div>
 			<div className="grid grid-cols-2 gap-2 sm:grid-cols-5">

@@ -19,7 +19,7 @@ export function toSerializedQuery(
 		subtypes: [...search.subtypes],
 		yearMin: search.yearMin,
 		yearMax: search.yearMax,
-		exact: search.exact,
+		mode: search.mode,
 	};
 }
 

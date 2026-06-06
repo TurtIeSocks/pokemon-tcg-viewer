@@ -1,4 +1,5 @@
 // src/store/userland/types.ts
+import type { SearchMode } from "../corpus/fuzzy";
 
 /** Raw (ungraded) condition, TCGplayer scale. */
 export type CardCondition = "NM" | "LP" | "MP" | "HP" | "DMG";
@@ -64,11 +65,11 @@ export interface SerializedQuery {
 	yearMin: number | null;
 	yearMax: number | null;
 	/**
-	 * When true, the text match is exact (no typo-tolerant fuzzy) so the rule's
-	 * membership stays tight. Rules persisted before this field existed lack the
-	 * key; readers treat missing as false (fuzzy) to preserve their behavior.
+	 * Search mode for text matching: "exact" (whole name only), "contains"
+	 * (prefix+substring), or "fuzzy" (default, adds typo tolerance). Rules
+	 * persisted before this field existed lack the key; readers default to "fuzzy".
 	 */
-	exact: boolean;
+	mode: SearchMode;
 }
 
 /** A single dynamic rule inside a Binder; cards matching the query are included. */

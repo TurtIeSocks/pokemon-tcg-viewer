@@ -12,7 +12,7 @@ const empty = (): SerializedQuery => ({
 	subtypes: [],
 	yearMin: null,
 	yearMax: null,
-	exact: false,
+	mode: "fuzzy",
 });
 
 describe("binderRuleLabel — user-story shapes", () => {
@@ -83,16 +83,30 @@ describe("binderRuleLabel — basics", () => {
 		expect(binderRuleLabel(q)).toBe('"pikachu"');
 	});
 
-	it("exact + text → '(exact)' suffix on the quoted text", () => {
-		const q: SerializedQuery = { ...empty(), text: "pikachu", exact: true };
+	it("mode=exact + text → '(exact)' suffix on the quoted text", () => {
+		const q: SerializedQuery = { ...empty(), text: "pikachu", mode: "exact" };
 		expect(binderRuleLabel(q)).toBe('"pikachu" (exact)');
 	});
 
-	it("exact without text → no suffix (flag has no visible effect)", () => {
+	it("mode=contains + text → '(contains)' suffix on the quoted text", () => {
+		const q: SerializedQuery = {
+			...empty(),
+			text: "pikachu",
+			mode: "contains",
+		};
+		expect(binderRuleLabel(q)).toBe('"pikachu" (contains)');
+	});
+
+	it("mode=fuzzy + text → no suffix (default, no annotation)", () => {
+		const q: SerializedQuery = { ...empty(), text: "pikachu", mode: "fuzzy" };
+		expect(binderRuleLabel(q)).toBe('"pikachu"');
+	});
+
+	it("mode=exact without text → no suffix (flag has no visible effect)", () => {
 		const q: SerializedQuery = {
 			...empty(),
 			supertypes: ["Trainer"],
-			exact: true,
+			mode: "exact",
 		};
 		expect(binderRuleLabel(q)).toBe("Trainer");
 	});
@@ -128,7 +142,7 @@ describe("binderRuleLabel — basics", () => {
 			text: "charizard",
 			yearMin: 1999,
 			yearMax: 2000,
-			exact: false,
+			mode: "fuzzy",
 		};
 		const label = binderRuleLabel(q, { setName: () => "Base" });
 		expect(label).toBe(

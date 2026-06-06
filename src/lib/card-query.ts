@@ -1,4 +1,5 @@
 import type { CorpusQuery } from "../store/corpus/corpus-engine";
+import type { SearchMode } from "../store/corpus/fuzzy";
 import type { FilterClauses } from "../utils/build-filter-clauses";
 
 export type ViewMode = "grid" | "timeline";
@@ -17,8 +18,8 @@ export interface ListSearch {
 	yearMin: number | null;
 	/** Inclusive upper bound on release year (YYYY). Null → no upper bound. */
 	yearMax: number | null;
-	/** When true, search by exact/substring only — no typo-tolerant fuzzy matching. */
-	exact: boolean;
+	/** Search mode: "exact" (whole name), "contains" (prefix+substring), or "fuzzy" (default). */
+	mode: SearchMode;
 }
 
 /** Page context: which entity the list is anchored to. */
@@ -47,7 +48,7 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 
 	const yearMin = s.yearMin ?? undefined;
 	const yearMax = s.yearMax ?? undefined;
-	const exact = s.exact;
+	const mode = s.mode;
 
 	if (ctx.setId != null) {
 		return {
@@ -56,7 +57,7 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 			filters,
 			yearMin,
 			yearMax,
-			exact,
+			mode,
 			relevance: false,
 		};
 	}
@@ -67,7 +68,7 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 			filters,
 			yearMin,
 			yearMax,
-			exact,
+			mode,
 			relevance: false,
 		};
 	}
@@ -77,7 +78,7 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 		filters,
 		yearMin,
 		yearMax,
-		exact,
+		mode,
 		relevance: !!query,
 	};
 }

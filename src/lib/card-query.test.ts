@@ -11,7 +11,7 @@ const empty: ListSearch = {
 	owned: "all",
 	yearMin: null,
 	yearMax: null,
-	exact: false,
+	mode: "fuzzy",
 };
 
 describe("buildCorpusQuery", () => {
@@ -76,16 +76,18 @@ describe("buildCorpusQuery", () => {
 		expect(q.yearMin).toBeUndefined();
 		expect(q.yearMax).toBe(2022);
 	});
-	test("exact defaults to false", () => {
-		expect(buildCorpusQuery(empty, {}).exact).toBe(false);
+	test("mode defaults to 'fuzzy'", () => {
+		expect(buildCorpusQuery(empty, {}).mode).toBe("fuzzy");
 	});
-	test("exact forwarded in global, set, and dex contexts", () => {
-		expect(buildCorpusQuery({ ...empty, exact: true }, {}).exact).toBe(true);
+	test("mode forwarded in global, set, and dex contexts", () => {
+		expect(buildCorpusQuery({ ...empty, mode: "exact" }, {}).mode).toBe(
+			"exact",
+		);
 		expect(
-			buildCorpusQuery({ ...empty, exact: true }, { setId: "swsh9" }).exact,
-		).toBe(true);
+			buildCorpusQuery({ ...empty, mode: "contains" }, { setId: "swsh9" }).mode,
+		).toBe("contains");
 		expect(
-			buildCorpusQuery({ ...empty, exact: true }, { dexNumber: 6 }).exact,
-		).toBe(true);
+			buildCorpusQuery({ ...empty, mode: "exact" }, { dexNumber: 6 }).mode,
+		).toBe("exact");
 	});
 });

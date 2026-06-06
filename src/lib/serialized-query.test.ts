@@ -12,7 +12,7 @@ const baseSearch = (): ListSearch => ({
 	owned: "all",
 	yearMin: null,
 	yearMax: null,
-	exact: false,
+	mode: "fuzzy",
 });
 
 const baseCtx = (): ListContext => ({});
@@ -83,11 +83,13 @@ describe("toSerializedQuery", () => {
 		expect(q.view).toBeUndefined();
 	});
 
-	it("passes exact through (default false)", () => {
-		expect(toSerializedQuery(baseSearch(), baseCtx()).exact).toBe(false);
+	it("passes mode through (default 'fuzzy')", () => {
+		expect(toSerializedQuery(baseSearch(), baseCtx()).mode).toBe("fuzzy");
 		const s = baseSearch();
-		s.exact = true;
-		expect(toSerializedQuery(s, baseCtx()).exact).toBe(true);
+		s.mode = "exact";
+		expect(toSerializedQuery(s, baseCtx()).mode).toBe("exact");
+		s.mode = "contains";
+		expect(toSerializedQuery(s, baseCtx()).mode).toBe("contains");
 	});
 });
 
@@ -102,16 +104,16 @@ describe("isRuleCapturable", () => {
 		subtypes: [] as string[],
 		yearMin: null,
 		yearMax: null,
-		exact: false,
+		mode: "fuzzy" as const,
 	});
 
 	it("returns false for all-empty query", () => {
 		expect(isRuleCapturable(empty())).toBe(false);
 	});
 
-	it("exact alone is NOT a capturable constraint", () => {
-		// exact only changes how text matches; with no text/filters it matches nothing useful
-		expect(isRuleCapturable({ ...empty(), exact: true })).toBe(false);
+	it("mode alone is NOT a capturable constraint", () => {
+		// mode only changes how text matches; with no text/filters it matches nothing useful
+		expect(isRuleCapturable({ ...empty(), mode: "exact" })).toBe(false);
 	});
 
 	it("returns true when text present", () => {

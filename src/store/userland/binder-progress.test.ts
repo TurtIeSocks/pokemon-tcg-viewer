@@ -56,7 +56,7 @@ function sq(partial: Partial<SerializedQuery> = {}): SerializedQuery {
 		subtypes: [],
 		yearMin: null,
 		yearMax: null,
-		exact: false,
+		mode: "fuzzy",
 		...partial,
 	};
 }
@@ -127,14 +127,15 @@ test("toCorpusQuery: non-null scalar fields pass through", () => {
 	expect(cq.yearMax).toBe(2000);
 });
 
-test("toCorpusQuery: exact flag maps through (default false)", () => {
-	expect(toCorpusQuery(sq()).exact).toBe(false);
-	expect(toCorpusQuery(sq({ exact: true })).exact).toBe(true);
+test("toCorpusQuery: mode maps through (default fuzzy)", () => {
+	expect(toCorpusQuery(sq()).mode).toBe("fuzzy");
+	expect(toCorpusQuery(sq({ mode: "exact" })).mode).toBe("exact");
+	expect(toCorpusQuery(sq({ mode: "contains" })).mode).toBe("contains");
 });
 
-test("toCorpusQuery: legacy rule missing exact key defaults to fuzzy (false)", () => {
-	// Rules stored before this field existed have no `exact` key. They must keep
-	// their original fuzzy behavior, not silently flip to exact.
+test("toCorpusQuery: legacy rule missing mode key defaults to fuzzy", () => {
+	// Rules stored before this field existed have no `mode` key. They must keep
+	// their original fuzzy behavior.
 	const legacy = {
 		text: "Pikachu",
 		setId: null,
@@ -146,7 +147,7 @@ test("toCorpusQuery: legacy rule missing exact key defaults to fuzzy (false)", (
 		yearMin: null,
 		yearMax: null,
 	} as unknown as SerializedQuery;
-	expect(toCorpusQuery(legacy).exact).toBe(false);
+	expect(toCorpusQuery(legacy).mode).toBe("fuzzy");
 });
 
 test("toCorpusQuery: filter arrays passed through into filters object", () => {

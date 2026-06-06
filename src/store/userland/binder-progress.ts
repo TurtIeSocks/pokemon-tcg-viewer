@@ -24,8 +24,8 @@ export function toCorpusQuery(q: SerializedQuery): CorpusQuery {
 		},
 		yearMin: q.yearMin ?? undefined,
 		yearMax: q.yearMax ?? undefined,
-		// Legacy rules predate this field; missing key (undefined) → fuzzy (false).
-		exact: q.exact === true,
+		// Legacy rules predate this field; missing key (undefined) → "fuzzy".
+		mode: q.mode ?? "fuzzy",
 		relevance: false,
 	};
 }

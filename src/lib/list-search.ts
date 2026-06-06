@@ -1,3 +1,4 @@
+import type { SearchMode } from "../store/corpus/fuzzy";
 import type { ListSearch, OwnedMode, ViewMode } from "./card-query";
 
 /**
@@ -17,7 +18,7 @@ export const LIST_SEARCH_DEFAULTS: ListSearch = {
 	owned: "all",
 	yearMin: null,
 	yearMax: null,
-	exact: false,
+	mode: "fuzzy",
 };
 
 const VALID_SEARCH_PARAMS = [
@@ -63,9 +64,12 @@ export function validateListSearch(
 		owned,
 		yearMin: toYear(search.yearMin),
 		yearMax: toYear(search.yearMax),
-		// URL params arrive as strings ("true"); also accept a raw boolean from
-		// in-page navigate() merges. Anything else → default false (fuzzy).
-		exact: search.exact === true || search.exact === "true",
+		// URL param is "mode"; enum-guard to the three valid values, else "fuzzy".
+		mode: ((): SearchMode => {
+			const m = search.mode;
+			if (m === "exact" || m === "contains" || m === "fuzzy") return m;
+			return "fuzzy";
+		})(),
 	};
 }
 
@@ -86,7 +90,8 @@ export function listSearchToUrl(
 		out.yearMin = s.yearMin != null ? String(s.yearMin) : undefined;
 	if (s.yearMax !== undefined)
 		out.yearMax = s.yearMax != null ? String(s.yearMax) : undefined;
-	if (s.exact !== undefined) out.exact = s.exact ? "true" : undefined;
+	// Omit "mode" from URL when it's the default ("fuzzy") to keep URLs clean.
+	if (s.mode !== undefined) out.mode = s.mode !== "fuzzy" ? s.mode : undefined;
 
 	return out;
 }

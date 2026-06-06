@@ -43,8 +43,15 @@ export function binderRuleLabel(
 	}
 
 	if (q.text !== null) {
-		// `exact` only changes name matching, so only annotate it when text is present.
-		parts.push(q.exact ? `"${q.text}" (exact)` : `"${q.text}"`);
+		// mode only changes name matching, so only annotate it when text is present.
+		const mode = q.mode ?? "fuzzy";
+		if (mode === "exact") {
+			parts.push(`"${q.text}" (exact)`);
+		} else if (mode === "contains") {
+			parts.push(`"${q.text}" (contains)`);
+		} else {
+			parts.push(`"${q.text}"`);
+		}
 	}
 
 	if (q.yearMin !== null && q.yearMax !== null) {

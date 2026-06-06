@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import type { ListSearch } from "../lib/card-query";
 import { LIST_SEARCH_DEFAULTS } from "../lib/list-search";
 import { findSet } from "../lib/nav-tree";
+import type { SearchMode } from "../store/corpus/fuzzy";
 import { nameByDex } from "./pokemon-dex";
 import { boundedInt, nonEmptyString } from "./validate";
 
@@ -41,14 +42,17 @@ export const getSetCardsFn = createServerFn({ method: "GET" })
 	});
 
 /**
- * Global name search, relevance order. `exact` (default false) drops the
- * typo-tolerant fuzzy tier so the server seed + total match the client grid when
- * the search page is in exact mode.
+ * Global name search, relevance order. `mode` (default "fuzzy") controls
+ * whether typo-tolerant fuzzy matching is used so the server seed + total
+ * match the client grid when the search page is in a non-fuzzy mode.
  */
 export const searchCardsFn = createServerFn({ method: "GET" })
 	.inputValidator((input: unknown) => {
-		const o = (input ?? {}) as { query?: unknown; exact?: unknown };
-		return { query: nonEmptyString(o.query, "query"), exact: o.exact === true };
+		const o = (input ?? {}) as { query?: unknown; mode?: unknown };
+		const m = o.mode;
+		const mode: SearchMode =
+			m === "exact" || m === "contains" || m === "fuzzy" ? m : "fuzzy";
+		return { query: nonEmptyString(o.query, "query"), mode };
 	})
 	.handler(async ({ data }) => {
 		const { queryCorpusServer } = await import("./corpus-loader");
@@ -56,7 +60,7 @@ export const searchCardsFn = createServerFn({ method: "GET" })
 			query: data.query,
 			setId: null,
 			relevance: true,
-			exact: data.exact,
+			mode: data.mode,
 		});
 	});
 

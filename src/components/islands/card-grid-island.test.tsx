@@ -44,7 +44,7 @@ const defaultSearch = {
 	owned: "all" as const,
 	yearMin: null,
 	yearMax: null,
-	exact: false,
+	mode: "fuzzy" as const,
 };
 
 beforeEach(() => {

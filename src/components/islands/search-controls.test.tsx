@@ -13,7 +13,7 @@ const defaultValue: ListSearch = {
 	owned: "all",
 	yearMin: null,
 	yearMax: null,
-	exact: false,
+	mode: "fuzzy" as const,
 };
 
 const options = {
@@ -162,9 +162,10 @@ test("existing controls (q input + filter selects + owned) still render", () => 
 	expect(screen.getByRole("searchbox")).toBeDefined();
 });
 
-// ─── Match-mode (fuzzy/exact) toggle ──────────────────────────────────────────
+// ─── Match-mode toggle (bridge: mode !== "fuzzy" = on) ────────────────────────
+// TODO(task2): update these tests when SearchModeMenu replaces MatchModeToggle
 
-test("match-mode toggle renders, reflecting exact=false as Exact pill off", () => {
+test("match-mode toggle renders, reflecting mode=fuzzy as Exact pill off", () => {
 	render(
 		<SearchControls
 			value={defaultValue}
@@ -177,7 +178,7 @@ test("match-mode toggle renders, reflecting exact=false as Exact pill off", () =
 	).toBe("false");
 });
 
-test("clicking Exact fires onChange with exact:true", () => {
+test("clicking Exact fires onChange with mode:'contains' (bridge maps on→contains)", () => {
 	const onChange = mock(() => {});
 	render(
 		<SearchControls
@@ -187,20 +188,20 @@ test("clicking Exact fires onChange with exact:true", () => {
 		/>,
 	);
 	fireEvent.click(screen.getByRole("button", { name: "Exact" }));
-	expect(onChange).toHaveBeenCalledWith({ exact: true });
+	expect(onChange).toHaveBeenCalledWith({ mode: "contains" });
 });
 
-test("clicking the Exact pill when on fires onChange with exact:false", () => {
+test("clicking the Exact pill when on fires onChange with mode:'fuzzy' (bridge maps off→fuzzy)", () => {
 	const onChange = mock(() => {});
 	render(
 		<SearchControls
-			value={{ ...defaultValue, exact: true }}
+			value={{ ...defaultValue, mode: "contains" }}
 			options={options}
 			onChange={onChange}
 		/>,
 	);
 	fireEvent.click(screen.getByRole("button", { name: "Exact" }));
-	expect(onChange).toHaveBeenCalledWith({ exact: false });
+	expect(onChange).toHaveBeenCalledWith({ mode: "fuzzy" });
 });
 
 test("yearMin value reflects prop", () => {

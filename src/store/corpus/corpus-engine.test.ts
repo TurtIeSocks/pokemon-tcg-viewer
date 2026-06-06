@@ -229,28 +229,51 @@ test("no year bounds: all cards returned unchanged", () => {
 	expect(r.map((c) => c.id)).toContain("yr2001-1");
 });
 
-// --- exact match-mode tests ---
+// --- search mode tests ---
 
-test("exact mode drops the typo (fuzzy) match", () => {
-	const fuzzy = queryCorpus(
+test("fuzzy mode (default) finds typo match", () => {
+	const r = queryCorpus(
 		index,
 		{ query: "charizrd", relevance: true },
 		setsById,
 	);
-	expect(fuzzy.map((c) => c.id)).toContain("base1-4"); // fuzzy still finds it
-	const exact = queryCorpus(
-		index,
-		{ query: "charizrd", relevance: true, exact: true },
-		setsById,
-	);
-	expect(exact).toEqual([]); // exact rejects the typo
+	expect(r.map((c) => c.id)).toContain("base1-4");
 });
 
-test("exact mode keeps exact and prefix matches", () => {
+test("exact mode drops the typo (fuzzy) match and substring", () => {
 	const r = queryCorpus(
 		index,
-		{ query: "charizard", relevance: true, exact: true },
+		{ query: "charizrd", relevance: true, mode: "exact" },
 		setsById,
 	);
-	expect(r.map((c) => c.id)).toEqual(["base1-4", "swsh1-25"]); // exact + prefix survive
+	expect(r).toEqual([]); // typo rejected by exact mode
+});
+
+test("exact mode: whole-name query matches, prefix does not", () => {
+	const r = queryCorpus(
+		index,
+		{ query: "charizard", relevance: true, mode: "exact" },
+		setsById,
+	);
+	// "Charizard" = tier 0 (whole-name match); "Charizard V" is NOT matched (exact mode rejects prefix)
+	expect(r.map((c) => c.id)).toEqual(["base1-4"]);
+});
+
+test("contains mode: prefix + substring match, typo rejected", () => {
+	const r = queryCorpus(
+		index,
+		{ query: "charizard", relevance: true, mode: "contains" },
+		setsById,
+	);
+	// "charizard" matches "Charizard" (tier 0) and "Charizard V" (tier 1 prefix)
+	expect(r.map((c) => c.id)).toEqual(["base1-4", "swsh1-25"]);
+});
+
+test("contains mode: typo rejected", () => {
+	const r = queryCorpus(
+		index,
+		{ query: "charizrd", relevance: true, mode: "contains" },
+		setsById,
+	);
+	expect(r).toEqual([]);
 });

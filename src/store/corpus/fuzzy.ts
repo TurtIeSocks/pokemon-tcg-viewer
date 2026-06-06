@@ -41,26 +41,35 @@ export interface NameMatch {
 }
 
 /**
+ * Three-level search mode controlling which tiers are considered:
+ * - "exact"    → tier 0 only (normalized whole-name equality)
+ * - "contains" → tiers 0–2 (prefix + substring; no typo tolerance)
+ * - "fuzzy"    → tiers 0–3 (contains + edit-distance near-misses); default
+ */
+export type SearchMode = "exact" | "contains" | "fuzzy";
+
+/**
  * Tiered name match. `q` and `name` must already be normalized; `tokens` are
  * the normalized per-word tokens of the name (for fuzzy on one word of a
  * multi-word name). Returns null when nothing matches within budget.
  *
- * When `exact` is true, the tier-3 edit-distance pass is skipped: only exact,
- * prefix, and substring matches (tiers 0–2) are returned. This drops typo
- * tolerance — e.g. "Brock's Rhydon" no longer matches "Brock's Rhyhorn" — while
- * still letting a partial name (a substring) find the card.
+ * The `mode` parameter controls which tiers are considered:
+ * - "exact"    → tier 0 only; rejects prefix/substring/fuzzy
+ * - "contains" → tiers 0–2; rejects fuzzy edit-distance (former `exact:true` behavior)
+ * - "fuzzy"    → tiers 0–3; full typo-tolerant search (default)
  */
 export function matchName(
 	q: string,
 	name: string,
 	tokens: string[],
-	exact = false,
+	mode: SearchMode = "fuzzy",
 ): NameMatch | null {
 	if (!q) return { tier: 2, distance: 0 }; // empty query matches all (substring)
 	if (name === q) return { tier: 0, distance: 0 };
+	if (mode === "exact") return null; // exact: whole-name match only
 	if (name.startsWith(q)) return { tier: 1, distance: 0 };
 	if (name.includes(q)) return { tier: 2, distance: 0 };
-	if (exact) return null; // exact mode: no edit-distance fuzzy beyond substring
+	if (mode === "contains") return null; // contains: no edit-distance fuzzy
 	const maxDist = q.length <= 4 ? 1 : 2;
 	let best = Number.POSITIVE_INFINITY;
 	// Length-prune before the O(mn) distance: |len diff| can't exceed maxDist.

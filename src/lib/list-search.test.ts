@@ -64,22 +64,33 @@ test("yearMin/yearMax: rejects non-finite values (Infinity, overflow)", () => {
 	expect(validateListSearch({ yearMin: "1e999" }).yearMin).toBeNull();
 });
 
-test("exact: defaults to false", () => {
-	expect(validateListSearch({}).exact).toBe(false);
+test("mode: defaults to 'fuzzy'", () => {
+	expect(validateListSearch({}).mode).toBe("fuzzy");
 });
 
-test("exact: validates from URL string and boolean", () => {
-	expect(validateListSearch({ exact: "true" }).exact).toBe(true);
-	expect(validateListSearch({ exact: true }).exact).toBe(true);
-	expect(validateListSearch({ exact: "false" }).exact).toBe(false);
-	expect(validateListSearch({ exact: "junk" }).exact).toBe(false);
+test("mode: validates the three valid values from URL string", () => {
+	expect(validateListSearch({ mode: "exact" }).mode).toBe("exact");
+	expect(validateListSearch({ mode: "contains" }).mode).toBe("contains");
+	expect(validateListSearch({ mode: "fuzzy" }).mode).toBe("fuzzy");
 });
 
-test("exact: true → 'true' in URL, false → omitted (stays default-stripped)", () => {
-	expect(listSearchToUrl({ exact: true }).exact).toBe("true");
-	expect(listSearchToUrl({ exact: false }).exact).toBeUndefined();
+test("mode: unknown value falls back to 'fuzzy'", () => {
+	expect(validateListSearch({ mode: "true" }).mode).toBe("fuzzy");
+	expect(validateListSearch({ mode: "junk" }).mode).toBe("fuzzy");
+	expect(validateListSearch({ mode: true }).mode).toBe("fuzzy");
 });
 
-test("exact: full round-trip serialize → parse", () => {
-	expect(validateListSearch(listSearchToUrl({ exact: true })).exact).toBe(true);
+test("mode: 'fuzzy' → omitted from URL (default-stripped); others → serialized", () => {
+	expect(listSearchToUrl({ mode: "fuzzy" }).mode).toBeUndefined();
+	expect(listSearchToUrl({ mode: "exact" }).mode).toBe("exact");
+	expect(listSearchToUrl({ mode: "contains" }).mode).toBe("contains");
+});
+
+test("mode: full round-trip serialize → parse", () => {
+	expect(validateListSearch(listSearchToUrl({ mode: "exact" })).mode).toBe(
+		"exact",
+	);
+	expect(validateListSearch(listSearchToUrl({ mode: "contains" })).mode).toBe(
+		"contains",
+	);
 });

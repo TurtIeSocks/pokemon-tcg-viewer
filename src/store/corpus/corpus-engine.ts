@@ -2,7 +2,7 @@ import type { HoloCardData } from "../../components/holo-card";
 import type { PokemonSet } from "../../server/card-mappers";
 import type { FilterClauses } from "../../utils/build-filter-clauses";
 import type { CorpusCard } from "./corpus-types";
-import { matchName, type NameMatch, normalize } from "./fuzzy";
+import { matchName, type NameMatch, normalize, type SearchMode } from "./fuzzy";
 import { compareCardNumber } from "./natural-compare";
 
 export interface CorpusQuery {
@@ -15,8 +15,8 @@ export interface CorpusQuery {
 	yearMin?: number | null;
 	/** Inclusive upper bound on release year (YYYY). Null/undefined → no upper bound. */
 	yearMax?: number | null;
-	/** When true, drop typo-tolerant fuzzy matching — only exact/prefix/substring name hits. */
-	exact?: boolean;
+	/** Search mode: "exact" (whole name only), "contains" (prefix+substring), or "fuzzy" (default, adds typo tolerance). */
+	mode?: SearchMode;
 	/** True for global name search (relevance order); false for set/dex (natural order). */
 	relevance: boolean;
 }
@@ -140,7 +140,7 @@ export function queryCorpus(
 				queryNorm,
 				index.nameNorm[i],
 				index.nameTokens[i],
-				q.exact ?? false,
+				q.mode ?? "fuzzy",
 			);
 			if (!match) continue;
 		}

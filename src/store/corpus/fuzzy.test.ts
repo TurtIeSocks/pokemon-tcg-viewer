@@ -19,6 +19,15 @@ function match(q: string, name: string) {
 	return matchName(normalize(q), n, n.length ? [n] : []);
 }
 
+function matchMode(
+	q: string,
+	name: string,
+	mode: Parameters<typeof matchName>[3],
+) {
+	const n = normalize(name);
+	return matchName(normalize(q), n, n.length ? [n] : [], mode);
+}
+
 test("tiers: exact < prefix < substring < fuzzy", () => {
 	expect(match("charizard", "Charizard")?.tier).toBe(0);
 	expect(match("char", "Charizard")?.tier).toBe(1);
@@ -35,19 +44,52 @@ test("short queries get a tighter fuzzy budget", () => {
 	expect(match("xyzw", "Pika")).toBeNull(); // distance > 1
 });
 
-function matchExact(q: string, name: string) {
-	const n = normalize(name);
-	return matchName(normalize(q), n, n.length ? [n] : [], true);
-}
+// --- Exact mode ---
 
-test("exact mode keeps exact/prefix/substring but drops fuzzy (tier 3)", () => {
-	expect(matchExact("charizard", "Charizard")?.tier).toBe(0); // exact
-	expect(matchExact("char", "Charizard")?.tier).toBe(1); // prefix
-	expect(matchExact("izard", "Charizard")?.tier).toBe(2); // substring
-	expect(matchExact("charizrd", "Charizard")).toBeNull(); // typo: was tier 3, now rejected
+test("exact mode: whole-name query matches (tier 0)", () => {
+	expect(matchMode("charizard", "Charizard", "exact")?.tier).toBe(0);
 });
 
-test("exact mode rejects the Brock's Rhydon → Rhyhorn near-miss", () => {
-	expect(matchExact("brocksrhydon", "Brock's Rhyhorn")).toBeNull();
-	expect(matchExact("brocksrhydon", "Brock's Rhydon")?.tier).toBe(0); // real card survives
+test("exact mode: substring query rejects (no prefix/substring/fuzzy)", () => {
+	expect(matchMode("char", "Charizard", "exact")).toBeNull();
+	expect(matchMode("izard", "Charizard", "exact")).toBeNull();
+});
+
+test("exact mode: 1-edit typo rejects", () => {
+	expect(matchMode("charizrd", "Charizard", "exact")).toBeNull();
+});
+
+test("exact mode: normalized-exact — 'mr. mime' matches 'Mr Mime'", () => {
+	// normalize("mr. mime") = "mrmime", normalize("Mr Mime") = "mrmime"
+	expect(matchMode("mr. mime", "Mr Mime", "exact")?.tier).toBe(0);
+});
+
+test("exact mode: rejects the Brock's Rhydon → Rhyhorn near-miss", () => {
+	expect(matchMode("brocksrhydon", "Brock's Rhyhorn", "exact")).toBeNull();
+	expect(matchMode("brocksrhydon", "Brock's Rhydon", "exact")?.tier).toBe(0);
+});
+
+// --- Contains mode ---
+
+test("contains mode: exact + prefix + substring all match", () => {
+	expect(matchMode("charizard", "Charizard", "contains")?.tier).toBe(0);
+	expect(matchMode("char", "Charizard", "contains")?.tier).toBe(1);
+	expect(matchMode("izard", "Charizard", "contains")?.tier).toBe(2);
+});
+
+test("contains mode: typo rejects (no edit-distance pass)", () => {
+	expect(matchMode("charizrd", "Charizard", "contains")).toBeNull();
+});
+
+// --- Fuzzy mode (default) ---
+
+test("fuzzy mode: accepts a 1-edit typo (tier 3)", () => {
+	expect(matchMode("charizrd", "Charizard", "fuzzy")?.tier).toBe(3);
+});
+
+test("contains mode keeps exact/prefix/substring but drops fuzzy (tier 3) — old 'exact=true' behavior", () => {
+	expect(matchMode("charizard", "Charizard", "contains")?.tier).toBe(0); // exact
+	expect(matchMode("char", "Charizard", "contains")?.tier).toBe(1); // prefix
+	expect(matchMode("izard", "Charizard", "contains")?.tier).toBe(2); // substring
+	expect(matchMode("charizrd", "Charizard", "contains")).toBeNull(); // typo rejected
 });
