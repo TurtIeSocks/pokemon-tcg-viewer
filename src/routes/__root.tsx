@@ -42,9 +42,10 @@ export const Route = createRootRoute({
 					"Browse the Pokémon TCG catalog with interactive holographic card effects.",
 			},
 			{ property: "og:type", content: "website" },
-			// og:url omitted: prod domain isn't committed (self-hosted; nginx
-			// server_name is a placeholder) and OG requires an absolute URL. The old
-			// GitHub Pages URL is dead. Add the canonical absolute URL here once known.
+			// Site-level OG url (homepage). Per-page routes can override in their own
+			// head(); intentionally NOT a site-wide rel=canonical (a static one would
+			// point every set/card page at the homepage and de-index them).
+			{ property: "og:url", content: "https://ptcg.turtlesocks.dev" },
 			{ name: "twitter:card", content: "summary_large_image" },
 		],
 		links: [
