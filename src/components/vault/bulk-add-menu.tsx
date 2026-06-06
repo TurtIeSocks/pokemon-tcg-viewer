@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { isRuleCapturable } from "../../lib/serialized-query";
 import { useOwnedCardIdSet } from "../../store/userland/selectors";
@@ -11,6 +12,7 @@ import {
 	useUserland,
 } from "../../store/userland/userland-store";
 import { BinderFormDialog } from "../binders/binder-form-dialog";
+import { Button } from "../ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -37,8 +39,13 @@ interface BulkAddMenuProps {
 	ruleQuery?: SerializedQuery | null;
 	/** When non-empty, actions target this selection instead of all cardIds. */
 	selectedCardIds?: string[];
-	/** Trigger button label; defaults to "Add all". */
+	/** Trigger button label; defaults to "Add all". In `chevron` mode it becomes the icon button's accessible name. */
 	label?: string;
+	/**
+	 * Trigger appearance. `pill` (default) is the standalone "Add all" text button.
+	 * `chevron` is an icon-only outline button for composing inside a `<ButtonGroup>` split button.
+	 */
+	triggerVariant?: "pill" | "chevron";
 }
 
 /** Pending action to run after a new binder is created. */
@@ -52,6 +59,7 @@ export function BulkAddMenu({
 	ruleQuery,
 	selectedCardIds,
 	label,
+	triggerVariant = "pill",
 }: BulkAddMenuProps) {
 	const ownedSet = useOwnedCardIdSet();
 	const binders = useUserland((s) => s.binders);
@@ -162,14 +170,32 @@ export function BulkAddMenu({
 		<>
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
-					<button
-						type="button"
-						className="rounded-[var(--r-pill)] border border-[var(--border)] bg-[var(--glass)] px-3 py-1.5 text-sm text-[var(--ink)] hover:bg-white/[0.09] transition-colors"
-					>
-						{label ?? "Add all"}
-					</button>
+					{triggerVariant === "chevron" ? (
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							aria-label={
+								inSelectMode
+									? `Add ${selectedCardIds?.length ?? 0} selected`
+									: (label ?? "Add all")
+							}
+						>
+							{inSelectMode ? (selectedCardIds?.length ?? 0) : "All"}
+							<ChevronDown />
+						</Button>
+					) : (
+						<button
+							type="button"
+							className="rounded-[var(--r-pill)] border border-[var(--border)] bg-[var(--glass)] px-3 py-1.5 text-sm text-[var(--ink)] hover:bg-white/[0.09] transition-colors"
+						>
+							{label ?? "Add all"}
+						</button>
+					)}
 				</DropdownMenuTrigger>
-				<DropdownMenuContent>
+				<DropdownMenuContent
+					align={triggerVariant === "chevron" ? "end" : undefined}
+				>
 					{/* Item 1: Add to collection */}
 					<DropdownMenuItem
 						disabled={toAdd.length === 0}

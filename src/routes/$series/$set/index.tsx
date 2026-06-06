@@ -10,6 +10,7 @@ import {
 import { Package } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import type { HoloCardData } from "../../../components/holo-card";
 import { CardGridIsland } from "../../../components/islands/card-grid-island";
 import {
@@ -126,28 +127,33 @@ function SetPageInner({
 			<div className="mb-3 flex items-center gap-3">
 				<div className="flex flex-col gap-0.5">
 					<Eyebrow>Card Set</Eyebrow>
-					<h1 className="text-xl font-[var(--font-display)] font-bold leading-tight">
-						{set.name}
-					</h1>
 				</div>
-				<span className="text-sm text-[var(--ink-muted)]">
+				<span className="text-sm text-(--ink-muted)">
 					{cards.length} cards
 				</span>
 				<ClientOnly fallback={null}>
 					<div className="ml-auto flex items-center gap-2">
-						<button
-							type="button"
-							aria-pressed={active}
-							onClick={toggleActive}
-							className="rounded border px-3 py-1.5 text-sm hover:bg-secondary"
-						>
-							{active ? "Done selecting" : "Select cards"}
-						</button>
-						<BulkAddMenu
-							cardIds={cards.map((c: HoloCardData) => c.id)}
-							ruleQuery={toSerializedQuery(search, { setId: set.id })}
-							selectedCardIds={active ? [...selected] : undefined}
-						/>
+						<ButtonGroup>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								aria-pressed={active}
+								onClick={toggleActive}
+							>
+								{!active
+									? "Select cards"
+									: selected.size > 0
+										? "Clear selected"
+										: "Cancel"}
+							</Button>
+							<BulkAddMenu
+								triggerVariant="chevron"
+								cardIds={cards.map((c: HoloCardData) => c.id)}
+								ruleQuery={toSerializedQuery(search, { setId: set.id })}
+								selectedCardIds={active ? [...selected] : undefined}
+							/>
+						</ButtonGroup>
 						<Button
 							variant="outline"
 							size="sm"
