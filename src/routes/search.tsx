@@ -145,12 +145,9 @@ function SearchPageInner({
 			<div className="mb-3 flex items-center gap-3">
 				<div className="flex flex-col gap-0.5">
 					{q && <Eyebrow>Search results</Eyebrow>}
-					<h1 className="text-xl font-[var(--font-display)] font-bold leading-tight">
-						{q ? `"${q}"` : "Search"}
-					</h1>
 				</div>
 				{q ? (
-					<span className="text-sm text-[var(--ink-muted)]">{total} cards</span>
+					<span className="text-sm text-(--ink-muted)">{total} cards</span>
 				) : null}
 				<div className="ml-auto flex items-center gap-2">
 					{q ? (
