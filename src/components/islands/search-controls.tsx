@@ -1,3 +1,5 @@
+import { Search } from "lucide-react";
+import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -8,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import type { SetFacets } from "@/server/set-facets";
 import type { ListSearch, OwnedMode } from "../../lib/card-query";
-import { MatchModeToggle } from "./match-mode-toggle";
+import { SearchModeMenu } from "./search-mode-menu";
 
 // Computed once at module load (client island) — avoids a `new Date()` on every
 // render (impure under React Compiler) and a server/client hydration mismatch.
@@ -111,21 +113,26 @@ export function SearchControls({
 }: SearchControlsProps) {
 	return (
 		<div className="rounded-[var(--r-panel)] border border-[var(--border)] bg-[var(--glass)] backdrop-blur-xl p-3 space-y-3">
-			<div className="flex flex-wrap items-center gap-2">
+			<ButtonGroup className="w-full">
 				<Input
 					type="search"
 					defaultValue={value.q}
 					placeholder={`${placeholder}...`}
 					aria-label={placeholder}
 					onChange={(e) => onChange({ q: e.target.value })}
-					className="min-w-0 flex-1"
+					className="min-w-0 bg-[var(--glass)] border-[var(--border)]"
 				/>
-				{/* TODO(task2): replace with SearchModeMenu */}
-				<MatchModeToggle
-					value={value.mode !== "fuzzy"}
-					onChange={(on) => onChange({ mode: on ? "contains" : "fuzzy" })}
+				<SearchModeMenu
+					value={value.mode}
+					onChange={(mode) => onChange({ mode })}
 				/>
-			</div>
+				<ButtonGroupText
+					aria-hidden="true"
+					className="bg-[var(--glass)] border-[var(--border)] text-[var(--ink-muted)]"
+				>
+					<Search className="size-4" />
+				</ButtonGroupText>
+			</ButtonGroup>
 			<div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
 				<FilterSelect
 					label="Card Type"

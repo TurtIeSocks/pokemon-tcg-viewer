@@ -162,10 +162,9 @@ test("existing controls (q input + filter selects + owned) still render", () => 
 	expect(screen.getByRole("searchbox")).toBeDefined();
 });
 
-// ─── Match-mode toggle (bridge: mode !== "fuzzy" = on) ────────────────────────
-// TODO(task2): update these tests when SearchModeMenu replaces MatchModeToggle
+// ─── Search-mode menu (ButtonGroup-fused 3-mode picker) ───────────────────────
 
-test("match-mode toggle renders, reflecting mode=fuzzy as Exact pill off", () => {
+test("search-mode trigger renders, reflecting the active mode (fuzzy)", () => {
 	render(
 		<SearchControls
 			value={defaultValue}
@@ -173,12 +172,24 @@ test("match-mode toggle renders, reflecting mode=fuzzy as Exact pill off", () =>
 			onChange={() => {}}
 		/>,
 	);
-	expect(
-		screen.getByRole("button", { name: "Exact" }).getAttribute("aria-pressed"),
-	).toBe("false");
+	const trigger = screen.getByRole("button", { name: "Search mode" });
+	expect(trigger.textContent).toContain("Fuzzy");
 });
 
-test("clicking Exact fires onChange with mode:'contains' (bridge maps on→contains)", () => {
+test("search-mode trigger reflects a non-default mode (contains)", () => {
+	render(
+		<SearchControls
+			value={{ ...defaultValue, mode: "contains" }}
+			options={options}
+			onChange={() => {}}
+		/>,
+	);
+	expect(
+		screen.getByRole("button", { name: "Search mode" }).textContent,
+	).toContain("Contains");
+});
+
+test("selecting a mode in the menu fires onChange({ mode })", async () => {
 	const onChange = mock(() => {});
 	render(
 		<SearchControls
@@ -187,21 +198,23 @@ test("clicking Exact fires onChange with mode:'contains' (bridge maps on→conta
 			onChange={onChange}
 		/>,
 	);
-	fireEvent.click(screen.getByRole("button", { name: "Exact" }));
-	expect(onChange).toHaveBeenCalledWith({ mode: "contains" });
+	fireEvent.pointerDown(screen.getByRole("button", { name: "Search mode" }), {
+		button: 0,
+		ctrlKey: false,
+	});
+	fireEvent.click(await screen.findByRole("menuitemradio", { name: /exact/i }));
+	expect(onChange).toHaveBeenCalledWith({ mode: "exact" });
 });
 
-test("clicking the Exact pill when on fires onChange with mode:'fuzzy' (bridge maps off→fuzzy)", () => {
-	const onChange = mock(() => {});
-	render(
+test("the decorative search magnifier is present and aria-hidden", () => {
+	const { container } = render(
 		<SearchControls
-			value={{ ...defaultValue, mode: "contains" }}
+			value={defaultValue}
 			options={options}
-			onChange={onChange}
+			onChange={() => {}}
 		/>,
 	);
-	fireEvent.click(screen.getByRole("button", { name: "Exact" }));
-	expect(onChange).toHaveBeenCalledWith({ mode: "fuzzy" });
+	expect(container.querySelector('[aria-hidden="true"]')).not.toBeNull();
 });
 
 test("yearMin value reflects prop", () => {
