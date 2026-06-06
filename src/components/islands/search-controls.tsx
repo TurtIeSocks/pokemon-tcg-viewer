@@ -14,6 +14,16 @@ import { MatchModeToggle } from "./match-mode-toggle";
 // render (impure under React Compiler) and a server/client hydration mismatch.
 const CURRENT_YEAR = new Date().getFullYear();
 
+// Earliest release year in the corpus (matches the old number-input `min`).
+const FIRST_YEAR = 1996;
+
+// Selectable release years, newest first. ~30 discrete values → a bounded Select
+// beats free-typed number inputs (no typos, no out-of-range, mobile-friendly).
+const YEARS = Array.from(
+	{ length: CURRENT_YEAR - FIRST_YEAR + 1 },
+	(_, i) => CURRENT_YEAR - i,
+);
+
 interface SearchControlsProps {
 	value: ListSearch;
 	options: SetFacets;
@@ -51,6 +61,40 @@ function FilterSelect({
 				{options.map((o) => (
 					<SelectItem key={o} value={o}>
 						{o}
+					</SelectItem>
+				))}
+			</SelectContent>
+		</Select>
+	);
+}
+
+// One end of the release-year range. `null` = open-ended (the sentinel option).
+function YearSelect({
+	label,
+	value,
+	years,
+	onChange,
+}: {
+	label: string;
+	value: number | null;
+	years: number[];
+	onChange: (v: number | null) => void;
+}) {
+	// Radix Select forbids an empty-string item value, so use a sentinel for "any".
+	const ANY = "__any__";
+	return (
+		<Select
+			value={value != null ? String(value) : ANY}
+			onValueChange={(v) => onChange(v === ANY ? null : Number(v))}
+		>
+			<SelectTrigger className="text-sm w-full" aria-label={label}>
+				<SelectValue placeholder={label} />
+			</SelectTrigger>
+			<SelectContent>
+				<SelectItem value={ANY}>{label}</SelectItem>
+				{years.map((y) => (
+					<SelectItem key={y} value={String(y)}>
+						{y}
 					</SelectItem>
 				))}
 			</SelectContent>
@@ -125,38 +169,29 @@ export function SearchControls({
 					<legend className="text-sm text-muted-foreground shrink-0">
 						Release year
 					</legend>
-					<Input
-						type="number"
-						aria-label="Release year from"
-						placeholder="From"
-						min={1996}
-						max={CURRENT_YEAR}
-						className="text-sm w-24"
-						value={value.yearMin ?? ""}
-						onChange={(e) => {
-							const n = Number(e.target.value);
-							onChange({
-								yearMin: e.target.value === "" || Number.isNaN(n) ? null : n,
-							});
-						}}
+					{/*
+					 * Cross-field constraint: each end only offers years that keep the
+					 * range valid — From ≤ the chosen To, To ≥ the chosen From — so an
+					 * inverted From > To range can't be built in the UI.
+					 */}
+					<YearSelect
+						label="From"
+						value={value.yearMin}
+						years={YEARS.filter(
+							(y) => value.yearMax == null || y <= value.yearMax,
+						)}
+						onChange={(yearMin) => onChange({ yearMin })}
 					/>
 					<span className="text-sm text-muted-foreground" aria-hidden="true">
 						–
 					</span>
-					<Input
-						type="number"
-						aria-label="Release year to"
-						placeholder="To"
-						min={1996}
-						max={CURRENT_YEAR}
-						className="text-sm w-24"
-						value={value.yearMax ?? ""}
-						onChange={(e) => {
-							const n = Number(e.target.value);
-							onChange({
-								yearMax: e.target.value === "" || Number.isNaN(n) ? null : n,
-							});
-						}}
+					<YearSelect
+						label="To"
+						value={value.yearMax}
+						years={YEARS.filter(
+							(y) => value.yearMin == null || y >= value.yearMin,
+						)}
+						onChange={(yearMax) => onChange({ yearMax })}
 					/>
 				</fieldset>
 			)}

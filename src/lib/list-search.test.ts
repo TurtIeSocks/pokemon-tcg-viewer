@@ -28,6 +28,21 @@ test("yearMin/yearMax: validate round-trips number", () => {
 	});
 });
 
+test("yearMin/yearMax: accepts the numeric form TanStack's parser produces", () => {
+	// `?yearMin=2020` is JSON-parsed to the *number* 2020 on a cold load — the
+	// validator must accept that, not only the string form an in-page merge sends.
+	expect(validateListSearch({ yearMin: 2020, yearMax: 2024 })).toMatchObject({
+		yearMin: 2020,
+		yearMax: 2024,
+	});
+});
+
+test("yearMin/yearMax: rejects non-string/number shapes", () => {
+	expect(validateListSearch({ yearMin: null }).yearMin).toBeNull();
+	expect(validateListSearch({ yearMin: true }).yearMin).toBeNull();
+	expect(validateListSearch({ yearMax: ["2020"] }).yearMax).toBeNull();
+});
+
 test("yearMin/yearMax: validate treats empty/NaN as null", () => {
 	expect(validateListSearch({}).yearMin).toBeNull();
 	expect(validateListSearch({}).yearMax).toBeNull();

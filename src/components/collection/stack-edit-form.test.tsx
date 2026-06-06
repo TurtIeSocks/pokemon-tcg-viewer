@@ -89,8 +89,11 @@ test("edit: invalid price shows error text (not [object Object]) and has role=al
 	expect(useUserland.getState().items[item.id].pricePaid).toBeNull();
 });
 
-test("edit: invalid date shows error on blur with role=alert", async () => {
-	const item = await addStack("c");
+test("edit: acquired-date field renders as a picker showing the stack's day", async () => {
+	// Fixed local day → deterministic label (the form mapping is local-time).
+	const item = await addStack("c", {
+		acquiredAt: new Date(2024, 2, 15).getTime(),
+	});
 	render(
 		<StackEditForm
 			mode="edit"
@@ -100,13 +103,39 @@ test("edit: invalid date shows error on blur with role=alert", async () => {
 			onCancel={() => {}}
 		/>,
 	);
-	const dateInput = screen.getByLabelText(/acquired date/i);
-	fireEvent.focus(dateInput);
-	fireEvent.change(dateInput, { target: { value: "9999-99-99" } });
-	fireEvent.blur(dateInput);
+	const trigger = screen.getByLabelText(/acquired date/i);
+	expect(trigger.tagName).toBe("BUTTON");
+	expect(trigger.textContent).toContain("Mar 15, 2024");
+});
+
+test("edit: picking a day in the calendar persists acquiredAt on Save", async () => {
+	const item = await addStack("c", {
+		acquiredAt: new Date(2024, 2, 15).getTime(),
+	});
+	render(
+		<StackEditForm
+			mode="edit"
+			item={useUserland.getState().items[item.id]}
+			cardId="c"
+			onSaved={() => {}}
+			onCancel={() => {}}
+		/>,
+	);
+	// Open the calendar (centred on the stack's month) and pick March 20.
+	fireEvent.click(screen.getByLabelText(/acquired date/i));
+	const day20 = await waitFor(() => {
+		const btn = [...document.querySelectorAll("button[data-day]")].find(
+			(b) => b.textContent?.trim() === "20",
+		);
+		if (!btn) throw new Error("day 20 not rendered");
+		return btn as HTMLButtonElement;
+	});
+	fireEvent.click(day20);
+	fireEvent.click(screen.getByRole("button", { name: /save/i }));
 	await waitFor(() => {
-		const alertEl = screen.queryByRole("alert");
-		expect(alertEl).not.toBeNull();
+		expect(useUserland.getState().items[item.id].acquiredAt).toBe(
+			new Date(2024, 2, 20).getTime(),
+		);
 	});
 });
 

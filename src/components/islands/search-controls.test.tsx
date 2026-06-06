@@ -25,7 +25,7 @@ const options = {
 
 // ─── Year filter visibility ───────────────────────────────────────────────────
 
-test("year inputs NOT rendered by default (showYearFilter omitted)", () => {
+test("year selects NOT rendered by default (showYearFilter omitted)", () => {
 	render(
 		<SearchControls
 			value={defaultValue}
@@ -33,15 +33,11 @@ test("year inputs NOT rendered by default (showYearFilter omitted)", () => {
 			onChange={() => {}}
 		/>,
 	);
-	expect(
-		screen.queryByRole("spinbutton", { name: /release year from/i }),
-	).toBeNull();
-	expect(
-		screen.queryByRole("spinbutton", { name: /release year to/i }),
-	).toBeNull();
+	expect(screen.queryByRole("combobox", { name: "From" })).toBeNull();
+	expect(screen.queryByRole("combobox", { name: "To" })).toBeNull();
 });
 
-test("year inputs NOT rendered when showYearFilter={false}", () => {
+test("year selects NOT rendered when showYearFilter={false}", () => {
 	render(
 		<SearchControls
 			value={defaultValue}
@@ -50,15 +46,11 @@ test("year inputs NOT rendered when showYearFilter={false}", () => {
 			showYearFilter={false}
 		/>,
 	);
-	expect(
-		screen.queryByRole("spinbutton", { name: /release year from/i }),
-	).toBeNull();
-	expect(
-		screen.queryByRole("spinbutton", { name: /release year to/i }),
-	).toBeNull();
+	expect(screen.queryByRole("combobox", { name: "From" })).toBeNull();
+	expect(screen.queryByRole("combobox", { name: "To" })).toBeNull();
 });
 
-test("renders From and To year inputs when showYearFilter={true}", () => {
+test("renders From and To year selects when showYearFilter={true}", () => {
 	render(
 		<SearchControls
 			value={defaultValue}
@@ -67,15 +59,11 @@ test("renders From and To year inputs when showYearFilter={true}", () => {
 			showYearFilter
 		/>,
 	);
-	expect(
-		screen.getByRole("spinbutton", { name: /release year from/i }),
-	).toBeDefined();
-	expect(
-		screen.getByRole("spinbutton", { name: /release year to/i }),
-	).toBeDefined();
+	expect(screen.getByRole("combobox", { name: "From" })).toBeDefined();
+	expect(screen.getByRole("combobox", { name: "To" })).toBeDefined();
 });
 
-test("From year input has correct placeholder", () => {
+test("From select shows its label when no year is selected", () => {
 	render(
 		<SearchControls
 			value={defaultValue}
@@ -84,13 +72,12 @@ test("From year input has correct placeholder", () => {
 			showYearFilter
 		/>,
 	);
-	const from = screen.getByRole("spinbutton", {
-		name: /release year from/i,
-	}) as HTMLInputElement;
-	expect(from.placeholder).toBe("From");
+	expect(screen.getByRole("combobox", { name: "From" }).textContent).toContain(
+		"From",
+	);
 });
 
-test("To year input has correct placeholder", () => {
+test("To select shows its label when no year is selected", () => {
 	render(
 		<SearchControls
 			value={defaultValue}
@@ -99,13 +86,12 @@ test("To year input has correct placeholder", () => {
 			showYearFilter
 		/>,
 	);
-	const to = screen.getByRole("spinbutton", {
-		name: /release year to/i,
-	}) as HTMLInputElement;
-	expect(to.placeholder).toBe("To");
+	expect(screen.getByRole("combobox", { name: "To" }).textContent).toContain(
+		"To",
+	);
 });
 
-test("typing a year into From fires onChange with yearMin", () => {
+test("selecting a year in From fires onChange with yearMin", async () => {
 	const onChange = mock(() => {});
 	render(
 		<SearchControls
@@ -115,12 +101,12 @@ test("typing a year into From fires onChange with yearMin", () => {
 			showYearFilter
 		/>,
 	);
-	const from = screen.getByRole("spinbutton", { name: /release year from/i });
-	fireEvent.change(from, { target: { value: "2020" } });
+	fireEvent.click(screen.getByRole("combobox", { name: "From" }));
+	fireEvent.click(await screen.findByRole("option", { name: "2020" }));
 	expect(onChange).toHaveBeenCalledWith({ yearMin: 2020 });
 });
 
-test("typing a year into To fires onChange with yearMax", () => {
+test("selecting a year in To fires onChange with yearMax", async () => {
 	const onChange = mock(() => {});
 	render(
 		<SearchControls
@@ -130,12 +116,12 @@ test("typing a year into To fires onChange with yearMax", () => {
 			showYearFilter
 		/>,
 	);
-	const to = screen.getByRole("spinbutton", { name: /release year to/i });
-	fireEvent.change(to, { target: { value: "2023" } });
+	fireEvent.click(screen.getByRole("combobox", { name: "To" }));
+	fireEvent.click(await screen.findByRole("option", { name: "2023" }));
 	expect(onChange).toHaveBeenCalledWith({ yearMax: 2023 });
 });
 
-test("clearing From fires onChange with yearMin null", () => {
+test("clearing From (the sentinel option) fires onChange with yearMin null", async () => {
 	const onChange = mock(() => {});
 	render(
 		<SearchControls
@@ -145,12 +131,12 @@ test("clearing From fires onChange with yearMin null", () => {
 			showYearFilter
 		/>,
 	);
-	const from = screen.getByRole("spinbutton", { name: /release year from/i });
-	fireEvent.change(from, { target: { value: "" } });
+	fireEvent.click(screen.getByRole("combobox", { name: "From" }));
+	fireEvent.click(await screen.findByRole("option", { name: "From" }));
 	expect(onChange).toHaveBeenCalledWith({ yearMin: null });
 });
 
-test("clearing To fires onChange with yearMax null", () => {
+test("clearing To (the sentinel option) fires onChange with yearMax null", async () => {
 	const onChange = mock(() => {});
 	render(
 		<SearchControls
@@ -160,8 +146,8 @@ test("clearing To fires onChange with yearMax null", () => {
 			showYearFilter
 		/>,
 	);
-	const to = screen.getByRole("spinbutton", { name: /release year to/i });
-	fireEvent.change(to, { target: { value: "" } });
+	fireEvent.click(screen.getByRole("combobox", { name: "To" }));
+	fireEvent.click(await screen.findByRole("option", { name: "To" }));
 	expect(onChange).toHaveBeenCalledWith({ yearMax: null });
 });
 
@@ -226,10 +212,9 @@ test("yearMin value reflects prop", () => {
 			showYearFilter
 		/>,
 	);
-	const from = screen.getByRole("spinbutton", {
-		name: /release year from/i,
-	}) as HTMLInputElement;
-	expect(from.value).toBe("1999");
+	expect(screen.getByRole("combobox", { name: "From" }).textContent).toContain(
+		"1999",
+	);
 });
 
 test("yearMax value reflects prop", () => {
@@ -241,8 +226,7 @@ test("yearMax value reflects prop", () => {
 			showYearFilter
 		/>,
 	);
-	const to = screen.getByRole("spinbutton", {
-		name: /release year to/i,
-	}) as HTMLInputElement;
-	expect(to.value).toBe("2006");
+	expect(screen.getByRole("combobox", { name: "To" }).textContent).toContain(
+		"2006",
+	);
 });

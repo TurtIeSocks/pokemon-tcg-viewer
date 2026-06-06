@@ -1,4 +1,5 @@
 import { useForm } from "@tanstack/react-form";
+import { DatePicker } from "@/components/islands/date-picker";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -109,6 +110,36 @@ function TextField({
 					className={mono ? "font-mono tabular-nums" : undefined}
 				/>
 			)}
+			{invalid && (
+				<FieldError errors={toFieldErrors(field.state.meta.errors)} />
+			)}
+		</Field>
+	);
+}
+
+interface DateFieldProps {
+	field: FormFieldApi<string>;
+	label: string;
+}
+
+/**
+ * Labeled day picker bound to a `yyyy-MM-dd` string field. Replaces the old
+ * free-text `<input type="date">`: the calendar can only emit a valid day, so
+ * the "invalid date" path is unreachable through the UI. Popover-close runs the
+ * field's blur validator, matching the other fields' touch-then-validate flow.
+ */
+function DateField({ field, label }: DateFieldProps) {
+	const invalid = fieldIsInvalid(field);
+	return (
+		<Field data-invalid={invalid || undefined}>
+			<FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+			<DatePicker
+				id={field.name}
+				value={field.state.value}
+				onChange={field.handleChange}
+				onClose={field.handleBlur}
+				aria-invalid={invalid}
+			/>
 			{invalid && (
 				<FieldError errors={toFieldErrors(field.state.meta.errors)} />
 			)}
@@ -438,7 +469,7 @@ export function StackEditForm({
 					validators={{ onBlur: stackFormSchema.shape.acquiredAt }}
 					// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 					children={(field) => (
-						<TextField field={field} label="Acquired date" type="date" />
+						<DateField field={field} label="Acquired date" />
 					)}
 				/>
 

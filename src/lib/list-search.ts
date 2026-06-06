@@ -44,9 +44,13 @@ export function validateListSearch(
 			: "all";
 
 	const toYear = (v: unknown): number | null => {
+		// TanStack's search parser JSON-parses `yearMin=2020` into a number, but an
+		// in-page navigate()/listSearchToUrl merge can also hand us the string form.
+		// Accept both; reject everything else (null/bool/object → unknown year).
+		if (typeof v !== "string" && typeof v !== "number") return null;
 		const n = Number(v);
 		// Number.isFinite (not !isNaN) so "Infinity"/"-Infinity" are rejected too.
-		return typeof v === "string" && v !== "" && Number.isFinite(n) ? n : null;
+		return v !== "" && Number.isFinite(n) ? n : null;
 	};
 
 	return {
