@@ -1,5 +1,7 @@
 import { ClientOnly, createFileRoute, notFound } from "@tanstack/react-router";
 import { useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import {
 	CardSelectionProvider,
 	useCardSelection,
@@ -43,21 +45,27 @@ function SeriesBulkMenu({ setIds }: { setIds: string[] }) {
 	);
 	if (!index) return null;
 	return (
-		<>
-			<button
+		<ButtonGroup>
+			<Button
 				type="button"
+				variant="outline"
+				size="sm"
 				aria-pressed={active}
 				onClick={toggleActive}
-				className="rounded border px-3 py-1.5 text-sm hover:bg-secondary"
 			>
-				{active ? "Done selecting" : "Select cards"}
-			</button>
+				{!active
+					? "Select cards"
+					: selected.size > 0
+						? "Clear selected"
+						: "Cancel"}
+			</Button>
 			<BulkAddMenu
+				triggerVariant="chevron"
 				cardIds={cardIds}
 				ruleQuery={null}
 				selectedCardIds={active ? [...selected] : undefined}
 			/>
-		</>
+		</ButtonGroup>
 	);
 }
 

@@ -6,6 +6,8 @@ import {
 	useNavigate,
 } from "@tanstack/react-router";
 import { useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import type { HoloCardData } from "../../components/holo-card";
 import { CardGridIsland } from "../../components/islands/card-grid-island";
 import {
@@ -141,19 +143,27 @@ function PokemonPageInner({
 					</span>
 				</h1>
 				<div className="ml-auto flex items-center gap-2">
-					<button
-						type="button"
-						aria-pressed={active}
-						onClick={toggleActive}
-						className="rounded border px-3 py-1.5 text-sm hover:bg-secondary"
-					>
-						{active ? "Done selecting" : "Select cards"}
-					</button>
-					<BulkAddMenu
-						cardIds={cards.map((c) => c.id)}
-						ruleQuery={toSerializedQuery(search, { dexNumber: dex })}
-						selectedCardIds={active ? [...selected] : undefined}
-					/>
+					<ButtonGroup>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							aria-pressed={active}
+							onClick={toggleActive}
+						>
+							{!active
+								? "Select cards"
+								: selected.size > 0
+									? "Clear selected"
+									: "Cancel"}
+						</Button>
+						<BulkAddMenu
+							triggerVariant="chevron"
+							cardIds={cards.map((c) => c.id)}
+							ruleQuery={toSerializedQuery(search, { dexNumber: dex })}
+							selectedCardIds={active ? [...selected] : undefined}
+						/>
+					</ButtonGroup>
 					<ViewModeToggle
 						value={search.view}
 						disabled={false}

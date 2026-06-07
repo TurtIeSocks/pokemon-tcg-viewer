@@ -5,6 +5,8 @@ import {
 	useNavigate,
 } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import type { HoloCardData } from "../components/holo-card";
 import { CardGridIsland } from "../components/islands/card-grid-island";
 import {
@@ -151,21 +153,27 @@ function SearchPageInner({
 				) : null}
 				<div className="ml-auto flex items-center gap-2">
 					{q ? (
-						<>
-							<button
+						<ButtonGroup>
+							<Button
 								type="button"
+								variant="outline"
+								size="sm"
 								aria-pressed={active}
 								onClick={toggleActive}
-								className="rounded border px-3 py-1.5 text-sm hover:bg-secondary"
 							>
-								{active ? "Done selecting" : "Select cards"}
-							</button>
+								{!active
+									? "Select cards"
+									: selected.size > 0
+										? "Clear selected"
+										: "Cancel"}
+							</Button>
 							<BulkAddMenu
+								triggerVariant="chevron"
 								cardIds={bulkCardIds}
 								ruleQuery={toSerializedQuery(search, {})}
 								selectedCardIds={active ? [...selected] : undefined}
 							/>
-						</>
+						</ButtonGroup>
 					) : null}
 					<ViewModeToggle
 						value={search.view}
