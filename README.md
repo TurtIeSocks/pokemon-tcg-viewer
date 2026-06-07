@@ -1,8 +1,16 @@
-# pokemon-tcg-viewer
+# Cardstack
 
-A server-rendered viewer for the Pokémon Trading Card Game catalog, with
-interactive holographic card rendering. Browse by series and set, search the
-full catalog, and view any card on its own shareable, crawlable page.
+> Working product name; the repository is still `pokemon-tcg-viewer`.
+
+A **local-first, open-source collection tracker for the Pokémon Trading Card
+Game** — built on a fast, server-rendered catalog with interactive holographic
+card rendering. Browse by series and set, search ~20k cards instantly, view any
+card on its own shareable/crawlable page, track what you own per **stack** (with
+provenance), organize into **Binders**, and import/export your collection as CSV
+or JSON. Your data lives in your browser (IndexedDB) and is always exportable.
+
+**Our deal:** the app, your data, and the self-hosted path are open source and
+always will be — see [LICENSING.md](LICENSING.md).
 
 ## Features
 
@@ -14,10 +22,17 @@ full catalog, and view any card on its own shareable, crawlable page.
 * Holographic card effect that reacts to pointer movement
 * Virtualized grid for smooth scrolling through large sets
 * Instant client-side search once the in-memory card corpus loads
-* **Your Vault** — a local-first (IndexedDB) collection hub: track owned cards
-  per physical copy (price paid, date acquired, condition/grade, notes), a set
-  grid with completion overlays, a sortable card grid, collection goals with
-  live progress, bulk "add all", owned/not-owned filters, and JSON import/export
+* **Your Vault** — a local-first (IndexedDB) collection hub:
+  * Track owned cards as **Stacks** — a quantity of identical copies, each with
+    price paid (per unit), date acquired, condition **or** grade, source, storage
+    location, and notes; split a stack apart or merge duplicates
+  * **Binders** — hybrid smart-rule + manual membership, with live completion
+  * A set grid with completion overlays, a sortable owned-card grid, bulk
+    "add all", and owned/not-owned filters
+  * **Import / export** — JSON backup/restore **and** CSV (per-stack or per-card).
+    Import *any* CSV (Pokellector, spreadsheets, …): columns are auto-detected
+    (and remappable), rows are matched against the catalog, and a review queue
+    lets you search-pick a card for anything ambiguous
 
 ## Stack
 
@@ -63,7 +78,7 @@ and cards are server-rendered on demand and cached at the edge (see Deployment).
 | `/{series}/{set}/{card}`    | SSR + SWR + OG      | Card detail; dialog over the grid on client nav |
 | `/search?q=`                | SSR → corpus island | API first paint, instant once corpus loads      |
 | `/pokemon/{name}`           | SSR + OG            | Every card of a Pokémon, across all sets        |
-| `/vault/{cards,sets,goals}` | Client islands      | The Vault hub — local IndexedDB collection, grids, goals |
+| `/vault/{cards,sets,binders}` | Client islands    | The Vault hub — local IndexedDB collection, grids, Binders |
 
 ## Project layout
 
@@ -90,7 +105,7 @@ src/
     card/           # Static card detail / metadata (SSR)
     ui/             # Radix-based primitives
   store/            # Zustand caches (sets, recents)
-    userland/       #   the Vault: per-copy collection + goals behind a repository
+    userland/       #   the Vault: per-stack collection + Binders behind a repository
                     #   port (IndexedDB adapter now; swappable for a hosted DB later)
     corpus/         # In-memory ~20k-card search index (loaded client-side)
 deploy/             # nginx, systemd, and the deploy runbook (see below)
@@ -169,4 +184,5 @@ dead.
 
 ## License
 
-See [LICENSE](LICENSE).
+Currently [MIT](LICENSE); an **AGPL-3.0** relicense of the core is planned. The
+licensing model and the "our deal" promise are in [LICENSING.md](LICENSING.md).
