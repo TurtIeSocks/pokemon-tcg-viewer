@@ -39,3 +39,4 @@ src/routeTree.gen.ts
 
 # Claude scheduled-task lock (local runtime junk)
 .claude/scheduled_tasks.lock
+docs/reports
