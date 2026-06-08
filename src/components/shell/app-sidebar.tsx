@@ -60,11 +60,11 @@ const VAULT_CHILDREN: VaultChild[] = [
 ];
 
 /**
- * Shared ~22px leading slot for nav rows — the one child that survives the
- * collapse-to-icon clip. `icon` mode renders a lucide glyph (Vault rows); `mono`
- * mode renders a 2-char series monogram on a calm glass chip. Active → violet,
- * matching the rest of the nav. The lucide glyph is nested inside a span so the
- * menu-button's `[&>svg]:size-4` rule (direct-child only) doesn't shrink it.
+ * Shared 24px (`size-6`) leading slot for nav rows — the one child that survives
+ * the collapse-to-icon clip. `icon` mode renders a lucide glyph (Vault rows);
+ * `mono` mode renders a 2-char series monogram on a calm glass chip. Active →
+ * violet, matching the rest of the nav. The lucide glyph is nested inside a span
+ * so the menu-button's `[&>svg]:size-4` rule (direct-child only) doesn't shrink it.
  */
 function NavGlyph({
 	active,
@@ -77,11 +77,11 @@ function NavGlyph({
 }) {
 	if (Icon) {
 		return (
-			<span className="grid size-[22px] shrink-0 place-items-center">
+			<span className="grid size-6 shrink-0 place-items-center">
 				<Icon
 					className={cn(
 						"size-[18px] transition-colors",
-						active ? "text-[var(--primary)]" : "text-[var(--ink-muted)]",
+						active ? "text-(--primary)" : "text-(--ink-muted)",
 					)}
 				/>
 			</span>
@@ -90,10 +90,10 @@ function NavGlyph({
 	return (
 		<span
 			className={cn(
-				"grid size-[22px] shrink-0 place-items-center rounded-[7px] border font-mono text-[11px] font-semibold leading-none tabular-nums transition-colors",
+				"grid size-6 shrink-0 place-items-center rounded-[7px] border font-mono text-[11px] font-semibold leading-none tabular-nums transition-colors",
 				active
-					? "border-transparent bg-[var(--primary)] text-white shadow-[0_4px_12px_-6px_var(--primary)]"
-					: "border-white/10 bg-white/[0.05] text-[var(--ink-muted)] shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]",
+					? "border-transparent bg-(--primary) text-white shadow-[0_4px_12px_-6px_var(--primary)]"
+					: "border-white/10 bg-white/5 text-(--ink-muted) shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]",
 			)}
 		>
 			{mono}
@@ -112,7 +112,10 @@ function VaultGroup() {
 			{VAULT_CHILDREN.map(({ label, to, icon }) => {
 				const isActive = pathname === to;
 				return (
-					<SidebarMenuItem key={to}>
+					<SidebarMenuItem
+						key={to}
+						className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center"
+					>
 						<SidebarMenuButton
 							asChild
 							isActive={isActive}
@@ -154,7 +157,7 @@ function SeriesItem({
 	// the series overview page instead of toggling a hidden sub-menu.
 	if (state === "collapsed") {
 		return (
-			<SidebarMenuItem>
+			<SidebarMenuItem className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
 				<SidebarMenuButton
 					asChild
 					isActive={isActiveSeries}
@@ -182,15 +185,15 @@ function SeriesItem({
 					<SidebarMenuButton isActive={isActiveSeries} tooltip={series.name}>
 						<NavGlyph active={isActiveSeries} mono={mono} />
 						<span className="flex-1 truncate">{series.name}</span>
-						<span className="font-mono text-[var(--faint)] text-xs tabular-nums">
+						<span className="font-mono text-(--faint) text-xs tabular-nums">
 							{series.year}
 						</span>
-						<span className="font-mono text-[var(--faint)] text-xs tabular-nums">
+						<span className="font-mono text-(--faint) text-xs tabular-nums">
 							{series.sets.length}
 						</span>
 						<ChevronRight
 							className={cn(
-								"size-4 shrink-0 text-[var(--faint)] transition-transform",
+								"size-4 shrink-0 text-(--faint) transition-transform",
 								open && "rotate-90",
 							)}
 						/>
@@ -219,7 +222,7 @@ function SeriesItem({
 												className="max-h-4 max-w-4 object-contain"
 											/>
 											<span className="flex-1 truncate">{set.name}</span>
-											<span className="font-mono text-[var(--faint)] text-xs tabular-nums opacity-70">
+											<span className="font-mono text-(--faint) text-xs tabular-nums opacity-70">
 												{set.total}
 											</span>
 										</Link>
@@ -244,10 +247,10 @@ function FooterIdentity() {
 		<Link
 			to="/profile"
 			onClick={() => setOpenMobile(false)}
-			className="flex min-w-0 flex-1 items-center gap-2 rounded-md py-0.5 transition-colors hover:text-[var(--ink)]"
+			className="flex min-w-0 flex-1 items-center gap-2 rounded-md py-0.5 transition-colors hover:text-(--ink) group-data-[collapsible=icon]:justify-center"
 		>
 			<CollectorAvatar displayName={displayName} preset={preset} size={28} />
-			<span className="flex-1 truncate text-xs text-[var(--ink-muted)] group-data-[collapsible=icon]:hidden">
+			<span className="flex-1 truncate text-xs text-(--ink-muted) group-data-[collapsible=icon]:hidden">
 				{displayName}
 			</span>
 		</Link>
@@ -260,14 +263,19 @@ export function AppSidebar({
 	activeSetSlug,
 }: AppSidebarProps) {
 	return (
-		<Sidebar variant="inset" collapsible="icon">
-			<SidebarHeader>
+		// `floating` variant: the sidebar is its own symmetric card, so collapsed
+		// glyphs centre cleanly against it. The icon-mode overrides below are the
+		// whole centering story: `px-0` on the header/groups + `justify-center` on
+		// the menu items centre the menu button within the card, and `p-1` on the
+		// nav buttons fits the 24px glyph (which then fills + centres in its button).
+		<Sidebar variant="floating" collapsible="icon">
+			<SidebarHeader className="group-data-[collapsible=icon]:px-0!">
 				<SidebarMenu>
-					<SidebarMenuItem>
+					<SidebarMenuItem className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
 						<SidebarMenuButton size="lg" asChild tooltip="CardStack — home">
 							<Link to="/">
 								<div
-									className="grid size-9 shrink-0 place-items-center rounded-[11px] shadow-[0_6px_18px_-6px_var(--primary)]"
+									className="grid size-9 shrink-0 place-items-center rounded-[11px] shadow-[0_6px_18px_-6px_var(--primary)] group-data-[collapsible=icon]:size-8"
 									style={{
 										background:
 											"linear-gradient(135deg, var(--primary), oklch(0.6 0.18 320))",
@@ -283,7 +291,7 @@ export function AppSidebar({
 									<span className="truncate font-display text-sm font-semibold">
 										Cardstack
 									</span>
-									<span className="font-mono text-[10px] text-[var(--faint)]">
+									<span className="font-mono text-[10px] text-(--faint)">
 										Home
 									</span>
 								</div>
@@ -295,7 +303,7 @@ export function AppSidebar({
 
 			<SidebarContent>
 				{/* Vault group */}
-				<SidebarGroup>
+				<SidebarGroup className="group-data-[collapsible=icon]:px-0!">
 					<SidebarGroupLabel>Vault</SidebarGroupLabel>
 					<SidebarMenu>
 						<VaultGroup />
@@ -303,7 +311,7 @@ export function AppSidebar({
 				</SidebarGroup>
 
 				{/* Series & sets */}
-				<SidebarGroup>
+				<SidebarGroup className="group-data-[collapsible=icon]:px-0!">
 					<SidebarGroupLabel>Series &amp; Sets</SidebarGroupLabel>
 					<SidebarMenu>
 						{tree.map((series) => (
