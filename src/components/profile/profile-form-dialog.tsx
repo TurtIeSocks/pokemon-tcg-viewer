@@ -90,8 +90,17 @@ export function ProfileFormDialog({
 		},
 	});
 
+	// Key on the open-session, NOT profile.id: the singleton profile transitions
+	// null -> {id:"me"} on first save, and keying on its id would remount the
+	// dialog mid-submit (dropping onOpenChange(false), so it never closes).
+	// Keying on `open` remounts on each open — re-seeding defaultValues from the
+	// current profile — while staying stable through a save.
 	return (
-		<Dialog key={profile?.id ?? "new"} open={open} onOpenChange={onOpenChange}>
+		<Dialog
+			key={open ? "open" : "closed"}
+			open={open}
+			onOpenChange={onOpenChange}
+		>
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle className="font-display">Edit profile</DialogTitle>
