@@ -1,5 +1,12 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ChevronRight } from "lucide-react";
+import {
+	BookOpen,
+	Boxes,
+	ChevronRight,
+	Layers,
+	LayoutDashboard,
+	type LucideIcon,
+} from "lucide-react";
 import { useState } from "react";
 import { CollectorAvatar } from "@/components/profile/collector-avatar";
 import {
@@ -24,7 +31,11 @@ import {
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
-import type { NavSeries, NavTree } from "../../lib/nav-tree";
+import {
+	type NavSeries,
+	type NavTree,
+	seriesMonogram,
+} from "../../lib/nav-tree";
 import { useUserland } from "../../store/userland/userland-store";
 import { AboutDialog } from "./about-dialog";
 import { RepoLink } from "./repo-link";
@@ -38,24 +49,55 @@ interface AppSidebarProps {
 interface VaultChild {
 	label: string;
 	to: string;
+	icon: LucideIcon;
 }
 
 const VAULT_CHILDREN: VaultChild[] = [
-	{ label: "Overview", to: "/vault" },
-	{ label: "All cards", to: "/vault/cards" },
-	{ label: "Sets", to: "/vault/sets" },
-	{ label: "Binders", to: "/vault/binders" },
+	{ label: "Overview", to: "/vault", icon: LayoutDashboard },
+	{ label: "All cards", to: "/vault/cards", icon: Layers },
+	{ label: "Sets", to: "/vault/sets", icon: Boxes },
+	{ label: "Binders", to: "/vault/binders", icon: BookOpen },
 ];
 
-/** Small square dot — inactive = white/20, active = primary */
-function NavDot({ active }: { active: boolean }) {
+/**
+ * Shared ~22px leading slot for nav rows — the one child that survives the
+ * collapse-to-icon clip. `icon` mode renders a lucide glyph (Vault rows); `mono`
+ * mode renders a 2-char series monogram on a calm glass chip. Active → violet,
+ * matching the rest of the nav. The lucide glyph is nested inside a span so the
+ * menu-button's `[&>svg]:size-4` rule (direct-child only) doesn't shrink it.
+ */
+function NavGlyph({
+	active,
+	icon: Icon,
+	mono,
+}: {
+	active: boolean;
+	icon?: LucideIcon;
+	mono?: string;
+}) {
+	if (Icon) {
+		return (
+			<span className="grid size-[22px] shrink-0 place-items-center">
+				<Icon
+					className={cn(
+						"size-[18px] transition-colors",
+						active ? "text-[var(--primary)]" : "text-[var(--ink-muted)]",
+					)}
+				/>
+			</span>
+		);
+	}
 	return (
 		<span
 			className={cn(
-				"size-1.5 shrink-0 rounded-[2px] transition-colors",
-				active ? "bg-[var(--primary)]" : "bg-white/20",
+				"grid size-[22px] shrink-0 place-items-center rounded-[7px] border font-mono text-[11px] font-semibold leading-none tabular-nums transition-colors",
+				active
+					? "border-transparent bg-[var(--primary)] text-white shadow-[0_4px_12px_-6px_var(--primary)]"
+					: "border-white/10 bg-white/[0.05] text-[var(--ink-muted)] shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]",
 			)}
-		/>
+		>
+			{mono}
+		</span>
 	);
 }
 
@@ -67,18 +109,23 @@ function VaultGroup() {
 
 	return (
 		<>
-			{VAULT_CHILDREN.map(({ label, to }) => {
+			{VAULT_CHILDREN.map(({ label, to, icon }) => {
 				const isActive = pathname === to;
 				return (
 					<SidebarMenuItem key={to}>
-						<SidebarMenuButton asChild isActive={isActive} tooltip={label}>
+						<SidebarMenuButton
+							asChild
+							isActive={isActive}
+							tooltip={label}
+							className="group-data-[collapsible=icon]:p-1!"
+						>
 							<Link
 								to={to}
 								activeOptions={{ exact: true }}
 								onClick={() => setOpenMobile(false)}
 								aria-current={isActive ? "page" : undefined}
 							>
-								<NavDot active={isActive} />
+								<NavGlyph active={isActive} icon={icon} />
 								<span>{label}</span>
 							</Link>
 						</SidebarMenuButton>
@@ -98,22 +145,42 @@ function SeriesItem({
 	activeSeriesSlug: string | null;
 	activeSetSlug: string | null;
 }) {
-	const { setOpenMobile } = useSidebar();
+	const { state, setOpenMobile } = useSidebar();
 	const [open, setOpen] = useState(series.slug === activeSeriesSlug);
 	const isActiveSeries = series.slug === activeSeriesSlug;
+	const mono = seriesMonogram(series.name);
+
+	// Collapsed icon rail: sub-sets can't render, so the badge links straight to
+	// the series overview page instead of toggling a hidden sub-menu.
+	if (state === "collapsed") {
+		return (
+			<SidebarMenuItem>
+				<SidebarMenuButton
+					asChild
+					isActive={isActiveSeries}
+					tooltip={series.name}
+					className="group-data-[collapsible=icon]:p-1!"
+				>
+					<Link
+						to="/$series"
+						params={{ series: series.slug }}
+						onClick={() => setOpenMobile(false)}
+						aria-current={isActiveSeries ? "page" : undefined}
+					>
+						<NavGlyph active={isActiveSeries} mono={mono} />
+						<span className="flex-1 truncate">{series.name}</span>
+					</Link>
+				</SidebarMenuButton>
+			</SidebarMenuItem>
+		);
+	}
 
 	return (
 		<Collapsible open={open} onOpenChange={setOpen}>
 			<SidebarMenuItem>
 				<CollapsibleTrigger asChild>
 					<SidebarMenuButton isActive={isActiveSeries} tooltip={series.name}>
-						<NavDot active={isActiveSeries} />
-						<ChevronRight
-							className={cn(
-								"size-4 shrink-0 transition-transform",
-								open && "rotate-90",
-							)}
-						/>
+						<NavGlyph active={isActiveSeries} mono={mono} />
 						<span className="flex-1 truncate">{series.name}</span>
 						<span className="font-mono text-[var(--faint)] text-xs tabular-nums">
 							{series.year}
@@ -121,6 +188,12 @@ function SeriesItem({
 						<span className="font-mono text-[var(--faint)] text-xs tabular-nums">
 							{series.sets.length}
 						</span>
+						<ChevronRight
+							className={cn(
+								"size-4 shrink-0 text-[var(--faint)] transition-transform",
+								open && "rotate-90",
+							)}
+						/>
 					</SidebarMenuButton>
 				</CollapsibleTrigger>
 				<CollapsibleContent>

@@ -45,10 +45,15 @@ const tree: NavTree = [
 
 async function renderInRouter(
 	ui: React.ReactNode,
-	{ initialPath = "/" }: { initialPath?: string } = {},
+	{
+		initialPath = "/",
+		defaultOpen = true,
+	}: { initialPath?: string; defaultOpen?: boolean } = {},
 ) {
 	const rootRoute = createRootRoute({
-		component: () => <SidebarProvider>{ui}</SidebarProvider>,
+		component: () => (
+			<SidebarProvider defaultOpen={defaultOpen}>{ui}</SidebarProvider>
+		),
 	});
 	const history = createMemoryHistory({ initialEntries: [initialPath] });
 	const router = createRouter({ routeTree: rootRoute, history });
@@ -60,7 +65,9 @@ async function renderInRouter(
  * Render `<AppSidebar>` with the shared `tree` and no active series/set — the
  * default arrangement for most tests. Pass `initialPath` to drive Vault routing.
  */
-function renderSidebar(opts: { initialPath?: string } = {}) {
+function renderSidebar(
+	opts: { initialPath?: string; defaultOpen?: boolean } = {},
+) {
 	return renderInRouter(
 		<AppSidebar tree={tree} activeSeriesSlug={null} activeSetSlug={null} />,
 		opts,
@@ -170,4 +177,22 @@ test("footer links to the profile page", async () => {
 	expect((profileLink as HTMLAnchorElement).getAttribute("href")).toBe(
 		"/profile",
 	);
+});
+
+test("series rows show a 2-char monogram badge", async () => {
+	await renderSidebar();
+	expect(screen.getByText("SS")).toBeDefined(); // Sword & Shield
+	expect(screen.getByText("BA")).toBeDefined(); // Base
+});
+
+test("Vault links render a leading icon", async () => {
+	await renderSidebar({ initialPath: "/vault" });
+	const overview = screen.getByRole("link", { name: "Overview" });
+	expect(overview.querySelector("svg")).not.toBeNull();
+});
+
+test("collapsed series row is a link to its series page", async () => {
+	await renderSidebar({ initialPath: "/", defaultOpen: false });
+	const link = screen.getByRole("link", { name: /Sword & Shield/ });
+	expect(link.getAttribute("href")).toBe("/sword-shield");
 });

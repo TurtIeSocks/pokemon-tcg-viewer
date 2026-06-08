@@ -80,3 +80,21 @@ export function findSet(
 ): NavSet | undefined {
 	return findSeries(tree, seriesSlug)?.sets.find((s) => s.slug === setSlug);
 }
+
+/**
+ * A short, uniform-width monogram for a series, for the collapsed sidebar badge.
+ * Two-or-more-word names take the first letter of the first two significant words
+ * ("Scarlet & Violet" → "SV"); single-word names take the first two letters
+ * ("Platinum" → "PL"). Always uppercased, always ≤2 chars. Stop-words (and/of/the)
+ * and punctuation (&, -) are dropped so "Call of Legends" → "CL", "e-Card" → "EC".
+ */
+export function seriesMonogram(name: string): string {
+	const words = name
+		.split(/[^A-Za-z0-9]+/)
+		.filter((w) => w && !/^(and|of|the)$/i.test(w));
+	return (
+		words.length >= 2
+			? words[0][0] + words[1][0]
+			: (words[0] ?? name).slice(0, 2)
+	).toUpperCase();
+}
