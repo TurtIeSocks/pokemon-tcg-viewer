@@ -12,6 +12,7 @@ const baseSearch = (): ListSearch => ({
 	owned: "all",
 	yearMin: null,
 	yearMax: null,
+	pokemon: null,
 	mode: "fuzzy",
 });
 

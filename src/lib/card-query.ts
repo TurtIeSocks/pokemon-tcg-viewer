@@ -18,6 +18,8 @@ export interface ListSearch {
 	yearMin: number | null;
 	/** Inclusive upper bound on release year (YYYY). Null → no upper bound. */
 	yearMax: number | null;
+	/** National Pokédex number of the selected species. Null → no species filter. */
+	pokemon: number | null;
 	/** Search mode: "exact" (whole name), "contains" (prefix+substring), or "fuzzy" (default). */
 	mode: SearchMode;
 }

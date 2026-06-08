@@ -13,6 +13,7 @@ const defaultValue: ListSearch = {
 	owned: "all",
 	yearMin: null,
 	yearMax: null,
+	pokemon: null,
 	mode: "fuzzy" as const,
 };
 
