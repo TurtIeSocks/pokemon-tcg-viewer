@@ -163,3 +163,11 @@ test("About and RepoLink are present in sidebar footer", async () => {
 	expect(screen.getByRole("button", { name: /about/i })).toBeDefined();
 	expect(screen.getByRole("link", { name: /github/i })).toBeDefined();
 });
+
+test("footer links to the profile page", async () => {
+	await renderSidebar();
+	const profileLink = screen.getByRole("link", { name: /collector/i });
+	expect((profileLink as HTMLAnchorElement).getAttribute("href")).toBe(
+		"/profile",
+	);
+});

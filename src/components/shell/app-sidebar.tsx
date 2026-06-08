@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import { useState } from "react";
+import { CollectorAvatar } from "@/components/profile/collector-avatar";
 import {
 	Collapsible,
 	CollapsibleContent,
@@ -24,6 +25,7 @@ import {
 import { cn } from "@/lib/utils";
 import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import type { NavSeries, NavTree } from "../../lib/nav-tree";
+import { useUserland } from "../../store/userland/userland-store";
 import { AboutDialog } from "./about-dialog";
 import { RepoLink } from "./repo-link";
 
@@ -159,6 +161,26 @@ function SeriesItem({
 	);
 }
 
+/** Sidebar footer identity: avatar + name, linking to the profile page. */
+function FooterIdentity() {
+	const profile = useUserland((s) => s.profile);
+	const { setOpenMobile } = useSidebar();
+	const displayName = profile?.displayName || "Collector";
+	const preset = profile?.avatarPreset ?? "dusk";
+	return (
+		<Link
+			to="/profile"
+			onClick={() => setOpenMobile(false)}
+			className="flex min-w-0 flex-1 items-center gap-2 rounded-md py-0.5 transition-colors hover:text-[var(--ink)]"
+		>
+			<CollectorAvatar displayName={displayName} preset={preset} size={28} />
+			<span className="flex-1 truncate text-xs text-[var(--ink-muted)] group-data-[collapsible=icon]:hidden">
+				{displayName}
+			</span>
+		</Link>
+	);
+}
+
 export function AppSidebar({
 	tree,
 	activeSeriesSlug,
@@ -225,18 +247,7 @@ export function AppSidebar({
 
 			<SidebarFooter>
 				<div className="flex items-center gap-2 px-1 py-0.5">
-					{/* Avatar */}
-					<div
-						className="size-7 shrink-0 rounded-full"
-						style={{
-							background:
-								"linear-gradient(135deg, oklch(0.5 0.12 290), oklch(0.4 0.1 320))",
-						}}
-					/>
-					{/* Label — hidden in icon-collapsed state */}
-					<span className="flex-1 truncate text-xs text-[var(--ink-muted)] group-data-[collapsible=icon]:hidden">
-						Collector
-					</span>
+					<FooterIdentity />
 					{/* Icon buttons */}
 					<div className="flex items-center gap-0.5 group-data-[collapsible=icon]:hidden">
 						<AboutDialog />
