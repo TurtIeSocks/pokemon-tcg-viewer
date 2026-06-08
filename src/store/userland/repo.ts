@@ -4,6 +4,8 @@ import type {
 	BinderPatch,
 	NewBinder,
 	NewStack,
+	Profile,
+	ProfilePatch,
 	Stack,
 	StackPatch,
 	UserDataSnapshot,
@@ -55,9 +57,20 @@ export interface BackupRepo {
 	): Promise<void>;
 }
 
+/** Persistence contract for the single local user profile. */
+export interface ProfileRepo {
+	/** Returns the stored profile, or null if never saved. */
+	get(): Promise<Profile | null>;
+	/** Upsert: first save fills id + createdAt; later saves merge the patch and bump updatedAt. */
+	save(patch: ProfilePatch): Promise<Profile>;
+	/** Delete the stored profile (used by backup replace + tests). */
+	clear(): Promise<void>;
+}
+
 /** Aggregates all per-domain repos for the userland data layer. */
 export interface UserlandRepos {
 	collection: CollectionRepo;
 	binders: BindersRepo;
 	backup: BackupRepo;
+	profile: ProfileRepo;
 }

@@ -10,16 +10,22 @@ import {
 	setMany,
 	type UseStore,
 } from "idb-keyval";
+import { DEFAULT_AVATAR_PRESET_ID } from "../../components/profile/avatar-presets";
 import type {
 	BackupRepo,
 	BindersRepo,
 	CollectionRepo,
+	ProfileRepo,
 	UserlandRepos,
 } from "./repo";
-import type { Binder, NewBinder, NewStack, Stack } from "./types";
+import type { Binder, NewBinder, NewStack, Profile, Stack } from "./types";
 
 const collectionStore = createStore("ptcg-collection", "items");
 const bindersStore = createStore("ptcg-binders", "binders");
+const profileStore = createStore("ptcg-profile", "profile");
+
+/** Fixed key for the single local profile; maps to the auth uid under a DB adapter. */
+export const LOCAL_PROFILE_ID = "me";
 
 /** Assign id, createdAt, and acquiredAt defaults; null-fill optional fields. */
 function fillStack(input: NewStack): Stack {
@@ -131,12 +137,44 @@ function createIdbBackupRepo(
 	};
 }
 
-/** Wire all three IDB-backed repos into a UserlandRepos bundle. */
+/** Create an IndexedDB-backed ProfileRepo; uses the default profile store unless overridden (tests). */
+export function createIdbProfileRepo(
+	store: UseStore = profileStore,
+): ProfileRepo {
+	return {
+		async get() {
+			return (await get<Profile>(LOCAL_PROFILE_ID, store)) ?? null;
+		},
+		async save(patch) {
+			const now = Date.now();
+			const existing = await get<Profile>(LOCAL_PROFILE_ID, store);
+			const next: Profile = existing
+				? { ...existing, ...patch, updatedAt: now }
+				: {
+						id: LOCAL_PROFILE_ID,
+						displayName: patch.displayName ?? "Collector",
+						bio: patch.bio ?? null,
+						avatarPreset: patch.avatarPreset ?? DEFAULT_AVATAR_PRESET_ID,
+						favoriteSetId: patch.favoriteSetId ?? null,
+						createdAt: now,
+						updatedAt: now,
+					};
+			await set(LOCAL_PROFILE_ID, next, store);
+			return next;
+		},
+		async clear() {
+			await clear(store);
+		},
+	};
+}
+
+/** Wire all four IDB-backed repos into a UserlandRepos bundle. */
 export function createIdbRepos(): UserlandRepos {
 	const collection = createIdbCollectionRepo();
 	const binders = createIdbBindersRepo();
+	const profile = createIdbProfileRepo();
 	const backup = createIdbBackupRepo(collection, binders);
-	return { collection, binders, backup };
+	return { collection, binders, backup, profile };
 }
 
 // The ONE swap point. Today: IDB. Later: choose by auth/config.

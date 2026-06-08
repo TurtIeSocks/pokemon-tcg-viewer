@@ -288,3 +288,44 @@ test("normalizeStack backfills legacy records (missing quantity/source/storageLo
 	expect(n.storageLocation).toBeNull();
 	expect(normalizeStack({ ...legacy, quantity: 5 } as Stack).quantity).toBe(5);
 });
+
+// --- Profile adapter ---
+import { createIdbProfileRepo } from "./idb-repo";
+
+/** A profile repo on a unique store so these tests are fully isolated. */
+function freshProfileRepo() {
+	return createIdbProfileRepo(
+		createStore(`test-profile-${crypto.randomUUID()}`, "profile"),
+	);
+}
+
+test("profile get() returns null when nothing saved", async () => {
+	const repo = freshProfileRepo();
+	expect(await repo.get()).toBeNull();
+});
+
+test("profile save() creates on first call then merges on the next", async () => {
+	const repo = freshProfileRepo();
+	const created = await repo.save({ displayName: "Ash" });
+	expect(created.id).toBe("me");
+	expect(created.displayName).toBe("Ash");
+	expect(created.bio).toBeNull();
+	expect(created.avatarPreset).toBe("dusk");
+	expect(created.favoriteSetId).toBeNull();
+	expect(typeof created.createdAt).toBe("number");
+
+	const updated = await repo.save({ bio: "Gotta catch em all" });
+	expect(updated.displayName).toBe("Ash"); // preserved
+	expect(updated.bio).toBe("Gotta catch em all");
+	expect(updated.createdAt).toBe(created.createdAt); // stable
+	expect(updated.updatedAt).toBeGreaterThanOrEqual(created.updatedAt); // bumped
+
+	expect((await repo.get())?.bio).toBe("Gotta catch em all");
+});
+
+test("profile clear() removes the stored record", async () => {
+	const repo = freshProfileRepo();
+	await repo.save({ displayName: "Misty" });
+	await repo.clear();
+	expect(await repo.get()).toBeNull();
+});
