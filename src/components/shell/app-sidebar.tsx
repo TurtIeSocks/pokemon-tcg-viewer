@@ -169,7 +169,7 @@ export function AppSidebar({
 			<SidebarHeader>
 				<SidebarMenu>
 					<SidebarMenuItem>
-						<SidebarMenuButton size="lg" asChild tooltip="TCG Viewer — home">
+						<SidebarMenuButton size="lg" asChild tooltip="CardStack — home">
 							<Link to="/">
 								<div
 									className="grid size-9 shrink-0 place-items-center rounded-[11px] shadow-[0_6px_18px_-6px_var(--primary)]"
@@ -186,10 +186,10 @@ export function AppSidebar({
 								</div>
 								<div className="grid flex-1 text-left leading-tight">
 									<span className="truncate font-display text-sm font-semibold">
-										TCG Viewer
+										Cardstack
 									</span>
 									<span className="font-mono text-[10px] text-[var(--faint)]">
-										vault
+										Home
 									</span>
 								</div>
 							</Link>
