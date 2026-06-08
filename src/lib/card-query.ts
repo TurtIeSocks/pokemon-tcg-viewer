@@ -55,6 +55,7 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 	if (ctx.setId != null) {
 		return {
 			setId: ctx.setId,
+			dexNumber: s.pokemon ?? undefined,
 			query,
 			filters,
 			yearMin,
@@ -76,6 +77,7 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 	}
 	return {
 		setId: null,
+		dexNumber: s.pokemon ?? undefined,
 		query,
 		filters,
 		yearMin,

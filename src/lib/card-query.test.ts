@@ -80,4 +80,23 @@ describe("buildCorpusQuery", () => {
 			buildCorpusQuery({ ...empty, mode: "exact" }, { dexNumber: 6 }).mode,
 		).toBe("exact");
 	});
+
+	test("pokemon filter sets dexNumber in the global branch", () => {
+		expect(buildCorpusQuery({ ...empty, pokemon: 112 }, {}).dexNumber).toBe(112);
+	});
+	test("pokemon filter sets dexNumber within a set", () => {
+		const q = buildCorpusQuery({ ...empty, pokemon: 25 }, { setId: "swsh9" });
+		expect(q.setId).toBe("swsh9");
+		expect(q.dexNumber).toBe(25);
+	});
+	test("dex context wins over the pokemon filter", () => {
+		const q = buildCorpusQuery({ ...empty, pokemon: 25 }, { dexNumber: 6 });
+		expect(q.dexNumber).toBe(6);
+	});
+	test("no pokemon filter → dexNumber undefined in global + set branches", () => {
+		expect(buildCorpusQuery(empty, {}).dexNumber).toBeUndefined();
+		expect(
+			buildCorpusQuery(empty, { setId: "swsh9" }).dexNumber,
+		).toBeUndefined();
+	});
 });
