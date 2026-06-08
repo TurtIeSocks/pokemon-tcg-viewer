@@ -25,8 +25,10 @@ import {
 	validateListSearch,
 } from "../../../lib/list-search";
 import { toSerializedQuery } from "../../../lib/serialized-query";
+import { getPokemonListFn } from "../../../server/card-data";
 import { getSetCardsFn } from "../../../server/corpus-server";
 import { findSet, getNavTreeFn } from "../../../server/nav-tree";
+import { nameByDex } from "../../../server/pokemon-dex";
 import { deriveFacets } from "../../../server/set-facets";
 
 export const Route = createFileRoute("/$series/$set/")({
@@ -37,13 +39,22 @@ export const Route = createFileRoute("/$series/$set/")({
 		const set = findSet(tree, params.series, params.set);
 		if (!set) throw notFound();
 
-		const all = await getSetCardsFn({ data: set.id });
+		// Species list runs in parallel with the set cards; it labels the Pokémon
+		// filter options (dex number → species name).
+		const [all, list] = await Promise.all([
+			getSetCardsFn({ data: set.id }),
+			getPokemonListFn(),
+		]);
 		const slugs = buildSetCardSlugs(all);
 		const cards = all.map((c) => ({
 			...c,
 			slug: slugs.slugById.get(c.id) ?? c.id,
 		}));
-		return { set, cards, facets: deriveFacets(all) };
+		return {
+			set,
+			cards,
+			facets: deriveFacets(all, (dex) => nameByDex(list, dex)),
+		};
 	},
 	head: ({ loaderData }) => ({
 		meta: [
@@ -147,6 +158,7 @@ function SetPageInner({
 						options={facets}
 						onChange={onChange}
 						placeholder={`Search ${set.name} cards`}
+						showPokemonFilter
 					/>
 				</div>
 			</ClientOnly>

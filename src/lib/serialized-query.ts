@@ -12,7 +12,7 @@ export function toSerializedQuery(
 	return {
 		text: search.q.trim() || null,
 		setId: ctx.setId ?? null,
-		dexNumber: ctx.dexNumber ?? null,
+		dexNumber: ctx.dexNumber ?? search.pokemon ?? null,
 		types: [...search.types],
 		rarities: [...search.rarity],
 		supertypes: [...search.supertype],

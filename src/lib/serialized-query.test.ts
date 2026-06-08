@@ -55,6 +55,18 @@ describe("toSerializedQuery", () => {
 		expect(q.dexNumber).toBeNull();
 	});
 
+	it("captures search.pokemon into dexNumber", () => {
+		const s = baseSearch();
+		s.pokemon = 112;
+		expect(toSerializedQuery(s, {}).dexNumber).toBe(112);
+	});
+
+	it("dex context wins over the pokemon filter", () => {
+		const s = baseSearch();
+		s.pokemon = 112;
+		expect(toSerializedQuery(s, { dexNumber: 6 }).dexNumber).toBe(6);
+	});
+
 	it("clones arrays (mutations to source do not affect result)", () => {
 		const s = baseSearch();
 		s.types = ["Fire"];
