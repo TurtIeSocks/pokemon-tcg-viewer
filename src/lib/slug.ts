@@ -11,6 +11,14 @@ export function slugify(input: string): string {
 		.replace(/^-+|-+$/g, ""); // trim leading/trailing hyphens
 }
 
+/** Title-case a hyphenated slug for display ("mr-mime" → "Mr Mime"). */
+export function titleCaseSlug(slug: string): string {
+	return slug
+		.split("-")
+		.map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+		.join(" ");
+}
+
 /** Minimal set shape needed for slugging (subset of api.ts PokemonSet). */
 export interface SluggableSet {
 	id: string;

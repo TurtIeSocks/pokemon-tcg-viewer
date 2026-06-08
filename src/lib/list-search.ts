@@ -18,6 +18,7 @@ export const LIST_SEARCH_DEFAULTS: ListSearch = {
 	owned: "all",
 	yearMin: null,
 	yearMax: null,
+	pokemon: null,
 	mode: "fuzzy",
 };
 
@@ -54,6 +55,14 @@ export function validateListSearch(
 		return v !== "" && Number.isFinite(n) ? n : null;
 	};
 
+	// National dex number (1..1025, the species-list fetch limit). Accept the
+	// string form too (in-page merge) and reject non-integers / out-of-range.
+	const toDex = (v: unknown): number | null => {
+		if (typeof v !== "string" && typeof v !== "number") return null;
+		const n = Number(v);
+		return v !== "" && Number.isInteger(n) && n >= 1 && n <= 1025 ? n : null;
+	};
+
 	return {
 		q: typeof search.q === "string" ? search.q : "",
 		types: csv(search.types),
@@ -64,6 +73,7 @@ export function validateListSearch(
 		owned,
 		yearMin: toYear(search.yearMin),
 		yearMax: toYear(search.yearMax),
+		pokemon: toDex(search.pokemon),
 		// URL param is "mode"; enum-guard to the three valid values, else "fuzzy".
 		mode: ((): SearchMode => {
 			const m = search.mode;
@@ -90,6 +100,8 @@ export function listSearchToUrl(
 		out.yearMin = s.yearMin != null ? String(s.yearMin) : undefined;
 	if (s.yearMax !== undefined)
 		out.yearMax = s.yearMax != null ? String(s.yearMax) : undefined;
+	if (s.pokemon !== undefined)
+		out.pokemon = s.pokemon != null ? String(s.pokemon) : undefined;
 	// Omit "mode" from URL when it's the default ("fuzzy") to keep URLs clean.
 	if (s.mode !== undefined) out.mode = s.mode !== "fuzzy" ? s.mode : undefined;
 

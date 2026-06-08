@@ -13,6 +13,7 @@ const defaultValue: ListSearch = {
 	owned: "all",
 	yearMin: null,
 	yearMax: null,
+	pokemon: null,
 	mode: "fuzzy" as const,
 };
 
@@ -21,20 +22,27 @@ const options = {
 	subtypes: ["Basic", "Stage 1"],
 	rarities: ["Common", "Rare Holo"],
 	types: ["fire", "water"],
+	pokemon: [
+		{ dex: 6, name: "Charizard" },
+		{ dex: 25, name: "Pikachu" },
+	],
 };
 
 /**
  * Render `<SearchControls>` with the shared `options` and a no-op `onChange`.
- * Override `value`, `onChange`, or `showYearFilter` per test as needed.
+ * Override `value`, `onChange`, `showYearFilter`, or `showPokemonFilter` per
+ * test as needed.
  */
 function renderControls({
 	value = defaultValue,
 	onChange = () => {},
 	showYearFilter = false,
+	showPokemonFilter = false,
 }: {
 	value?: ListSearch;
 	onChange?: (patch: Partial<ListSearch>) => void;
 	showYearFilter?: boolean;
+	showPokemonFilter?: boolean;
 } = {}) {
 	return render(
 		<SearchControls
@@ -42,6 +50,7 @@ function renderControls({
 			options={options}
 			onChange={onChange}
 			showYearFilter={showYearFilter}
+			showPokemonFilter={showPokemonFilter}
 		/>,
 	);
 }
@@ -123,6 +132,55 @@ test("clearing To (the sentinel option) fires onChange with yearMax null", async
 test("existing controls (q input + filter selects + owned) still render", () => {
 	renderControls();
 	expect(screen.getByRole("searchbox")).toBeDefined();
+});
+
+// ─── Pokémon (species) filter ─────────────────────────────────────────────────
+
+test("Pokémon select NOT rendered by default (showPokemonFilter omitted)", () => {
+	renderControls();
+	expect(screen.queryByRole("combobox", { name: "Pokémon" })).toBeNull();
+});
+
+test("renders the Pokémon select when showPokemonFilter={true}", () => {
+	renderControls({ showPokemonFilter: true });
+	expect(screen.getByRole("combobox", { name: "Pokémon" })).toBeDefined();
+});
+
+test("Pokémon select shows its label when no species is selected", () => {
+	renderControls({ showPokemonFilter: true });
+	expect(
+		screen.getByRole("combobox", { name: "Pokémon" }).textContent,
+	).toContain("Pokémon");
+});
+
+test("selecting a species fires onChange with its dex number", async () => {
+	const onChange = mock(() => {});
+	renderControls({ onChange, showPokemonFilter: true });
+	fireEvent.click(screen.getByRole("combobox", { name: "Pokémon" }));
+	fireEvent.click(await screen.findByRole("option", { name: "Charizard" }));
+	expect(onChange).toHaveBeenCalledWith({ pokemon: 6 });
+});
+
+test("clearing the species (All Pokémon sentinel) fires onChange with null", async () => {
+	const onChange = mock(() => {});
+	renderControls({
+		value: { ...defaultValue, pokemon: 6 },
+		onChange,
+		showPokemonFilter: true,
+	});
+	fireEvent.click(screen.getByRole("combobox", { name: "Pokémon" }));
+	fireEvent.click(await screen.findByRole("option", { name: "All Pokémon" }));
+	expect(onChange).toHaveBeenCalledWith({ pokemon: null });
+});
+
+test("selected species label reflects the prop value", () => {
+	renderControls({
+		value: { ...defaultValue, pokemon: 25 },
+		showPokemonFilter: true,
+	});
+	expect(
+		screen.getByRole("combobox", { name: "Pokémon" }).textContent,
+	).toContain("Pikachu");
 });
 
 // ─── Search-mode menu (ButtonGroup-fused 3-mode picker) ───────────────────────

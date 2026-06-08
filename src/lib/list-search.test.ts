@@ -1,5 +1,9 @@
 import { expect, test } from "bun:test";
-import { listSearchToUrl, validateListSearch } from "./list-search";
+import {
+	LIST_SEARCH_DEFAULTS,
+	listSearchToUrl,
+	validateListSearch,
+} from "./list-search";
 
 test("owned validates + serializes", () => {
 	expect(validateListSearch({}).owned).toBe("all");
@@ -62,6 +66,32 @@ test("yearMin/yearMax: rejects non-finite values (Infinity, overflow)", () => {
 	expect(validateListSearch({ yearMax: "-Infinity" }).yearMax).toBeNull();
 	// Number("1e999") overflows to Infinity — must also be rejected.
 	expect(validateListSearch({ yearMin: "1e999" }).yearMin).toBeNull();
+});
+
+test("pokemon: defaults to null", () => {
+	expect(LIST_SEARCH_DEFAULTS.pokemon).toBeNull();
+});
+
+test("pokemon: validates a dex number from number or string", () => {
+	expect(validateListSearch({ pokemon: 112 }).pokemon).toBe(112);
+	expect(validateListSearch({ pokemon: "112" }).pokemon).toBe(112);
+});
+
+test("pokemon: rejects out-of-range / junk → null", () => {
+	expect(validateListSearch({ pokemon: 0 }).pokemon).toBeNull();
+	expect(validateListSearch({ pokemon: 9999 }).pokemon).toBeNull();
+	expect(validateListSearch({ pokemon: "abc" }).pokemon).toBeNull();
+	expect(validateListSearch({ pokemon: 1.5 }).pokemon).toBeNull();
+	expect(validateListSearch({}).pokemon).toBeNull();
+});
+
+test("pokemon: serializes to URL string, omits when null", () => {
+	expect(listSearchToUrl({ pokemon: 112 }).pokemon).toBe("112");
+	expect(listSearchToUrl({ pokemon: null }).pokemon).toBeUndefined();
+});
+
+test("pokemon: full round-trip serialize → parse", () => {
+	expect(validateListSearch(listSearchToUrl({ pokemon: 6 })).pokemon).toBe(6);
 });
 
 test("mode: defaults to 'fuzzy'", () => {

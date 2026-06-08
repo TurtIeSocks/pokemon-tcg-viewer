@@ -8,7 +8,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import type { SetFacets } from "@/server/set-facets";
+import type { PokemonFacet, SetFacets } from "@/server/set-facets";
 import type { ListSearch, OwnedMode } from "../../lib/card-query";
 import { SearchModeMenu } from "./search-mode-menu";
 
@@ -33,6 +33,8 @@ interface SearchControlsProps {
 	placeholder?: string;
 	/** When true, renders the Release-year From/To inputs. Defaults to false. */
 	showYearFilter?: boolean;
+	/** When true, renders the Pokémon (species) filter select. Defaults to false. */
+	showPokemonFilter?: boolean;
 }
 
 // A single-select that maps to a string[] param (one active value at a time —
@@ -104,12 +106,46 @@ function YearSelect({
 	);
 }
 
+// Single-select species filter. Value is a national dex number; the "__all__"
+// sentinel clears it (Radix Select forbids an empty-string item value). Options
+// are the species present in the current cards, labeled + sorted upstream.
+function PokemonFilterSelect({
+	value,
+	options,
+	onChange,
+}: {
+	value: number | null;
+	options: PokemonFacet[];
+	onChange: (v: number | null) => void;
+}) {
+	const ALL = "__all__";
+	return (
+		<Select
+			value={value != null ? String(value) : ALL}
+			onValueChange={(v) => onChange(v === ALL ? null : Number(v))}
+		>
+			<SelectTrigger className="text-sm w-full" aria-label="Pokémon">
+				<SelectValue placeholder="Pokémon" />
+			</SelectTrigger>
+			<SelectContent>
+				<SelectItem value={ALL}>All Pokémon</SelectItem>
+				{options.map((p) => (
+					<SelectItem key={p.dex} value={String(p.dex)}>
+						{p.name}
+					</SelectItem>
+				))}
+			</SelectContent>
+		</Select>
+	);
+}
+
 export function SearchControls({
 	value,
 	options,
 	onChange,
 	placeholder = "Search cards by name",
 	showYearFilter = false,
+	showPokemonFilter = false,
 }: SearchControlsProps) {
 	return (
 		<div className="rounded-[var(--r-panel)] border border-[var(--border)] bg-[var(--glass)] backdrop-blur-xl p-3 space-y-3">
@@ -133,7 +169,11 @@ export function SearchControls({
 					<Search className="size-4" />
 				</ButtonGroupText>
 			</ButtonGroup>
-			<div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+			<div
+				className={`grid grid-cols-2 gap-2 ${
+					showPokemonFilter ? "sm:grid-cols-6" : "sm:grid-cols-5"
+				}`}
+			>
 				<FilterSelect
 					label="Card Type"
 					value={value.supertype}
@@ -158,6 +198,13 @@ export function SearchControls({
 					options={options.types}
 					onChange={(v) => onChange({ types: v })}
 				/>
+				{showPokemonFilter && (
+					<PokemonFilterSelect
+						value={value.pokemon}
+						options={options.pokemon}
+						onChange={(pokemon) => onChange({ pokemon })}
+					/>
+				)}
 				<Select
 					value={value.owned}
 					onValueChange={(v) => onChange({ owned: v as OwnedMode })}

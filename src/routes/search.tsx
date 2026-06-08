@@ -20,7 +20,9 @@ import {
 	validateListSearch,
 } from "../lib/list-search";
 import { toSerializedQuery } from "../lib/serialized-query";
+import { getPokemonListFn } from "../server/card-data";
 import { searchCardsFn } from "../server/corpus-server";
+import { nameByDex } from "../server/pokemon-dex";
 import { deriveFacets, type SetFacets } from "../server/set-facets";
 import { useStore } from "../store";
 import { queryCorpus, setsById } from "../store/corpus/corpus-engine";
@@ -33,9 +35,16 @@ export const Route = createFileRoute("/search")({
 	loaderDeps: ({ search }) => ({ q: search.q, mode: search.mode }),
 	loader: async ({ deps }) => {
 		const q = deps.q.trim();
-		if (!q) return { q, cards: [], total: 0 };
-		const all = await searchCardsFn({ data: { query: q, mode: deps.mode } });
-		return { q, cards: all.slice(0, 40), total: all.length };
+		if (!q) return { q, cards: [], total: 0, facets: deriveFacets([]) };
+		// Species list runs in parallel with the search; it labels the Pokémon
+		// filter options (dex number → species name).
+		const [all, list] = await Promise.all([
+			searchCardsFn({ data: { query: q, mode: deps.mode } }),
+			getPokemonListFn(),
+		]);
+		const cards = all.slice(0, 40);
+		const facets = deriveFacets(cards, (dex) => nameByDex(list, dex));
+		return { q, cards, total: all.length, facets };
 	},
 	head: ({ loaderData }) => ({
 		meta: [
@@ -54,7 +63,7 @@ export const Route = createFileRoute("/search")({
 });
 
 function SearchPage() {
-	const { q, cards, total } = Route.useLoaderData();
+	const { q, cards, total, facets } = Route.useLoaderData();
 	const search = Route.useSearch();
 	const navigate = useNavigate({ from: Route.fullPath });
 	const addRecentSearch = useRecentsStore((s) => s.addRecentSearch);
@@ -70,9 +79,6 @@ function SearchPage() {
 			// In-page filter/view change: keep it instant, don't crossfade.
 			viewTransition: false,
 		});
-
-	// Options derived from the SSR seed (corpus refines as the user filters live).
-	const options = deriveFacets(cards);
 
 	// Corpus + sets for BulkAddMenu cardIds derivation.
 	const index = useCorpusRuntime((s) => s.index);
@@ -106,7 +112,7 @@ function SearchPage() {
 				cards={cards}
 				search={search}
 				onChange={onChange}
-				options={options}
+				options={facets}
 				bulkCardIds={bulkCardIds}
 				cardHref={cardHref}
 			/>
@@ -165,6 +171,7 @@ function SearchPageInner({
 					onChange={onChange}
 					placeholder="Search all cards"
 					showYearFilter
+					showPokemonFilter
 				/>
 			</div>
 			<div className="min-h-0 flex-1">

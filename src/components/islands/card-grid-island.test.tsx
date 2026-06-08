@@ -35,6 +35,7 @@ const defaultSearch = {
 	owned: "all" as const,
 	yearMin: null,
 	yearMax: null,
+	pokemon: null,
 	mode: "fuzzy" as const,
 };
 

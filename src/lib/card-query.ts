@@ -18,6 +18,8 @@ export interface ListSearch {
 	yearMin: number | null;
 	/** Inclusive upper bound on release year (YYYY). Null → no upper bound. */
 	yearMax: number | null;
+	/** National Pokédex number of the selected species. Null → no species filter. */
+	pokemon: number | null;
 	/** Search mode: "exact" (whole name), "contains" (prefix+substring), or "fuzzy" (default). */
 	mode: SearchMode;
 }
@@ -53,6 +55,7 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 	if (ctx.setId != null) {
 		return {
 			setId: ctx.setId,
+			dexNumber: s.pokemon ?? undefined,
 			query,
 			filters,
 			yearMin,
@@ -74,6 +77,7 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 	}
 	return {
 		setId: null,
+		dexNumber: s.pokemon ?? undefined,
 		query,
 		filters,
 		yearMin,
