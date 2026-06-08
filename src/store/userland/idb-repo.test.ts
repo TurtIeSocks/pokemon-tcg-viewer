@@ -146,25 +146,28 @@ const repos = getRepos();
 beforeEach(async () => {
 	await repos.collection.clear();
 	await repos.binders.clear();
+	await repos.profile.clear();
 });
 
-test("exportAll returns a v2 snapshot of current data", async () => {
+test("exportAll returns a v3 snapshot of current data", async () => {
 	await repos.collection.add({ cardId: "a", pricePaid: 3 });
 	await repos.binders.create({ name: "G" });
 	const snap = await repos.backup.exportAll();
-	expect(snap.schemaVersion).toBe(2);
+	expect(snap.schemaVersion).toBe(3);
 	expect(snap.collection).toHaveLength(1);
 	expect(snap.binders).toHaveLength(1);
 	expect(typeof snap.exportedAt).toBe("number");
+	expect(snap.profile).toBeNull();
 });
 
 test("importAll replace clears then writes, preserving ids", async () => {
 	await repos.collection.add({ cardId: "old" });
 	const snap: UserDataSnapshot = {
-		schemaVersion: 2,
+		schemaVersion: 3,
 		exportedAt: 0,
 		collection: [makeStack({ id: "fixed-1", cardId: "new" })],
 		binders: [],
+		profile: null,
 	};
 	await repos.backup.importAll(snap, "replace");
 	const all = await repos.collection.list();
@@ -176,10 +179,11 @@ test("importAll replace clears then writes, preserving ids", async () => {
 test("importAll merge upserts by id without clearing", async () => {
 	const existing = await repos.collection.add({ cardId: "keep" });
 	const snap: UserDataSnapshot = {
-		schemaVersion: 2,
+		schemaVersion: 3,
 		exportedAt: 0,
 		collection: [makeStack({ id: "added-1", cardId: "added" })],
 		binders: [],
+		profile: null,
 	};
 	await repos.backup.importAll(snap, "merge");
 	const ids = (await repos.collection.list()).map((i) => i.id).sort();
@@ -213,10 +217,11 @@ test("backup round-trips a binder with rule + includeCardIds + excludeCardIds, p
 		updatedAt: 2000,
 	});
 	const snap: UserDataSnapshot = {
-		schemaVersion: 2,
+		schemaVersion: 3,
 		exportedAt: 0,
 		collection: [],
 		binders: [fullBinder],
+		profile: null,
 	};
 	await repos.backup.importAll(snap, "replace");
 	const exportedSnap = await repos.backup.exportAll();
@@ -228,6 +233,28 @@ test("backup round-trips a binder with rule + includeCardIds + excludeCardIds, p
 	expect(got.rules).toEqual([rule]);
 	expect(got.includeCardIds).toEqual(["base1-4"]);
 	expect(got.excludeCardIds).toEqual(["xy7-11"]);
+});
+
+test("backup round-trips the profile via replace import", async () => {
+	const snap: UserDataSnapshot = {
+		schemaVersion: 3,
+		exportedAt: 0,
+		collection: [],
+		binders: [],
+		profile: {
+			id: "me",
+			displayName: "Ash",
+			bio: "hi",
+			avatarPreset: "violet",
+			favoriteSetId: "base1",
+			createdAt: 1,
+			updatedAt: 2,
+		},
+	};
+	await repos.backup.importAll(snap, "replace");
+	const out = await repos.backup.exportAll();
+	expect(out.profile?.displayName).toBe("Ash");
+	expect(out.profile?.favoriteSetId).toBe("base1");
 });
 
 // --- Phase 0.1a: quantity + provenance fields ---

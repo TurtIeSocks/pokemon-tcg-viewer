@@ -120,10 +120,11 @@ export type ProfilePatch = Partial<
 	Pick<Profile, "displayName" | "bio" | "avatarPreset" | "favoriteSetId">
 >;
 
-/** Import/export envelope. v2 added Stack.quantity + source + storageLocation; v1 backups upgrade on import. */
+/** Import/export envelope. v3 added Profile; v2 added Stack.quantity + provenance; older backups upgrade on import. */
 export interface UserDataSnapshot {
-	schemaVersion: 2;
+	schemaVersion: 3;
 	exportedAt: number;
 	collection: Stack[];
 	binders: Binder[];
+	profile: Profile | null;
 }

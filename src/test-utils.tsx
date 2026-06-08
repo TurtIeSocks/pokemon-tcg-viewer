@@ -152,16 +152,18 @@ export function makeProfile(overrides: Partial<Profile> = {}): Profile {
 	};
 }
 
-/** A v2 import/export envelope from the given stacks + binders. */
+/** A v3 import/export envelope from the given stacks + binders (+ optional profile). */
 export function makeSnapshot(
 	collection: Stack[] = [],
 	binders: Binder[] = [],
+	profile: Profile | null = null,
 ): UserDataSnapshot {
 	return {
-		schemaVersion: 2,
+		schemaVersion: 3,
 		exportedAt: Date.now(),
 		collection,
 		binders,
+		profile,
 	};
 }
 

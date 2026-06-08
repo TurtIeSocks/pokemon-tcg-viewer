@@ -5,15 +5,11 @@ import { useStore } from "../../store";
 import { buildIndex } from "../../store/corpus/corpus-engine";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
 import type { CorpusCard } from "../../store/corpus/corpus-types";
-import type { UserDataSnapshot } from "../../store/userland/types";
 import { useUserland } from "../../store/userland/userland-store";
 import { setupUserlandTest } from "../../test-utils";
 import { ImportDialog } from "./import-dialog";
 
-function makeSnapshot(
-	collectionLen: number,
-	goalsLen: number,
-): UserDataSnapshot {
+function makeSnapshot(collectionLen: number, goalsLen: number) {
 	const now = Date.now();
 	return {
 		schemaVersion: 2,

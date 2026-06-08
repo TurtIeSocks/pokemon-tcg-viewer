@@ -1,4 +1,5 @@
 // src/store/userland/backup.ts
+import { DEFAULT_AVATAR_PRESET_ID } from "../../components/profile/avatar-presets";
 import type { Stack, UserDataSnapshot } from "./types";
 
 /** Type guard: true when v is a non-null object. */
@@ -12,14 +13,15 @@ interface RawSnapshot {
 	exportedAt?: unknown;
 	collection: Record<string, unknown>[];
 	binders: Record<string, unknown>[];
+	profile?: unknown;
 }
 
 /** Schema versions this build can read (and upgrade from). */
-const SUPPORTED_VERSIONS = new Set([1, 2]);
+const SUPPORTED_VERSIONS = new Set([1, 2, 3]);
 
 /**
  * Type guard: validates that v has the minimum shape of a supported snapshot
- * (schemaVersion in {1,2}; collection/binders arrays with required id fields).
+ * (schemaVersion in {1,2,3}; collection/binders arrays with required id fields).
  */
 export function isValidSnapshot(v: unknown): v is RawSnapshot {
 	if (!isRecord(v)) return false;
@@ -40,7 +42,26 @@ export function isValidSnapshot(v: unknown): v is RawSnapshot {
 	return itemsOk && bindersOk;
 }
 
-/** Upgrade any supported snapshot to the current v2 shape (backfills quantity=1, null provenance). */
+/** Backfill a possibly-partial profile from a backup; null when absent/invalid. Every field null-disciplined. */
+function upgradeProfile(raw: unknown): UserDataSnapshot["profile"] {
+	if (!isRecord(raw) || typeof raw.id !== "string") return null;
+	return {
+		id: raw.id,
+		displayName:
+			typeof raw.displayName === "string" ? raw.displayName : "Collector",
+		bio: typeof raw.bio === "string" ? raw.bio : null,
+		avatarPreset:
+			typeof raw.avatarPreset === "string"
+				? raw.avatarPreset
+				: DEFAULT_AVATAR_PRESET_ID,
+		favoriteSetId:
+			typeof raw.favoriteSetId === "string" ? raw.favoriteSetId : null,
+		createdAt: typeof raw.createdAt === "number" ? raw.createdAt : 0,
+		updatedAt: typeof raw.updatedAt === "number" ? raw.updatedAt : 0,
+	};
+}
+
+/** Upgrade any supported snapshot to the current v3 shape (backfills quantity=1, null provenance, null profile). */
 function upgrade(snap: RawSnapshot): UserDataSnapshot {
 	const collection = snap.collection.map((c) => {
 		// Older/hand-edited backups may omit fields Stack requires non-null. Backfill
@@ -64,10 +85,11 @@ function upgrade(snap: RawSnapshot): UserDataSnapshot {
 		};
 	}) as unknown as UserDataSnapshot["collection"];
 	return {
-		schemaVersion: 2,
+		schemaVersion: 3,
 		exportedAt: typeof snap.exportedAt === "number" ? snap.exportedAt : 0,
 		collection,
 		binders: snap.binders as unknown as UserDataSnapshot["binders"],
+		profile: upgradeProfile(snap.profile),
 	};
 }
 

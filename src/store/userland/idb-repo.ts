@@ -104,25 +104,32 @@ export function createIdbBindersRepo(
 	};
 }
 
-/** Create a BackupRepo that delegates to the provided collection + binders repos. */
+/** Create a BackupRepo that delegates to the provided collection + binders + profile repos. */
 function createIdbBackupRepo(
 	collection: CollectionRepo,
 	binders: BindersRepo,
+	profile: ProfileRepo,
 ): BackupRepo {
 	return {
 		async exportAll() {
-			const [c, b] = await Promise.all([collection.list(), binders.list()]);
+			const [c, b, p] = await Promise.all([
+				collection.list(),
+				binders.list(),
+				profile.get(),
+			]);
 			return {
-				schemaVersion: 2,
+				schemaVersion: 3,
 				exportedAt: Date.now(),
 				collection: c,
 				binders: b,
+				profile: p,
 			};
 		},
 		async importAll(snapshot, mode) {
 			if (mode === "replace") {
 				await clear(collectionStore);
 				await clear(bindersStore);
+				await clear(profileStore);
 			}
 			// Snapshot rows are full records — write verbatim to preserve ids.
 			await setMany(
@@ -133,6 +140,11 @@ function createIdbBackupRepo(
 				snapshot.binders.map((b) => [b.id, b] as [string, Binder]),
 				bindersStore,
 			);
+			// Write the profile verbatim (preserve id/createdAt). A null profile in
+			// merge mode must not wipe an existing one; replace already cleared it.
+			if (snapshot.profile) {
+				await set(LOCAL_PROFILE_ID, snapshot.profile, profileStore);
+			}
 		},
 	};
 }
@@ -173,7 +185,7 @@ export function createIdbRepos(): UserlandRepos {
 	const collection = createIdbCollectionRepo();
 	const binders = createIdbBindersRepo();
 	const profile = createIdbProfileRepo();
-	const backup = createIdbBackupRepo(collection, binders);
+	const backup = createIdbBackupRepo(collection, binders, profile);
 	return { collection, binders, backup, profile };
 }
 
