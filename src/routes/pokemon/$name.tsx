@@ -133,6 +133,8 @@ function PokemonPageInner({
 					<SelectAndBulkAdd
 						cardIds={cards.map((c) => c.id)}
 						ruleQuery={toSerializedQuery(search, { dexNumber: dex })}
+						search={search}
+						context={{ dexNumber: dex }}
 					/>
 					<ViewModeToggle
 						value={search.view}

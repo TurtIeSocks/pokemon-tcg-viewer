@@ -1,3 +1,5 @@
+import type { ListContext, ListSearch } from "../../lib/card-query";
+import { useFilteredCardIds } from "../../store/corpus/use-filtered-card-ids";
 import type { SerializedQuery } from "../../store/userland/types";
 import { useCardSelection } from "../islands/card-selection";
 import { Button } from "../ui/button";
@@ -6,10 +8,18 @@ import { BulkAddMenu } from "./bulk-add-menu";
 
 /** Props for {@link SelectAndBulkAdd}. */
 interface SelectAndBulkAddProps {
-	/** Card IDs eligible for bulk-add; already-owned cards are filtered downstream. */
+	/** Card IDs eligible for bulk-add; the SSR seed / fallback (full unfiltered set). */
 	cardIds: string[];
 	/** Smart-rule query for the "Add smart rule to binder" item; null when not capturable. */
 	ruleQuery?: SerializedQuery | null;
+	/**
+	 * Active list search + context. When provided, the bulk-add target is the
+	 * filtered result of the same corpus query the grid runs — so "Add all" / "Add
+	 * N cards to binder" respect the active filters instead of the whole set. Omit
+	 * on filterless lists (e.g. a series page) to target `cardIds` as-is.
+	 */
+	search?: ListSearch;
+	context?: ListContext;
 }
 
 /**
@@ -22,8 +32,12 @@ interface SelectAndBulkAddProps {
 export function SelectAndBulkAdd({
 	cardIds,
 	ruleQuery = null,
+	search,
+	context,
 }: SelectAndBulkAddProps) {
 	const { active, selected, toggleActive } = useCardSelection();
+	// Resolve the "All" target to what the active filters actually show.
+	const targetCardIds = useFilteredCardIds(search, context, cardIds);
 	return (
 		<ButtonGroup>
 			<Button
@@ -41,7 +55,7 @@ export function SelectAndBulkAdd({
 			</Button>
 			<BulkAddMenu
 				triggerVariant="chevron"
-				cardIds={cardIds}
+				cardIds={targetCardIds}
 				ruleQuery={ruleQuery}
 				selectedCardIds={active ? [...selected] : undefined}
 			/>

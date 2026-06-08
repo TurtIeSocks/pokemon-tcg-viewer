@@ -104,16 +104,19 @@ function openMenu(name = /add all/i) {
 	fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
 }
 
-/** Open the submenu whose trigger matches `triggerName`, then click "My Binder". */
-async function openSubmenuPickBinder(triggerName: RegExp) {
-	const subTrigger = await waitFor(() =>
-		screen.getByRole("menuitem", { name: triggerName }),
+/**
+ * Click the menu item matching `itemName` (opening its binder-picker dialog),
+ * then click "My Binder" in that dialog.
+ */
+async function clickItemPickBinder(itemName: RegExp) {
+	const item = await waitFor(() =>
+		screen.getByRole("menuitem", { name: itemName }),
 	);
-	fireEvent.click(subTrigger);
-	const binderItem = await waitFor(() =>
-		screen.getByRole("menuitem", { name: /my binder/i }),
+	fireEvent.click(item);
+	const binderBtn = await waitFor(() =>
+		screen.getByRole("button", { name: /my binder/i }),
 	);
-	fireEvent.click(binderItem);
+	fireEvent.click(binderBtn);
 }
 
 // ---- Item 1: Collection add ----
@@ -164,13 +167,13 @@ test("collection item is disabled when all cards are owned", async () => {
 
 // ---- Item 2: Add cards to binder ----
 
-test("'Add cards to binder' submenu lists binders and calls addCardsToBinder", async () => {
+test("'Add cards to binder' opens a picker dialog and calls addCardsToBinder", async () => {
 	useUserland.setState({ binders: { b1: binder1 }, hydrated: true });
 
 	render(<BulkAddMenu cardIds={["base1-1", "base1-2"]} />);
 	openMenu();
 
-	await openSubmenuPickBinder(/add 2 cards to binder/i);
+	await clickItemPickBinder(/add 2 cards to binder/i);
 
 	await waitFor(() => expect(spyAddCardsToBinder).toHaveBeenCalledTimes(1));
 	expect(spyAddCardsToBinder.mock.calls[0]).toEqual([
@@ -179,25 +182,37 @@ test("'Add cards to binder' submenu lists binders and calls addCardsToBinder", a
 	]);
 });
 
-test("'Add cards to binder' shows '＋ New binder…' even with no binders", async () => {
+test("'Add cards to binder' dialog shows '＋ New binder…' even with no binders", async () => {
 	render(<BulkAddMenu cardIds={["base1-1", "base1-2"]} />);
 	openMenu();
 
-	const subTrigger = await waitFor(() =>
+	const item = await waitFor(() =>
 		screen.getByRole("menuitem", { name: /add 2 cards to binder/i }),
 	);
-	fireEvent.click(subTrigger);
+	fireEvent.click(item);
 
 	await waitFor(() =>
-		expect(
-			screen.getAllByRole("menuitem", { name: /new binder/i }).length,
-		).toBeGreaterThan(0),
+		expect(screen.getByRole("button", { name: /new binder/i })).toBeDefined(),
+	);
+});
+
+test("'Add cards to binder' dialog shows a 'No binders yet' hint when empty", async () => {
+	render(<BulkAddMenu cardIds={["base1-1", "base1-2"]} />);
+	openMenu();
+
+	const item = await waitFor(() =>
+		screen.getByRole("menuitem", { name: /add 2 cards to binder/i }),
+	);
+	fireEvent.click(item);
+
+	await waitFor(() =>
+		expect(screen.getByText(/no binders yet/i)).toBeDefined(),
 	);
 });
 
 // ---- Item 3: Smart rule ----
 
-test("'Add smart rule to binder' calls addRuleToBinder when capturable", async () => {
+test("'Add smart rule to binder' opens a picker dialog and calls addRuleToBinder", async () => {
 	useUserland.setState({ binders: { b1: binder1 }, hydrated: true });
 
 	render(
@@ -205,13 +220,13 @@ test("'Add smart rule to binder' calls addRuleToBinder when capturable", async (
 	);
 	openMenu();
 
-	await openSubmenuPickBinder(/add smart rule to binder/i);
+	await clickItemPickBinder(/add smart rule to binder/i);
 
 	await waitFor(() => expect(spyAddRuleToBinder).toHaveBeenCalledTimes(1));
 	expect(spyAddRuleToBinder.mock.calls[0]).toEqual(["b1", capturableRule]);
 });
 
-test("smart-rule submenu trigger is disabled when ruleQuery is null", async () => {
+test("smart-rule item is disabled when ruleQuery is null", async () => {
 	render(<BulkAddMenu cardIds={["base1-1", "base1-2"]} ruleQuery={null} />);
 	openMenu();
 
@@ -221,7 +236,20 @@ test("smart-rule submenu trigger is disabled when ruleQuery is null", async () =
 	expect(subTrigger.dataset.disabled).toBe("");
 });
 
-test("smart-rule submenu trigger is disabled when ruleQuery is not capturable", async () => {
+test("disabled smart-rule item shows its reason inline (tooltip would be unreachable)", async () => {
+	render(<BulkAddMenu cardIds={["base1-1", "base1-2"]} ruleQuery={null} />);
+	openMenu();
+
+	// The reason text is always visible — a disabled item has pointer-events:none,
+	// so a hover tooltip on it would never fire.
+	await waitFor(() =>
+		expect(
+			screen.getByText(/apply a filter\/search to save it/i),
+		).toBeDefined(),
+	);
+});
+
+test("smart-rule item is disabled when ruleQuery is not capturable", async () => {
 	render(
 		<BulkAddMenu cardIds={["base1-1", "base1-2"]} ruleQuery={emptyRule} />,
 	);
@@ -233,7 +261,7 @@ test("smart-rule submenu trigger is disabled when ruleQuery is not capturable", 
 	expect(subTrigger.dataset.disabled).toBe("");
 });
 
-test("smart-rule submenu trigger is disabled when in select mode", async () => {
+test("smart-rule item is disabled when in select mode", async () => {
 	render(
 		<BulkAddMenu
 			cardIds={["base1-1", "base1-2"]}
@@ -276,7 +304,7 @@ test("when selectedCardIds provided, card actions target the selection", async (
 
 	// Binder item should show "1 cards"
 	openMenu();
-	await openSubmenuPickBinder(/add 1 cards to binder/i);
+	await clickItemPickBinder(/add 1 cards to binder/i);
 	await waitFor(() =>
 		expect(spyAddCardsToBinder).toHaveBeenCalledWith("b1", ["base1-1"]),
 	);
