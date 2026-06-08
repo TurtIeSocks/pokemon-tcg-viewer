@@ -10,6 +10,8 @@ import {
 import { Search } from "lucide-react";
 import type { ReactNode } from "react";
 import { type FormEvent, useCallback, useState } from "react";
+import { AboutDialog } from "@/components/shell/about-dialog";
+import { RepoLink } from "@/components/shell/repo-link";
 import {
 	SidebarInset,
 	SidebarProvider,
@@ -87,7 +89,6 @@ export const Route = createRootRoute({
 function useBreadcrumb(tree: NavTree): string[] {
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
 	const parts = pathname.split("/").filter(Boolean);
-
 	if (parts.length === 0) return ["Browse"];
 
 	if (parts[0] === "vault") {
@@ -97,7 +98,6 @@ function useBreadcrumb(tree: NavTree): string[] {
 		if (sub) return ["Vault", sub.charAt(0).toUpperCase() + sub.slice(1)];
 		return ["Vault"];
 	}
-
 	if (parts[0] === "search") return ["Search"];
 
 	// /{series}/{set}/{card?}
@@ -107,6 +107,9 @@ function useBreadcrumb(tree: NavTree): string[] {
 
 	const series = tree.find((s) => s.slug === seriesSlug);
 	const set = series?.sets.find((s) => s.slug === setSlug);
+
+	// Unknown single segment (e.g. /profile) → just the capitalised label.
+	if (!series && parts.length === 1) return [capitalize(seriesSlug)];
 
 	const crumbs: string[] = ["Browse"];
 	if (series) crumbs.push(series.name);
@@ -143,7 +146,7 @@ function ShellHeader({ tree }: { tree: NavTree }) {
 	);
 
 	return (
-		<header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-[var(--hairline)] px-4 backdrop-blur-md">
+		<header className="sticky top-0 z-30 flex h-14 items-center gap-2 justify-between border-b border-[var(--hairline)] px-4 backdrop-blur-md">
 			<SidebarTrigger />
 
 			{/* Breadcrumb */}
@@ -180,27 +183,18 @@ function ShellHeader({ tree }: { tree: NavTree }) {
 					className="h-8 w-48 rounded-[var(--r-pill)] bg-[var(--glass)] border border-[var(--border)] pl-7 pr-3 text-xs text-[var(--ink)] placeholder:text-[var(--faint)] outline-none focus:border-[var(--primary)] focus:ring-0 transition-colors sm:w-56"
 				/>
 			</form>
+			<RepoLink />
+			<AboutDialog />
 		</header>
 	);
 }
 
 function RootComponent() {
 	const tree = Route.useLoaderData();
-	// Active slugs from the current path: /{series}/{set}/...
-	const segments = useRouterState({
-		select: (s) => s.location.pathname.split("/").filter(Boolean),
-	});
-	const activeSeriesSlug = segments[0] ?? null;
-	const activeSetSlug = segments[1] ?? null;
-
 	return (
 		<RootDocument>
 			<SidebarProvider defaultOpen={true}>
-				<AppSidebar
-					tree={tree}
-					activeSeriesSlug={activeSeriesSlug}
-					activeSetSlug={activeSetSlug}
-				/>
+				<AppSidebar tree={tree} />
 				<SidebarInset>
 					<ShellHeader tree={tree} />
 					<main className="flex-1 min-w-0 overflow-auto">
@@ -227,4 +221,8 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
 			</body>
 		</html>
 	);
+}
+
+function capitalize(str: string): string {
+	return `${str.slice(0, 1).toUpperCase()}${str.slice(1)}`;
 }

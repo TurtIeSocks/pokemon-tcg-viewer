@@ -1,9 +1,8 @@
-"use client";
-
 import { cva, type VariantProps } from "class-variance-authority";
 import { PanelLeftIcon } from "lucide-react";
 import { Slot } from "radix-ui";
 import * as React from "react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -363,7 +362,10 @@ function SidebarSeparator({
 		<Separator
 			data-slot="sidebar-separator"
 			data-sidebar="separator"
-			className={cn("mx-2 w-auto bg-sidebar-border", className)}
+			className={cn(
+				"mx-2 data-[orientation=horizontal]:w-auto bg-sidebar-border",
+				className,
+			)}
 			{...props}
 		/>
 	);
@@ -644,7 +646,7 @@ function SidebarMenuSub({ className, ...props }: React.ComponentProps<"ul">) {
 			data-slot="sidebar-menu-sub"
 			data-sidebar="menu-sub"
 			className={cn(
-				"mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border px-2.5 py-0.5",
+				"ml-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border pl-2.5 py-0.5",
 				"group-data-[collapsible=icon]:hidden",
 				className,
 			)}

@@ -68,10 +68,7 @@ async function renderInRouter(
 function renderSidebar(
 	opts: { initialPath?: string; defaultOpen?: boolean } = {},
 ) {
-	return renderInRouter(
-		<AppSidebar tree={tree} activeSeriesSlug={null} activeSetSlug={null} />,
-		opts,
-	);
+	return renderInRouter(<AppSidebar tree={tree} />, opts);
 }
 
 /** Assert the four Vault child links are present. */
@@ -88,14 +85,8 @@ test("AppSidebar lists all series", async () => {
 	expect(screen.getByText("Base")).toBeDefined();
 });
 
-test("active series' set is visible", async () => {
-	await renderInRouter(
-		<AppSidebar
-			tree={tree}
-			activeSeriesSlug="sword-shield"
-			activeSetSlug="brilliant-stars"
-		/>,
-	);
+test("active series auto-expands to reveal its sets", async () => {
+	await renderSidebar({ initialPath: "/sword-shield/brilliant-stars" });
 	expect(screen.getByText("Brilliant Stars")).toBeDefined();
 });
 
@@ -163,12 +154,6 @@ test("Vault items are always visible (flat group, matches mock)", async () => {
 	await renderSidebar({ initialPath: "/" });
 	// Flat group (no collapsible parent): vault children render regardless of path
 	expectVaultLinks();
-});
-
-test("About and RepoLink are present in sidebar footer", async () => {
-	await renderSidebar();
-	expect(screen.getByRole("button", { name: /about/i })).toBeDefined();
-	expect(screen.getByRole("link", { name: /github/i })).toBeDefined();
 });
 
 test("footer links to the profile page", async () => {

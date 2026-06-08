@@ -64,7 +64,7 @@ export function ProfilePageInner({ tree }: { tree: NavTree }) {
 					<CollectorAvatar
 						displayName={displayName}
 						preset={preset}
-						size={72}
+						className="text-3xl size-18"
 					/>
 					<div className="flex-1 space-y-1">
 						<h1 className="font-display text-[clamp(1.6rem,3.5vw,2.25rem)] font-semibold leading-none tracking-tight text-[var(--ink)]">
