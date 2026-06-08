@@ -26,6 +26,7 @@ import {
 	setUserlandRepos,
 	splitStack,
 	toggleCardOwned,
+	updateProfile,
 	updateStack,
 	useUserland,
 } from "./userland-store";
@@ -425,4 +426,25 @@ test("toggleCardOwned: card with 2 stacks → all removed", async () => {
 			(i) => i.cardId === "multi-stack",
 		),
 	).toHaveLength(0);
+});
+
+// --- profile ---
+
+test("profile starts null and hydrates from the repo", async () => {
+	const repos = await setupUserlandTest();
+	await repos.profile.save({ displayName: "Ash" });
+	expect(useUserland.getState().profile).toBeNull();
+	await loadUserland();
+	expect(useUserland.getState().profile?.displayName).toBe("Ash");
+});
+
+test("updateProfile persists and commits the returned record", async () => {
+	await setupUserlandTest();
+	const saved = await updateProfile({ displayName: "Misty", bio: "Water" });
+	expect(saved.displayName).toBe("Misty");
+	expect(useUserland.getState().profile?.bio).toBe("Water");
+
+	const merged = await updateProfile({ favoriteSetId: "base1" });
+	expect(merged.displayName).toBe("Misty"); // preserved
+	expect(useUserland.getState().profile?.favoriteSetId).toBe("base1");
 });

@@ -9,6 +9,8 @@ import type {
 	EditableStackFields,
 	NewBinder,
 	NewStack,
+	Profile,
+	ProfilePatch,
 	SerializedQuery,
 	Stack,
 	StackPatch,
@@ -21,6 +23,8 @@ interface UserlandState {
 	items: Record<string, Stack>;
 	/** All user binders, keyed by binder id. */
 	binders: Record<string, Binder>;
+	/** The local user profile, or null until first saved. */
+	profile: Profile | null;
 	/** True once the first load from the repo has completed. */
 	hydrated: boolean;
 	/** True while the initial load is in flight. */
@@ -30,6 +34,7 @@ interface UserlandState {
 const initial: UserlandState = {
 	items: {},
 	binders: {},
+	profile: null,
 	hydrated: false,
 	loading: false,
 };
@@ -50,19 +55,20 @@ export function setUserlandRepos(r: UserlandRepos | null): void {
 }
 
 // --- Hydration ---
-/** Load all items and binders from the repo and index them by id. */
+/** Load all items, binders, and profile from the repo and index them by id. */
 async function fetchAll(
 	r: UserlandRepos,
-): Promise<Pick<UserlandState, "items" | "binders">> {
-	const [itemList, binderList] = await Promise.all([
+): Promise<Pick<UserlandState, "items" | "binders" | "profile">> {
+	const [itemList, binderList, profile] = await Promise.all([
 		r.collection.list(),
 		r.binders.list(),
+		r.profile.get(),
 	]);
 	const items: Record<string, Stack> = {};
 	for (const it of itemList) items[it.id] = it;
 	const binders: Record<string, Binder> = {};
 	for (const b of binderList) binders[b.id] = b;
-	return { items, binders };
+	return { items, binders, profile };
 }
 
 let inFlight: Promise<void> | null = null;
@@ -75,8 +81,14 @@ export function loadUserland(): Promise<void> {
 	if (inFlight) return inFlight;
 	useUserland.setState({ loading: true });
 	inFlight = (async () => {
-		const { items, binders } = await fetchAll(activeRepos());
-		useUserland.setState({ items, binders, hydrated: true, loading: false });
+		const { items, binders, profile } = await fetchAll(activeRepos());
+		useUserland.setState({
+			items,
+			binders,
+			profile,
+			hydrated: true,
+			loading: false,
+		});
 	})().finally(() => {
 		inFlight = null;
 	});
@@ -491,6 +503,14 @@ export async function restoreCardToBinder(
 	});
 }
 
+// --- Profile actions ---
+/** Persist a patch to the profile (upsert) and commit the returned record. */
+export async function updateProfile(patch: ProfilePatch): Promise<Profile> {
+	const profile = await activeRepos().profile.save(patch);
+	useUserland.setState({ profile });
+	return profile;
+}
+
 // --- Import / export actions ---
 /** Produce a full snapshot of collection + binders via the backup repo. */
 export function exportUserData(): Promise<UserDataSnapshot> {
@@ -507,6 +527,6 @@ export async function importUserData(
 ): Promise<void> {
 	const r = activeRepos();
 	await r.backup.importAll(snapshot, mode);
-	const { items, binders } = await fetchAll(r); // force-refresh (loadUserland would no-op once hydrated)
-	useUserland.setState({ items, binders, hydrated: true });
+	const { items, binders, profile } = await fetchAll(r); // force-refresh (loadUserland would no-op once hydrated)
+	useUserland.setState({ items, binders, profile, hydrated: true });
 }
