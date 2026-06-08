@@ -104,10 +104,27 @@ export type BinderPatch = Partial<
 	>
 >;
 
-/** Import/export envelope. v2 added Stack.quantity + source + storageLocation; v1 backups upgrade on import. */
+/** The local collector's profile. Singleton today; one row per auth user under a DB adapter. */
+export interface Profile {
+	id: string; // local: fixed "me"; DB: auth uid / PK
+	displayName: string; // UI falls back to "Collector" when empty
+	bio: string | null; // free text; null = unset
+	avatarPreset: string; // key into AVATAR_PRESETS (gradient); never an uploaded image
+	favoriteSetId: string | null; // corpus set id (FK); null = none picked
+	createdAt: number; // ms epoch; set on first save
+	updatedAt: number; // ms epoch; bumped each save
+}
+
+/** update() patch: omitted keys untouched; null clears nullable fields. */
+export type ProfilePatch = Partial<
+	Pick<Profile, "displayName" | "bio" | "avatarPreset" | "favoriteSetId">
+>;
+
+/** Import/export envelope. v3 added Profile; v2 added Stack.quantity + provenance; older backups upgrade on import. */
 export interface UserDataSnapshot {
-	schemaVersion: 2;
+	schemaVersion: 3;
 	exportedAt: number;
 	collection: Stack[];
 	binders: Binder[];
+	profile: Profile | null;
 }

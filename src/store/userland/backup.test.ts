@@ -4,7 +4,7 @@ import { isValidSnapshot, parseSnapshot, snapshotFilename } from "./backup";
 import type { UserDataSnapshot } from "./types";
 
 const good: UserDataSnapshot = {
-	schemaVersion: 2,
+	schemaVersion: 3,
 	exportedAt: 0,
 	collection: [
 		{
@@ -34,10 +34,11 @@ const good: UserDataSnapshot = {
 			updatedAt: 1,
 		},
 	],
+	profile: null,
 };
 
 test("isValidSnapshot accepts a v2 snapshot", () => {
-	expect(isValidSnapshot(good)).toBe(true);
+	expect(isValidSnapshot({ ...good, schemaVersion: 2 })).toBe(true);
 });
 
 test("isValidSnapshot accepts a snapshot with empty binders", () => {
@@ -103,7 +104,7 @@ test("parseSnapshot throws when binders is missing", () => {
 	expect(() => parseSnapshot(JSON.stringify(withoutBinders))).toThrow();
 });
 
-test("parseSnapshot upgrades a v1 snapshot to v2 (quantity=1, null provenance)", () => {
+test("parseSnapshot upgrades a v1 snapshot to v3 (quantity=1, null provenance)", () => {
 	const v1 = JSON.stringify({
 		schemaVersion: 1,
 		exportedAt: 0,
@@ -123,10 +124,11 @@ test("parseSnapshot upgrades a v1 snapshot to v2 (quantity=1, null provenance)",
 		binders: [],
 	});
 	const snap = parseSnapshot(v1);
-	expect(snap.schemaVersion).toBe(2);
+	expect(snap.schemaVersion).toBe(3);
 	expect(snap.collection[0].quantity).toBe(1);
 	expect(snap.collection[0].source).toBeNull();
 	expect(snap.collection[0].storageLocation).toBeNull();
+	expect(snap.profile).toBeNull();
 });
 
 test("upgrade backfills required Stack fields on a minimal collection item", () => {
@@ -150,10 +152,48 @@ test("upgrade backfills required Stack fields on a minimal collection item", () 
 	expect(s.storageLocation).toBeNull();
 });
 
-test("isValidSnapshot accepts both v1 and v2; rejects other versions", () => {
+test("isValidSnapshot accepts both v1/v2/v3; rejects other versions", () => {
 	expect(isValidSnapshot({ ...good, schemaVersion: 1 })).toBe(true);
 	expect(isValidSnapshot({ ...good, schemaVersion: 2 })).toBe(true);
-	expect(isValidSnapshot({ ...good, schemaVersion: 3 })).toBe(false);
+	expect(isValidSnapshot({ ...good, schemaVersion: 3 })).toBe(true);
+	expect(isValidSnapshot({ ...good, schemaVersion: 4 })).toBe(false);
+});
+
+test("parseSnapshot keeps a valid profile on a v3 snapshot", () => {
+	const withProfile = {
+		...good,
+		profile: {
+			id: "me",
+			displayName: "Ash",
+			bio: null,
+			avatarPreset: "dusk",
+			favoriteSetId: null,
+			createdAt: 1,
+			updatedAt: 1,
+		},
+	};
+	const snap = parseSnapshot(JSON.stringify(withProfile));
+	expect(snap.profile?.displayName).toBe("Ash");
+});
+
+test("parseSnapshot backfills a partial v3 profile (no undefined fields)", () => {
+	const partial = {
+		schemaVersion: 3,
+		exportedAt: 0,
+		collection: [],
+		binders: [],
+		profile: { id: "me" }, // every other field missing
+	};
+	const snap = parseSnapshot(JSON.stringify(partial));
+	expect(snap.profile).toEqual({
+		id: "me",
+		displayName: "Collector",
+		bio: null,
+		avatarPreset: "dusk",
+		favoriteSetId: null,
+		createdAt: 0,
+		updatedAt: 0,
+	});
 });
 
 test("snapshotFilename formats the date", () => {

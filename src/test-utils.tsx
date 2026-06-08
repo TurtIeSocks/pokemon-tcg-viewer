@@ -11,7 +11,12 @@ import { buildIndex } from "./store/corpus/corpus-engine";
 import { useCorpusRuntime } from "./store/corpus/corpus-runtime";
 import type { CorpusCard } from "./store/corpus/corpus-types";
 import { createIdbRepos } from "./store/userland/idb-repo";
-import type { Binder, Stack, UserDataSnapshot } from "./store/userland/types";
+import type {
+	Binder,
+	Profile,
+	Stack,
+	UserDataSnapshot,
+} from "./store/userland/types";
 import {
 	resetUserlandForTests,
 	setUserlandRepos,
@@ -132,16 +137,33 @@ export function makeBinder(overrides: Partial<Binder> = {}): Binder {
 	};
 }
 
-/** A v2 import/export envelope from the given stacks + binders. */
+/** A profile fixture, every key present; override any field. */
+export function makeProfile(overrides: Partial<Profile> = {}): Profile {
+	const now = Date.now();
+	return {
+		id: "me",
+		displayName: "Collector",
+		bio: null,
+		avatarPreset: "dusk",
+		favoriteSetId: null,
+		createdAt: now,
+		updatedAt: now,
+		...overrides,
+	};
+}
+
+/** A v3 import/export envelope from the given stacks + binders (+ optional profile). */
 export function makeSnapshot(
 	collection: Stack[] = [],
 	binders: Binder[] = [],
+	profile: Profile | null = null,
 ): UserDataSnapshot {
 	return {
-		schemaVersion: 2,
+		schemaVersion: 3,
 		exportedAt: Date.now(),
 		collection,
 		binders,
+		profile,
 	};
 }
 
@@ -181,6 +203,7 @@ export async function setupUserlandTest(): Promise<
 	const repos = createIdbRepos();
 	await repos.collection.clear();
 	await repos.binders.clear();
+	await repos.profile.clear();
 	setUserlandRepos(repos);
 	resetUserlandForTests();
 	return repos;

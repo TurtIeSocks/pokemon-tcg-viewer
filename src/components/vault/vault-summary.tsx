@@ -7,58 +7,7 @@ import { BezelPanel } from "@/components/ui/glass";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { Stat } from "@/components/ui/stat";
 import { ImportDialog } from "@/components/vault/import-dialog";
-import { useStore } from "../../store";
-import { setsById } from "../../store/corpus/corpus-engine";
-import {
-	useOwnedCountBySet,
-	useOwnedIndex,
-} from "../../store/userland/selectors";
-import { useUserland } from "../../store/userland/userland-store";
-
-/**
- * Compute overall collection completion %.
- * Denominator = sum of set.total for every set the user has touched (≥1 owned card).
- * Returns 0 when no sets are touched.
- */
-function useCompletionPct(countBySet: Map<string, number>): number {
-	const sets = useStore((s) => s.sets);
-	if (!sets || countBySet.size === 0) return 0;
-	const byId = setsById(sets);
-	let owned = 0;
-	let total = 0;
-	for (const [setId, count] of countBySet) {
-		const set = byId.get(setId);
-		if (!set || set.total <= 0) continue;
-		owned += count;
-		total += set.total;
-	}
-	return total === 0 ? 0 : Math.min(100, Math.round((owned / total) * 100));
-}
-
-/**
- * Est. value = sum of (pricePaid × quantity) over all stacks where pricePaid is non-null.
- * pricePaid is per-unit; CorpusCard has no market-price field, so this is the user's own cost data only.
- */
-function useEstValue(): number | null {
-	const items = useUserland((s) => s.items);
-	let sum = 0;
-	let any = false;
-	for (const item of Object.values(items)) {
-		if (item.pricePaid !== null) {
-			sum += item.pricePaid * item.quantity;
-			any = true;
-		}
-	}
-	return any ? sum : null;
-}
-
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-/** Copies acquired within the last 7 days (cutoff frozen at mount; no Date.now in render). */
-function useThisWeekCount(): number {
-	const items = useUserland((s) => s.items);
-	const [cutoff] = useState(() => Date.now() - WEEK_MS);
-	return Object.values(items).filter((i) => i.acquiredAt >= cutoff).length;
-}
+import { useCollectionStats } from "../../store/userland/stats";
 
 // Built once — constructing an Intl.NumberFormat per call is expensive.
 const USD_FORMAT = new Intl.NumberFormat("en-US", {
@@ -78,13 +27,9 @@ function formatDollars(cents: number): string {
  */
 export function VaultSummaryHero() {
 	const [importOpen, setImportOpen] = useState(false);
-	const index = useOwnedIndex();
-	const countBySet = useOwnedCountBySet();
-	const cardsOwned = index.size;
-	const setsTouched = countBySet.size;
-	const pct = useCompletionPct(countBySet);
-	const estValue = useEstValue();
-	const thisWeek = useThisWeekCount();
+	const { cardsOwned, setsTouched, completionPct, estValue, thisWeek } =
+		useCollectionStats();
+	const pct = completionPct;
 
 	return (
 		<>

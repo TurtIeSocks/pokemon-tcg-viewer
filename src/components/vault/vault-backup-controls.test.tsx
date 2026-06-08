@@ -39,7 +39,7 @@ test("clicking Import backup opens the import dialog", async () => {
 
 test("exportUserData resolves a snapshot with correct shape", async () => {
 	const snapshot = await exportUserData();
-	expect(snapshot.schemaVersion).toBe(2);
+	expect(snapshot.schemaVersion).toBe(3);
 	expect(Array.isArray(snapshot.collection)).toBe(true);
 	expect(Array.isArray(snapshot.binders)).toBe(true);
 });
