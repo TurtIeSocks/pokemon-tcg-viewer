@@ -12,23 +12,15 @@ import {
 	useUserland,
 } from "../../store/userland/userland-store";
 import { BinderFormDialog } from "../binders/binder-form-dialog";
+import { BinderPickerDialog } from "../binders/binder-picker-dialog";
 import { Button } from "../ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuLabel,
-	DropdownMenuSub,
-	DropdownMenuSubContent,
-	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "../ui/tooltip";
 import { partitionUnowned } from "./bulk-add";
 
 /** Props for {@link BulkAddMenu}. */
@@ -86,6 +78,11 @@ export function BulkAddMenu({
 		? "Clear your selection to save a rule"
 		: "Apply a filter/search to save it as a rule";
 
+	// Which binder-picker dialog is open (null = none). Opening it on click —
+	// rather than the old hover-only nested submenu — is what makes binder
+	// selection work on click/tap/trackpad.
+	const [picker, setPicker] = useState<null | "cards" | "rule">(null);
+
 	// BinderFormDialog open state + the pending action. `pending` is only read
 	// inside handlers (never rendered), so a ref avoids two wasted re-renders.
 	const [newBinderOpen, setNewBinderOpen] = useState(false);
@@ -118,51 +115,6 @@ export function BulkAddMenu({
 		await bulkAddStacks(toAdd);
 		window.alert(
 			`Added ${toAdd.length}${skipped ? ` · skipped ${skipped} already owned` : ""}`,
-		);
-	}
-
-	// Binder sub-items shared between both submenus.
-	function binderCardItems() {
-		return (
-			<>
-				{binderList.map((b) => (
-					<DropdownMenuItem
-						key={b.id}
-						onSelect={() => void addCardsToBinder(b.id, targetIds)}
-					>
-						{b.name}
-					</DropdownMenuItem>
-				))}
-				<DropdownMenuItem
-					onSelect={() => openNewBinder({ kind: "cards", targetIds })}
-				>
-					＋ New binder…
-				</DropdownMenuItem>
-			</>
-		);
-	}
-
-	function binderRuleItems(q: SerializedQuery) {
-		return (
-			<>
-				{binderList.map((b) => (
-					<DropdownMenuItem
-						key={b.id}
-						onSelect={() => void addRuleToBinder(b.id, q)}
-					>
-						{b.name}
-					</DropdownMenuItem>
-				))}
-				<DropdownMenuItem
-					onSelect={() => openNewBinder({ kind: "rule", query: q })}
-				>
-					＋ New binder…
-				</DropdownMenuItem>
-				<DropdownMenuLabel className="text-xs text-[var(--ink-muted)] font-normal">
-					Matching cards always appear in this binder, including ones from
-					future sets.
-				</DropdownMenuLabel>
-			</>
 		);
 	}
 
@@ -206,38 +158,58 @@ export function BulkAddMenu({
 							: `Add ${toAdd.length} to collection`}
 					</DropdownMenuItem>
 
-					{/* Item 2: Add cards to binder */}
-					<DropdownMenuSub>
-						<DropdownMenuSubTrigger>
-							Add {targetIds.length} cards to binder
-						</DropdownMenuSubTrigger>
-						<DropdownMenuSubContent>{binderCardItems()}</DropdownMenuSubContent>
-					</DropdownMenuSub>
+					{/* Item 2: Add cards to binder — opens a click-reliable picker
+					    dialog (the old nested submenu only opened on hover). */}
+					<DropdownMenuItem onSelect={() => setPicker("cards")}>
+						Add {targetIds.length} cards to binder
+					</DropdownMenuItem>
 
-					{/* Item 3: Add smart rule to binder */}
+					{/* Item 3: Add smart rule to binder. When disabled, the reason is
+					    shown inline — a disabled item has `pointer-events:none`, so a
+					    hover tooltip on it would never fire. */}
 					{ruleDisabled || !ruleQuery ? (
-						<TooltipProvider>
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<DropdownMenuItem disabled>
-										Add smart rule to binder
-									</DropdownMenuItem>
-								</TooltipTrigger>
-								<TooltipContent>{ruleDisabledReason}</TooltipContent>
-							</Tooltip>
-						</TooltipProvider>
-					) : (
-						<DropdownMenuSub>
-							<DropdownMenuSubTrigger>
+						<>
+							<DropdownMenuItem disabled>
 								Add smart rule to binder
-							</DropdownMenuSubTrigger>
-							<DropdownMenuSubContent>
-								{binderRuleItems(ruleQuery)}
-							</DropdownMenuSubContent>
-						</DropdownMenuSub>
+							</DropdownMenuItem>
+							<DropdownMenuLabel className="-mt-1 text-xs text-[var(--ink-muted)] font-normal">
+								{ruleDisabledReason}
+							</DropdownMenuLabel>
+						</>
+					) : (
+						<DropdownMenuItem onSelect={() => setPicker("rule")}>
+							Add smart rule to binder
+						</DropdownMenuItem>
 					)}
 				</DropdownMenuContent>
 			</DropdownMenu>
+
+			{/* Click-reliable binder choosers, opened from the menu items above. */}
+			<BinderPickerDialog
+				open={picker === "cards"}
+				onOpenChange={(o) => {
+					if (!o) setPicker(null);
+				}}
+				title={`Add ${targetIds.length} ${targetIds.length === 1 ? "card" : "cards"} to a binder`}
+				description="Pick a binder to add these cards to."
+				binders={binderList}
+				onPick={(id) => void addCardsToBinder(id, targetIds)}
+				onCreateNew={() => openNewBinder({ kind: "cards", targetIds })}
+			/>
+			{ruleQuery && !ruleDisabled ? (
+				<BinderPickerDialog
+					open={picker === "rule"}
+					onOpenChange={(o) => {
+						if (!o) setPicker(null);
+					}}
+					title="Save as a smart rule"
+					description="Pick a binder to save this filter as a smart rule."
+					footnote="Matching cards always appear in this binder, including ones from future sets."
+					binders={binderList}
+					onPick={(id) => void addRuleToBinder(id, ruleQuery)}
+					onCreateNew={() => openNewBinder({ kind: "rule", query: ruleQuery })}
+				/>
+			) : null}
 
 			<BinderFormDialog
 				open={newBinderOpen}

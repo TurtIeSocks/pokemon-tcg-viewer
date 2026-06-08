@@ -139,6 +139,8 @@ function SetPageInner({
 						<SelectAndBulkAdd
 							cardIds={cards.map((c: HoloCardData) => c.id)}
 							ruleQuery={toSerializedQuery(search, { setId: set.id })}
+							search={search}
+							context={{ setId: set.id }}
 						/>
 						<Button
 							variant="outline"
