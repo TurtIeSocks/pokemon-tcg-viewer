@@ -45,10 +45,15 @@ const tree: NavTree = [
 
 async function renderInRouter(
 	ui: React.ReactNode,
-	{ initialPath = "/" }: { initialPath?: string } = {},
+	{
+		initialPath = "/",
+		defaultOpen = true,
+	}: { initialPath?: string; defaultOpen?: boolean } = {},
 ) {
 	const rootRoute = createRootRoute({
-		component: () => <SidebarProvider>{ui}</SidebarProvider>,
+		component: () => (
+			<SidebarProvider defaultOpen={defaultOpen}>{ui}</SidebarProvider>
+		),
 	});
 	const history = createMemoryHistory({ initialEntries: [initialPath] });
 	const router = createRouter({ routeTree: rootRoute, history });
@@ -60,11 +65,10 @@ async function renderInRouter(
  * Render `<AppSidebar>` with the shared `tree` and no active series/set — the
  * default arrangement for most tests. Pass `initialPath` to drive Vault routing.
  */
-function renderSidebar(opts: { initialPath?: string } = {}) {
-	return renderInRouter(
-		<AppSidebar tree={tree} activeSeriesSlug={null} activeSetSlug={null} />,
-		opts,
-	);
+function renderSidebar(
+	opts: { initialPath?: string; defaultOpen?: boolean } = {},
+) {
+	return renderInRouter(<AppSidebar tree={tree} />, opts);
 }
 
 /** Assert the four Vault child links are present. */
@@ -81,14 +85,8 @@ test("AppSidebar lists all series", async () => {
 	expect(screen.getByText("Base")).toBeDefined();
 });
 
-test("active series' set is visible", async () => {
-	await renderInRouter(
-		<AppSidebar
-			tree={tree}
-			activeSeriesSlug="sword-shield"
-			activeSetSlug="brilliant-stars"
-		/>,
-	);
+test("active series auto-expands to reveal its sets", async () => {
+	await renderSidebar({ initialPath: "/sword-shield/brilliant-stars" });
 	expect(screen.getByText("Brilliant Stars")).toBeDefined();
 });
 
@@ -158,16 +156,28 @@ test("Vault items are always visible (flat group, matches mock)", async () => {
 	expectVaultLinks();
 });
 
-test("About and RepoLink are present in sidebar footer", async () => {
-	await renderSidebar();
-	expect(screen.getByRole("button", { name: /about/i })).toBeDefined();
-	expect(screen.getByRole("link", { name: /github/i })).toBeDefined();
-});
-
 test("footer links to the profile page", async () => {
 	await renderSidebar();
 	const profileLink = screen.getByRole("link", { name: /collector/i });
 	expect((profileLink as HTMLAnchorElement).getAttribute("href")).toBe(
 		"/profile",
 	);
+});
+
+test("series rows show a 2-char monogram badge", async () => {
+	await renderSidebar();
+	expect(screen.getByText("SS")).toBeDefined(); // Sword & Shield
+	expect(screen.getByText("BA")).toBeDefined(); // Base
+});
+
+test("Vault links render a leading icon", async () => {
+	await renderSidebar({ initialPath: "/vault" });
+	const overview = screen.getByRole("link", { name: "Overview" });
+	expect(overview.querySelector("svg")).not.toBeNull();
+});
+
+test("collapsed series row is a link to its series page", async () => {
+	await renderSidebar({ initialPath: "/", defaultOpen: false });
+	const link = screen.getByRole("link", { name: /Sword & Shield/ });
+	expect(link.getAttribute("href")).toBe("/sword-shield");
 });

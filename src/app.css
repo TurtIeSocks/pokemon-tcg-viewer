@@ -184,9 +184,12 @@
 	background: transparent !important;
 }
 
-/* Plate 1: floating sidebar inner — glass panel with 12px all-side float */
+/* Plate 1: floating sidebar inner — glass panel. Float top/bottom only; no
+   horizontal padding here (it narrows the collapsed icon rail below the 48px the
+   menu button needs and throws off glyph centering — the inner already floats
+   ~8px left/right via the primitive's own `p-2`). */
 [data-slot="sidebar-container"] {
-	padding: 12px !important;
+	padding-block: 12px !important;
 }
 [data-slot="sidebar-inner"] {
 	border-radius: 20px !important;
@@ -197,9 +200,9 @@
 	-webkit-backdrop-filter: blur(22px) saturate(1.4) !important;
 }
 
-/* Plate 2: SidebarInset — matching glass panel with 12px gap on all sides
-   (the peer-based margins from the primitive give right/bottom/top gap;
-    we also add left margin when sidebar is visible for the inter-plate gap) */
+/* Plate 2: SidebarInset — matching glass panel, 12px float. On desktop the left
+   edge sits flush against the sidebar plate (the inter-plate gap comes from the
+   sidebar's own float), so margin-left is 0 there. */
 [data-slot="sidebar-inset"] {
 	margin: 12px !important;
 	margin-left: 0 !important;
@@ -212,9 +215,12 @@
 	overflow: hidden !important;
 }
 
-/* When sidebar is collapsed (icon mode), give inset a left margin too */
-.peer[data-variant="inset"][data-state="collapsed"] ~ [data-slot="sidebar-inset"] {
-	margin-left: 12px !important;
+/* Mobile: the sidebar is an off-canvas sheet (no left plate), so the content
+   plate needs its own left margin to stay evenly inset on all four sides. */
+@media (max-width: 767px) {
+	[data-slot="sidebar-inset"] {
+		margin-left: 12px !important;
+	}
 }
 
 /* Home hero backdrop: float via `translate` so it composes with Tailwind v4
