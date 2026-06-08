@@ -22,6 +22,7 @@ const options = {
 	subtypes: ["Basic", "Stage 1"],
 	rarities: ["Common", "Rare Holo"],
 	types: ["fire", "water"],
+	pokemon: [],
 };
 
 /**

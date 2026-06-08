@@ -44,3 +44,45 @@ describe("deriveFacets", () => {
 		expect(f.rarities).toEqual([]);
 	});
 });
+
+describe("deriveFacets pokemon", () => {
+	const dexName = (n: number): string | null =>
+		({ 6: "charizard", 25: "pikachu", 112: "rhydon" })[n] ?? null;
+
+	test("distinct species from cards, alphabetized, labeled via resolver", () => {
+		const f = deriveFacets(
+			[
+				c({ name: "Brock's Rhydon", nationalPokedexNumbers: [112] }),
+				c({ name: "Rhydon", nationalPokedexNumbers: [112] }),
+				c({ name: "Charizard", nationalPokedexNumbers: [6] }),
+			],
+			dexName,
+		);
+		expect(f.pokemon).toEqual([
+			{ dex: 6, name: "Charizard" },
+			{ dex: 112, name: "Rhydon" },
+		]);
+	});
+
+	test("cards without a dex contribute no species option", () => {
+		const f = deriveFacets([c({ name: "Potion", supertype: "Trainer" })], dexName);
+		expect(f.pokemon).toEqual([]);
+	});
+
+	test("multi-dex card contributes an option per species", () => {
+		const f = deriveFacets(
+			[c({ name: "Pikachu & Zekrom", nationalPokedexNumbers: [25, 644] })],
+			dexName,
+		);
+		expect(f.pokemon.map((p) => p.dex).sort((a, b) => a - b)).toEqual([25, 644]);
+		expect(f.pokemon.find((p) => p.dex === 25)?.name).toBe("Pikachu");
+		expect(f.pokemon.find((p) => p.dex === 644)?.name).toBe("#644");
+	});
+
+	test("no resolver → #<dex> labels", () => {
+		const f = deriveFacets([
+			c({ name: "Rhydon", nationalPokedexNumbers: [112] }),
+		]);
+		expect(f.pokemon).toEqual([{ dex: 112, name: "#112" }]);
+	});
+});
