@@ -19,18 +19,12 @@ import {
 	validateListSearch,
 } from "../../lib/list-search";
 import { toSerializedQuery } from "../../lib/serialized-query";
+import { titleCaseSlug } from "../../lib/slug";
 import { getPokemonListFn } from "../../server/card-data";
 import { getDexCardsFn } from "../../server/corpus-server";
 import { dexByName } from "../../server/pokemon-dex";
 import { deriveFacets, type SetFacets } from "../../server/set-facets";
 import { useSlugIndex } from "../../store/corpus/corpus-runtime";
-
-function titleCase(slug: string): string {
-	return slug
-		.split("-")
-		.map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-		.join(" ");
-}
 
 export const Route = createFileRoute("/pokemon/$name")({
 	validateSearch: validateListSearch,
@@ -41,7 +35,7 @@ export const Route = createFileRoute("/pokemon/$name")({
 		if (dex === null) throw notFound();
 		const all = await getDexCardsFn({ data: dex });
 		return {
-			display: titleCase(params.name),
+			display: titleCaseSlug(params.name),
 			dex,
 			cards: all.slice(0, 60),
 			total: all.length,

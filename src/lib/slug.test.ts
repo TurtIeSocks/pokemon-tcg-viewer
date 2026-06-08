@@ -7,7 +7,16 @@ import {
 	resolveSet,
 	type SluggableSet,
 	slugify,
+	titleCaseSlug,
 } from "./slug";
+
+describe("titleCaseSlug", () => {
+	test("title-cases a hyphenated species slug", () => {
+		expect(titleCaseSlug("rhydon")).toBe("Rhydon");
+		expect(titleCaseSlug("mr-mime")).toBe("Mr Mime");
+		expect(titleCaseSlug("nidoran-f")).toBe("Nidoran F");
+	});
+});
 
 const sets: SluggableSet[] = [
 	{ id: "swsh9", name: "Brilliant Stars", series: "Sword & Shield" },
