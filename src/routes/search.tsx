@@ -5,18 +5,13 @@ import {
 	useNavigate,
 } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import type { HoloCardData } from "../components/holo-card";
 import { CardGridIsland } from "../components/islands/card-grid-island";
-import {
-	CardSelectionProvider,
-	useCardSelection,
-} from "../components/islands/card-selection";
+import { CardSelectionProvider } from "../components/islands/card-selection";
 import { SearchControls } from "../components/islands/search-controls";
 import { ViewModeToggle } from "../components/islands/view-mode-toggle";
 import { Eyebrow } from "../components/ui/eyebrow";
-import { BulkAddMenu } from "../components/vault/bulk-add-menu";
+import { SelectAndBulkAdd } from "../components/vault/select-and-bulk-add";
 import { buildCorpusQuery } from "../lib/card-query";
 import { cardModalLinkProps } from "../lib/card-route";
 import {
@@ -140,8 +135,6 @@ function SearchPageInner({
 	bulkCardIds,
 	cardHref,
 }: SearchPageInnerProps) {
-	const { active, selected, toggleActive } = useCardSelection();
-
 	return (
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
 			<div className="mb-3 flex items-center gap-3">
@@ -153,27 +146,10 @@ function SearchPageInner({
 				) : null}
 				<div className="ml-auto flex items-center gap-2">
 					{q ? (
-						<ButtonGroup>
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								aria-pressed={active}
-								onClick={toggleActive}
-							>
-								{!active
-									? "Select cards"
-									: selected.size > 0
-										? "Clear selected"
-										: "Cancel"}
-							</Button>
-							<BulkAddMenu
-								triggerVariant="chevron"
-								cardIds={bulkCardIds}
-								ruleQuery={toSerializedQuery(search, {})}
-								selectedCardIds={active ? [...selected] : undefined}
-							/>
-						</ButtonGroup>
+						<SelectAndBulkAdd
+							cardIds={bulkCardIds}
+							ruleQuery={toSerializedQuery(search, {})}
+						/>
 					) : null}
 					<ViewModeToggle
 						value={search.view}

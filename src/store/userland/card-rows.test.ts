@@ -1,27 +1,12 @@
 import { expect, test } from "bun:test";
 import type { PokemonSet } from "../../server/card-mappers";
+import { makeCorpusCard, makeStack } from "../../test-utils";
 import { buildIndex } from "../corpus/corpus-engine";
-import type { CorpusCard } from "../corpus/corpus-types";
 import { buildCardRows, sortCardRows } from "./card-rows";
 import type { Stack } from "./types";
 
-function item(id: string, cardId: string, over: Partial<Stack> = {}): Stack {
-	return {
-		id,
-		cardId,
-		quantity: 1,
-		source: null,
-		storageLocation: null,
-		acquiredAt: 0,
-		createdAt: 0,
-		pricePaid: null,
-		variant: null,
-		notes: null,
-		condition: null,
-		grading: null,
-		...over,
-	};
-}
+const item = (id: string, cardId: string, over: Partial<Stack> = {}): Stack =>
+	makeStack({ id, cardId, acquiredAt: 0, createdAt: 0, ...over });
 
 test("buildCardRows count sums quantity across a card's stacks", () => {
 	const index = buildIndex([cc("base1-1", "base1", "1")]);
@@ -38,17 +23,8 @@ test("buildCardRows count sums quantity across a card's stacks", () => {
 	expect(rows[0].stacks).toHaveLength(2);
 });
 
-function cc(id: string, setId: string, number: string): CorpusCard {
-	return {
-		id,
-		name: id,
-		imageUrl: "",
-		imageUrlSmall: "",
-		supertype: "Pokémon",
-		setId,
-		number,
-	};
-}
+const cc = (id: string, setId: string, number: string) =>
+	makeCorpusCard({ id, setId, number });
 const sets = new Map<string, PokemonSet>([
 	[
 		"base1",

@@ -10,17 +10,13 @@ import {
 import { Package } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import type { HoloCardData } from "../../../components/holo-card";
 import { CardGridIsland } from "../../../components/islands/card-grid-island";
-import {
-	CardSelectionProvider,
-	useCardSelection,
-} from "../../../components/islands/card-selection";
+import { CardSelectionProvider } from "../../../components/islands/card-selection";
 import { PackDialog } from "../../../components/islands/pack-dialog";
 import { SearchControls } from "../../../components/islands/search-controls";
 import { Eyebrow } from "../../../components/ui/eyebrow";
-import { BulkAddMenu } from "../../../components/vault/bulk-add-menu";
+import { SelectAndBulkAdd } from "../../../components/vault/select-and-bulk-add";
 import { cardModalLinkPropsFor } from "../../../lib/card-route";
 import { buildSetCardSlugs } from "../../../lib/card-slugs";
 import {
@@ -120,40 +116,19 @@ function SetPageInner({
 	packOpen,
 	setPackOpen,
 }: SetPageInnerProps) {
-	const { active, selected, toggleActive } = useCardSelection();
-
 	return (
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
 			<div className="mb-3 flex items-center gap-3">
 				<div className="flex flex-col gap-0.5">
 					<Eyebrow>Card Set</Eyebrow>
 				</div>
-				<span className="text-sm text-(--ink-muted)">
-					{cards.length} cards
-				</span>
+				<span className="text-sm text-(--ink-muted)">{cards.length} cards</span>
 				<ClientOnly fallback={null}>
 					<div className="ml-auto flex items-center gap-2">
-						<ButtonGroup>
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								aria-pressed={active}
-								onClick={toggleActive}
-							>
-								{!active
-									? "Select cards"
-									: selected.size > 0
-										? "Clear selected"
-										: "Cancel"}
-							</Button>
-							<BulkAddMenu
-								triggerVariant="chevron"
-								cardIds={cards.map((c: HoloCardData) => c.id)}
-								ruleQuery={toSerializedQuery(search, { setId: set.id })}
-								selectedCardIds={active ? [...selected] : undefined}
-							/>
-						</ButtonGroup>
+						<SelectAndBulkAdd
+							cardIds={cards.map((c: HoloCardData) => c.id)}
+							ruleQuery={toSerializedQuery(search, { setId: set.id })}
+						/>
 						<Button
 							variant="outline"
 							size="sm"

@@ -56,10 +56,27 @@ async function renderInRouter(
 	return render(<RouterProvider router={router} />);
 }
 
-test("AppSidebar lists all series", async () => {
-	await renderInRouter(
+/**
+ * Render `<AppSidebar>` with the shared `tree` and no active series/set — the
+ * default arrangement for most tests. Pass `initialPath` to drive Vault routing.
+ */
+function renderSidebar(opts: { initialPath?: string } = {}) {
+	return renderInRouter(
 		<AppSidebar tree={tree} activeSeriesSlug={null} activeSetSlug={null} />,
+		opts,
 	);
+}
+
+/** Assert the four Vault child links are present. */
+function expectVaultLinks() {
+	expect(screen.getByRole("link", { name: "Overview" })).toBeDefined();
+	expect(screen.getByRole("link", { name: "All cards" })).toBeDefined();
+	expect(screen.getByRole("link", { name: "Sets" })).toBeDefined();
+	expect(screen.getByRole("link", { name: "Binders" })).toBeDefined();
+}
+
+test("AppSidebar lists all series", async () => {
+	await renderSidebar();
 	expect(screen.getByText("Sword & Shield")).toBeDefined();
 	expect(screen.getByText("Base")).toBeDefined();
 });
@@ -76,30 +93,18 @@ test("active series' set is visible", async () => {
 });
 
 test("Vault group renders Overview / All cards / Sets / Binders links at /vault", async () => {
-	await renderInRouter(
-		<AppSidebar tree={tree} activeSeriesSlug={null} activeSetSlug={null} />,
-		{ initialPath: "/vault" },
-	);
-	expect(screen.getByRole("link", { name: "Overview" })).toBeDefined();
-	expect(screen.getByRole("link", { name: "All cards" })).toBeDefined();
-	expect(screen.getByRole("link", { name: "Sets" })).toBeDefined();
-	expect(screen.getByRole("link", { name: "Binders" })).toBeDefined();
+	await renderSidebar({ initialPath: "/vault" });
+	expectVaultLinks();
 });
 
 test("Vault Overview link points to /vault", async () => {
-	await renderInRouter(
-		<AppSidebar tree={tree} activeSeriesSlug={null} activeSetSlug={null} />,
-		{ initialPath: "/vault" },
-	);
+	await renderSidebar({ initialPath: "/vault" });
 	const overview = screen.getByRole("link", { name: "Overview" });
 	expect((overview as HTMLAnchorElement).getAttribute("href")).toBe("/vault");
 });
 
 test("Vault All cards link points to /vault/cards", async () => {
-	await renderInRouter(
-		<AppSidebar tree={tree} activeSeriesSlug={null} activeSetSlug={null} />,
-		{ initialPath: "/vault" },
-	);
+	await renderSidebar({ initialPath: "/vault" });
 	const cards = screen.getByRole("link", { name: "All cards" });
 	expect((cards as HTMLAnchorElement).getAttribute("href")).toBe(
 		"/vault/cards",
@@ -107,19 +112,13 @@ test("Vault All cards link points to /vault/cards", async () => {
 });
 
 test("Vault Sets link points to /vault/sets", async () => {
-	await renderInRouter(
-		<AppSidebar tree={tree} activeSeriesSlug={null} activeSetSlug={null} />,
-		{ initialPath: "/vault" },
-	);
+	await renderSidebar({ initialPath: "/vault" });
 	const sets = screen.getByRole("link", { name: "Sets" });
 	expect((sets as HTMLAnchorElement).getAttribute("href")).toBe("/vault/sets");
 });
 
 test("Vault Binders link points to /vault/binders", async () => {
-	await renderInRouter(
-		<AppSidebar tree={tree} activeSeriesSlug={null} activeSetSlug={null} />,
-		{ initialPath: "/vault" },
-	);
+	await renderSidebar({ initialPath: "/vault" });
 	const binders = screen.getByRole("link", { name: "Binders" });
 	expect((binders as HTMLAnchorElement).getAttribute("href")).toBe(
 		"/vault/binders",
@@ -127,21 +126,12 @@ test("Vault Binders link points to /vault/binders", async () => {
 });
 
 test("Vault group is expanded when path starts with /vault", async () => {
-	await renderInRouter(
-		<AppSidebar tree={tree} activeSeriesSlug={null} activeSetSlug={null} />,
-		{ initialPath: "/vault/binders" },
-	);
-	expect(screen.getByRole("link", { name: "Overview" })).toBeDefined();
-	expect(screen.getByRole("link", { name: "All cards" })).toBeDefined();
-	expect(screen.getByRole("link", { name: "Sets" })).toBeDefined();
-	expect(screen.getByRole("link", { name: "Binders" })).toBeDefined();
+	await renderSidebar({ initialPath: "/vault/binders" });
+	expectVaultLinks();
 });
 
 test("Binders child is aria-current=page at /vault/binders", async () => {
-	await renderInRouter(
-		<AppSidebar tree={tree} activeSeriesSlug={null} activeSetSlug={null} />,
-		{ initialPath: "/vault/binders" },
-	);
+	await renderSidebar({ initialPath: "/vault/binders" });
 	const binders = screen.getByRole("link", { name: "Binders" });
 	expect(binders.getAttribute("aria-current")).toBe("page");
 	const overview = screen.getByRole("link", { name: "Overview" });
@@ -149,10 +139,7 @@ test("Binders child is aria-current=page at /vault/binders", async () => {
 });
 
 test("Overview child is aria-current=page at /vault", async () => {
-	await renderInRouter(
-		<AppSidebar tree={tree} activeSeriesSlug={null} activeSetSlug={null} />,
-		{ initialPath: "/vault" },
-	);
+	await renderSidebar({ initialPath: "/vault" });
 	const overview = screen.getByRole("link", { name: "Overview" });
 	expect(overview.getAttribute("aria-current")).toBe("page");
 	const sets = screen.getByRole("link", { name: "Sets" });
@@ -160,30 +147,19 @@ test("Overview child is aria-current=page at /vault", async () => {
 });
 
 test("Sets child is aria-current=page at /vault/sets", async () => {
-	await renderInRouter(
-		<AppSidebar tree={tree} activeSeriesSlug={null} activeSetSlug={null} />,
-		{ initialPath: "/vault/sets" },
-	);
+	await renderSidebar({ initialPath: "/vault/sets" });
 	const setsLink = screen.getByRole("link", { name: "Sets" });
 	expect(setsLink.getAttribute("aria-current")).toBe("page");
 });
 
 test("Vault items are always visible (flat group, matches mock)", async () => {
-	await renderInRouter(
-		<AppSidebar tree={tree} activeSeriesSlug={null} activeSetSlug={null} />,
-		{ initialPath: "/" },
-	);
+	await renderSidebar({ initialPath: "/" });
 	// Flat group (no collapsible parent): vault children render regardless of path
-	expect(screen.getByRole("link", { name: "Overview" })).toBeDefined();
-	expect(screen.getByRole("link", { name: "All cards" })).toBeDefined();
-	expect(screen.getByRole("link", { name: "Sets" })).toBeDefined();
-	expect(screen.getByRole("link", { name: "Binders" })).toBeDefined();
+	expectVaultLinks();
 });
 
 test("About and RepoLink are present in sidebar footer", async () => {
-	await renderInRouter(
-		<AppSidebar tree={tree} activeSeriesSlug={null} activeSetSlug={null} />,
-	);
+	await renderSidebar();
 	expect(screen.getByRole("button", { name: /about/i })).toBeDefined();
 	expect(screen.getByRole("link", { name: /github/i })).toBeDefined();
 });

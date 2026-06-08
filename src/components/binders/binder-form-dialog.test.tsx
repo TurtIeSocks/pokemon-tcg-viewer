@@ -2,18 +2,14 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createIdbRepos } from "../../store/userland/idb-repo";
 import {
-	resetUserlandForTests,
 	setUserlandRepos,
 	useUserland,
 } from "../../store/userland/userland-store";
+import { setupUserlandTest } from "../../test-utils";
 import { BinderFormDialog } from "./binder-form-dialog";
 
 beforeEach(async () => {
-	const repos = createIdbRepos();
-	await repos.collection.clear();
-	await repos.binders.clear();
-	setUserlandRepos(repos);
-	resetUserlandForTests();
+	await setupUserlandTest();
 });
 
 test("renders open with title and name field", () => {

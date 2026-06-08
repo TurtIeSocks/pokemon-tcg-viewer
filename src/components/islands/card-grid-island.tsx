@@ -16,7 +16,7 @@ import {
 } from "../../store/corpus/corpus-runtime";
 import { useOwnedCardIdSet } from "../../store/userland/selectors";
 import { CollectionToggle } from "../collection-toggle";
-import type { HoloCardData } from "../holo-card";
+import { type HoloCardData, holoCardProps } from "../holo-card";
 import { useCardSelection } from "./card-selection";
 import { FlipCard } from "./flip-card";
 import { HoloCardIsland } from "./holo-card-island";
@@ -146,16 +146,7 @@ export function CardGridIsland({
 		const cardContent = (
 			<FlipCard imageUrl={card.imageUrlSmall ?? card.imageUrl}>
 				<HoloCardIsland
-					imageUrl={card.imageUrl}
-					imageUrlSmall={card.imageUrlSmall}
-					name={card.name}
-					rarity={card.rarity}
-					subtypes={card.subtypes}
-					supertype={card.supertype}
-					setId={card.setId}
-					series={card.setSeries}
-					variants={card.variants}
-					cardNumber={card.cardNumber}
+					{...holoCardProps(card)}
 					hoverOverlay={
 						selectActive ? undefined : <CollectionToggle card={card} />
 					}

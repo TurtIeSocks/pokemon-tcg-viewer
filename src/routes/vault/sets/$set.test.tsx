@@ -9,33 +9,19 @@ import {
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { PokemonSet } from "../../../server/card-mappers";
 import { useStore } from "../../../store";
-import { buildIndex } from "../../../store/corpus/corpus-engine";
-import { useCorpusRuntime } from "../../../store/corpus/corpus-runtime";
-import type { CorpusCard } from "../../../store/corpus/corpus-types";
-import { createIdbRepos } from "../../../store/userland/idb-repo";
 import type { Stack } from "../../../store/userland/types";
+import { useUserland } from "../../../store/userland/userland-store";
 import {
-	resetUserlandForTests,
-	setUserlandRepos,
-	useUserland,
-} from "../../../store/userland/userland-store";
+	makeCorpusCard,
+	makeStack,
+	seedCorpus,
+	setupUserlandTest,
+} from "../../../test-utils";
 import { VaultSetDetailInner } from "./$set";
 
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
-
-function cc(id: string, name: string, setId: string, number = "1"): CorpusCard {
-	return {
-		id,
-		name,
-		imageUrl: `https://example.com/${id}.png`,
-		imageUrlSmall: `https://example.com/${id}-sm.png`,
-		supertype: "Pokémon",
-		setId,
-		number,
-	};
-}
 
 const baseSet: PokemonSet = {
 	id: "base1",
@@ -47,26 +33,22 @@ const baseSet: PokemonSet = {
 };
 
 const cards = [
-	cc("base1-1", "Bulbasaur", "base1", "1"),
-	cc("base1-2", "Ivysaur", "base1", "2"),
+	makeCorpusCard({
+		id: "base1-1",
+		name: "Bulbasaur",
+		setId: "base1",
+		number: "1",
+	}),
+	makeCorpusCard({
+		id: "base1-2",
+		name: "Ivysaur",
+		setId: "base1",
+		number: "2",
+	}),
 ];
 
 function makeItem(id: string, cardId: string): Stack {
-	return {
-		id,
-		cardId,
-		acquiredAt: Date.now(),
-		createdAt: Date.now(),
-		quantity: 1,
-		source: null,
-		storageLocation: null,
-		pricePaid: null,
-		variant: null,
-		condition: null,
-		grading: null,
-		notes: null,
-		isPrimary: true,
-	};
+	return makeStack({ id, cardId, isPrimary: true });
 }
 
 async function renderSetDetail(setId: string, items: Stack[] = []) {
@@ -103,13 +85,9 @@ async function renderSetDetail(setId: string, items: Stack[] = []) {
 // ---------------------------------------------------------------------------
 
 beforeEach(async () => {
-	const repos = createIdbRepos();
-	await repos.collection.clear();
-	await repos.binders.clear();
-	setUserlandRepos(repos);
-	resetUserlandForTests();
+	await setupUserlandTest();
 	useStore.setState({ sets: [baseSet] });
-	useCorpusRuntime.setState({ index: buildIndex(cards), loading: false });
+	seedCorpus(cards);
 });
 
 // ---------------------------------------------------------------------------

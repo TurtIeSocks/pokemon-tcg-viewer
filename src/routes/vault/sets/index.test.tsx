@@ -7,32 +7,18 @@ import {
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { PokemonSet } from "../../../server/card-mappers";
 import { useStore } from "../../../store";
-import { buildIndex } from "../../../store/corpus/corpus-engine";
-import { useCorpusRuntime } from "../../../store/corpus/corpus-runtime";
-import type { CorpusCard } from "../../../store/corpus/corpus-types";
-import { createIdbRepos } from "../../../store/userland/idb-repo";
 import type { Stack } from "../../../store/userland/types";
+import { useUserland } from "../../../store/userland/userland-store";
 import {
-	resetUserlandForTests,
-	setUserlandRepos,
-	useUserland,
-} from "../../../store/userland/userland-store";
+	makeCorpusCard,
+	makeStack,
+	seedCorpus,
+	setupUserlandTest,
+} from "../../../test-utils";
 
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
-
-function cc(id: string, name: string, setId: string, number = "1"): CorpusCard {
-	return {
-		id,
-		name,
-		imageUrl: `https://example.com/${id}.png`,
-		imageUrlSmall: `https://example.com/${id}-sm.png`,
-		supertype: "Pokémon",
-		setId,
-		number,
-	};
-}
 
 function makeSet(id: string, name: string, series: string): PokemonSet {
 	return {
@@ -49,28 +35,14 @@ const ownedSet = makeSet("base1", "Base Set", "Base");
 const unownedSet = makeSet("jungle1", "Jungle", "Base");
 
 const cards = [
-	cc("base1-1", "Bulbasaur", "base1"),
-	cc("base1-2", "Ivysaur", "base1"),
-	cc("jungle1-1", "Clefairy", "jungle1"),
-	cc("jungle1-2", "Oddish", "jungle1"),
+	makeCorpusCard({ id: "base1-1", name: "Bulbasaur", setId: "base1" }),
+	makeCorpusCard({ id: "base1-2", name: "Ivysaur", setId: "base1" }),
+	makeCorpusCard({ id: "jungle1-1", name: "Clefairy", setId: "jungle1" }),
+	makeCorpusCard({ id: "jungle1-2", name: "Oddish", setId: "jungle1" }),
 ];
 
 function makeItem(id: string, cardId: string): Stack {
-	return {
-		id,
-		cardId,
-		acquiredAt: Date.now(),
-		createdAt: Date.now(),
-		quantity: 1,
-		source: null,
-		storageLocation: null,
-		pricePaid: null,
-		variant: null,
-		condition: null,
-		grading: null,
-		notes: null,
-		isPrimary: true,
-	};
+	return makeStack({ id, cardId, isPrimary: true });
 }
 
 // Loader data has to be supplied to Route — but VaultSetsInner calls
@@ -191,13 +163,9 @@ function VaultSetsInnerWithData({ tree }: { tree: NavTree }) {
 // ---------------------------------------------------------------------------
 
 beforeEach(async () => {
-	const repos = createIdbRepos();
-	await repos.collection.clear();
-	await repos.binders.clear();
-	setUserlandRepos(repos);
-	resetUserlandForTests();
+	await setupUserlandTest();
 	useStore.setState({ sets: [ownedSet, unownedSet] });
-	useCorpusRuntime.setState({ index: buildIndex(cards), loading: false });
+	seedCorpus(cards);
 });
 
 // ---------------------------------------------------------------------------

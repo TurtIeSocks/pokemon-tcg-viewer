@@ -1,11 +1,7 @@
 // src/components/shell/set-tile.test.tsx
 import { expect, test } from "bun:test";
-import {
-	createRootRoute,
-	createRouter,
-	RouterProvider,
-} from "@tanstack/react-router";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
+import { renderInRouter } from "../../test-utils";
 import { SetTile } from "./set-tile";
 
 const set = {
@@ -16,13 +12,6 @@ const set = {
 	symbol: "s.png",
 	total: 120,
 };
-
-async function renderInRouter(ui: React.ReactNode) {
-	const rootRoute = createRootRoute({ component: () => <>{ui}</> });
-	const router = createRouter({ routeTree: rootRoute });
-	await router.load();
-	return render(<RouterProvider router={router} />);
-}
 
 test("shows owned/total stat + percent when ownedCount provided", async () => {
 	await renderInRouter(<SetTile seriesSlug="base" set={set} ownedCount={3} />);

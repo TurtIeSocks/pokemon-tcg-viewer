@@ -6,7 +6,7 @@ import type { FocusCardData } from "../../server/card-mappers";
 import { useIsOwned } from "../../store/userland/selectors";
 import { addStack } from "../../store/userland/userland-store";
 import { getCardAccent, getReadableAccent } from "../../utils/card-colors";
-import { HoloCard } from "../holo-card";
+import { HoloCard, holoCardProps } from "../holo-card";
 import { CardPrices } from "../islands/card-prices";
 import { CardCrossLinks, type CrossLink } from "../islands/cross-links";
 import { CardInfo } from "./card-info";
@@ -59,17 +59,7 @@ export function CardDetail({
 									/>
 								}
 							>
-								<HoloCard
-									imageUrl={card.imageUrl}
-									name={card.name}
-									rarity={card.rarity}
-									subtypes={card.subtypes}
-									supertype={card.supertype}
-									setId={card.setId}
-									series={card.setSeries}
-									cardNumber={card.cardNumber}
-									size="focus"
-								/>
+								<HoloCard {...holoCardProps(card)} size="focus" />
 							</ClientOnly>
 							<CollectionButton card={holo} onManage={onManage} />
 						</div>

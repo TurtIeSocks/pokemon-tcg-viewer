@@ -1,7 +1,7 @@
 import { Link, type LinkProps } from "@tanstack/react-router";
 import { useOwnedIndex } from "../../store/userland/selectors";
 import { CollectionToggle } from "../collection-toggle";
-import { HoloCard, type HoloCardData } from "../holo-card";
+import { HoloCard, type HoloCardData, holoCardProps } from "../holo-card";
 import { groupCardsByEra } from "../pokemon-timeline/group-cards-by-era";
 import "../pokemon-timeline/pokemon-timeline.css";
 
@@ -46,16 +46,7 @@ export function PokemonTimeline({
 						{era.cards.map((card) => (
 							<Link key={card.id} {...cardHref(card)} className="block">
 								<HoloCard
-									imageUrl={card.imageUrl}
-									imageUrlSmall={card.imageUrlSmall}
-									name={card.name}
-									rarity={card.rarity}
-									subtypes={card.subtypes}
-									supertype={card.supertype}
-									setId={card.setId}
-									series={card.setSeries}
-									variants={card.variants}
-									cardNumber={card.cardNumber}
+									{...holoCardProps(card)}
 									owned={ownedIndex.has(card.id)}
 									hoverOverlay={<CollectionToggle card={card} />}
 									style={{ width: 300 }}

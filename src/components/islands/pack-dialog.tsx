@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { rollPack } from "../../utils/roll-pack";
 import { BoosterPack, type PackArt } from "../booster-pack/booster-pack";
 import { CollectionToggle } from "../collection-toggle";
-import { HoloCard, type HoloCardData } from "../holo-card";
+import { HoloCard, type HoloCardData, holoCardProps } from "../holo-card";
 
 const RIP_DURATION_MS = 320;
 
@@ -76,16 +76,7 @@ export function PackDialog({
 							{pack.map((card) => (
 								<Link key={card.id} {...cardHref(card)} className="block">
 									<HoloCard
-										imageUrl={card.imageUrl}
-										imageUrlSmall={card.imageUrlSmall}
-										name={card.name}
-										rarity={card.rarity}
-										subtypes={card.subtypes}
-										supertype={card.supertype}
-										setId={card.setId}
-										series={card.setSeries}
-										variants={card.variants}
-										cardNumber={card.cardNumber}
+										{...holoCardProps(card)}
 										hoverOverlay={<CollectionToggle card={card} />}
 										style={{ width: "100%" }}
 									/>

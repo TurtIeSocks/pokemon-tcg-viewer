@@ -7,30 +7,16 @@ import {
 import { render, screen } from "@testing-library/react";
 import type { PokemonSet } from "../../server/card-mappers";
 import { useStore } from "../../store";
-import { buildIndex } from "../../store/corpus/corpus-engine";
-import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
-import type { CorpusCard } from "../../store/corpus/corpus-types";
 import {
 	type BinderSnapshot,
 	encodeSnapshot,
 } from "../../store/userland/share";
+import { makeCorpusCard, seedCorpus } from "../../test-utils";
 import { SharedBinderInner } from "./shared";
 
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
-
-function cc(id: string, name: string, setId: string): CorpusCard {
-	return {
-		id,
-		name,
-		imageUrl: `https://example.com/${id}.png`,
-		imageUrlSmall: `https://example.com/${id}-sm.png`,
-		supertype: "Pokémon",
-		setId,
-		number: "1",
-	};
-}
 
 const oneSet: PokemonSet = {
 	id: "base1",
@@ -42,8 +28,8 @@ const oneSet: PokemonSet = {
 };
 
 const cards = [
-	cc("base1-1", "Bulbasaur", "base1"),
-	cc("base1-2", "Ivysaur", "base1"),
+	makeCorpusCard({ id: "base1-1", name: "Bulbasaur", setId: "base1" }),
+	makeCorpusCard({ id: "base1-2", name: "Ivysaur", setId: "base1" }),
 ];
 
 function makeSnapshot(overrides: Partial<BinderSnapshot> = {}): BinderSnapshot {
@@ -76,7 +62,7 @@ async function renderInner() {
 
 beforeEach(() => {
 	useStore.setState({ sets: [oneSet] });
-	useCorpusRuntime.setState({ index: buildIndex(cards), loading: false });
+	seedCorpus(cards);
 });
 
 // ---------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 // src/store/userland/idb-repo.test.ts
 import { beforeEach, expect, test } from "bun:test";
+import { makeBinder, makeStack } from "../../test-utils";
 import { createIdbCollectionRepo } from "./idb-repo";
 
 const repo = createIdbCollectionRepo();
@@ -162,22 +163,7 @@ test("importAll replace clears then writes, preserving ids", async () => {
 	const snap: UserDataSnapshot = {
 		schemaVersion: 2,
 		exportedAt: 0,
-		collection: [
-			{
-				id: "fixed-1",
-				cardId: "new",
-				quantity: 1,
-				source: null,
-				storageLocation: null,
-				acquiredAt: 1,
-				createdAt: 1,
-				pricePaid: null,
-				variant: null,
-				notes: null,
-				condition: null,
-				grading: null,
-			},
-		],
+		collection: [makeStack({ id: "fixed-1", cardId: "new" })],
 		binders: [],
 	};
 	await repos.backup.importAll(snap, "replace");
@@ -192,22 +178,7 @@ test("importAll merge upserts by id without clearing", async () => {
 	const snap: UserDataSnapshot = {
 		schemaVersion: 2,
 		exportedAt: 0,
-		collection: [
-			{
-				id: "added-1",
-				cardId: "added",
-				quantity: 1,
-				source: null,
-				storageLocation: null,
-				acquiredAt: 1,
-				createdAt: 1,
-				pricePaid: null,
-				variant: null,
-				notes: null,
-				condition: null,
-				grading: null,
-			},
-		],
+		collection: [makeStack({ id: "added-1", cardId: "added" })],
 		binders: [],
 	};
 	await repos.backup.importAll(snap, "merge");
@@ -231,7 +202,7 @@ test("backup round-trips a binder with rule + includeCardIds + excludeCardIds, p
 			mode: "fuzzy",
 		},
 	};
-	const fullBinder: Binder = {
+	const fullBinder: Binder = makeBinder({
 		id: "binder-abc",
 		name: "Charizard collection",
 		description: "All Charizard cards",
@@ -240,7 +211,7 @@ test("backup round-trips a binder with rule + includeCardIds + excludeCardIds, p
 		excludeCardIds: ["xy7-11"],
 		createdAt: 1000,
 		updatedAt: 2000,
-	};
+	});
 	const snap: UserDataSnapshot = {
 		schemaVersion: 2,
 		exportedAt: 0,

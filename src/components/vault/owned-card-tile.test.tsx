@@ -1,33 +1,26 @@
 // owned-card-tile.test.tsx
 import { beforeEach, expect, test } from "bun:test";
-import {
-	createRootRoute,
-	createRouter,
-	RouterProvider,
-} from "@tanstack/react-router";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import type { PokemonSet } from "../../server/card-mappers";
-import { buildIndex, hydrateCard } from "../../store/corpus/corpus-engine";
-import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
-import type { CorpusCard } from "../../store/corpus/corpus-types";
+import { hydrateCard } from "../../store/corpus/corpus-engine";
 import { useStore } from "../../store/index";
 import type { CardRow } from "../../store/userland/card-rows";
-import { createIdbRepos } from "../../store/userland/idb-repo";
 import {
-	resetUserlandForTests,
-	setUserlandRepos,
-} from "../../store/userland/userland-store";
+	makeCorpusCard,
+	makeStack,
+	renderInRouter,
+	seedCorpus,
+	setupUserlandTest,
+} from "../../test-utils";
 import { OwnedCardTile } from "./owned-card-tile";
 
-const testCard: CorpusCard = {
+const testCard = makeCorpusCard({
 	id: "base1-4",
 	name: "Charizard",
 	imageUrl: "https://example.com/charizard.png",
 	imageUrlSmall: "https://example.com/charizard-sm.png",
-	supertype: "Pokémon",
-	setId: "base1",
 	number: "4",
-};
+});
 
 const testSet: PokemonSet = {
 	id: "base1",
@@ -42,44 +35,17 @@ const setsById = new Map([[testSet.id, testSet]]);
 
 function makeRow(stacks: number): CardRow {
 	const card = hydrateCard(testCard, setsById);
-	const primary = {
-		id: "copy-1",
-		cardId: testCard.id,
-		quantity: 1,
-		source: null,
-		storageLocation: null,
-		acquiredAt: 0,
-		createdAt: 0,
-		pricePaid: null,
-		variant: null,
-		notes: null,
-		condition: null,
-		grading: null,
-	};
-	const copyList = Array.from({ length: stacks }, (_, i) => ({
-		...primary,
-		id: `copy-${i + 1}`,
-	}));
-	return { card, stacks: copyList, primary, count: stacks };
+	const copyList = Array.from({ length: stacks }, (_, i) =>
+		makeStack({ id: `copy-${i + 1}`, cardId: testCard.id }),
+	);
+	return { card, stacks: copyList, primary: copyList[0], count: stacks };
 }
 
-async function renderInRouter(ui: React.ReactNode) {
-	const rootRoute = createRootRoute({ component: () => <>{ui}</> });
-	const router = createRouter({ routeTree: rootRoute });
-	await router.load();
-	return render(<RouterProvider router={router} />);
-}
-
-let repos = createIdbRepos();
 beforeEach(async () => {
-	repos = createIdbRepos();
-	await repos.collection.clear();
-	await repos.binders.clear();
-	setUserlandRepos(repos);
-	resetUserlandForTests();
+	await setupUserlandTest();
 
 	// Pre-seed corpus + sets so useSlugIndex resolves inside OwnedCardTile.
-	useCorpusRuntime.setState({ index: buildIndex([testCard]) });
+	seedCorpus([testCard]);
 	useStore.setState({ sets: [testSet] });
 });
 

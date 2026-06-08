@@ -1,61 +1,27 @@
 // card-detail.test.tsx
 import { beforeEach, expect, mock, test } from "bun:test";
+import { fireEvent, screen } from "@testing-library/react";
+import { addStack } from "../../store/userland/userland-store";
 import {
-	createRootRoute,
-	createRouter,
-	RouterProvider,
-} from "@tanstack/react-router";
-import { fireEvent, render, screen } from "@testing-library/react";
-import type { FocusCardData } from "../../server/card-mappers";
-import { buildIndex } from "../../store/corpus/corpus-engine";
-import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
-import { createIdbRepos } from "../../store/userland/idb-repo";
-import {
-	addStack,
-	resetUserlandForTests,
-	setUserlandRepos,
-} from "../../store/userland/userland-store";
+	makeFocusCard,
+	renderInRouter,
+	seedCorpusFor,
+	setupUserlandTest,
+} from "../../test-utils";
 import { CardDetail } from "./card-detail";
 
-const CARD: FocusCardData = {
+const CARD = makeFocusCard({
 	id: "base1-4",
 	name: "Charizard",
 	imageUrl: "https://example.com/charizard.png",
-	supertype: "Pokémon",
-	setId: "base1",
 	setName: "Base Set",
-	setSeries: "Base",
 	cardNumber: "4",
-};
-
-async function renderInRouter(ui: React.ReactNode) {
-	const rootRoute = createRootRoute({ component: () => <>{ui}</> });
-	const router = createRouter({ routeTree: rootRoute });
-	await router.load();
-	return render(<RouterProvider router={router} />);
-}
+});
 
 beforeEach(async () => {
 	// Pre-seed corpus so loadCorpus() early-returns without network.
-	useCorpusRuntime.setState({
-		index: buildIndex([
-			{
-				id: "base1-4",
-				name: "Charizard",
-				imageUrl: "https://example.com/charizard.png",
-				imageUrlSmall: "https://example.com/charizard-sm.png",
-				supertype: "Pokémon",
-				setId: "base1",
-				number: "4",
-			},
-		]),
-	});
-
-	const repos = createIdbRepos();
-	await repos.collection.clear();
-	await repos.binders.clear();
-	setUserlandRepos(repos);
-	resetUserlandForTests();
+	seedCorpusFor(CARD);
+	await setupUserlandTest();
 });
 
 test("unowned card renders '＋ Add to collection' button", async () => {

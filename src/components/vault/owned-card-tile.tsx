@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { cardManageLinkPropsFor, cardRouteParams } from "../../lib/card-route";
 import { useSlugIndex } from "../../store/corpus/corpus-runtime";
 import type { CardRow } from "../../store/userland/card-rows";
+import { holoCardProps } from "../holo-card";
 import { HoloCardIsland } from "../islands/holo-card-island";
 
 /** Props for {@link OwnedCardTile}. */
@@ -20,18 +21,7 @@ export function OwnedCardTile({ row }: OwnedCardTileProps) {
 
 	const inner = (
 		<>
-			<HoloCardIsland
-				imageUrl={row.card.imageUrl}
-				imageUrlSmall={row.card.imageUrlSmall}
-				name={row.card.name}
-				rarity={row.card.rarity}
-				subtypes={row.card.subtypes}
-				supertype={row.card.supertype}
-				setId={row.card.setId}
-				series={row.card.setSeries}
-				variants={row.card.variants}
-				cardNumber={row.card.cardNumber}
-			/>
+			<HoloCardIsland {...holoCardProps(row.card)} />
 			{row.count > 1 && (
 				<span className="absolute bottom-1 right-1 flex h-6 min-w-6 items-center justify-center rounded-[var(--r-pill)] bg-[var(--success)] px-1.5 text-xs font-bold text-[var(--primary-ink)]">
 					×{row.count}

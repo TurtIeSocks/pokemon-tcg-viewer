@@ -8,33 +8,20 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { deriveNavTree } from "../../lib/nav-tree";
 import type { PokemonSet } from "../../server/card-mappers";
 import { useStore } from "../../store";
-import { buildIndex } from "../../store/corpus/corpus-engine";
-import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
-import type { CorpusCard } from "../../store/corpus/corpus-types";
-import { createIdbRepos } from "../../store/userland/idb-repo";
-import type { Binder, Stack } from "../../store/userland/types";
+import type { Stack } from "../../store/userland/types";
+import { useUserland } from "../../store/userland/userland-store";
 import {
-	resetUserlandForTests,
-	setUserlandRepos,
-	useUserland,
-} from "../../store/userland/userland-store";
+	makeBinder,
+	makeCorpusCard,
+	makeStack,
+	seedCorpus,
+	setupUserlandTest,
+} from "../../test-utils";
 import { VaultOverviewInner } from "./index";
 
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
-
-function cc(id: string, name: string, setId: string, number = "1"): CorpusCard {
-	return {
-		id,
-		name,
-		imageUrl: `https://example.com/${id}.png`,
-		imageUrlSmall: `https://example.com/${id}-sm.png`,
-		supertype: "Pokémon",
-		setId,
-		number,
-	};
-}
 
 function makeSet(
 	id: string,
@@ -56,9 +43,9 @@ const baseSet = makeSet("base1", "Base Set", "Base", 102);
 const jungleSet = makeSet("jungle1", "Jungle", "Base", 64);
 
 const cards = [
-	cc("base1-1", "Bulbasaur", "base1"),
-	cc("base1-2", "Ivysaur", "base1"),
-	cc("jungle1-1", "Clefairy", "jungle1"),
+	makeCorpusCard({ id: "base1-1", name: "Bulbasaur", setId: "base1" }),
+	makeCorpusCard({ id: "base1-2", name: "Ivysaur", setId: "base1" }),
+	makeCorpusCard({ id: "jungle1-1", name: "Clefairy", setId: "jungle1" }),
 ];
 
 function makeItem(
@@ -66,34 +53,7 @@ function makeItem(
 	cardId: string,
 	overrides: Partial<Stack> = {},
 ): Stack {
-	return {
-		id,
-		cardId,
-		acquiredAt: Date.now(),
-		createdAt: Date.now(),
-		quantity: 1,
-		source: null,
-		storageLocation: null,
-		pricePaid: null,
-		variant: null,
-		condition: null,
-		grading: null,
-		notes: null,
-		...overrides,
-	};
-}
-
-function makeBinder(id: string, name: string): Binder {
-	return {
-		id,
-		name,
-		description: null,
-		rules: [],
-		includeCardIds: [],
-		excludeCardIds: [],
-		createdAt: 1000,
-		updatedAt: 1000,
-	};
+	return makeStack({ id, cardId, ...overrides });
 }
 
 const tree = deriveNavTree([baseSet, jungleSet]);
@@ -112,13 +72,9 @@ async function renderOverview() {
 // ---------------------------------------------------------------------------
 
 beforeEach(async () => {
-	const repos = createIdbRepos();
-	await repos.collection.clear();
-	await repos.binders.clear();
-	setUserlandRepos(repos);
-	resetUserlandForTests();
+	await setupUserlandTest();
 	useStore.setState({ sets: [baseSet, jungleSet] });
-	useCorpusRuntime.setState({ index: buildIndex(cards), loading: false });
+	seedCorpus(cards);
 });
 
 // ---------------------------------------------------------------------------
@@ -194,7 +150,7 @@ test("binders empty state shown when no binders", async () => {
 });
 
 test("binder name shown when binders exist", async () => {
-	const binder = makeBinder("b1", "Charizard Line");
+	const binder = makeBinder({ id: "b1", name: "Charizard Line" });
 	useUserland.setState((s) => ({
 		...s,
 		binders: { b1: binder },

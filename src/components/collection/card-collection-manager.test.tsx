@@ -1,20 +1,12 @@
 // card-collection-manager.test.tsx
 import { beforeEach, expect, test } from "bun:test";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { createIdbRepos } from "../../store/userland/idb-repo";
-import {
-	addStack,
-	resetUserlandForTests,
-	setUserlandRepos,
-} from "../../store/userland/userland-store";
+import { addStack } from "../../store/userland/userland-store";
+import { setupUserlandTest } from "../../test-utils";
 import { CardCollectionManager } from "./card-collection-manager";
 
 beforeEach(async () => {
-	const repos = createIdbRepos();
-	await repos.collection.clear();
-	await repos.binders.clear();
-	setUserlandRepos(repos);
-	resetUserlandForTests();
+	await setupUserlandTest();
 });
 
 test("renders the card name in the top bar", () => {

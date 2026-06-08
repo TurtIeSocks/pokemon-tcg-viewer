@@ -1,5 +1,47 @@
 import type { HoloCardData } from "../components/holo-card";
 
+/** A card ability (focus view). */
+export interface CardAbility {
+	name: string;
+	text: string;
+	type: string;
+}
+
+/** A card attack (focus view). */
+export interface CardAttack {
+	name: string;
+	cost?: string[];
+	damage?: string;
+	text?: string;
+}
+
+/** A typed value for weaknesses/resistances (e.g. `{ type: "Fire", value: "×2" }`). */
+export interface CardTypeValue {
+	type: string;
+	value: string;
+}
+
+/** Small/large card image URLs from the pokemontcg.io API. */
+export interface ApiCardImages {
+	small: string;
+	large: string;
+}
+
+/** Battle/stat fields shared by {@link FocusCardData} and {@link PokemonApiFocusCard}. */
+export interface CardStats {
+	hp?: string;
+	types?: string[];
+	evolvesFrom?: string;
+	abilities?: CardAbility[];
+	attacks?: CardAttack[];
+	rules?: string[];
+	weaknesses?: CardTypeValue[];
+	resistances?: CardTypeValue[];
+	retreatCost?: string[];
+	flavorText?: string;
+	artist?: string;
+}
+
 export interface PokemonApiCard {
 	id: string;
 	name: string;
@@ -10,7 +52,7 @@ export interface PokemonApiCard {
 	number: string;
 	nationalPokedexNumbers?: number[];
 	set: { id: string; name: string; series: string; releaseDate?: string };
-	images: { small: string; large: string };
+	images: ApiCardImages;
 	tcgplayer?: { prices?: Record<string, unknown> };
 }
 
@@ -51,7 +93,7 @@ export interface PokemonListEntry {
 	url: string;
 }
 
-export interface FocusCardData {
+export interface FocusCardData extends CardStats {
 	// Common with HoloCardData
 	id: string;
 	imageUrl: string;
@@ -68,22 +110,6 @@ export interface FocusCardData {
 	// Additional for focus view
 	setLogo?: string;
 	setReleaseDate?: string;
-	hp?: string;
-	types?: string[];
-	evolvesFrom?: string;
-	abilities?: { name: string; text: string; type: string }[];
-	attacks?: {
-		name: string;
-		cost?: string[];
-		damage?: string;
-		text?: string;
-	}[];
-	rules?: string[];
-	weaknesses?: { type: string; value: string }[];
-	resistances?: { type: string; value: string }[];
-	retreatCost?: string[];
-	flavorText?: string;
-	artist?: string;
 	tcgplayer?: {
 		url: string;
 		updatedAt: string;
@@ -103,7 +129,7 @@ export interface FocusCardData {
 	};
 }
 
-export interface PokemonApiFocusCard {
+export interface PokemonApiFocusCard extends CardStats {
 	id: string;
 	name: string;
 	supertype: string;
@@ -111,22 +137,6 @@ export interface PokemonApiFocusCard {
 	rarity?: string;
 	number: string;
 	nationalPokedexNumbers?: number[];
-	hp?: string;
-	types?: string[];
-	evolvesFrom?: string;
-	abilities?: { name: string; text: string; type: string }[];
-	attacks?: {
-		name: string;
-		cost?: string[];
-		damage?: string;
-		text?: string;
-	}[];
-	rules?: string[];
-	weaknesses?: { type: string; value: string }[];
-	resistances?: { type: string; value: string }[];
-	retreatCost?: string[];
-	flavorText?: string;
-	artist?: string;
 	set: {
 		id: string;
 		name: string;
@@ -134,7 +144,7 @@ export interface PokemonApiFocusCard {
 		releaseDate?: string;
 		images?: { logo?: string; symbol?: string };
 	};
-	images: { small: string; large: string };
+	images: ApiCardImages;
 	tcgplayer?: FocusCardData["tcgplayer"];
 	cardmarket?: FocusCardData["cardmarket"];
 }

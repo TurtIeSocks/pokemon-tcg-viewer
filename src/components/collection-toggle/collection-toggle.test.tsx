@@ -1,31 +1,24 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import {
-	createRootRoute,
-	createRouter,
-	RouterProvider,
-} from "@tanstack/react-router";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import type { PokemonSet } from "../../server/card-mappers";
-import { buildIndex } from "../../store/corpus/corpus-engine";
-import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
 import { useStore } from "../../store/index";
-import { createIdbRepos } from "../../store/userland/idb-repo";
+import { resetUserlandForTests } from "../../store/userland/userland-store";
 import {
-	resetUserlandForTests,
-	setUserlandRepos,
-} from "../../store/userland/userland-store";
-import type { HoloCardData } from "../holo-card";
+	makeCard,
+	makeCorpusCard,
+	renderInRouter,
+	seedCorpus,
+	setupUserlandTest,
+	type UserlandTestRepos,
+} from "../../test-utils";
 import { CollectionToggle } from "./collection-toggle";
 
-const card: HoloCardData = {
+const card = makeCard({
 	id: "base1-58",
-	imageUrl: "https://example.invalid/p.png",
 	name: "Pikachu",
 	setId: "base1",
-	setName: "Base",
-	setSeries: "Base",
 	cardNumber: "58",
-};
+});
 
 const testSet: PokemonSet = {
 	id: "base1",
@@ -36,35 +29,19 @@ const testSet: PokemonSet = {
 	images: { symbol: "", logo: "" },
 };
 
-async function renderInRouter(ui: React.ReactNode) {
-	const rootRoute = createRootRoute({ component: () => <>{ui}</> });
-	const router = createRouter({ routeTree: rootRoute });
-	await router.load();
-	return render(<RouterProvider router={router} />);
-}
-
-let repos = createIdbRepos();
+let repos!: UserlandTestRepos;
 beforeEach(async () => {
-	repos = createIdbRepos();
-	await repos.collection.clear();
-	await repos.binders.clear();
-	setUserlandRepos(repos);
-	resetUserlandForTests();
+	repos = await setupUserlandTest();
 
 	// Pre-seed corpus + sets so useSlugIndex resolves inside CollectionToggle.
-	useCorpusRuntime.setState({
-		index: buildIndex([
-			{
-				id: card.id,
-				name: card.name,
-				imageUrl: card.imageUrl,
-				imageUrlSmall: card.imageUrl,
-				supertype: card.supertype ?? "Pokémon",
-				setId: card.setId,
-				number: card.cardNumber,
-			},
-		]),
-	});
+	seedCorpus([
+		makeCorpusCard({
+			id: card.id,
+			name: card.name,
+			setId: card.setId,
+			number: card.cardNumber,
+		}),
+	]);
 	useStore.setState({ sets: [testSet] });
 });
 

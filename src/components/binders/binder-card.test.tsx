@@ -1,39 +1,21 @@
 import { beforeEach, expect, test } from "bun:test";
-import {
-	createRootRoute,
-	createRouter,
-	RouterProvider,
-} from "@tanstack/react-router";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import type { PokemonSet } from "../../server/card-mappers";
 import { useStore } from "../../store";
-import { buildIndex } from "../../store/corpus/corpus-engine";
-import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
-import type { CorpusCard } from "../../store/corpus/corpus-types";
-import { createIdbRepos } from "../../store/userland/idb-repo";
-import type { Binder } from "../../store/userland/types";
+import type { Binder, SerializedQuery } from "../../store/userland/types";
+import { useUserland } from "../../store/userland/userland-store";
 import {
-	resetUserlandForTests,
-	setUserlandRepos,
-	useUserland,
-} from "../../store/userland/userland-store";
+	makeBinder,
+	makeCorpusCard,
+	renderInRouter,
+	seedCorpus,
+	setupUserlandTest,
+} from "../../test-utils";
 import { BinderCard } from "./binder-card";
 
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
-
-function cc(id: string, name: string, setId: string): CorpusCard {
-	return {
-		id,
-		name,
-		imageUrl: "",
-		imageUrlSmall: "",
-		supertype: "Pokémon",
-		setId,
-		number: "1",
-	};
-}
 
 const oneSet: PokemonSet = {
 	id: "base1",
@@ -45,61 +27,44 @@ const oneSet: PokemonSet = {
 };
 
 const cards = [
-	cc("base1-1", "Bulbasaur", "base1"),
-	cc("base1-2", "Ivysaur", "base1"),
+	makeCorpusCard({ id: "base1-1", name: "Bulbasaur" }),
+	makeCorpusCard({ id: "base1-2", name: "Ivysaur" }),
 ];
 
-function makeBinder(overrides: Partial<Binder> = {}): Binder {
-	return {
-		id: "b1",
+const emptyQuery: SerializedQuery = {
+	text: null,
+	setId: null,
+	dexNumber: null,
+	types: [],
+	rarities: [],
+	supertypes: [],
+	subtypes: [],
+	yearMin: null,
+	yearMax: null,
+	mode: "fuzzy",
+};
+
+/** The binder shape these tests assert against: one set-scoped rule + one manual include. */
+function testBinder(overrides: Partial<Binder> = {}): Binder {
+	return makeBinder({
 		name: "My Test Binder",
-		description: null,
-		rules: [
-			{
-				id: "r1",
-				query: {
-					text: null,
-					setId: "base1",
-					dexNumber: null,
-					types: [],
-					rarities: [],
-					supertypes: [],
-					subtypes: [],
-					yearMin: null,
-					yearMax: null,
-					mode: "fuzzy" as const,
-				},
-			},
-		],
+		rules: [{ id: "r1", query: { ...emptyQuery, setId: "base1" } }],
 		includeCardIds: ["base1-1"],
-		excludeCardIds: [],
-		createdAt: 1000,
-		updatedAt: 1000,
 		...overrides,
-	};
+	});
 }
 
-async function renderBinderCard(binder: Binder) {
-	const rootRoute = createRootRoute({
-		component: () => <BinderCard binder={binder} />,
-	});
-	const router = createRouter({ routeTree: rootRoute });
-	await router.load();
-	return render(<RouterProvider router={router} />);
-}
+const renderBinderCard = (binder: Binder) =>
+	renderInRouter(<BinderCard binder={binder} />);
 
 // ---------------------------------------------------------------------------
 // Setup
 // ---------------------------------------------------------------------------
 
 beforeEach(async () => {
-	const repos = createIdbRepos();
-	await repos.collection.clear();
-	await repos.binders.clear();
-	setUserlandRepos(repos);
-	resetUserlandForTests();
+	await setupUserlandTest();
 	useStore.setState({ sets: [oneSet] });
-	useCorpusRuntime.setState({ index: buildIndex(cards), loading: false });
+	seedCorpus(cards);
 });
 
 // ---------------------------------------------------------------------------
@@ -107,7 +72,7 @@ beforeEach(async () => {
 // ---------------------------------------------------------------------------
 
 test("renders binder name", async () => {
-	const binder = makeBinder();
+	const binder = testBinder();
 	useUserland.setState((s) => ({
 		binders: { ...s.binders, [binder.id]: binder },
 	}));
@@ -118,7 +83,7 @@ test("renders binder name", async () => {
 });
 
 test("renders description when present", async () => {
-	const binder = makeBinder({ description: "All Base Set holos" });
+	const binder = testBinder({ description: "All Base Set holos" });
 	useUserland.setState((s) => ({
 		binders: { ...s.binders, [binder.id]: binder },
 	}));
@@ -129,7 +94,7 @@ test("renders description when present", async () => {
 });
 
 test("does not render description element when null", async () => {
-	const binder = makeBinder({ description: null });
+	const binder = testBinder({ description: null });
 	useUserland.setState((s) => ({
 		binders: { ...s.binders, [binder.id]: binder },
 	}));
@@ -140,7 +105,7 @@ test("does not render description element when null", async () => {
 });
 
 test("renders progress indicator (owned/total label)", async () => {
-	const binder = makeBinder();
+	const binder = testBinder();
 	useUserland.setState((s) => ({
 		binders: { ...s.binders, [binder.id]: binder },
 	}));
@@ -156,38 +121,10 @@ test("renders progress indicator (owned/total label)", async () => {
 });
 
 test("renders rules and cards counts line", async () => {
-	const binder = makeBinder({
+	const binder = testBinder({
 		rules: [
-			{
-				id: "r1",
-				query: {
-					text: null,
-					setId: "base1",
-					dexNumber: null,
-					types: [],
-					rarities: [],
-					supertypes: [],
-					subtypes: [],
-					yearMin: null,
-					yearMax: null,
-					mode: "fuzzy" as const,
-				},
-			},
-			{
-				id: "r2",
-				query: {
-					text: null,
-					setId: null,
-					dexNumber: null,
-					types: [],
-					rarities: [],
-					supertypes: [],
-					subtypes: [],
-					yearMin: null,
-					yearMax: null,
-					mode: "fuzzy" as const,
-				},
-			},
+			{ id: "r1", query: { ...emptyQuery, setId: "base1" } },
+			{ id: "r2", query: { ...emptyQuery } },
 		],
 		includeCardIds: ["base1-1", "base1-2"],
 	});
@@ -202,7 +139,7 @@ test("renders rules and cards counts line", async () => {
 });
 
 test("share icon button opens ShareDialog", async () => {
-	const binder = makeBinder();
+	const binder = testBinder();
 	useUserland.setState((s) => ({
 		binders: { ...s.binders, [binder.id]: binder },
 	}));
@@ -219,7 +156,7 @@ test("share icon button opens ShareDialog", async () => {
 });
 
 test("share button click does not navigate (stopPropagation)", async () => {
-	const binder = makeBinder();
+	const binder = testBinder();
 	useUserland.setState((s) => ({
 		binders: { ...s.binders, [binder.id]: binder },
 	}));

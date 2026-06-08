@@ -1,23 +1,10 @@
 import { expect, mock, test } from "bun:test";
 import { fireEvent, render, screen } from "@testing-library/react";
-import type { HoloCardData } from "../holo-card";
+import { makeCard } from "../../test-utils";
 import { OwnedMissingGrid } from "./owned-missing-grid";
 
-function makeCard(id: string, name: string): HoloCardData {
-	return {
-		id,
-		name,
-		imageUrl: `https://example.com/${id}.png`,
-		imageUrlSmall: `https://example.com/${id}-sm.png`,
-		setId: "base1",
-		setName: "Base Set",
-		setSeries: "Base",
-		cardNumber: "1",
-	};
-}
-
-const cardA = makeCard("base1-1", "Bulbasaur");
-const cardB = makeCard("base1-2", "Ivysaur");
+const cardA = makeCard({ id: "base1-1", name: "Bulbasaur" });
+const cardB = makeCard({ id: "base1-2", name: "Ivysaur" });
 
 // "base1-1" owned; "base1-2" missing
 const ownedSet = new Set(["base1-1"]);

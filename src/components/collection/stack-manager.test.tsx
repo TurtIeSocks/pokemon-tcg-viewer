@@ -1,22 +1,12 @@
 // stack-manager.test.tsx
 import { beforeEach, expect, test } from "bun:test";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { createIdbRepos } from "../../store/userland/idb-repo";
-import {
-	addStack,
-	resetUserlandForTests,
-	setUserlandRepos,
-	useUserland,
-} from "../../store/userland/userland-store";
+import { addStack, useUserland } from "../../store/userland/userland-store";
+import { setupUserlandTest } from "../../test-utils";
 import { StackManager } from "./stack-manager";
 
-let repos = createIdbRepos();
 beforeEach(async () => {
-	repos = createIdbRepos();
-	await repos.collection.clear();
-	await repos.binders.clear();
-	setUserlandRepos(repos);
-	resetUserlandForTests();
+	await setupUserlandTest();
 });
 
 test("Merge dupes button appears for identical stacks and merges them", async () => {

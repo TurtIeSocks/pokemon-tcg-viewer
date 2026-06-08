@@ -5,13 +5,9 @@ import { useStore } from "../../store";
 import { buildIndex } from "../../store/corpus/corpus-engine";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
 import type { CorpusCard } from "../../store/corpus/corpus-types";
-import { createIdbRepos } from "../../store/userland/idb-repo";
 import type { UserDataSnapshot } from "../../store/userland/types";
-import {
-	resetUserlandForTests,
-	setUserlandRepos,
-	useUserland,
-} from "../../store/userland/userland-store";
+import { useUserland } from "../../store/userland/userland-store";
+import { setupUserlandTest } from "../../test-utils";
 import { ImportDialog } from "./import-dialog";
 
 function makeSnapshot(
@@ -65,14 +61,59 @@ function corpusCard(id: string, setId: string, number: string): CorpusCard {
 	};
 }
 
-let repos = createIdbRepos();
+/** Render the dialog (open) and fire a file change, returning the file input. */
+function openImportDialogWithFile(file: File): HTMLInputElement {
+	render(<ImportDialog open onOpenChange={() => {}} />);
+	const input = document.querySelector(
+		'input[type="file"]',
+	) as HTMLInputElement;
+	fireEvent.change(input, { target: { files: [file] } });
+	return input;
+}
+
+/** Match a <p> whose collapsed textContent contains `substr` (counts live in child spans). */
+function pTextContains(substr: string) {
+	return (_: string, node: Element | null) =>
+		node?.nodeName === "P" &&
+		(node?.textContent ?? "").replace(/\s+/g, " ").includes(substr);
+}
+
+/** Wait until a <p> with collapsed textContent containing `substr` is present. */
+async function waitForPText(substr: string): Promise<void> {
+	await waitFor(() => {
+		expect(screen.getByText(pTextContains(substr))).toBeDefined();
+	});
+}
+
+/** Seed the corpus with the canonical base1-4 card used across CSV tests. */
+function seedBase1Corpus(
+	card: CorpusCard = corpusCard("base1-4", "base1", "4"),
+) {
+	useCorpusRuntime.setState({ index: buildIndex([card]) });
+}
+
+/** Seed the single "Base" set used by set-name matching tests. */
+function seedBaseSet() {
+	useStore.setState({
+		sets: [
+			{
+				id: "base1",
+				name: "Base",
+				series: "Base",
+				releaseDate: "1999-01-09",
+				total: 102,
+				images: { symbol: "", logo: "" },
+			},
+		],
+	});
+}
+
+function csvFile(content: string, name: string): File {
+	return new File([content], name, { type: "text/csv" });
+}
 
 beforeEach(async () => {
-	repos = createIdbRepos();
-	await repos.collection.clear();
-	await repos.binders.clear();
-	setUserlandRepos(repos);
-	resetUserlandForTests();
+	await setupUserlandTest();
 });
 
 afterEach(() => {
@@ -81,16 +122,8 @@ afterEach(() => {
 });
 
 test("invalid JSON file → inline error shown, no import called", async () => {
-	const onOpenChange = () => {};
-	render(<ImportDialog open onOpenChange={onOpenChange} />);
-
-	const input = document.querySelector(
-		'input[type="file"]',
-	) as HTMLInputElement;
+	const input = openImportDialogWithFile(makeFile("not { json }"));
 	expect(input).toBeDefined();
-
-	const file = makeFile("not { json }");
-	fireEvent.change(input, { target: { files: [file] } });
 
 	await waitFor(() => {
 		expect(screen.getByText(/isn't valid JSON|Unrecognized/i)).toBeDefined();
@@ -101,28 +134,10 @@ test("invalid JSON file → inline error shown, no import called", async () => {
 });
 
 test("valid snapshot → summary shown; Merge → store gains items and binders", async () => {
-	const snap = makeSnapshot(3, 2);
-	const onOpenChange = () => {};
-
-	render(<ImportDialog open onOpenChange={onOpenChange} />);
-
-	const input = document.querySelector(
-		'input[type="file"]',
-	) as HTMLInputElement;
-	const file = makeFile(JSON.stringify(snap));
-	fireEvent.change(input, { target: { files: [file] } });
+	openImportDialogWithFile(makeFile(JSON.stringify(makeSnapshot(3, 2))));
 
 	// Summary appears (counts are in child spans so we match on combined textContent)
-	await waitFor(() => {
-		const el = screen.getByText(
-			(_, node) =>
-				node?.nodeName === "P" &&
-				(node?.textContent ?? "")
-					.replace(/\s+/g, " ")
-					.includes("3 cards · 2 binders"),
-		);
-		expect(el).toBeDefined();
-	});
+	await waitForPText("3 cards · 2 binders");
 
 	// Click Merge
 	const mergeBtn = screen.getByRole("button", { name: /merge/i });
@@ -139,27 +154,9 @@ test("valid snapshot → Replace (confirm true) → store replaced", async () =>
 	// Seed an existing item that should be gone after replace
 	spyOn(window, "confirm").mockImplementation(() => true);
 
-	const snap = makeSnapshot(2, 1);
-	const onOpenChange = () => {};
+	openImportDialogWithFile(makeFile(JSON.stringify(makeSnapshot(2, 1))));
 
-	render(<ImportDialog open onOpenChange={onOpenChange} />);
-
-	const input = document.querySelector(
-		'input[type="file"]',
-	) as HTMLInputElement;
-	const file = makeFile(JSON.stringify(snap));
-	fireEvent.change(input, { target: { files: [file] } });
-
-	await waitFor(() => {
-		const el = screen.getByText(
-			(_, node) =>
-				node?.nodeName === "P" &&
-				(node?.textContent ?? "")
-					.replace(/\s+/g, " ")
-					.includes("2 cards · 1 binders"),
-		);
-		expect(el).toBeDefined();
-	});
+	await waitForPText("2 cards · 1 binders");
 
 	const replaceBtn = screen.getByRole("button", { name: /replace/i });
 	fireEvent.click(replaceBtn);
@@ -174,27 +171,9 @@ test("valid snapshot → Replace (confirm true) → store replaced", async () =>
 test("Replace (confirm false) → no import", async () => {
 	spyOn(window, "confirm").mockImplementation(() => false);
 
-	const snap = makeSnapshot(2, 1);
-	const onOpenChange = () => {};
+	openImportDialogWithFile(makeFile(JSON.stringify(makeSnapshot(2, 1))));
 
-	render(<ImportDialog open onOpenChange={onOpenChange} />);
-
-	const input = document.querySelector(
-		'input[type="file"]',
-	) as HTMLInputElement;
-	const file = makeFile(JSON.stringify(snap));
-	fireEvent.change(input, { target: { files: [file] } });
-
-	await waitFor(() => {
-		const el = screen.getByText(
-			(_, node) =>
-				node?.nodeName === "P" &&
-				(node?.textContent ?? "")
-					.replace(/\s+/g, " ")
-					.includes("2 cards · 1 binders"),
-		);
-		expect(el).toBeDefined();
-	});
+	await waitForPText("2 cards · 1 binders");
 
 	const replaceBtn = screen.getByRole("button", { name: /replace/i });
 	fireEvent.click(replaceBtn);
@@ -207,32 +186,13 @@ test("Replace (confirm false) → no import", async () => {
 });
 
 test("CSV import previews matched/unmatched then commits matched stacks", async () => {
-	useCorpusRuntime.setState({
-		index: buildIndex([corpusCard("base1-4", "base1", "4")]),
-	});
-	render(<ImportDialog open onOpenChange={() => {}} />);
-
-	const input = document.querySelector(
-		'input[type="file"]',
-	) as HTMLInputElement;
-	const csvFile = new File(
-		["card_id,quantity\nbase1-4,2\nnope,1\n"],
-		"collection.csv",
-		{ type: "text/csv" },
+	seedBase1Corpus();
+	openImportDialogWithFile(
+		csvFile("card_id,quantity\nbase1-4,2\nnope,1\n", "collection.csv"),
 	);
-	fireEvent.change(input, { target: { files: [csvFile] } });
 
 	// Preview: 1 matched, 1 unmatched
-	await waitFor(() => {
-		const el = screen.getByText(
-			(_, node) =>
-				node?.nodeName === "P" &&
-				(node?.textContent ?? "")
-					.replace(/\s+/g, " ")
-					.includes("1 matched · 1 unmatched"),
-		);
-		expect(el).toBeDefined();
-	});
+	await waitForPText("1 matched · 1 unmatched");
 
 	fireEvent.click(screen.getByRole("button", { name: /import 1 stack/i }));
 
@@ -245,43 +205,16 @@ test("CSV import previews matched/unmatched then commits matched stacks", async 
 });
 
 test("CSV with foreign headers imports via auto-detect + set_name matching", async () => {
-	useCorpusRuntime.setState({
-		index: buildIndex([corpusCard("base1-4", "base1", "4")]),
-	});
-	useStore.setState({
-		sets: [
-			{
-				id: "base1",
-				name: "Base",
-				series: "Base",
-				releaseDate: "1999-01-09",
-				total: 102,
-				images: { symbol: "", logo: "" },
-			},
-		],
-	});
-	render(<ImportDialog open onOpenChange={() => {}} />);
-
-	const input = document.querySelector(
-		'input[type="file"]',
-	) as HTMLInputElement;
-	const file = new File(
-		["Name,Set,Card Number,Qty\nCharizard,Base,4,3\n"],
-		"pokellector.csv",
-		{ type: "text/csv" },
+	seedBase1Corpus();
+	seedBaseSet();
+	openImportDialogWithFile(
+		csvFile(
+			"Name,Set,Card Number,Qty\nCharizard,Base,4,3\n",
+			"pokellector.csv",
+		),
 	);
-	fireEvent.change(input, { target: { files: [file] } });
 
-	await waitFor(() => {
-		const el = screen.getByText(
-			(_, n) =>
-				n?.nodeName === "P" &&
-				(n?.textContent ?? "")
-					.replace(/\s+/g, " ")
-					.includes("1 matched · 0 unmatched"),
-		);
-		expect(el).toBeDefined();
-	});
+	await waitForPText("1 matched · 0 unmatched");
 
 	fireEvent.click(screen.getByRole("button", { name: /import 1 stack/i }));
 	await waitFor(() => {
@@ -292,57 +225,19 @@ test("CSV with foreign headers imports via auto-detect + set_name matching", asy
 });
 
 test("CSV set name 'Base Set' fuzzy-matches corpus set 'Base'", async () => {
-	useCorpusRuntime.setState({
-		index: buildIndex([corpusCard("base1-4", "base1", "4")]),
-	});
-	useStore.setState({
-		sets: [
-			{
-				id: "base1",
-				name: "Base",
-				series: "Base",
-				releaseDate: "1999-01-09",
-				total: 102,
-				images: { symbol: "", logo: "" },
-			},
-		],
-	});
-	render(<ImportDialog open onOpenChange={() => {}} />);
-	const input = document.querySelector(
-		'input[type="file"]',
-	) as HTMLInputElement;
-	const file = new File(
-		["Name,Set,Card Number,Qty\nCharizard,Base Set,4,1\n"],
-		"x.csv",
-		{ type: "text/csv" },
+	seedBase1Corpus();
+	seedBaseSet();
+	openImportDialogWithFile(
+		csvFile("Name,Set,Card Number,Qty\nCharizard,Base Set,4,1\n", "x.csv"),
 	);
-	fireEvent.change(input, { target: { files: [file] } });
-	await waitFor(() => {
-		const el = screen.getByText(
-			(_, n) =>
-				n?.nodeName === "P" &&
-				(n?.textContent ?? "")
-					.replace(/\s+/g, " ")
-					.includes("1 matched · 0 unmatched"),
-		);
-		expect(el).toBeDefined();
-	});
+	await waitForPText("1 matched · 0 unmatched");
 });
 
 test("CSV import with Merge on collapses duplicate rows into one stack", async () => {
-	useCorpusRuntime.setState({
-		index: buildIndex([corpusCard("base1-4", "base1", "4")]),
-	});
-	render(<ImportDialog open onOpenChange={() => {}} />);
-	const input = document.querySelector(
-		'input[type="file"]',
-	) as HTMLInputElement;
-	const file = new File(
-		["card_id,quantity\nbase1-4,2\nbase1-4,2\n"],
-		"dupes.csv",
-		{ type: "text/csv" },
+	seedBase1Corpus();
+	openImportDialogWithFile(
+		csvFile("card_id,quantity\nbase1-4,2\nbase1-4,2\n", "dupes.csv"),
 	);
-	fireEvent.change(input, { target: { files: [file] } });
 	await screen.findByRole("button", { name: /import 2 stacks/i });
 	fireEvent.click(screen.getByRole("button", { name: /import 2 stacks/i }));
 	await waitFor(() => {
@@ -353,58 +248,23 @@ test("CSV import with Merge on collapses duplicate rows into one stack", async (
 });
 
 test("manual column-remap: fixing a missed header makes the row match + import", async () => {
-	useCorpusRuntime.setState({
-		index: buildIndex([corpusCard("base1-4", "base1", "4")]),
-	});
-	useStore.setState({
-		sets: [
-			{
-				id: "base1",
-				name: "Base",
-				series: "Base",
-				releaseDate: "1999-01-09",
-				total: 102,
-				images: { symbol: "", logo: "" },
-			},
-		],
-	});
-	render(<ImportDialog open onOpenChange={() => {}} />);
-	const input = document.querySelector(
-		'input[type="file"]',
-	) as HTMLInputElement;
+	seedBase1Corpus();
+	seedBaseSet();
 	// "Expansion Name" is not an auto-detected alias for set_name.
-	const file = new File(
-		["Card,Expansion Name,Number,Count\nCharizard,Base,4,2\n"],
-		"weird.csv",
-		{ type: "text/csv" },
+	openImportDialogWithFile(
+		csvFile(
+			"Card,Expansion Name,Number,Count\nCharizard,Base,4,2\n",
+			"weird.csv",
+		),
 	);
-	fireEvent.change(input, { target: { files: [file] } });
 
-	await waitFor(() => {
-		const el = screen.getByText(
-			(_, n) =>
-				n?.nodeName === "P" &&
-				(n?.textContent ?? "")
-					.replace(/\s+/g, " ")
-					.includes("0 matched · 1 unmatched"),
-		);
-		expect(el).toBeDefined();
-	});
+	await waitForPText("0 matched · 1 unmatched");
 
 	// Remap set_name → "Expansion Name"; the row should now match.
 	fireEvent.change(screen.getByLabelText("set_name"), {
 		target: { value: "Expansion Name" },
 	});
-	await waitFor(() => {
-		const el = screen.getByText(
-			(_, n) =>
-				n?.nodeName === "P" &&
-				(n?.textContent ?? "")
-					.replace(/\s+/g, " ")
-					.includes("1 matched · 0 unmatched"),
-		);
-		expect(el).toBeDefined();
-	});
+	await waitForPText("1 matched · 0 unmatched");
 
 	fireEvent.click(screen.getByRole("button", { name: /import 1 stack/i }));
 	await waitFor(() => {
@@ -415,66 +275,26 @@ test("manual column-remap: fixing a missed header makes the row match + import",
 });
 
 test("review queue: search-pick a card for an unmatched name-only row → import", async () => {
-	useCorpusRuntime.setState({
-		index: buildIndex([
-			{
-				id: "base1-4",
-				name: "Charizard",
-				imageUrl: "",
-				imageUrlSmall: "",
-				supertype: "Pokémon",
-				setId: "base1",
-				number: "4",
-			},
-		]),
+	seedBase1Corpus({
+		id: "base1-4",
+		name: "Charizard",
+		imageUrl: "",
+		imageUrlSmall: "",
+		supertype: "Pokémon",
+		setId: "base1",
+		number: "4",
 	});
-	useStore.setState({
-		sets: [
-			{
-				id: "base1",
-				name: "Base",
-				series: "Base",
-				releaseDate: "1999-01-09",
-				total: 102,
-				images: { symbol: "", logo: "" },
-			},
-		],
-	});
-	render(<ImportDialog open onOpenChange={() => {}} />);
-	const input = document.querySelector(
-		'input[type="file"]',
-	) as HTMLInputElement;
+	seedBaseSet();
 	// name only → no number/set/card_id → can't auto-match
-	const file = new File(["card_name\nCharizard\n"], "names.csv", {
-		type: "text/csv",
-	});
-	fireEvent.change(input, { target: { files: [file] } });
+	openImportDialogWithFile(csvFile("card_name\nCharizard\n", "names.csv"));
 
-	await waitFor(() => {
-		const el = screen.getByText(
-			(_, n) =>
-				n?.nodeName === "P" &&
-				(n?.textContent ?? "")
-					.replace(/\s+/g, " ")
-					.includes("0 matched · 1 unmatched"),
-		);
-		expect(el).toBeDefined();
-	});
+	await waitForPText("0 matched · 1 unmatched");
 
 	// pick the candidate from the review queue
 	const candidate = await screen.findByRole("button", { name: /charizard/i });
 	fireEvent.click(candidate);
 
-	await waitFor(() => {
-		const el = screen.getByText(
-			(_, n) =>
-				n?.nodeName === "P" &&
-				(n?.textContent ?? "")
-					.replace(/\s+/g, " ")
-					.includes("1 matched · 0 unmatched"),
-		);
-		expect(el).toBeDefined();
-	});
+	await waitForPText("1 matched · 0 unmatched");
 
 	fireEvent.click(screen.getByRole("button", { name: /import 1 stack/i }));
 	await waitFor(() => {

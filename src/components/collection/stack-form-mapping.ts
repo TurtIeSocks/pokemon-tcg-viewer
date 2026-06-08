@@ -3,19 +3,12 @@ import type {
 	Stack,
 	StackPatch,
 } from "../../store/userland/types";
+import { dayMsToInput, inputDayToMs } from "../../utils/day";
 import type { StackFormValues } from "./stack-form-schema";
 
-/** Converts a UTC epoch-ms timestamp to a YYYY-MM-DD string using local time. */
-export function dayMsToInput(ms: number): string {
-	const d = new Date(ms);
-	const p = (n: number) => String(n).padStart(2, "0");
-	return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-}
-/** Parses a YYYY-MM-DD string to a local-midnight epoch-ms value. */
-export function inputDayToMs(s: string): number {
-	const [y, m, d] = s.split("-").map(Number);
-	return new Date(y, m - 1, d).getTime(); // local midnight
-}
+// dayMsToInput / inputDayToMs are defined in src/utils/day.ts (imported above for
+// internal use); re-exported here so existing importers of this module keep working.
+export { dayMsToInput, inputDayToMs };
 
 /** Converts a store Stack into the flat string-keyed form values shape. */
 export function itemToForm(i: Stack): StackFormValues {

@@ -5,6 +5,7 @@ import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import { useStore } from "../../store";
 import { loadCorpus, useSlugIndex } from "../../store/corpus/corpus-runtime";
 import { useRecentsStore } from "../../store/recents";
+import { holoCardProps } from "../holo-card";
 import { HoloCardIsland } from "./holo-card-island";
 
 const LABEL_CLS =
@@ -74,18 +75,7 @@ function RecentsInner() {
 									style={{ width: 96 }}
 									className="shrink-0"
 								>
-									<HoloCardIsland
-										imageUrl={card.imageUrl}
-										imageUrlSmall={card.imageUrlSmall}
-										name={card.name}
-										rarity={card.rarity}
-										subtypes={card.subtypes}
-										supertype={card.supertype}
-										setId={card.setId}
-										series={card.setSeries}
-										variants={card.variants}
-										cardNumber={card.cardNumber}
-									/>
+									<HoloCardIsland {...holoCardProps(card)} />
 								</Link>
 							);
 						})}

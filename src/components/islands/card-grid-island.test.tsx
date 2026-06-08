@@ -1,37 +1,28 @@
 import { beforeEach, expect, test } from "bun:test";
+import { fireEvent, screen } from "@testing-library/react";
 import {
-	createRootRoute,
-	createRouter,
-	RouterProvider,
-} from "@tanstack/react-router";
-import { fireEvent, render, screen } from "@testing-library/react";
-import { buildIndex } from "../../store/corpus/corpus-engine";
-import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
+	makeCard,
+	makeCorpusCard,
+	renderInRouter,
+	seedCorpus,
+} from "../../test-utils";
 import type { GridCard } from "./card-grid-island";
 import { CardGridIsland } from "./card-grid-island";
 import { CardSelectionProvider, useCardSelection } from "./card-selection";
 
 const seed: GridCard[] = [
-	{
+	makeCard({
 		id: "swsh9-1",
 		name: "Exeggcute",
-		imageUrl: "l1",
-		imageUrlSmall: "s1",
 		setId: "swsh9",
-		setName: "BS",
-		setSeries: "S&S",
 		cardNumber: "1",
-	},
-	{
+	}),
+	makeCard({
 		id: "swsh9-2",
 		name: "Exeggutor",
-		imageUrl: "l2",
-		imageUrlSmall: "s2",
 		setId: "swsh9",
-		setName: "BS",
-		setSeries: "S&S",
 		cardNumber: "2",
-	},
+	}),
 ];
 
 const defaultSearch = {
@@ -49,36 +40,21 @@ const defaultSearch = {
 
 beforeEach(() => {
 	// Pre-seed corpus so loadCorpus() early-returns without hitting the network.
-	useCorpusRuntime.setState({
-		index: buildIndex([
-			{
-				id: "swsh9-1",
-				name: "Exeggcute",
-				imageUrl: "l1",
-				imageUrlSmall: "s1",
-				supertype: "Pokémon",
-				setId: "swsh9",
-				number: "1",
-			},
-			{
-				id: "swsh9-2",
-				name: "Exeggutor",
-				imageUrl: "l2",
-				imageUrlSmall: "s2",
-				supertype: "Pokémon",
-				setId: "swsh9",
-				number: "2",
-			},
-		]),
-	});
+	seedCorpus([
+		makeCorpusCard({
+			id: "swsh9-1",
+			name: "Exeggcute",
+			setId: "swsh9",
+			number: "1",
+		}),
+		makeCorpusCard({
+			id: "swsh9-2",
+			name: "Exeggutor",
+			setId: "swsh9",
+			number: "2",
+		}),
+	]);
 });
-
-async function renderInRouter(ui: React.ReactNode) {
-	const rootRoute = createRootRoute({ component: () => <>{ui}</> });
-	const router = createRouter({ routeTree: rootRoute });
-	await router.load();
-	return render(<RouterProvider router={router} />);
-}
 
 /** A small helper component that renders a toggle button + grid inside a provider. */
 function GridWithSelectionToggle() {

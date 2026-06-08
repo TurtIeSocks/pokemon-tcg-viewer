@@ -51,6 +51,21 @@ function flush(maxFrames = 5000) {
 	}
 }
 
+/** Mount `<Probe>` and return its element with a stubbed bounding rect (RECT). */
+function mountProbe() {
+	const { getByTestId } = render(<Probe />);
+	const el = getByTestId("card") as HTMLElement;
+	el.getBoundingClientRect = () => RECT;
+	return el;
+}
+
+/** Dispatch a bubbling pointermove at client coords (x, y) on `el`. */
+function movePointer(el: HTMLElement, x: number, y: number) {
+	el.dispatchEvent(
+		new PointerEvent("pointermove", { clientX: x, clientY: y, bubbles: true }),
+	);
+}
+
 test("hook writes centered, hidden state on mount (no animation needed)", () => {
 	const { getByTestId } = render(<Probe />);
 	const el = getByTestId("card") as HTMLElement;
@@ -66,17 +81,9 @@ test("hook writes centered, hidden state on mount (no animation needed)", () => 
 });
 
 test("pointermove eases toward the pointer and fades the foil in", () => {
-	const { getByTestId } = render(<Probe />);
-	const el = getByTestId("card") as HTMLElement;
-	el.getBoundingClientRect = () => RECT;
+	const el = mountProbe();
 
-	el.dispatchEvent(
-		new PointerEvent("pointermove", {
-			clientX: 75,
-			clientY: 75,
-			bubbles: true,
-		}),
-	);
+	movePointer(el, 75, 75);
 	flush();
 
 	expect(el.style.getPropertyValue("--pointer-x")).toBe("75%");
@@ -91,17 +98,9 @@ test("pointermove eases toward the pointer and fades the foil in", () => {
 });
 
 test("pointerleave eases back to the centered, hidden state", () => {
-	const { getByTestId } = render(<Probe />);
-	const el = getByTestId("card") as HTMLElement;
-	el.getBoundingClientRect = () => RECT;
+	const el = mountProbe();
 
-	el.dispatchEvent(
-		new PointerEvent("pointermove", {
-			clientX: 90,
-			clientY: 90,
-			bubbles: true,
-		}),
-	);
+	movePointer(el, 90, 90);
 	flush();
 	el.dispatchEvent(new PointerEvent("pointerleave", { bubbles: true }));
 	flush();
@@ -127,20 +126,8 @@ test("pointer interaction never triggers a React re-render", () => {
 	el.getBoundingClientRect = () => RECT;
 	const baseline = renderCount;
 
-	el.dispatchEvent(
-		new PointerEvent("pointermove", {
-			clientX: 25,
-			clientY: 25,
-			bubbles: true,
-		}),
-	);
-	el.dispatchEvent(
-		new PointerEvent("pointermove", {
-			clientX: 75,
-			clientY: 75,
-			bubbles: true,
-		}),
-	);
+	movePointer(el, 25, 25);
+	movePointer(el, 75, 75);
 	el.dispatchEvent(new PointerEvent("pointerleave", { bubbles: true }));
 	flush();
 

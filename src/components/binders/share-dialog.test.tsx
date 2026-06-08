@@ -2,33 +2,20 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { PokemonSet } from "../../server/card-mappers";
 import { useStore } from "../../store";
-import { buildIndex } from "../../store/corpus/corpus-engine";
-import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
-import type { CorpusCard } from "../../store/corpus/corpus-types";
-import { createIdbRepos } from "../../store/userland/idb-repo";
 import type { Binder, Stack } from "../../store/userland/types";
+import { useUserland } from "../../store/userland/userland-store";
 import {
-	resetUserlandForTests,
-	setUserlandRepos,
-	useUserland,
-} from "../../store/userland/userland-store";
+	makeBinder,
+	makeCorpusCard,
+	makeStack,
+	seedCorpus,
+	setupUserlandTest,
+} from "../../test-utils";
 import { ShareDialog } from "./share-dialog";
 
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
-
-function cc(id: string, name: string, setId: string): CorpusCard {
-	return {
-		id,
-		name,
-		imageUrl: "",
-		imageUrlSmall: "",
-		supertype: "Pokémon",
-		setId,
-		number: "1",
-	};
-}
 
 const oneSet: PokemonSet = {
 	id: "base1",
@@ -40,40 +27,19 @@ const oneSet: PokemonSet = {
 };
 
 const cards = [
-	cc("base1-1", "Bulbasaur", "base1"),
-	cc("base1-2", "Ivysaur", "base1"),
+	makeCorpusCard({ id: "base1-1", name: "Bulbasaur" }),
+	makeCorpusCard({ id: "base1-2", name: "Ivysaur" }),
 ];
 
-function makeBinder(overrides: Partial<Binder> = {}): Binder {
-	return {
-		id: "b1",
-		name: "My Test Binder",
-		description: null,
-		rules: [],
-		includeCardIds: ["base1-1", "base1-2"],
-		excludeCardIds: [],
-		createdAt: 1000,
-		updatedAt: 1000,
-		...overrides,
-	};
-}
-
 function makeItem(id: string, cardId: string): Stack {
-	return {
+	return makeStack({
 		id,
 		cardId,
-		quantity: 1,
-		source: null,
-		storageLocation: null,
 		acquiredAt: 1000,
 		createdAt: 1000,
-		pricePaid: null,
-		variant: null,
-		notes: null,
 		condition: "NM",
-		grading: null,
 		isPrimary: true,
-	};
+	});
 }
 
 // ---------------------------------------------------------------------------
@@ -81,14 +47,10 @@ function makeItem(id: string, cardId: string): Stack {
 // ---------------------------------------------------------------------------
 
 beforeEach(async () => {
-	const repos = createIdbRepos();
-	await repos.collection.clear();
-	await repos.binders.clear();
-	setUserlandRepos(repos);
-	resetUserlandForTests();
+	await setupUserlandTest();
 
 	// Seed corpus
-	useCorpusRuntime.setState({ index: buildIndex(cards), loading: false });
+	seedCorpus(cards);
 	// Seed sets
 	useStore.setState({ sets: [oneSet] });
 });
@@ -111,7 +73,7 @@ function seedStore(binder: Binder, items: Stack[] = []) {
 // ---------------------------------------------------------------------------
 
 test("scope control renders all three options", () => {
-	const binder = makeBinder();
+	const binder = makeBinder({ includeCardIds: ["base1-1", "base1-2"] });
 	seedStore(binder);
 	render(<ShareDialog open={true} onOpenChange={() => {}} binder={binder} />);
 
@@ -121,7 +83,7 @@ test("scope control renders all three options", () => {
 });
 
 test("include grades toggle renders and is checked by default", () => {
-	const binder = makeBinder();
+	const binder = makeBinder({ includeCardIds: ["base1-1", "base1-2"] });
 	seedStore(binder);
 	render(<ShareDialog open={true} onOpenChange={() => {}} binder={binder} />);
 
@@ -134,7 +96,7 @@ test("include grades toggle renders and is checked by default", () => {
 });
 
 test("generated link contains /vault/shared#b=", async () => {
-	const binder = makeBinder();
+	const binder = makeBinder({ includeCardIds: ["base1-1", "base1-2"] });
 	const items = [makeItem("i1", "base1-1"), makeItem("i2", "base1-2")];
 	seedStore(binder, items);
 
@@ -149,7 +111,7 @@ test("generated link contains /vault/shared#b=", async () => {
 });
 
 test("switching scope to Owned changes the generated link", async () => {
-	const binder = makeBinder();
+	const binder = makeBinder({ includeCardIds: ["base1-1", "base1-2"] });
 	const items = [makeItem("i1", "base1-1")]; // owns base1-1, not base1-2
 	seedStore(binder, items);
 
@@ -181,7 +143,7 @@ test("switching scope to Owned changes the generated link", async () => {
 });
 
 test("clicking Copy link calls navigator.clipboard.writeText with the url", async () => {
-	const binder = makeBinder();
+	const binder = makeBinder({ includeCardIds: ["base1-1", "base1-2"] });
 	seedStore(binder, [makeItem("i1", "base1-1")]);
 
 	// Mock clipboard
@@ -212,7 +174,7 @@ test("clicking Copy link calls navigator.clipboard.writeText with the url", asyn
 });
 
 test("frozen-snapshot note is present", () => {
-	const binder = makeBinder();
+	const binder = makeBinder({ includeCardIds: ["base1-1", "base1-2"] });
 	seedStore(binder);
 	render(<ShareDialog open={true} onOpenChange={() => {}} binder={binder} />);
 

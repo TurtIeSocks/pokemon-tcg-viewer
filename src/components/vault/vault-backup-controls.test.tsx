@@ -1,22 +1,13 @@
 // vault-backup-controls.test.tsx
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { createIdbRepos } from "../../store/userland/idb-repo";
-import {
-	exportUserData,
-	resetUserlandForTests,
-	setUserlandRepos,
-} from "../../store/userland/userland-store";
+import { exportUserData } from "../../store/userland/userland-store";
+import { setupUserlandTest } from "../../test-utils";
 import { VaultBackupControls } from "./vault-backup-controls";
 
 let origCreateObjectURL: typeof URL.createObjectURL;
-let repos = createIdbRepos();
 beforeEach(async () => {
-	repos = createIdbRepos();
-	await repos.collection.clear();
-	await repos.binders.clear();
-	setUserlandRepos(repos);
-	resetUserlandForTests();
+	await setupUserlandTest();
 	// Stub URL.createObjectURL so downloadSnapshot doesn't throw in happy-dom
 	origCreateObjectURL = URL.createObjectURL;
 	URL.createObjectURL = () => "blob:stub";

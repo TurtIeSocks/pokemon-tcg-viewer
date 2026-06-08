@@ -1,17 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import type { FocusCardData } from "../server/card-mappers";
+import { makeFocusCard } from "../test-utils";
 import { buildPriceLines } from "./price-lines";
 
-const base: FocusCardData = {
-	id: "x",
-	imageUrl: "l",
-	name: "n",
-	supertype: "Pokémon",
-	setId: "swsh9",
-	setName: "BS",
-	setSeries: "S&S",
-	cardNumber: "1",
-};
+const base = makeFocusCard();
 
 describe("buildPriceLines", () => {
 	test("TCGPlayer market price line", () => {

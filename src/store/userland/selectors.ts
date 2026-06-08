@@ -72,6 +72,18 @@ function useEnsureUserland(): void {
 	}, []);
 }
 
+/**
+ * Shared store reads for the corpus-join hooks: triggers userland hydration and
+ * returns the corpus index + sets. Consumers read `items`/`binder` themselves and
+ * apply their own `useMemo` join on top.
+ */
+function useCorpusJoinInputs() {
+	useEnsureUserland();
+	const index = useCorpusRuntime((s) => s.index);
+	const sets = useStore((s) => s.sets);
+	return { index, sets };
+}
+
 /** Hook: returns all stacks grouped by cardId; triggers hydration as a side-effect. */
 export function useOwnedIndex(): Map<string, Stack[]> {
 	useEnsureUserland();
@@ -92,10 +104,8 @@ export function useOwnedCount(cardId: string): number {
 
 /** Distinct owned cards joined with the corpus. [] until corpus + sets load. */
 export function useOwnedCardViews(): HoloCardData[] {
-	useEnsureUserland();
 	const items = useUserland((s) => s.items);
-	const index = useCorpusRuntime((s) => s.index);
-	const sets = useStore((s) => s.sets);
+	const { index, sets } = useCorpusJoinInputs();
 	return useMemo(() => {
 		if (!index || !sets) return [];
 		return joinOwnedViews(Object.values(items), index, setsById(sets));
@@ -129,10 +139,8 @@ export function useOwnedCountBySet(): Map<string, number> {
 
 /** All owned cards grouped by cardId, sorted by key+dir. [] until corpus + sets load. */
 export function useOwnedCardRows(key: SortKey, dir: SortDir): CardRow[] {
-	useEnsureUserland();
 	const items = useUserland((s) => s.items);
-	const index = useCorpusRuntime((s) => s.index);
-	const sets = useStore((s) => s.sets);
+	const { index, sets } = useCorpusJoinInputs();
 	return useMemo(() => {
 		if (!index || !sets) return [];
 		return sortCardRows(
@@ -145,11 +153,9 @@ export function useOwnedCardRows(key: SortKey, dir: SortDir): CardRow[] {
 
 /** Hook: compute progress for a binder by id; null until corpus + sets + userland load. */
 export function useBinderProgress(binderId: string): BinderProgress | null {
-	useEnsureUserland();
 	const binder = useUserland((s) => s.binders[binderId] ?? null);
 	const items = useUserland((s) => s.items);
-	const index = useCorpusRuntime((s) => s.index);
-	const sets = useStore((s) => s.sets);
+	const { index, sets } = useCorpusJoinInputs();
 	return useMemo(() => {
 		if (!binder || !index || !sets) return null;
 		return computeBinderProgress(
@@ -163,10 +169,8 @@ export function useBinderProgress(binderId: string): BinderProgress | null {
 
 /** Hook: compute the member card-id set for a binder by id; null until corpus + sets load. */
 export function useBinderMembers(binderId: string): Set<string> | null {
-	useEnsureUserland();
 	const binder = useUserland((s) => s.binders[binderId] ?? null);
-	const index = useCorpusRuntime((s) => s.index);
-	const sets = useStore((s) => s.sets);
+	const { index, sets } = useCorpusJoinInputs();
 	return useMemo(() => {
 		if (!binder || !index || !sets) return null;
 		return binderMembers(binder, index, setsById(sets));

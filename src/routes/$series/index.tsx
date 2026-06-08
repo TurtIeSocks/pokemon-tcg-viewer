@@ -1,14 +1,9 @@
 import { ClientOnly, createFileRoute, notFound } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
-import {
-	CardSelectionProvider,
-	useCardSelection,
-} from "../../components/islands/card-selection";
+import { CardSelectionProvider } from "../../components/islands/card-selection";
 import { SetTile } from "../../components/shell/set-tile";
 import { cardIdsInSets } from "../../components/vault/bulk-add";
-import { BulkAddMenu } from "../../components/vault/bulk-add-menu";
+import { SelectAndBulkAdd } from "../../components/vault/select-and-bulk-add";
 import { findSeries, getNavTreeFn } from "../../server/nav-tree";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
 import { useEnsureCorpus } from "../../store/corpus/use-ensure-corpus";
@@ -38,35 +33,12 @@ export const Route = createFileRoute("/$series/")({
 function SeriesBulkMenu({ setIds }: { setIds: string[] }) {
 	useEnsureCorpus();
 	const index = useCorpusRuntime((s) => s.index);
-	const { active, selected, toggleActive } = useCardSelection();
 	const cardIds = useMemo(
 		() => (index ? cardIdsInSets(index, setIds) : []),
 		[index, setIds],
 	);
 	if (!index) return null;
-	return (
-		<ButtonGroup>
-			<Button
-				type="button"
-				variant="outline"
-				size="sm"
-				aria-pressed={active}
-				onClick={toggleActive}
-			>
-				{!active
-					? "Select cards"
-					: selected.size > 0
-						? "Clear selected"
-						: "Cancel"}
-			</Button>
-			<BulkAddMenu
-				triggerVariant="chevron"
-				cardIds={cardIds}
-				ruleQuery={null}
-				selectedCardIds={active ? [...selected] : undefined}
-			/>
-		</ButtonGroup>
-	);
+	return <SelectAndBulkAdd cardIds={cardIds} ruleQuery={null} />;
 }
 
 function SeriesPage() {

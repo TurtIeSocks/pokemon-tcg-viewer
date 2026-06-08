@@ -1,27 +1,12 @@
 // src/store/userland/selectors.test.ts
 import { expect, test } from "bun:test";
 import type { PokemonSet } from "../../server/card-mappers";
+import { makeCorpusCard, makeStack } from "../../test-utils";
 import { buildIndex } from "../corpus/corpus-engine";
-import type { CorpusCard } from "../corpus/corpus-types";
 import { groupByCardId, joinOwnedViews, sumQuantity } from "./selectors";
 import type { Stack } from "./types";
 
-function item(id: string, cardId: string): Stack {
-	return {
-		id,
-		cardId,
-		quantity: 1,
-		source: null,
-		storageLocation: null,
-		acquiredAt: 1,
-		createdAt: 1,
-		pricePaid: null,
-		variant: null,
-		notes: null,
-		condition: null,
-		grading: null,
-	};
-}
+const item = (id: string, cardId: string): Stack => makeStack({ id, cardId });
 
 test("sumQuantity totals quantity across stacks", () => {
 	expect(
@@ -30,17 +15,8 @@ test("sumQuantity totals quantity across stacks", () => {
 	expect(sumQuantity([])).toBe(0);
 });
 
-function corpusCard(id: string, setId = "base1"): CorpusCard {
-	return {
-		id,
-		name: id,
-		imageUrl: "",
-		imageUrlSmall: "",
-		supertype: "Pokémon",
-		setId,
-		number: "1",
-	};
-}
+const corpusCard = (id: string, setId = "base1") =>
+	makeCorpusCard({ id, setId });
 const base1: PokemonSet = {
 	id: "base1",
 	name: "Base",

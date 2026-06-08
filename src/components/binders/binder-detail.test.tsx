@@ -1,54 +1,25 @@
 import { beforeEach, expect, test } from "bun:test";
-import {
-	createRootRoute,
-	createRouter,
-	RouterProvider,
-} from "@tanstack/react-router";
-import {
-	act,
-	fireEvent,
-	render,
-	screen,
-	waitFor,
-} from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import type { PokemonSet } from "../../server/card-mappers";
 import { useStore } from "../../store";
-import { buildIndex } from "../../store/corpus/corpus-engine";
-import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
-import type { CorpusCard } from "../../store/corpus/corpus-types";
-import { createIdbRepos } from "../../store/userland/idb-repo";
 import type { Binder } from "../../store/userland/types";
 import {
 	addRuleToBinder,
 	addStack,
 	createBinder,
-	resetUserlandForTests,
-	setUserlandRepos,
 	useUserland,
 } from "../../store/userland/userland-store";
+import {
+	makeCorpusCard,
+	renderInRouter,
+	seedCorpus,
+	setupUserlandTest,
+} from "../../test-utils";
 import { BinderDetail } from "./binder-detail";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function cc(
-	id: string,
-	name: string,
-	setId: string,
-	dex?: number[],
-): CorpusCard {
-	return {
-		id,
-		name,
-		imageUrl: "",
-		imageUrlSmall: "",
-		supertype: "Pokémon",
-		setId,
-		number: "1",
-		...(dex ? { nationalPokedexNumbers: dex } : {}),
-	};
-}
 
 const testSet: PokemonSet = {
 	id: "base1",
@@ -60,35 +31,30 @@ const testSet: PokemonSet = {
 };
 
 // Two corpus cards: one will be owned, one missing.
-const ownedCard = cc("base1-1", "Bulbasaur", "base1", [1]);
-const missingCard = cc("base1-2", "Ivysaur", "base1", [2]);
+const ownedCard = makeCorpusCard({
+	id: "base1-1",
+	name: "Bulbasaur",
+	nationalPokedexNumbers: [1],
+});
+const missingCard = makeCorpusCard({
+	id: "base1-2",
+	name: "Ivysaur",
+	nationalPokedexNumbers: [2],
+});
 
-async function renderDetail(binder: Binder) {
-	const rootRoute = createRootRoute({
-		component: () => <BinderDetail binder={binder} />,
-	});
-	const router = createRouter({ routeTree: rootRoute });
-	await router.load();
-	return render(<RouterProvider router={router} />);
-}
+const renderDetail = (binder: Binder) =>
+	renderInRouter(<BinderDetail binder={binder} />);
 
 // ---------------------------------------------------------------------------
 // Test setup
 // ---------------------------------------------------------------------------
 
 beforeEach(async () => {
-	const repos = createIdbRepos();
-	await repos.collection.clear();
-	await repos.binders.clear();
-	setUserlandRepos(repos);
-	resetUserlandForTests();
+	await setupUserlandTest();
 	// Pre-seed sets
 	useStore.setState({ sets: [testSet] });
 	// Pre-seed corpus
-	useCorpusRuntime.setState({
-		index: buildIndex([ownedCard, missingCard]),
-		loading: false,
-	});
+	seedCorpus([ownedCard, missingCard]);
 	// owned card is in the user's collection; missing card is not
 	await addStack(ownedCard.id);
 });

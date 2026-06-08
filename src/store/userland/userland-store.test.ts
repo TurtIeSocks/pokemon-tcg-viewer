@@ -1,5 +1,6 @@
 // src/store/userland/userland-store.test.ts
 import { beforeEach, expect, test } from "bun:test";
+import { setupUserlandTest } from "../../test-utils";
 import { createIdbRepos } from "./idb-repo";
 import {
 	addCardsToBinder,
@@ -30,11 +31,7 @@ import {
 } from "./userland-store";
 
 beforeEach(async () => {
-	const repos = createIdbRepos();
-	await repos.collection.clear();
-	await repos.binders.clear();
-	setUserlandRepos(repos);
-	resetUserlandForTests();
+	await setupUserlandTest();
 });
 
 // --- basic hydration ---

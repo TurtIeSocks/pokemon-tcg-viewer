@@ -1,18 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { buildCorpusQuery, type ListSearch } from "./card-query";
+import { buildCorpusQuery } from "./card-query";
+import { LIST_SEARCH_DEFAULTS } from "./list-search";
 
-const empty: ListSearch = {
-	q: "",
-	types: [],
-	rarity: [],
-	supertype: [],
-	subtypes: [],
-	view: "grid",
-	owned: "all",
-	yearMin: null,
-	yearMax: null,
-	mode: "fuzzy",
-};
+const empty = LIST_SEARCH_DEFAULTS;
 
 describe("buildCorpusQuery", () => {
 	test("set context, no query → set-scoped natural order", () => {

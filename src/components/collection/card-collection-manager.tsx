@@ -5,7 +5,7 @@ import { GlassPanel } from "@/components/ui/glass";
 import type { FocusCardData } from "../../server/card-mappers";
 import { getCardAccent, getReadableAccent } from "../../utils/card-colors";
 import { toHoloCardData } from "../card/to-holo";
-import { HoloCard } from "../holo-card";
+import { HoloCard, holoCardProps } from "../holo-card";
 import { CardPrices } from "../islands/card-prices";
 import { StackManager } from "./stack-manager";
 
@@ -134,14 +134,7 @@ export function CardCollectionManager({
 							}
 						>
 							<HoloCard
-								imageUrl={card.imageUrl}
-								name={card.name}
-								rarity={card.rarity}
-								subtypes={card.subtypes}
-								supertype={card.supertype}
-								setId={card.setId}
-								series={card.setSeries}
-								cardNumber={card.cardNumber}
+								{...holoCardProps(card)}
 								size="focus"
 								className="w-full"
 							/>

@@ -1,39 +1,21 @@
 import { beforeEach, expect, test } from "bun:test";
-import {
-	createRootRoute,
-	createRouter,
-	RouterProvider,
-} from "@tanstack/react-router";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import type { PokemonSet } from "../../../server/card-mappers";
 import { useStore } from "../../../store";
-import { buildIndex } from "../../../store/corpus/corpus-engine";
-import { useCorpusRuntime } from "../../../store/corpus/corpus-runtime";
-import type { CorpusCard } from "../../../store/corpus/corpus-types";
-import { createIdbRepos } from "../../../store/userland/idb-repo";
-import type { Binder } from "../../../store/userland/types";
+import type { Binder, SerializedQuery } from "../../../store/userland/types";
+import { useUserland } from "../../../store/userland/userland-store";
 import {
-	resetUserlandForTests,
-	setUserlandRepos,
-	useUserland,
-} from "../../../store/userland/userland-store";
+	makeBinder,
+	makeCorpusCard,
+	renderInRouter,
+	seedCorpus,
+	setupUserlandTest,
+} from "../../../test-utils";
 import { VaultBindersInner } from "./index";
 
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
-
-function cc(id: string, name: string, setId: string): CorpusCard {
-	return {
-		id,
-		name,
-		imageUrl: "",
-		imageUrlSmall: "",
-		supertype: "Pokémon",
-		setId,
-		number: "1",
-	};
-}
 
 const oneSet: PokemonSet = {
 	id: "base1",
@@ -45,61 +27,43 @@ const oneSet: PokemonSet = {
 };
 
 const cards = [
-	cc("base1-1", "Bulbasaur", "base1"),
-	cc("base1-2", "Ivysaur", "base1"),
+	makeCorpusCard({ id: "base1-1", name: "Bulbasaur" }),
+	makeCorpusCard({ id: "base1-2", name: "Ivysaur" }),
 ];
 
-function makeBinder(overrides: Partial<Binder> = {}): Binder {
-	return {
-		id: "b1",
+const emptyQuery: SerializedQuery = {
+	text: null,
+	setId: null,
+	dexNumber: null,
+	types: [],
+	rarities: [],
+	supertypes: [],
+	subtypes: [],
+	yearMin: null,
+	yearMax: null,
+	mode: "fuzzy",
+};
+
+/** The binder shape these tests assert against: one empty rule + one manual include. */
+function testBinder(overrides: Partial<Binder> = {}): Binder {
+	return makeBinder({
 		name: "My Test Binder",
-		description: null,
-		rules: [
-			{
-				id: "r1",
-				query: {
-					text: null,
-					setId: null,
-					dexNumber: null,
-					types: [],
-					rarities: [],
-					supertypes: [],
-					subtypes: [],
-					yearMin: null,
-					yearMax: null,
-					mode: "fuzzy" as const,
-				},
-			},
-		],
+		rules: [{ id: "r1", query: { ...emptyQuery } }],
 		includeCardIds: ["base1-1"],
-		excludeCardIds: [],
-		createdAt: 1000,
-		updatedAt: 1000,
 		...overrides,
-	};
+	});
 }
 
-async function renderInner() {
-	const rootRoute = createRootRoute({
-		component: () => <VaultBindersInner />,
-	});
-	const router = createRouter({ routeTree: rootRoute });
-	await router.load();
-	return render(<RouterProvider router={router} />);
-}
+const renderInner = () => renderInRouter(<VaultBindersInner />);
 
 // ---------------------------------------------------------------------------
 // Setup
 // ---------------------------------------------------------------------------
 
 beforeEach(async () => {
-	const repos = createIdbRepos();
-	await repos.collection.clear();
-	await repos.binders.clear();
-	setUserlandRepos(repos);
-	resetUserlandForTests();
+	await setupUserlandTest();
 	useStore.setState({ sets: [oneSet] });
-	useCorpusRuntime.setState({ index: buildIndex(cards), loading: false });
+	seedCorpus(cards);
 });
 
 // ---------------------------------------------------------------------------
@@ -113,7 +77,7 @@ test("empty state shows placeholder text", async () => {
 });
 
 test("binder renders with its name", async () => {
-	const binder = makeBinder();
+	const binder = testBinder();
 	useUserland.setState((s) => ({
 		binders: { ...s.binders, [binder.id]: binder },
 	}));
@@ -124,7 +88,7 @@ test("binder renders with its name", async () => {
 });
 
 test("binder renders a progress indicator", async () => {
-	const binder = makeBinder();
+	const binder = testBinder();
 	useUserland.setState((s) => ({
 		binders: { ...s.binders, [binder.id]: binder },
 	}));
@@ -138,24 +102,8 @@ test("binder renders a progress indicator", async () => {
 });
 
 test("binder counts line shows rules and cards counts", async () => {
-	const binder = makeBinder({
-		rules: [
-			{
-				id: "r1",
-				query: {
-					text: null,
-					setId: null,
-					dexNumber: null,
-					types: [],
-					rarities: [],
-					supertypes: [],
-					subtypes: [],
-					yearMin: null,
-					yearMax: null,
-					mode: "fuzzy" as const,
-				},
-			},
-		],
+	const binder = testBinder({
+		rules: [{ id: "r1", query: { ...emptyQuery } }],
 		includeCardIds: ["base1-1", "base1-2"],
 	});
 	useUserland.setState((s) => ({
@@ -181,7 +129,7 @@ test("clicking New binder opens the form dialog with title 'New Binder'", async 
 });
 
 test("clicking share icon opens ShareDialog without navigating", async () => {
-	const binder = makeBinder();
+	const binder = testBinder();
 	useUserland.setState((s) => ({
 		binders: { ...s.binders, [binder.id]: binder },
 	}));

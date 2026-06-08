@@ -1,20 +1,12 @@
 import { expect, test } from "bun:test";
 import type { PokemonSet } from "../../server/card-mappers";
+import { makeCorpusCard } from "../../test-utils";
 import { buildIndex, hydrateCard, queryCorpus } from "./corpus-engine";
 import type { CorpusCard } from "./corpus-types";
 
-function card(
+const card = (
 	p: Partial<CorpusCard> & { id: string; name: string },
-): CorpusCard {
-	return {
-		imageUrl: `${p.id}.png`,
-		imageUrlSmall: `${p.id}-s.png`,
-		supertype: "Pokémon",
-		setId: "base1",
-		number: "1",
-		...p,
-	};
-}
+): CorpusCard => makeCorpusCard(p);
 
 const sets: PokemonSet[] = [
 	{
@@ -119,18 +111,8 @@ test("missing set falls back to setId as name", () => {
 	expect(r[0].setReleaseDate).toBeUndefined();
 });
 
-function corpusCard(id: string, over: Partial<CorpusCard> = {}): CorpusCard {
-	return {
-		id,
-		name: over.name ?? "Test",
-		imageUrl: `https://img.invalid/${id}.png`,
-		imageUrlSmall: `https://img.invalid/${id}-sm.png`,
-		supertype: over.supertype ?? "Pokémon",
-		setId: over.setId ?? "base1",
-		number: over.number ?? "1",
-		...over,
-	};
-}
+const corpusCard = (id: string, over: Partial<CorpusCard> = {}): CorpusCard =>
+	makeCorpusCard({ id, ...over });
 
 const base1: PokemonSet = {
 	id: "base1",

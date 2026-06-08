@@ -1,4 +1,5 @@
 import Papa from "papaparse";
+import { dayMsToInput } from "../../utils/day";
 import type { CardCondition, NewStack, Stack } from "./types";
 
 /** Canonical Cardstack CSV column order (v1). */
@@ -30,13 +31,6 @@ export interface CsvCardInfo {
 }
 export type ResolveCardInfo = (cardId: string) => CsvCardInfo | undefined;
 
-/** ms epoch → YYYY-MM-DD using LOCAL components (matches the form's inputDayToMs so round-trips are stable). */
-function ymd(ms: number): string {
-	const d = new Date(ms);
-	const p = (n: number) => String(n).padStart(2, "0");
-	return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-}
-
 /** RFC-4180 escape: wrap in quotes + double inner quotes when the value has a comma, quote, or newline. */
 function esc(v: string): string {
 	return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
@@ -58,7 +52,7 @@ function rowValues(
 		grading_company: s.grading?.company ?? "",
 		grading_grade: s.grading == null ? "" : String(s.grading.grade),
 		price_paid_unit: s.pricePaid == null ? "" : String(s.pricePaid),
-		acquired_at: ymd(s.acquiredAt),
+		acquired_at: dayMsToInput(s.acquiredAt),
 		source: s.source ?? "",
 		storage_location: s.storageLocation ?? "",
 		label: s.label ?? "",

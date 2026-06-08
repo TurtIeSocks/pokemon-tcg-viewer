@@ -177,33 +177,15 @@ export async function removeStack(id: string): Promise<void> {
 	}
 }
 
-/**
- * Toggle ownership of a card: if ≥1 stack exists, remove all of them;
- * if 0 stacks, add one (auto-marked primary by addStack).
- */
-export async function toggleCardOwned(cardId: string): Promise<void> {
-	const ids = Object.values(useUserland.getState().items)
+/** Stack ids currently owned for a cardId (across every stack of that card). */
+function stackIdsOfCard(cardId: string): string[] {
+	return Object.values(useUserland.getState().items)
 		.filter((i) => i.cardId === cardId)
 		.map((i) => i.id);
-	if (ids.length > 0) {
-		await activeRepos().collection.removeMany(ids);
-		useUserland.setState((s) => {
-			const items = { ...s.items };
-			for (const id of ids) delete items[id];
-			return { items };
-		});
-	} else {
-		await addStack(cardId);
-	}
 }
 
-/** Delete every stack owned for a given cardId in one batched operation. */
-export async function removeAllStacksOfCard(cardId: string): Promise<void> {
-	const ids = Object.values(useUserland.getState().items)
-		.filter((i) => i.cardId === cardId)
-		.map((i) => i.id);
-	if (ids.length === 0) return;
-	await activeRepos().collection.removeMany(ids);
+/** Drop the given stack ids from the in-memory store. */
+function dropStacksFromState(ids: Iterable<string>): void {
 	useUserland.setState((s) => {
 		const items = { ...s.items };
 		for (const id of ids) delete items[id];
@@ -211,19 +193,39 @@ export async function removeAllStacksOfCard(cardId: string): Promise<void> {
 	});
 }
 
-/** Persist one stack per cardId in a single write; useful for bulk import flows. */
-export async function bulkAddStacks(
-	cardIds: string[],
-	fields: Partial<EditableStackFields> = {},
-): Promise<void> {
-	// Seed with already-owned cardIds; only the FIRST newly-added stack of each
-	// previously-unowned cardId in this batch becomes primary.
-	const existing = useUserland.getState().items;
-	const grantedPrimary = new Set(Object.values(existing).map((i) => i.cardId));
-	const created = await activeRepos().collection.bulkAdd(
-		cardIds.map((cardId) => ({ cardId, ...fields })),
+/** Remove the given stacks from the repo and the store (no-op for an empty list). */
+async function removeStacksByIds(ids: string[]): Promise<void> {
+	if (ids.length === 0) return;
+	await activeRepos().collection.removeMany(ids);
+	dropStacksFromState(ids);
+}
+
+/**
+ * Toggle ownership of a card: if ≥1 stack exists, remove all of them;
+ * if 0 stacks, add one (auto-marked primary by addStack).
+ */
+export async function toggleCardOwned(cardId: string): Promise<void> {
+	const ids = stackIdsOfCard(cardId);
+	if (ids.length === 0) await addStack(cardId);
+	else await removeStacksByIds(ids);
+}
+
+/** Delete every stack owned for a given cardId in one batched operation. */
+export async function removeAllStacksOfCard(cardId: string): Promise<void> {
+	await removeStacksByIds(stackIdsOfCard(cardId));
+}
+
+/**
+ * Persist freshly-created stacks: mark the first newly-owned stack of each
+ * previously-unowned card as primary (patching the repo), then merge all into
+ * the store. `created` are the stacks just written via `collection.bulkAdd`;
+ * the store is untouched by that write, so reading current ownership here still
+ * reflects the pre-batch state.
+ */
+async function commitNewStacks(created: Stack[]): Promise<Stack[]> {
+	const grantedPrimary = new Set(
+		Object.values(useUserland.getState().items).map((i) => i.cardId),
 	);
-	// Patch primary flag for the first newly-owned stack of each card.
 	const patched = await Promise.all(
 		created.map(async (item) => {
 			if (!grantedPrimary.has(item.cardId)) {
@@ -239,31 +241,25 @@ export async function bulkAddStacks(
 		for (const it of patched) items[it.id] = it;
 		return { items };
 	});
+	return patched;
+}
+
+/** Persist one stack per cardId in a single write; useful for bulk import flows. */
+export async function bulkAddStacks(
+	cardIds: string[],
+	fields: Partial<EditableStackFields> = {},
+): Promise<void> {
+	const created = await activeRepos().collection.bulkAdd(
+		cardIds.map((cardId) => ({ cardId, ...fields })),
+	);
+	await commitNewStacks(created);
 }
 
 /** Persist many pre-built stacks in one write (CSV import); first stack of each previously-unowned card becomes primary. */
 export async function addStacks(items: NewStack[]): Promise<Stack[]> {
 	if (items.length === 0) return [];
-	const grantedPrimary = new Set(
-		Object.values(useUserland.getState().items).map((i) => i.cardId),
-	);
 	const created = await activeRepos().collection.bulkAdd(items);
-	const patched = await Promise.all(
-		created.map(async (item) => {
-			if (!grantedPrimary.has(item.cardId)) {
-				grantedPrimary.add(item.cardId);
-				await activeRepos().collection.update(item.id, { isPrimary: true });
-				return { ...item, isPrimary: true };
-			}
-			return item;
-		}),
-	);
-	useUserland.setState((s) => {
-		const map = { ...s.items };
-		for (const it of patched) map[it.id] = it;
-		return { items: map };
-	});
-	return patched;
+	return commitNewStacks(created);
 }
 
 type DedupeFields = Pick<

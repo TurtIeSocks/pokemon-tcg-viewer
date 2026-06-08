@@ -1,34 +1,26 @@
 // owned-cards-grid.test.tsx
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import {
-	createRootRoute,
-	createRouter,
-	RouterProvider,
-} from "@tanstack/react-router";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import type { PokemonSet } from "../../server/card-mappers";
 import { useStore } from "../../store";
-import { buildIndex } from "../../store/corpus/corpus-engine";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
 import { clearCorpus } from "../../store/corpus/corpus-store";
-import type { CorpusCard } from "../../store/corpus/corpus-types";
-import { createIdbRepos } from "../../store/userland/idb-repo";
+import { addStack } from "../../store/userland/userland-store";
 import {
-	addStack,
-	resetUserlandForTests,
-	setUserlandRepos,
-} from "../../store/userland/userland-store";
+	makeCorpusCard,
+	renderInRouter,
+	seedCorpus,
+	setupUserlandTest,
+} from "../../test-utils";
 import { OwnedCardsGrid } from "./owned-cards-grid";
 
-const testCard: CorpusCard = {
+const testCard = makeCorpusCard({
 	id: "base1-4",
 	name: "Charizard",
 	imageUrl: "https://example.com/charizard.png",
 	imageUrlSmall: "https://example.com/charizard-sm.png",
-	supertype: "Pokémon",
-	setId: "base1",
 	number: "4",
-};
+});
 
 const testSet: PokemonSet = {
 	id: "base1",
@@ -43,25 +35,15 @@ const testSet: PokemonSet = {
  * OwnedCardTile renders a TanStack `<Link>` (to the card manage face), which
  * needs a router context. Wrap the grid in a minimal in-memory router.
  */
-async function renderGrid() {
-	const rootRoute = createRootRoute({ component: () => <OwnedCardsGrid /> });
-	const router = createRouter({ routeTree: rootRoute });
-	await router.load();
-	return render(<RouterProvider router={router} />);
-}
+const renderGrid = () => renderInRouter(<OwnedCardsGrid />);
 
-let repos = createIdbRepos();
 beforeEach(async () => {
-	repos = createIdbRepos();
-	await repos.collection.clear();
-	await repos.binders.clear();
-	setUserlandRepos(repos);
-	resetUserlandForTests();
+	await setupUserlandTest();
 	// Pre-seed an empty corpus index so OwnedCardsGrid's loadCorpus() effect
 	// early-returns instead of hitting the real /corpus network endpoint, which
 	// would pollute the shared fake-indexeddb + corpus runtime for other files.
 	await clearCorpus();
-	useCorpusRuntime.setState({ index: buildIndex([]), loading: false });
+	seedCorpus([]);
 });
 
 afterEach(() => {
@@ -80,7 +62,7 @@ test("renders without crashing", async () => {
 });
 
 test("renders a tile when a card is owned with seeded corpus + sets", async () => {
-	useCorpusRuntime.setState({ index: buildIndex([testCard]), loading: false });
+	seedCorpus([testCard]);
 	useStore.setState({ sets: [testSet], setsFetchedAt: Date.now() });
 	await addStack(testCard.id);
 
@@ -92,7 +74,7 @@ test("renders a tile when a card is owned with seeded corpus + sets", async () =
 });
 
 test("renders ×2 badge when two stacks are owned", async () => {
-	useCorpusRuntime.setState({ index: buildIndex([testCard]), loading: false });
+	seedCorpus([testCard]);
 	useStore.setState({ sets: [testSet], setsFetchedAt: Date.now() });
 	await addStack(testCard.id);
 	await addStack(testCard.id);
@@ -102,7 +84,7 @@ test("renders ×2 badge when two stacks are owned", async () => {
 });
 
 test("changing sort key re-renders grid without crashing", async () => {
-	useCorpusRuntime.setState({ index: buildIndex([testCard]), loading: false });
+	seedCorpus([testCard]);
 	useStore.setState({ sets: [testSet], setsFetchedAt: Date.now() });
 	await addStack(testCard.id);
 
@@ -120,7 +102,7 @@ test("changing sort key re-renders grid without crashing", async () => {
 });
 
 test("clicking asc/desc toggle re-renders grid without crashing", async () => {
-	useCorpusRuntime.setState({ index: buildIndex([testCard]), loading: false });
+	seedCorpus([testCard]);
 	useStore.setState({ sets: [testSet], setsFetchedAt: Date.now() });
 	await addStack(testCard.id);
 

@@ -1,19 +1,7 @@
 import { beforeEach, expect, test } from "bun:test";
-import {
-	createRootRoute,
-	createRouter,
-	RouterProvider,
-} from "@tanstack/react-router";
-import { render } from "@testing-library/react";
 import { useRecentsStore } from "../../store/recents";
+import { renderInRouter } from "../../test-utils";
 import { HomeRecents } from "./home-recents";
-
-async function renderInRouter(ui: React.ReactNode) {
-	const rootRoute = createRootRoute({ component: () => <>{ui}</> });
-	const router = createRouter({ routeTree: rootRoute });
-	await router.load();
-	return render(<RouterProvider router={router} />);
-}
 
 beforeEach(() => {
 	useRecentsStore.setState({ recentSearches: [], recentlyViewed: [] });

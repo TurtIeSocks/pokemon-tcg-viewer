@@ -1,50 +1,24 @@
 // bulk-add-menu.test.tsx
 import { afterEach, beforeEach, expect, mock, spyOn, test } from "bun:test";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { buildIndex } from "../../store/corpus/corpus-engine";
-import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
 import { clearCorpus } from "../../store/corpus/corpus-store";
-import type { CorpusCard } from "../../store/corpus/corpus-types";
-import { createIdbRepos } from "../../store/userland/idb-repo";
 import * as userlandStore from "../../store/userland/userland-store";
+import { useUserland } from "../../store/userland/userland-store";
 import {
-	resetUserlandForTests,
-	setUserlandRepos,
-	useUserland,
-} from "../../store/userland/userland-store";
+	makeBinder,
+	makeCorpusCard,
+	makeStack,
+	seedCorpus,
+	setupUserlandTest,
+} from "../../test-utils";
 import { BulkAddMenu } from "./bulk-add-menu";
 
-const base1Cards: CorpusCard[] = [
-	{
-		id: "base1-1",
-		name: "Bulbasaur",
-		imageUrl: "",
-		imageUrlSmall: "",
-		supertype: "Pokémon",
-		setId: "base1",
-		number: "1",
-	},
-	{
-		id: "base1-2",
-		name: "Ivysaur",
-		imageUrl: "",
-		imageUrlSmall: "",
-		supertype: "Pokémon",
-		setId: "base1",
-		number: "2",
-	},
+const base1Cards = [
+	makeCorpusCard({ id: "base1-1", name: "Bulbasaur", number: "1" }),
+	makeCorpusCard({ id: "base1-2", name: "Ivysaur", number: "2" }),
 ];
 
-const binder1 = {
-	id: "b1",
-	name: "My Binder",
-	description: null,
-	rules: [],
-	includeCardIds: [],
-	excludeCardIds: [],
-	createdAt: 0,
-	updatedAt: 0,
-};
+const binder1 = makeBinder({ id: "b1", name: "My Binder" });
 
 const capturableRule = {
 	text: null,
@@ -89,16 +63,10 @@ let spyUpdateBinder: ReturnType<
 	typeof spyOn<typeof userlandStore, "updateBinder">
 >;
 
-let repos = createIdbRepos();
-
 beforeEach(async () => {
-	repos = createIdbRepos();
-	await repos.collection.clear();
-	await repos.binders.clear();
-	setUserlandRepos(repos);
-	resetUserlandForTests();
+	await setupUserlandTest();
 	await clearCorpus();
-	useCorpusRuntime.setState({ index: buildIndex(base1Cards), loading: false });
+	seedCorpus(base1Cards);
 	useUserland.setState({ hydrated: true });
 
 	// Spy on store actions used by the menu; all others remain real.
@@ -114,16 +82,9 @@ beforeEach(async () => {
 		"addRuleToBinder",
 	).mockImplementation(mock(async () => {}));
 	spyCreateBinder = spyOn(userlandStore, "createBinder").mockImplementation(
-		mock(async (input: { name: string }) => ({
-			id: "new-b",
-			name: input.name,
-			description: null,
-			rules: [],
-			includeCardIds: [],
-			excludeCardIds: [],
-			createdAt: 0,
-			updatedAt: 0,
-		})),
+		mock(async (input: { name: string }) =>
+			makeBinder({ id: "new-b", name: input.name }),
+		),
 	);
 	spyUpdateBinder = spyOn(userlandStore, "updateBinder").mockImplementation(
 		mock(async () => {}),
@@ -141,6 +102,18 @@ afterEach(() => {
 function openMenu(name = /add all/i) {
 	const trigger = screen.getByRole("button", { name });
 	fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
+}
+
+/** Open the submenu whose trigger matches `triggerName`, then click "My Binder". */
+async function openSubmenuPickBinder(triggerName: RegExp) {
+	const subTrigger = await waitFor(() =>
+		screen.getByRole("menuitem", { name: triggerName }),
+	);
+	fireEvent.click(subTrigger);
+	const binderItem = await waitFor(() =>
+		screen.getByRole("menuitem", { name: /my binder/i }),
+	);
+	fireEvent.click(binderItem);
 }
 
 // ---- Item 1: Collection add ----
@@ -174,34 +147,8 @@ test("collection-add calls bulkAddStacks with unowned cards", async () => {
 test("collection item is disabled when all cards are owned", async () => {
 	useUserland.setState({
 		items: {
-			"copy-1": {
-				id: "copy-1",
-				cardId: "base1-1",
-				quantity: 1,
-				source: null,
-				storageLocation: null,
-				acquiredAt: 0,
-				createdAt: 0,
-				pricePaid: null,
-				variant: null,
-				notes: null,
-				condition: null,
-				grading: null,
-			},
-			"copy-2": {
-				id: "copy-2",
-				cardId: "base1-2",
-				quantity: 1,
-				source: null,
-				storageLocation: null,
-				acquiredAt: 0,
-				createdAt: 0,
-				pricePaid: null,
-				variant: null,
-				notes: null,
-				condition: null,
-				grading: null,
-			},
+			"copy-1": makeStack({ id: "copy-1", cardId: "base1-1" }),
+			"copy-2": makeStack({ id: "copy-2", cardId: "base1-2" }),
 		},
 		hydrated: true,
 	});
@@ -223,15 +170,7 @@ test("'Add cards to binder' submenu lists binders and calls addCardsToBinder", a
 	render(<BulkAddMenu cardIds={["base1-1", "base1-2"]} />);
 	openMenu();
 
-	const subTrigger = await waitFor(() =>
-		screen.getByRole("menuitem", { name: /add 2 cards to binder/i }),
-	);
-	fireEvent.click(subTrigger);
-
-	const binderItem = await waitFor(() =>
-		screen.getByRole("menuitem", { name: /my binder/i }),
-	);
-	fireEvent.click(binderItem);
+	await openSubmenuPickBinder(/add 2 cards to binder/i);
 
 	await waitFor(() => expect(spyAddCardsToBinder).toHaveBeenCalledTimes(1));
 	expect(spyAddCardsToBinder.mock.calls[0]).toEqual([
@@ -266,15 +205,7 @@ test("'Add smart rule to binder' calls addRuleToBinder when capturable", async (
 	);
 	openMenu();
 
-	const subTrigger = await waitFor(() =>
-		screen.getByRole("menuitem", { name: /add smart rule to binder/i }),
-	);
-	fireEvent.click(subTrigger);
-
-	const binderItem = await waitFor(() =>
-		screen.getByRole("menuitem", { name: /my binder/i }),
-	);
-	fireEvent.click(binderItem);
+	await openSubmenuPickBinder(/add smart rule to binder/i);
 
 	await waitFor(() => expect(spyAddRuleToBinder).toHaveBeenCalledTimes(1));
 	expect(spyAddRuleToBinder.mock.calls[0]).toEqual(["b1", capturableRule]);
@@ -345,14 +276,7 @@ test("when selectedCardIds provided, card actions target the selection", async (
 
 	// Binder item should show "1 cards"
 	openMenu();
-	const subTrigger = await waitFor(() =>
-		screen.getByRole("menuitem", { name: /add 1 cards to binder/i }),
-	);
-	fireEvent.click(subTrigger);
-	const binderItem = await waitFor(() =>
-		screen.getByRole("menuitem", { name: /my binder/i }),
-	);
-	fireEvent.click(binderItem);
+	await openSubmenuPickBinder(/add 1 cards to binder/i);
 	await waitFor(() =>
 		expect(spyAddCardsToBinder).toHaveBeenCalledWith("b1", ["base1-1"]),
 	);

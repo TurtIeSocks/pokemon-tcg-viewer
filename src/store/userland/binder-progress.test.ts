@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import type { PokemonSet } from "../../server/card-mappers";
+import { makeBinder, makeCorpusCard } from "../../test-utils";
 import { buildIndex } from "../corpus/corpus-engine";
 import type { CorpusCard } from "../corpus/corpus-types";
 import {
@@ -11,22 +12,11 @@ import type { Binder, SerializedQuery } from "./types";
 
 // --- helpers ---
 
-function card(
+const card = (
 	id: string,
 	setId: string,
 	overrides: Partial<CorpusCard> = {},
-): CorpusCard {
-	return {
-		id,
-		name: id,
-		imageUrl: "",
-		imageUrlSmall: "",
-		supertype: "Pokémon",
-		setId,
-		number: "1",
-		...overrides,
-	};
-}
+): CorpusCard => makeCorpusCard({ id, setId, ...overrides });
 
 function set(
 	id: string,
@@ -62,19 +52,8 @@ function sq(partial: Partial<SerializedQuery> = {}): SerializedQuery {
 }
 
 /** Build a minimal Binder. */
-function binder(partial: Partial<Binder> = {}): Binder {
-	return {
-		id: "b1",
-		name: "Test Binder",
-		description: null,
-		rules: [],
-		includeCardIds: [],
-		excludeCardIds: [],
-		createdAt: 0,
-		updatedAt: 0,
-		...partial,
-	};
-}
+const binder = (partial: Partial<Binder> = {}): Binder =>
+	makeBinder({ id: "b1", createdAt: 0, updatedAt: 0, ...partial });
 
 // --- corpus fixture ---
 
