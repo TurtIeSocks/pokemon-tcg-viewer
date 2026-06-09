@@ -1,7 +1,7 @@
 // src/store/userland/userland-store.test.ts
 import { beforeEach, expect, test } from "bun:test";
 import { setupUserlandTest } from "../../test-utils";
-import { createIdbRepos } from "./idb-repo";
+import { createIdbRepos, getRepos } from "./idb-repo";
 import {
 	_setCurrentSessionForTests,
 	activeRepos,
@@ -638,4 +638,122 @@ test("on SIGNED_IN simulation: resetUserland + loadUserland re-hydrates from act
 			(i) => i.cardId === "cloud-card",
 		),
 	).toBe(true);
+});
+
+// --- Task 6: signed-in → cache bundle + engine; re-hydrate after each pass ---
+// isCloudEnabled() can't be flipped via env in bun test, so a dedicated seam
+// (_setCloudEnabledForTests) lets us exercise the signed-in cache-selection
+// branch fully in-memory (fake-indexeddb backs createCacheRepos).
+
+test("rehydrateFromCache force-refreshes from activeRepos even when already hydrated", async () => {
+	// Start hydrated against an injected repo.
+	const repos = createIdbRepos();
+	setUserlandRepos(repos);
+	resetUserlandForTests();
+	await loadUserland();
+	expect(useUserland.getState().hydrated).toBe(true);
+	expect(Object.values(useUserland.getState().items)).toHaveLength(0);
+
+	// A background sync pass writes a new row straight into the repo (the cache),
+	// bypassing the store. loadUserland() would no-op (already hydrated); only a
+	// force re-fetch surfaces it.
+	const added = await repos.collection.add({ cardId: "bg-pulled" });
+
+	const { rehydrateFromCache } = await import("./userland-store");
+	await rehydrateFromCache();
+
+	expect(useUserland.getState().items[added.id]?.cardId).toBe("bg-pulled");
+});
+
+test("activeRepos: cloud enabled + session → returns the per-uid cache bundle (not IDB, not supabase)", async () => {
+	const { _setCloudEnabledForTests } = await import("./userland-store");
+	// Drop the injected fake so the real selection branch runs.
+	setUserlandRepos(null);
+	_setCloudEnabledForTests(true);
+	_setCurrentSessionForTests({
+		access_token: "tok",
+		user: { id: "uid-cache" },
+	});
+
+	const cacheBundle = activeRepos();
+	// Distinct from the signed-out IDB singleton.
+	expect(cacheBundle).not.toBe(getRepos());
+	expect(typeof cacheBundle.collection.list).toBe("function");
+
+	// Memoised per uid: same bundle returned on a second call.
+	expect(activeRepos()).toBe(cacheBundle);
+
+	// Cleanup the seams.
+	_setCloudEnabledForTests(null);
+	_setCurrentSessionForTests(null);
+	setUserlandRepos(createIdbRepos());
+});
+
+test("activeRepos: signed-in cache bundle is per-uid (different uid → different bundle)", async () => {
+	const { _setCloudEnabledForTests } = await import("./userland-store");
+	setUserlandRepos(null);
+	_setCloudEnabledForTests(true);
+
+	_setCurrentSessionForTests({ access_token: "t1", user: { id: "uid-A" } });
+	const bundleA = activeRepos();
+	_setCurrentSessionForTests({ access_token: "t2", user: { id: "uid-B" } });
+	const bundleB = activeRepos();
+
+	expect(bundleA).not.toBe(bundleB);
+
+	_setCloudEnabledForTests(null);
+	_setCurrentSessionForTests(null);
+	setUserlandRepos(createIdbRepos());
+});
+
+test("signed-in cache: a write goes through the cache (soft-delete), and rehydrate reflects a background pull", async () => {
+	const { _setCloudEnabledForTests, rehydrateFromCache } = await import(
+		"./userland-store"
+	);
+	setUserlandRepos(null);
+	_setCloudEnabledForTests(true);
+	_setCurrentSessionForTests({ access_token: "tok", user: { id: "uid-soft" } });
+	resetUserlandForTests();
+	// resetUserlandForTests cleared the session — restore it for this branch.
+	_setCurrentSessionForTests({ access_token: "tok", user: { id: "uid-soft" } });
+	await loadUserland();
+
+	// A store write lands in the cache bundle.
+	const item = await addStack("soft-card");
+	expect(useUserland.getState().items[item.id]?.cardId).toBe("soft-card");
+
+	// Delete via the store → cache soft-deletes (deletedAt set), list() hides it.
+	await removeStack(item.id);
+	expect(useUserland.getState().items[item.id]).toBeUndefined();
+	const cache = activeRepos();
+	expect(
+		(await cache.collection.list()).find((s) => s.id === item.id),
+	).toBeUndefined();
+
+	// Simulate a background sync pull: write a fresh row into the same cache, then
+	// re-hydrate (as the engine's post-pass callback does).
+	const pulled = await cache.collection.add({ cardId: "bg-from-cloud" });
+	await rehydrateFromCache();
+	expect(useUserland.getState().items[pulled.id]?.cardId).toBe("bg-from-cloud");
+
+	_setCloudEnabledForTests(null);
+	_setCurrentSessionForTests(null);
+	setUserlandRepos(createIdbRepos());
+});
+
+test("SIGNED_OUT cleanup: dropping the cache bundle + session falls back to IDB", async () => {
+	const { _setCloudEnabledForTests } = await import("./userland-store");
+	setUserlandRepos(null);
+	_setCloudEnabledForTests(true);
+	_setCurrentSessionForTests({ access_token: "tok", user: { id: "uid-out" } });
+	const cacheBundle = activeRepos();
+	expect(cacheBundle).not.toBe(getRepos());
+
+	// Sign-out: resetUserlandForTests clears the session + memoised bundles.
+	resetUserlandForTests();
+	_setCloudEnabledForTests(null);
+	// No session now → IDB Vault.
+	expect(activeRepos()).toBe(getRepos());
+
+	setUserlandRepos(createIdbRepos());
 });

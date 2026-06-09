@@ -15,6 +15,7 @@ import {
 import type React from "react";
 import { AuthControls } from "@/components/auth/auth-controls";
 import { CollectorAvatar } from "@/components/profile/collector-avatar";
+import { SyncIndicator } from "@/components/sync/sync-indicator";
 import {
 	Collapsible,
 	CollapsibleContent,
@@ -278,6 +279,7 @@ function SidebarFooterContent() {
 			<SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
 				<ClientOnly fallback={null}>
 					<AuthControls />
+					<SyncIndicator />
 				</ClientOnly>
 			</SidebarMenuItem>
 		</SidebarMenu>

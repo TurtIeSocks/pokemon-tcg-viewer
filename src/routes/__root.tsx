@@ -12,6 +12,7 @@ import type { ReactNode } from "react";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { AboutDialog } from "@/components/shell/about-dialog";
 import { RepoLink } from "@/components/shell/repo-link";
+import { SyncToastsWatcher } from "@/components/sync/sync-toasts";
 import {
 	SidebarInset,
 	SidebarProvider,
@@ -217,6 +218,7 @@ function RootComponent() {
 			<ClientOnly fallback={null}>
 				<CardOverlay />
 				<VersionToast />
+				<SyncToastsWatcher />
 				<Toaster />
 			</ClientOnly>
 		</RootDocument>

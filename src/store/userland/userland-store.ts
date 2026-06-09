@@ -4,6 +4,9 @@ import { getBrowserClient, isCloudEnabled } from "../../lib/supabase/client";
 import { getRepos, migrateUserlandData } from "./idb-repo";
 import type { UserlandRepos } from "./repo";
 import { createSupabaseRepo } from "./supabase-repo";
+import { createCacheRepos } from "./sync/cache-repo";
+import { startSync, stopSync, syncOnce } from "./sync/sync-engine";
+import { syncStatus } from "./sync/sync-status-singleton";
 import type {
 	Binder,
 	BinderPatch,
@@ -59,18 +62,40 @@ let usingInjectedRepos = false;
 // --- Auth session tracking ---
 // Synchronously tracks the current Supabase session so activeRepos() can decide
 // which backend to return without needing to await anything.
-type Session = { access_token: string } | null;
+type Session = { access_token: string; user?: { id: string } } | null;
 let currentSession: Session = null;
-/** Lazily-created Supabase repo bundle (one per tab). */
+/**
+ * Lazily-created Supabase repo bundle (one per tab). Signed-in, this is NOT what
+ * the store talks to — it is the sync engine's *remote* (push/pull target). The
+ * store talks to the per-uid cache bundle (see {@link _getOrCreateCacheRepos}).
+ */
 let supabaseRepos: UserlandRepos | null = null;
+/** Per-uid local cache bundle (the offline source of truth the store reads). */
+const cacheReposByUid = new Map<string, UserlandRepos>();
+/** The notifyWrite handle from the running engine, used to debounce a post-write push. */
+let syncHandle: { notifyWrite: () => void } | null = null;
+
+/**
+ * Test seam: override `isCloudEnabled()` so the signed-in cache-selection branch
+ * can be exercised in-memory (env vars can't be flipped under `bun test`).
+ * `null` → use the real `isCloudEnabled()`.
+ */
+let cloudEnabledOverride: boolean | null = null;
+function cloudEnabled(): boolean {
+	return cloudEnabledOverride ?? isCloudEnabled();
+}
 
 /**
  * Wire up the Supabase auth listener. Must be called once at app init when
  * `isCloudEnabled()` is true (e.g. from the root component or client entry).
  *
- * On SIGNED_IN: updates session, runs the local→cloud claim for this uid, then
- * resets + re-hydrates useUserland from the now-active Supabase repos.
- * On SIGNED_OUT: resets session + re-hydrates from IDB.
+ * On SIGNED_IN (signed-in store reads the per-uid CACHE bundle, NOT the cloud
+ * repo directly): (a) run the local→cloud claim against the cloud remote, then
+ * (b) warm the cache with an initial `syncOnce` (pulls cloud → cache), then
+ * (c) start the background sync engine (re-hydrating the store after every pass),
+ * then (d) re-hydrate the store from the now-warm cache.
+ * On SIGNED_OUT: stop the engine, drop the cache bundle + session, re-hydrate
+ * from the signed-out IDB Vault.
  * On TOKEN_REFRESHED: just updates the session (no reload needed).
  */
 export async function subscribeAuth(): Promise<void> {
@@ -88,53 +113,111 @@ export async function subscribeAuth(): Promise<void> {
 		currentSession = sess;
 
 		if (event === "SIGNED_IN") {
-			// Lazy import avoids a circular dep at module evaluation time.
-			// The entire sign-in flow is a single awaited async sequence so the store
-			// hydrates AFTER the claim upload finishes (fixes the empty-Vault race).
-			void (async () => {
-				const { claimLocalToCloud, pendingClaimPrompt } = await import(
-					"./claim"
-				);
-				const localRepos = getRepos();
-				const cloudRepos = _getOrCreateSupabaseRepos();
-				const uid = sess?.user.id ?? "";
-				let prompt: { localOnlyCount: number } | null = null;
-				if (uid) {
-					const descriptor = await claimLocalToCloud(
-						localRepos,
-						cloudRepos,
-						uid,
-					);
-					prompt = pendingClaimPrompt(uid, descriptor);
-				}
-				// Reset + hydrate AFTER the claim so cloud data is present.
-				resetUserland();
-				await loadUserland();
-				// Surface the claim prompt (if undismissed and cloud already had data).
-				if (prompt) {
-					useUserland.setState({ claimPrompt: prompt });
-				}
-			})();
+			const uid = sess?.user.id ?? "";
+			if (uid) void handleSignedIn(uid);
 		} else if (event === "SIGNED_OUT") {
-			supabaseRepos = null; // next SIGNED_IN gets a fresh bundle
-			useUserland.setState({ claimPrompt: null });
-			resetUserland();
-			void loadUserland();
+			handleSignedOut();
 		}
 		// TOKEN_REFRESHED: currentSession already updated above; no reload needed.
 	});
 }
 
-/** Internal: lazily create + memoise the Supabase repo bundle. */
+/**
+ * The full SIGNED_IN sequence (a single awaited chain so the store only hydrates
+ * after the claim + warm finish — fixes the empty-Vault race). Lazy import of
+ * `./claim` avoids a circular dep at module-eval time.
+ */
+async function handleSignedIn(uid: string): Promise<void> {
+	const { claimLocalToCloud, pendingClaimPrompt } = await import("./claim");
+	const client = getBrowserClient();
+	const localRepos = getRepos();
+	const cloudRemote = _getOrCreateSupabaseRepos();
+
+	// (a) Claim: local IDB Vault → cloud if cloud is empty; otherwise compute the
+	// prompt descriptor. The cloud remote is the claim target (NOT the cache).
+	const descriptor = await claimLocalToCloud(localRepos, cloudRemote, uid);
+	const prompt = pendingClaimPrompt(uid, descriptor);
+
+	// (b) Warm the cache: pull cloud (incl. the just-claimed data) into the cache.
+	// A warm failure (offline at sign-in) must not block hydration — the cache
+	// still serves whatever it already holds.
+	try {
+		syncStatus.onSyncStart();
+		await syncOnce(uid, client);
+		await syncStatus.onSyncSuccess(uid);
+	} catch (e) {
+		console.error("Initial sync warm failed; serving the cache as-is", e);
+		syncStatus.onSyncError(
+			typeof navigator !== "undefined" && !navigator.onLine,
+		);
+	}
+
+	// (c) Start background sync; re-hydrate the store after every pass so a
+	// background pull (cache mutated underneath the store) shows in the UI.
+	syncHandle = startSync({
+		uid,
+		client,
+		onSyncStart: () => {
+			syncStatus.onSyncStart();
+		},
+		onSyncComplete: () => {
+			void syncStatus.onSyncSuccess(uid);
+			void rehydrateFromCache();
+		},
+		onSyncError: (err) => {
+			console.error("Background sync pass failed", err);
+			// Treat a fetch failure / offline signal as offline; anything else = error.
+			const offline = typeof navigator !== "undefined" && !navigator.onLine;
+			syncStatus.onSyncError(offline);
+		},
+	});
+
+	// (d) Reset + hydrate the store from the warm cache.
+	resetUserland();
+	await loadUserland();
+	if (prompt) useUserland.setState({ claimPrompt: prompt });
+}
+
+/** Tear down the engine + cache for the signed-out uid and return to the IDB Vault. */
+function handleSignedOut(): void {
+	for (const uid of cacheReposByUid.keys()) stopSync(uid);
+	cacheReposByUid.clear();
+	supabaseRepos = null; // next SIGNED_IN gets a fresh remote
+	syncHandle = null;
+	useUserland.setState({ claimPrompt: null });
+	resetUserland();
+	void loadUserland();
+}
+
+/** Internal: lazily create + memoise the Supabase repo bundle (the engine's remote). */
 function _getOrCreateSupabaseRepos(): UserlandRepos {
 	if (!supabaseRepos) supabaseRepos = createSupabaseRepo(getBrowserClient());
 	return supabaseRepos;
 }
 
-/** Return the active repo bundle, lazily initialising the IDB default. */
+/** Internal: lazily create + memoise the per-uid local cache bundle. */
+function _getOrCreateCacheRepos(uid: string): UserlandRepos {
+	let bundle = cacheReposByUid.get(uid);
+	if (!bundle) {
+		bundle = createCacheRepos(uid);
+		cacheReposByUid.set(uid, bundle);
+	}
+	return bundle;
+}
+
+/**
+ * Return the active repo bundle, lazily initialising the IDB default.
+ *
+ * Signed-in (cloud enabled + a session): the per-uid **cache** bundle — the
+ * offline source of truth the store reads/writes; the sync engine reconciles it
+ * against the cloud remote in the background. Signed-out: the IDB Vault.
+ * An injected fake (test seam) always wins.
+ */
 export function activeRepos(): UserlandRepos {
 	if (usingInjectedRepos && repos !== null) return repos;
-	if (isCloudEnabled() && currentSession) return _getOrCreateSupabaseRepos();
+	if (cloudEnabled() && currentSession?.user?.id) {
+		return _getOrCreateCacheRepos(currentSession.user.id);
+	}
 	return getRepos();
 }
 
@@ -206,11 +289,25 @@ export function loadUserland(): Promise<void> {
 	return inFlight;
 }
 
+/**
+ * Force a re-fetch of items/binders/profile from the active repo, bypassing the
+ * hydrated guard. Called after every background sync pass so a pull that mutated
+ * the cache underneath the store surfaces in the UI. No-ops the loading flag —
+ * this is a silent refresh, not the initial load.
+ */
+export async function rehydrateFromCache(): Promise<void> {
+	const { items, binders, profile } = await fetchAll(activeRepos());
+	useUserland.setState({ items, binders, profile, hydrated: true });
+}
+
 /** Test helper: clear the in-flight guard, reset state, and clear any injected session. */
 export function resetUserlandForTests(): void {
 	inFlight = null;
 	currentSession = null;
 	supabaseRepos = null;
+	cacheReposByUid.clear();
+	syncHandle = null;
+	cloudEnabledOverride = null;
 	useUserland.setState({ ...initial });
 }
 
@@ -220,6 +317,23 @@ export function resetUserlandForTests(): void {
  */
 export function _setCurrentSessionForTests(sess: Session): void {
 	currentSession = sess;
+}
+
+/**
+ * Test-only: override the `isCloudEnabled()` gate so the signed-in cache branch
+ * can be exercised in-memory. Pass `null` to restore the real env-driven gate.
+ */
+export function _setCloudEnabledForTests(enabled: boolean | null): void {
+	cloudEnabledOverride = enabled;
+}
+
+/**
+ * Signal that a local (signed-in) write just landed in the cache, so the engine
+ * schedules a debounced background push. No-op when no engine is running
+ * (signed-out, or cloud disabled). Safe to call from any mutation path.
+ */
+export function notifyLocalWrite(): void {
+	syncHandle?.notifyWrite();
 }
 
 // --- Collection actions ---
@@ -239,6 +353,7 @@ export async function addStack(
 		isPrimary,
 	});
 	useUserland.setState((s) => ({ items: { ...s.items, [item.id]: item } }));
+	notifyLocalWrite();
 	return item;
 }
 
@@ -259,6 +374,7 @@ export async function updateStack(
 			},
 		};
 	});
+	notifyLocalWrite();
 }
 
 /**
@@ -296,6 +412,7 @@ export async function removeStack(id: string): Promise<void> {
 		delete items[id];
 		return { items };
 	});
+	notifyLocalWrite();
 	// Promote-on-delete: if removed stack was primary, promote earliest-createdAt survivor.
 	if (stack?.isPrimary) {
 		const survivors = Object.values(useUserland.getState().items)
@@ -328,6 +445,7 @@ async function removeStacksByIds(ids: string[]): Promise<void> {
 	if (ids.length === 0) return;
 	await activeRepos().collection.removeMany(ids);
 	dropStacksFromState(ids);
+	notifyLocalWrite();
 }
 
 /**
@@ -371,6 +489,7 @@ async function commitNewStacks(created: Stack[]): Promise<Stack[]> {
 		for (const it of patched) items[it.id] = it;
 		return { items };
 	});
+	notifyLocalWrite();
 	return patched;
 }
 
@@ -477,6 +596,7 @@ export async function mergeDuplicateStacks(cardId: string): Promise<void> {
 			for (const id of removeIds) delete items[id];
 			return { items };
 		});
+		notifyLocalWrite();
 	}
 }
 
@@ -484,6 +604,7 @@ export async function mergeDuplicateStacks(cardId: string): Promise<void> {
 export async function clearCollection(): Promise<void> {
 	await activeRepos().collection.clear();
 	useUserland.setState({ items: {} });
+	notifyLocalWrite();
 }
 
 /**
@@ -512,6 +633,7 @@ export async function setPrimaryStack(
 		}
 		return { items };
 	});
+	notifyLocalWrite();
 }
 
 // --- Binder actions ---
@@ -519,6 +641,7 @@ export async function setPrimaryStack(
 export async function createBinder(input: NewBinder): Promise<Binder> {
 	const b = await activeRepos().binders.create(input);
 	useUserland.setState((s) => ({ binders: { ...s.binders, [b.id]: b } }));
+	notifyLocalWrite();
 	return b;
 }
 
@@ -538,6 +661,7 @@ export async function updateBinder(
 			},
 		};
 	});
+	notifyLocalWrite();
 }
 
 /** Delete a binder by id from storage and the store. */
@@ -548,6 +672,7 @@ export async function removeBinder(id: string): Promise<void> {
 		delete binders[id];
 		return { binders };
 	});
+	notifyLocalWrite();
 }
 
 /** Union cardIds into includeCardIds; remove those ids from excludeCardIds. */
@@ -630,6 +755,7 @@ export async function restoreCardToBinder(
 export async function updateProfile(patch: ProfilePatch): Promise<Profile> {
 	const profile = await activeRepos().profile.save(patch);
 	useUserland.setState({ profile });
+	notifyLocalWrite();
 	return profile;
 }
 
@@ -651,4 +777,5 @@ export async function importUserData(
 	await r.backup.importAll(snapshot, mode);
 	const { items, binders, profile } = await fetchAll(r); // force-refresh (loadUserland would no-op once hydrated)
 	useUserland.setState({ items, binders, profile, hydrated: true });
+	notifyLocalWrite();
 }
