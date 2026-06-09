@@ -448,3 +448,61 @@ test("updateProfile persists and commits the returned record", async () => {
 	expect(merged.displayName).toBe("Misty"); // preserved
 	expect(useUserland.getState().profile?.favoriteSetId).toBe("base1");
 });
+
+// --- v5: language + grading cert in identity key ---
+
+import { stackIdentityKey } from "./userland-store";
+
+test("importStacks merge: different language (en vs ja) = different stacks, not merged", async () => {
+	await addStack("a", { quantity: 2, language: "en" });
+	await importStacks(
+		[{ cardId: "a", quantity: 1, language: "ja" }], // different language = different physical card
+		true,
+	);
+	const items = Object.values(useUserland.getState().items);
+	expect(items).toHaveLength(2);
+});
+
+test("importStacks merge: same language → merges as before", async () => {
+	await addStack("a", { quantity: 2, language: "en" });
+	await importStacks(
+		[{ cardId: "a", quantity: 3, language: "en" }],
+		true,
+	);
+	const items = Object.values(useUserland.getState().items);
+	expect(items).toHaveLength(1);
+	expect(items[0].quantity).toBe(5);
+});
+
+test("importStacks merge: different grading cert = different stacks, not merged", async () => {
+	await addStack("a", { quantity: 1, grading: { company: "PSA", grade: 10, cert: "AAA" } });
+	await importStacks(
+		[{ cardId: "a", quantity: 1, grading: { company: "PSA", grade: 10, cert: "BBB" } }],
+		true,
+	);
+	const items = Object.values(useUserland.getState().items);
+	expect(items).toHaveLength(2);
+});
+
+test("importStacks merge: same cert (including null) → merges", async () => {
+	await addStack("a", { quantity: 1, grading: { company: "PSA", grade: 10, cert: null } });
+	await importStacks(
+		[{ cardId: "a", quantity: 2, grading: { company: "PSA", grade: 10, cert: null } }],
+		true,
+	);
+	const items = Object.values(useUserland.getState().items);
+	expect(items).toHaveLength(1);
+	expect(items[0].quantity).toBe(3);
+});
+
+test("stackIdentityKey includes language and grading cert", () => {
+	const base = { cardId: "a", variant: null, condition: null, grading: null, source: null, pricePaid: null, label: null, language: "en" };
+	const ja = { ...base, language: "ja" };
+	const graded = { ...base, grading: { company: "PSA", grade: 10, cert: "123" } };
+	const gradedNoCert = { ...base, grading: { company: "PSA", grade: 10, cert: null } };
+	const gradedOtherCert = { ...base, grading: { company: "PSA", grade: 10, cert: "456" } };
+	expect(stackIdentityKey(base)).not.toBe(stackIdentityKey(ja));
+	expect(stackIdentityKey(graded)).not.toBe(stackIdentityKey(gradedNoCert));
+	expect(stackIdentityKey(graded)).not.toBe(stackIdentityKey(gradedOtherCert));
+	expect(stackIdentityKey(gradedNoCert)).toBe(stackIdentityKey(gradedNoCert));
+});

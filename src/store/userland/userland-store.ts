@@ -289,6 +289,7 @@ export async function addStacks(items: NewStack[]): Promise<Stack[]> {
 type DedupeFields = Pick<
 	NewStack,
 	| "cardId"
+	| "language"
 	| "variant"
 	| "condition"
 	| "grading"
@@ -296,13 +297,16 @@ type DedupeFields = Pick<
 	| "pricePaid"
 	| "label"
 >;
-/** Identity key for "the same physical stack" (card + variant + condition + grading + source + price + label). */
+/** Identity key for "the same physical stack" (card + language + variant + condition + grading + source + price + label). */
 export function stackIdentityKey(f: DedupeFields): string {
 	return [
 		f.cardId,
+		f.language ?? "en",
 		f.variant ?? "",
 		f.condition ?? "",
-		f.grading ? `${f.grading.company}/${f.grading.grade}` : "",
+		f.grading
+			? `${f.grading.company}/${f.grading.grade}/${f.grading.cert ?? ""}`
+			: "",
 		f.source ?? "",
 		f.pricePaid ?? "",
 		f.label ?? "",
