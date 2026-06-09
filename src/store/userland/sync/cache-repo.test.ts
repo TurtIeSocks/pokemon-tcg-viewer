@@ -6,7 +6,6 @@ import { allRows, clearDirty, createCacheRepos, dirtyIds } from "./cache-repo";
 // Each test uses distinct uid strings to achieve store isolation.
 
 const UID_A = crypto.randomUUID();
-const _UID_B = crypto.randomUUID();
 
 // ---------------------------------------------------------------------------
 // Collection (stack) dirty-marking tests
@@ -230,5 +229,181 @@ describe("allRows", () => {
 
 		expect(all.some((s) => s.id === stack.id)).toBe(true);
 		expect(listed.some((s) => s.id === stack.id)).toBe(false);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// collection.clear() soft-delete tests
+// ---------------------------------------------------------------------------
+
+describe("collection.clear()", () => {
+	test("clear soft-deletes all live rows: list returns empty, allRows has tombstones, all dirty", async () => {
+		const uid = crypto.randomUUID();
+		const repos = createCacheRepos(uid);
+		const [s1, s2] = await repos.collection.bulkAdd([
+			{ cardId: "sv1-200" },
+			{ cardId: "sv1-201" },
+		]);
+		// Flush dirty so we can confirm clear re-marks
+		await clearDirty(uid, "stacks", [s1.id, s2.id]);
+
+		await repos.collection.clear();
+
+		// list() returns nothing (tombstones filtered)
+		const listed = await repos.collection.list();
+		expect(listed).toHaveLength(0);
+
+		// allRows still has the rows with deletedAt set
+		const all = await allRows(uid, "stacks");
+		for (const id of [s1.id, s2.id]) {
+			const row = all.find((s) => s.id === id);
+			expect(row).toBeDefined();
+			expect(row?.deletedAt).not.toBeNull();
+		}
+
+		// Both ids are dirty (so tombstones push to cloud)
+		const dirty = await dirtyIds(uid, "stacks");
+		expect(dirty.has(s1.id)).toBe(true);
+		expect(dirty.has(s2.id)).toBe(true);
+	});
+
+	test("clear on already-tombstoned rows does not double-add to dirty", async () => {
+		const uid = crypto.randomUUID();
+		const repos = createCacheRepos(uid);
+		const stack = await repos.collection.add({ cardId: "sv1-202" });
+		// Already soft-deleted
+		await repos.collection.remove(stack.id);
+		await clearDirty(uid, "stacks", [stack.id]);
+
+		// clear() only soft-deletes LIVE rows; tombstoned ones are skipped
+		await repos.collection.clear();
+
+		const dirty = await dirtyIds(uid, "stacks");
+		// Already tombstoned before clear, so NOT re-touched by clear
+		expect(dirty.has(stack.id)).toBe(false);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// backup.importAll dirty-marking tests
+// ---------------------------------------------------------------------------
+
+describe("backup.importAll", () => {
+	const makeSnapshot = (cardIds: string[], binderNames: string[]) => ({
+		schemaVersion: 5 as const,
+		exportedAt: Date.now(),
+		collection: cardIds.map((cardId) => ({
+			id: crypto.randomUUID(),
+			cardId,
+			quantity: 1,
+			createdAt: Date.now(),
+			updatedAt: Date.now(),
+			acquiredAt: Date.now(),
+			deletedAt: null as null,
+			label: null,
+			pricePaid: null,
+			currency: "USD" as const,
+			language: "en" as const,
+			variant: null,
+			notes: null,
+			condition: null,
+			grading: null,
+			source: null,
+			storageLocation: null,
+			isPrimary: false,
+		})),
+		binders: binderNames.map((name) => ({
+			id: crypto.randomUUID(),
+			name,
+			description: null,
+			rules: [] as [],
+			includeCardIds: [] as string[],
+			excludeCardIds: [] as string[],
+			createdAt: Date.now(),
+			updatedAt: Date.now(),
+			deletedAt: null as null,
+		})),
+		profile: null,
+	});
+
+	test("importAll(merge) marks all written stack+binder ids dirty", async () => {
+		const uid = crypto.randomUUID();
+		const repos = createCacheRepos(uid);
+		const snapshot = makeSnapshot(["sv1-300", "sv1-301"], ["Binder A"]);
+
+		await repos.backup.importAll(snapshot, "merge");
+
+		const stackDirty = await dirtyIds(uid, "stacks");
+		for (const s of snapshot.collection) {
+			expect(stackDirty.has(s.id)).toBe(true);
+		}
+		const binderDirty = await dirtyIds(uid, "binders");
+		for (const b of snapshot.binders) {
+			expect(binderDirty.has(b.id)).toBe(true);
+		}
+	});
+
+	test("importAll(replace) tombstones existing rows AND marks new snapshot ids dirty", async () => {
+		const uid = crypto.randomUUID();
+		const repos = createCacheRepos(uid);
+
+		// Pre-existing rows
+		const [old1] = await repos.collection.bulkAdd([{ cardId: "sv1-400" }]);
+		const oldBinder = await repos.binders.create({ name: "Old Binder" });
+		await clearDirty(uid, "stacks", [old1.id]);
+		await clearDirty(uid, "binders", [oldBinder.id]);
+
+		const snapshot = makeSnapshot(["sv1-401"], ["New Binder"]);
+		await repos.backup.importAll(snapshot, "replace");
+
+		// Old row should be tombstoned and dirty
+		const allStacks = await allRows(uid, "stacks");
+		const oldRow = allStacks.find((s) => s.id === old1.id);
+		expect(oldRow?.deletedAt).not.toBeNull();
+		const stackDirty = await dirtyIds(uid, "stacks");
+		expect(stackDirty.has(old1.id)).toBe(true);
+
+		const allBinders = await allRows(uid, "binders");
+		const oldBinderRow = allBinders.find((b) => b.id === oldBinder.id);
+		expect(oldBinderRow?.deletedAt).not.toBeNull();
+		const binderDirty = await dirtyIds(uid, "binders");
+		expect(binderDirty.has(oldBinder.id)).toBe(true);
+
+		// New snapshot rows must also be dirty
+		for (const s of snapshot.collection) {
+			expect(stackDirty.has(s.id)).toBe(true);
+		}
+		for (const b of snapshot.binders) {
+			expect(binderDirty.has(b.id)).toBe(true);
+		}
+
+		// list() only shows new snapshot rows (old ones are tombstoned)
+		const listed = await repos.collection.list();
+		const ids = listed.map((s) => s.id);
+		expect(ids).not.toContain(old1.id);
+		expect(ids).toContain(snapshot.collection[0].id);
+	});
+
+	test("importAll with profile marks profile dirty", async () => {
+		const uid = crypto.randomUUID();
+		const repos = createCacheRepos(uid);
+		const snapshot = {
+			...makeSnapshot([], []),
+			profile: {
+				id: "me",
+				displayName: "Alice",
+				bio: null,
+				avatarPreset: "default",
+				favoriteSetId: null,
+				createdAt: Date.now(),
+				updatedAt: Date.now(),
+				deletedAt: null as null,
+			},
+		};
+
+		await repos.backup.importAll(snapshot, "merge");
+
+		const profileDirty = await dirtyIds(uid, "profiles");
+		expect(profileDirty.has("me")).toBe(true);
 	});
 });

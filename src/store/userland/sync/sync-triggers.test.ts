@@ -28,40 +28,27 @@ function makeFakeClient(opts?: {
 	const pushData: unknown[] = [];
 
 	// biome-ignore lint/suspicious/noExplicitAny: test helper fake
-	const builder: any = {
-		select: () => builder,
-		gt: () => builder,
-		range: () =>
+	const from = (_table: string): any => {
+		const pullResult = () =>
 			opts?.pullError
 				? Promise.resolve({ data: null, error: { message: "offline" } })
-				: Promise.resolve({ data: pullData, error: null }),
-		upsert: () => builder,
-	};
-	// upsert().select() → final thenable
-	builder.select = () =>
-		opts?.pushError
-			? Promise.resolve({ data: null, error: { message: "push failed" } })
-			: Promise.resolve({ data: pushData, error: null });
+				: Promise.resolve({ data: pullData, error: null });
+		const pushResult = () =>
+			opts?.pushError
+				? Promise.resolve({ data: null, error: { message: "push failed" } })
+				: Promise.resolve({ data: pushData, error: null });
 
-	// biome-ignore lint/suspicious/noExplicitAny: test helper fake
-	const from = (_table: string): any => {
-		const tableBuilder = {
-			select: () => tableBuilder,
-			gt: () => tableBuilder,
-			range: () =>
-				opts?.pullError
-					? Promise.resolve({ data: null, error: { message: "offline" } })
-					: Promise.resolve({ data: pullData, error: null }),
-			upsert: () => tableBuilder,
+		// Pull chain: .select().gt().range() → Promise
+		const pullChain = {
+			gt: () => ({ range: pullResult }),
 		};
-		// .upsert(rows).select() must chain
-		tableBuilder.upsert = () => ({
-			select: () =>
-				opts?.pushError
-					? Promise.resolve({ data: null, error: { message: "push failed" } })
-					: Promise.resolve({ data: pushData, error: null }),
-		});
-		return tableBuilder;
+		// Push chain: .upsert(rows).select() → Promise
+		const upsert = () => ({ select: pushResult });
+
+		return {
+			select: () => pullChain,
+			upsert,
+		};
 	};
 
 	return { from } as unknown as SupabaseClient;

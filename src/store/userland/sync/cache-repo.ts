@@ -282,7 +282,21 @@ export function createCacheRepos(uid: string): UserlandRepos {
 		},
 
 		async clear() {
-			await clear(cStore);
+			// Soft-delete all live rows so tombstones push to cloud.
+			const rows = await entries<string, Stack>(cStore);
+			const now = Date.now();
+			const pairs: [string, Stack][] = rows
+				.map(([k, v]) => v ?? { id: k })
+				.filter((v): v is Stack => v.deletedAt === null)
+				.map((v) => [v.id, { ...v, deletedAt: now, updatedAt: now }]);
+			if (pairs.length > 0) {
+				await setMany(pairs, cStore);
+				await markDirty(
+					mStore,
+					"stacks",
+					pairs.map(([id]) => id),
+				);
+			}
 		},
 	};
 
@@ -318,7 +332,21 @@ export function createCacheRepos(uid: string): UserlandRepos {
 		},
 
 		async clear() {
-			await clear(bStore);
+			// Soft-delete all live binders so tombstones push to cloud.
+			const rows = await entries<string, Binder>(bStore);
+			const now = Date.now();
+			const pairs: [string, Binder][] = rows
+				.map(([k, v]) => v ?? { id: k })
+				.filter((v): v is Binder => v.deletedAt === null)
+				.map((v) => [v.id, { ...v, deletedAt: now, updatedAt: now }]);
+			if (pairs.length > 0) {
+				await setMany(pairs, bStore);
+				await markDirty(
+					mStore,
+					"binders",
+					pairs.map(([id]) => id),
+				);
+			}
 		},
 	};
 
@@ -370,20 +398,38 @@ export function createCacheRepos(uid: string): UserlandRepos {
 
 		async importAll(snapshot: UserDataSnapshot, mode: "replace" | "merge") {
 			if (mode === "replace") {
-				await clear(cStore);
-				await clear(bStore);
+				// Soft-delete existing rows so tombstones are pushed to cloud.
+				await collection.clear();
+				await binders.clear();
+				// Profile is always hard-replaced (it's a singleton, re-written below).
 				await clear(pStore);
 			}
-			await setMany(
-				snapshot.collection.map((i) => [i.id, i] as [string, Stack]),
-				cStore,
-			);
-			await setMany(
-				snapshot.binders.map((b) => [b.id, b] as [string, Binder]),
-				bStore,
-			);
+			// Write snapshot rows.
+			if (snapshot.collection.length > 0) {
+				await setMany(
+					snapshot.collection.map((i) => [i.id, i] as [string, Stack]),
+					cStore,
+				);
+				await markDirty(
+					mStore,
+					"stacks",
+					snapshot.collection.map((i) => i.id),
+				);
+			}
+			if (snapshot.binders.length > 0) {
+				await setMany(
+					snapshot.binders.map((b) => [b.id, b] as [string, Binder]),
+					bStore,
+				);
+				await markDirty(
+					mStore,
+					"binders",
+					snapshot.binders.map((b) => b.id),
+				);
+			}
 			if (snapshot.profile) {
 				await set(LOCAL_PROFILE_ID, snapshot.profile, pStore);
+				await markDirty(mStore, "profiles", [LOCAL_PROFILE_ID]);
 			}
 		},
 	};
