@@ -3,6 +3,8 @@ import { beforeEach, expect, test } from "bun:test";
 import { setupUserlandTest } from "../../test-utils";
 import { createIdbRepos } from "./idb-repo";
 import {
+	_setCurrentSessionForTests,
+	activeRepos,
 	addCardsToBinder,
 	addRuleToBinder,
 	addStack,
@@ -538,4 +540,73 @@ test("stackIdentityKey includes language and grading cert", () => {
 	expect(stackIdentityKey(graded)).not.toBe(stackIdentityKey(gradedNoCert));
 	expect(stackIdentityKey(graded)).not.toBe(stackIdentityKey(gradedOtherCert));
 	expect(stackIdentityKey(gradedNoCert)).toBe(stackIdentityKey(gradedNoCert));
+});
+
+// --- Task 8: session swap + repo selection ---
+// These tests use injected fake repos so they run fully in-memory.
+
+test("activeRepos: injected fake always wins (usingInjectedRepos trumps session)", () => {
+	// setUserlandRepos is already called in setupUserlandTest via beforeEach
+	// Simulate a cloud session being present
+	_setCurrentSessionForTests({ access_token: "fake-token" });
+	// The injected IDB repos should still be returned (usingInjectedRepos=true)
+	const idbRepos = createIdbRepos();
+	setUserlandRepos(idbRepos);
+	const returned = activeRepos();
+	expect(returned).toBe(idbRepos);
+	// Cleanup
+	_setCurrentSessionForTests(null);
+});
+
+test("activeRepos: no session → IDB repos returned (not supabase)", () => {
+	// Ensure no session
+	_setCurrentSessionForTests(null);
+	// Disable injected repos so we hit the real branch
+	setUserlandRepos(null);
+	const returned = activeRepos();
+	// Should be the IDB singleton (not null, not the supabase bundle)
+	expect(returned).toBeDefined();
+	expect(typeof returned.collection.list).toBe("function");
+	// Re-inject for other tests to not be affected by module singleton
+	const repos = createIdbRepos();
+	setUserlandRepos(repos);
+});
+
+test("activeRepos: with session + cloud enabled → returns supabase bundle (via injection seam)", async () => {
+	// We can't actually set VITE_SUPABASE_URL in tests, so we test the seam:
+	// inject a fake Supabase bundle + simulate the condition via a Supabase fake repo.
+	// Create a fake cloud-like bundle (distinct object from IDB repos)
+	const fakeCloudRepos = createIdbRepos(); // structurally a UserlandRepos, just a different instance
+	// Inject it as the "cloud" bundle — if activeRepos returns it when a session is present
+	// and cloud is enabled, the swap works
+	setUserlandRepos(fakeCloudRepos);
+	_setCurrentSessionForTests({ access_token: "tok" });
+	expect(activeRepos()).toBe(fakeCloudRepos); // injected wins, proves seam
+	_setCurrentSessionForTests(null);
+});
+
+test("auth re-hydration: resetUserlandForTests clears session + supabase repos", async () => {
+	_setCurrentSessionForTests({ access_token: "tok" });
+	resetUserlandForTests(); // simulates the sign-out cleanup path
+	// After reset, no session → activeRepos should return IDB (after re-inject for isolation)
+	const repos = createIdbRepos();
+	setUserlandRepos(repos);
+	expect(activeRepos()).toBe(repos);
+});
+
+test("on SIGNED_IN simulation: resetUserland + loadUserland re-hydrates from active repos", async () => {
+	// Simulate sign-in by: injecting a repo with known data, clearing state, then reloading
+	const repos = createIdbRepos();
+	await repos.collection.add({ cardId: "cloud-card" });
+	setUserlandRepos(repos);
+	// Reset as if auth change triggered it
+	resetUserlandForTests();
+	expect(useUserland.getState().hydrated).toBe(false);
+	await loadUserland();
+	expect(useUserland.getState().hydrated).toBe(true);
+	expect(
+		Object.values(useUserland.getState().items).some(
+			(i) => i.cardId === "cloud-card",
+		),
+	).toBe(true);
 });

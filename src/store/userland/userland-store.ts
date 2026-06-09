@@ -1,7 +1,9 @@
 // src/store/userland/userland-store.ts
 import { create } from "zustand";
+import { getBrowserClient, isCloudEnabled } from "../../lib/supabase/client";
 import { getRepos, migrateUserlandData } from "./idb-repo";
 import type { UserlandRepos } from "./repo";
+import { createSupabaseRepo } from "./supabase-repo";
 import type {
 	Binder,
 	BinderPatch,
@@ -47,15 +49,85 @@ export const useUserland = create<UserlandState>(() => ({ ...initial }));
 let repos: UserlandRepos | null = null;
 /** True while a fake repo is injected — gates the real-IDB data migration off in tests. */
 let usingInjectedRepos = false;
+
+// --- Auth session tracking ---
+// Synchronously tracks the current Supabase session so activeRepos() can decide
+// which backend to return without needing to await anything.
+type Session = { access_token: string } | null;
+let currentSession: Session = null;
+/** Lazily-created Supabase repo bundle (one per tab). */
+let supabaseRepos: UserlandRepos | null = null;
+
+/**
+ * Wire up the Supabase auth listener. Must be called once at app init when
+ * `isCloudEnabled()` is true (e.g. from the root component or client entry).
+ *
+ * On SIGNED_IN: updates session, runs the local→cloud claim for this uid, then
+ * resets + re-hydrates useUserland from the now-active Supabase repos.
+ * On SIGNED_OUT: resets session + re-hydrates from IDB.
+ * On TOKEN_REFRESHED: just updates the session (no reload needed).
+ */
+export async function subscribeAuth(): Promise<void> {
+	if (!isCloudEnabled()) return;
+	const client = getBrowserClient();
+
+	// Initial session check — synchronously initialise currentSession so that
+	// activeRepos() returns the right bundle even before the first auth event fires.
+	const {
+		data: { session },
+	} = await client.auth.getSession();
+	currentSession = session;
+
+	client.auth.onAuthStateChange((event, sess) => {
+		currentSession = sess;
+
+		if (event === "SIGNED_IN") {
+			// Import lazily to avoid a circular dependency at module evaluation time.
+			// claim.ts is authored after this file.
+			void import("./claim").then(async ({ claimLocalToCloud }) => {
+				const localRepos = getRepos();
+				const cloudRepos = _getOrCreateSupabaseRepos();
+				const uid = sess?.user.id ?? "";
+				if (uid) await claimLocalToCloud(localRepos, cloudRepos, uid);
+			});
+			resetUserland();
+			void loadUserland();
+		} else if (event === "SIGNED_OUT") {
+			supabaseRepos = null; // next SIGNED_IN gets a fresh bundle
+			resetUserland();
+			void loadUserland();
+		}
+		// TOKEN_REFRESHED: currentSession already updated above; no reload needed.
+	});
+}
+
+/** Internal: lazily create + memoise the Supabase repo bundle. */
+function _getOrCreateSupabaseRepos(): UserlandRepos {
+	if (!supabaseRepos) supabaseRepos = createSupabaseRepo(getBrowserClient());
+	return supabaseRepos;
+}
+
 /** Return the active repo bundle, lazily initialising the IDB default. */
 export function activeRepos(): UserlandRepos {
-	if (!repos) repos = getRepos();
-	return repos;
+	if (usingInjectedRepos && repos !== null) return repos;
+	if (isCloudEnabled() && currentSession) return _getOrCreateSupabaseRepos();
+	return getRepos();
 }
+
 /** Override the active repo bundle (pass null to reset to the IDB default). Used in tests. */
 export function setUserlandRepos(r: UserlandRepos | null): void {
 	repos = r;
 	usingInjectedRepos = r !== null;
+}
+
+/**
+ * Reset the in-memory Zustand state and the in-flight load guard so a subsequent
+ * `loadUserland()` re-hydrates from scratch. Called on auth state changes and by
+ * test helpers. Does NOT touch the repos pointer (use `setUserlandRepos` for that).
+ */
+function resetUserland(): void {
+	inFlight = null;
+	useUserland.setState({ ...initial });
 }
 
 // --- Hydration ---
@@ -110,10 +182,20 @@ export function loadUserland(): Promise<void> {
 	return inFlight;
 }
 
-/** Test helper: clear the in-flight guard and reset state. */
+/** Test helper: clear the in-flight guard, reset state, and clear any injected session. */
 export function resetUserlandForTests(): void {
 	inFlight = null;
+	currentSession = null;
+	supabaseRepos = null;
 	useUserland.setState({ ...initial });
+}
+
+/**
+ * Test-only: directly set the module-level session so `activeRepos()` sees it
+ * without needing a real Supabase client. Pass `null` to simulate signed-out.
+ */
+export function _setCurrentSessionForTests(sess: Session): void {
+	currentSession = sess;
 }
 
 // --- Collection actions ---
