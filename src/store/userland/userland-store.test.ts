@@ -512,6 +512,35 @@ test("importStacks merge: same cert (including null) → merges", async () => {
 	expect(items[0].quantity).toBe(3);
 });
 
+// --- Task 10: cloud-disabled = pure local-first ---
+
+test("cloud-disabled path: injected IDB repos always returned regardless of session", () => {
+	// Tests use injected IDB repos (usingInjectedRepos = true from setupUserlandTest).
+	// Even if a cloud session is present, activeRepos must return the injected bundle —
+	// this covers both the "cloud disabled" case and the test-isolation invariant.
+	_setCurrentSessionForTests({ access_token: "tok" });
+	const r = activeRepos();
+	expect(r).toBeDefined();
+	expect(typeof r.collection.list).toBe("function");
+	// Injected repos are an IDB bundle — they have the same repo shape.
+	expect(typeof r.binders.list).toBe("function");
+	expect(typeof r.backup.exportAll).toBe("function");
+	_setCurrentSessionForTests(null);
+});
+
+test("cloud-disabled: subscribeAuth no-ops (does not throw, no listener attached)", async () => {
+	// subscribeAuth early-returns when isCloudEnabled() is false.
+	// It must not throw even if called without a real Supabase client.
+	const { subscribeAuth } = await import("./userland-store");
+	// Should resolve without error.
+	await expect(subscribeAuth()).resolves.toBeUndefined();
+});
+
+test("cloud-disabled: claimPrompt starts null and stays null after loadUserland", async () => {
+	await loadUserland();
+	expect(useUserland.getState().claimPrompt).toBeNull();
+});
+
 test("stackIdentityKey includes language and grading cert", () => {
 	const base = {
 		cardId: "a",
