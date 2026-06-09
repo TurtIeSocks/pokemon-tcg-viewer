@@ -12,6 +12,9 @@ export default defineConfig({
 		alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
 	},
 	plugins: [
+		// First so its dev middleware registers ahead of nitro's catch-all
+		// (otherwise GET /version.json falls through to the SPA handler → 404).
+		versionPlugin(),
 		tailwindcss(),
 		tanstackStart({
 			srcDirectory: "src",
@@ -38,6 +41,5 @@ export default defineConfig({
 		}),
 		viteReact(),
 		nitro(),
-		versionPlugin(),
 	],
 });
