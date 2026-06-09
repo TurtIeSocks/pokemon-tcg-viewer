@@ -48,10 +48,13 @@ function fillStack(input: NewStack): Stack {
 		label: input.label ?? null,
 		pricePaid: input.pricePaid ?? null,
 		currency: input.currency ?? "USD",
+		language: input.language ?? "en",
 		variant: input.variant ?? null,
 		notes: input.notes ?? null,
 		condition: input.condition ?? null,
-		grading: input.grading ?? null,
+		grading: input.grading
+			? { ...input.grading, cert: input.grading.cert ?? null }
+			: null,
 		source: input.source ?? null,
 		storageLocation: input.storageLocation ?? null,
 		isPrimary: input.isPrimary ?? false,
@@ -75,8 +78,13 @@ export function normalizeStack(raw: Stack): Stack {
 		deletedAt: raw.deletedAt ?? null,
 		label: raw.label ?? null,
 		currency: raw.currency ?? "USD",
+		language: (raw as Stack & { language?: string }).language ?? "en",
+		variant: raw.variant ?? null,
 		source: raw.source ?? null,
 		storageLocation: raw.storageLocation ?? null,
+		grading: raw.grading
+			? { ...raw.grading, cert: (raw.grading as typeof raw.grading & { cert?: string | null }).cert ?? null }
+			: null,
 		isPrimary: raw.isPrimary ?? false,
 	};
 }
