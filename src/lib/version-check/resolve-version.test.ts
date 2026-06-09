@@ -4,7 +4,9 @@ import { resolveVersion } from "./resolve-version";
 const NO_GIT = () => null;
 
 test("explicit APP_VERSION wins and is not truncated", () => {
-	expect(resolveVersion({ APP_VERSION: "1.4.2-rc1" }, NO_GIT)).toBe("1.4.2-rc1");
+	expect(resolveVersion({ APP_VERSION: "1.4.2-rc1" }, NO_GIT)).toBe(
+		"1.4.2-rc1",
+	);
 });
 
 test("Vercel commit SHA is used and truncated to 7", () => {
@@ -20,7 +22,9 @@ test("Cloudflare Pages SHA is used when Vercel absent", () => {
 });
 
 test("GitHub SHA is used when others absent", () => {
-	expect(resolveVersion({ GITHUB_SHA: "deadbeefcafe" }, NO_GIT)).toBe("deadbee");
+	expect(resolveVersion({ GITHUB_SHA: "deadbeefcafe" }, NO_GIT)).toBe(
+		"deadbee",
+	);
 });
 
 test("falls back to git short SHA when no env source", () => {

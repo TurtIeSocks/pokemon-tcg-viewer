@@ -44,8 +44,7 @@ export function useVersionAvailable(
 				});
 				if (!res.ok) return;
 				const data = (await res.json()) as { version?: unknown };
-				const version =
-					typeof data.version === "string" ? data.version : null;
+				const version = typeof data.version === "string" ? data.version : null;
 				if (version === null || signal.aborted) return;
 				latest.current = version;
 				setLatestVersion(version);
