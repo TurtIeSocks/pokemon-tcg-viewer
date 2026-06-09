@@ -13,6 +13,7 @@ Skipping either leaves the dev server broken in confusing, partial ways.
 
 - Dev server: `bun run dev` (Vite + TanStack Start, port 6201 via `.claude/launch.json`).
 - Tests: `bun test` (Bun runner; `fake-indexeddb` + happy-dom preloaded via `bunfig.toml`).
+- **Test cloud/auth locally without the magic-link email:** `bun run dev:preview` (sets `VITE_CLAUDE_PREVIEW=true`) → a gated dev-login panel (bottom-right) signs in a throwaway local user (`preview@local.dev`) in one click. The Claude-preview launch config sets the flag automatically. Needs the local Supabase stack up (`supabase start`) + `VITE_SUPABASE_*` in `.env`. Magic links otherwise land in Mailpit (`:55324`), never a real inbox.
 - Typecheck: `bunx tsc -b`.
 - Lint: `bunx biome check --write <files>`. Note: `bun run lint` can fail on a nested `biome.json` inside a worktree — pass explicit file paths (or `--config-path=.`).
 - Health scan (React): `npx react-doctor@latest --verbose .` — a perf/a11y/correctness + dead-code lens (not installed; run via npx). Accepted-deviation rules to **ignore**: `react-compiler-no-manual-memoization` (manual memo is intentional), route `only-export-components`, TanStack-Form `noChildrenProp`/`no-prevent-default`. `role="img"`+`aria-label` on meaningful icons is correct (not a `prefer-tag-over-role` bug).
