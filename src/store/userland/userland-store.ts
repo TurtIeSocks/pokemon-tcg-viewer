@@ -6,6 +6,7 @@ import type { UserlandRepos } from "./repo";
 import { createSupabaseRepo } from "./supabase-repo";
 import { createCacheRepos } from "./sync/cache-repo";
 import { startSync, stopSync, syncOnce } from "./sync/sync-engine";
+import { syncStatus } from "./sync/sync-status-singleton";
 import type {
 	Binder,
 	BinderPatch,
@@ -141,9 +142,14 @@ async function handleSignedIn(uid: string): Promise<void> {
 	// A warm failure (offline at sign-in) must not block hydration — the cache
 	// still serves whatever it already holds.
 	try {
+		syncStatus.onSyncStart();
 		await syncOnce(uid, client);
+		await syncStatus.onSyncSuccess(uid);
 	} catch (e) {
 		console.error("Initial sync warm failed; serving the cache as-is", e);
+		syncStatus.onSyncError(
+			typeof navigator !== "undefined" && !navigator.onLine,
+		);
 	}
 
 	// (c) Start background sync; re-hydrate the store after every pass so a
@@ -151,11 +157,18 @@ async function handleSignedIn(uid: string): Promise<void> {
 	syncHandle = startSync({
 		uid,
 		client,
+		onSyncStart: () => {
+			syncStatus.onSyncStart();
+		},
 		onSyncComplete: () => {
+			void syncStatus.onSyncSuccess(uid);
 			void rehydrateFromCache();
 		},
 		onSyncError: (err) => {
 			console.error("Background sync pass failed", err);
+			// Treat a fetch failure / offline signal as offline; anything else = error.
+			const offline = typeof navigator !== "undefined" && !navigator.onLine;
+			syncStatus.onSyncError(offline);
 		},
 	});
 

@@ -306,6 +306,7 @@ const DEBOUNCE_MS = 1500;
 interface SyncHandle {
 	uid: string;
 	client: SupabaseClient;
+	onSyncStart?: () => void;
 	onSyncComplete?: (result: SyncOnceResult) => void;
 	onSyncError?: (err: unknown) => void;
 }
@@ -329,7 +330,7 @@ const activeHandles = new Map<string, CleanupFn>();
  * Multiple calls with the same uid replace the previous registration.
  */
 export function startSync(handle: SyncHandle): { notifyWrite: () => void } {
-	const { uid, client, onSyncComplete, onSyncError } = handle;
+	const { uid, client, onSyncStart, onSyncComplete, onSyncError } = handle;
 
 	// Tear down any previous registration for this uid.
 	stopSync(uid);
@@ -340,6 +341,7 @@ export function startSync(handle: SyncHandle): { notifyWrite: () => void } {
 	async function runSync() {
 		if (syncing) return; // coalesce concurrent triggers
 		syncing = true;
+		onSyncStart?.();
 		try {
 			const result = await syncOnce(uid, client);
 			onSyncComplete?.(result);
