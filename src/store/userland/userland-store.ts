@@ -32,6 +32,11 @@ interface UserlandState {
 	hydrated: boolean;
 	/** True while the initial load is in flight. */
 	loading: boolean;
+	/**
+	 * Set when cloud already has data and local has stack ids absent from cloud.
+	 * Null until a SIGNED_IN claim resolves, or after the user imports/dismisses.
+	 */
+	claimPrompt: { localOnlyCount: number } | null;
 }
 
 const initial: UserlandState = {
@@ -40,6 +45,7 @@ const initial: UserlandState = {
 	profile: null,
 	hydrated: false,
 	loading: false,
+	claimPrompt: null,
 };
 
 /** Zustand store holding all user-owned stacks and binders. Subscribe via selectors. */
@@ -82,18 +88,36 @@ export async function subscribeAuth(): Promise<void> {
 		currentSession = sess;
 
 		if (event === "SIGNED_IN") {
-			// Import lazily to avoid a circular dependency at module evaluation time.
-			// claim.ts is authored after this file.
-			void import("./claim").then(async ({ claimLocalToCloud }) => {
+			// Lazy import avoids a circular dep at module evaluation time.
+			// The entire sign-in flow is a single awaited async sequence so the store
+			// hydrates AFTER the claim upload finishes (fixes the empty-Vault race).
+			void (async () => {
+				const { claimLocalToCloud, pendingClaimPrompt } = await import(
+					"./claim"
+				);
 				const localRepos = getRepos();
 				const cloudRepos = _getOrCreateSupabaseRepos();
 				const uid = sess?.user.id ?? "";
-				if (uid) await claimLocalToCloud(localRepos, cloudRepos, uid);
-			});
-			resetUserland();
-			void loadUserland();
+				let prompt: { localOnlyCount: number } | null = null;
+				if (uid) {
+					const descriptor = await claimLocalToCloud(
+						localRepos,
+						cloudRepos,
+						uid,
+					);
+					prompt = pendingClaimPrompt(uid, descriptor);
+				}
+				// Reset + hydrate AFTER the claim so cloud data is present.
+				resetUserland();
+				await loadUserland();
+				// Surface the claim prompt (if undismissed and cloud already had data).
+				if (prompt) {
+					useUserland.setState({ claimPrompt: prompt });
+				}
+			})();
 		} else if (event === "SIGNED_OUT") {
 			supabaseRepos = null; // next SIGNED_IN gets a fresh bundle
+			useUserland.setState({ claimPrompt: null });
 			resetUserland();
 			void loadUserland();
 		}
