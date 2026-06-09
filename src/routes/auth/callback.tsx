@@ -1,0 +1,127 @@
+import type { EmailOtpType } from "@supabase/supabase-js";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { POST_SIGN_IN_PATH } from "@/components/auth/auth-actions";
+import { Button } from "@/components/ui/button";
+import { BezelPanel } from "@/components/ui/glass";
+import { getBrowserClient, isCloudEnabled } from "@/lib/supabase/client";
+
+/**
+ * Search params on the magic-link return URL. Supabase delivers EITHER:
+ *  - `code`  → PKCE flow (the `@supabase/ssr` browser-client default) →
+ *    `exchangeCodeForSession(code)`; or
+ *  - `token_hash` + `type` → email-OTP confirm flow → `verifyOtp({token_hash,type})`.
+ * Handling both makes the callback correct regardless of the email template.
+ * `error` / `error_description` arrive when the provider rejects the link.
+ */
+interface CallbackSearch {
+	code?: string;
+	token_hash?: string;
+	type?: string;
+	error?: string;
+	error_description?: string;
+}
+
+export const Route = createFileRoute("/auth/callback")({
+	validateSearch: (search: Record<string, unknown>): CallbackSearch => ({
+		code: typeof search.code === "string" ? search.code : undefined,
+		token_hash:
+			typeof search.token_hash === "string" ? search.token_hash : undefined,
+		type: typeof search.type === "string" ? search.type : undefined,
+		error: typeof search.error === "string" ? search.error : undefined,
+		error_description:
+			typeof search.error_description === "string"
+				? search.error_description
+				: undefined,
+	}),
+	head: () => ({ meta: [{ title: "Signing in… — Pokémon TCG" }] }),
+	component: AuthCallback,
+});
+
+type Phase = "exchanging" | "error";
+
+function AuthCallback() {
+	const search = Route.useSearch();
+	const navigate = useNavigate();
+	const [phase, setPhase] = useState<Phase>("exchanging");
+	const [message, setMessage] = useState<string>("");
+
+	useEffect(() => {
+		let cancelled = false;
+		const fail = (msg: string) => {
+			if (!cancelled) {
+				setMessage(msg);
+				setPhase("error");
+			}
+		};
+
+		async function run() {
+			if (!isCloudEnabled()) {
+				fail("Cloud sign-in is not enabled in this build.");
+				return;
+			}
+			// Provider rejected the link (expired, already used, etc.).
+			if (search.error) {
+				fail(search.error_description ?? search.error);
+				return;
+			}
+
+			const auth = getBrowserClient().auth;
+			try {
+				if (search.code) {
+					const { error } = await auth.exchangeCodeForSession(search.code);
+					if (error) return fail(error.message);
+				} else if (search.token_hash) {
+					const { error } = await auth.verifyOtp({
+						token_hash: search.token_hash,
+						type: (search.type ?? "email") as EmailOtpType,
+					});
+					if (error) return fail(error.message);
+				} else {
+					return fail("This sign-in link is missing its verification token.");
+				}
+			} catch (e) {
+				return fail(e instanceof Error ? e.message : "Sign-in failed.");
+			}
+
+			if (!cancelled) {
+				// Replace so the consumed link isn't left in history.
+				void navigate({ to: POST_SIGN_IN_PATH, replace: true });
+			}
+		}
+
+		void run();
+		return () => {
+			cancelled = true;
+		};
+	}, [search, navigate]);
+
+	return (
+		<div className="mx-auto flex min-h-[60vh] w-full max-w-md items-center justify-center px-4">
+			<BezelPanel className="w-full text-center">
+				{phase === "exchanging" ? (
+					<div className="space-y-2 py-4">
+						<p className="font-display text-lg font-semibold text-[var(--ink)]">
+							Signing you in…
+						</p>
+						<p className="text-sm text-[var(--ink-muted)]">
+							Verifying your magic link.
+						</p>
+					</div>
+				) : (
+					<div className="space-y-4 py-4">
+						<div className="space-y-1.5">
+							<p className="font-display text-lg font-semibold text-[var(--ink)]">
+								Sign-in link didn't work
+							</p>
+							<p className="text-sm text-[var(--ink-muted)]">{message}</p>
+						</div>
+						<Button asChild variant="soft" size="sm">
+							<Link to="/vault">Back to your Vault</Link>
+						</Button>
+					</div>
+				)}
+			</BezelPanel>
+		</div>
+	);
+}

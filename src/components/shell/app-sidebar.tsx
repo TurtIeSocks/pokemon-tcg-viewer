@@ -1,4 +1,8 @@
-import { Link, type LinkComponentProps } from "@tanstack/react-router";
+import {
+	ClientOnly,
+	Link,
+	type LinkComponentProps,
+} from "@tanstack/react-router";
 import {
 	BookOpen,
 	Boxes,
@@ -9,6 +13,7 @@ import {
 	UserIcon,
 } from "lucide-react";
 import type React from "react";
+import { AuthControls } from "@/components/auth/auth-controls";
 import { CollectorAvatar } from "@/components/profile/collector-avatar";
 import {
 	Collapsible,
@@ -267,6 +272,13 @@ function SidebarFooterContent() {
 						<UserIcon />
 					</Link>
 				</SidebarMenuButton>
+			</SidebarMenuItem>
+			{/* Cloud auth (magic-link sign-in / sign-out). Self-renders nothing
+			    when cloud is disabled. Hidden in the collapsed icon rail. */}
+			<SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
+				<ClientOnly fallback={null}>
+					<AuthControls />
+				</ClientOnly>
 			</SidebarMenuItem>
 		</SidebarMenu>
 	);
