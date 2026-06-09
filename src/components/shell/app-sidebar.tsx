@@ -1,8 +1,4 @@
-import {
-	ClientOnly,
-	Link,
-	type LinkComponentProps,
-} from "@tanstack/react-router";
+import { Link, type LinkComponentProps } from "@tanstack/react-router";
 import {
 	BookOpen,
 	Boxes,
@@ -10,12 +6,8 @@ import {
 	Layers,
 	LayoutDashboard,
 	type LucideIcon,
-	UserIcon,
 } from "lucide-react";
 import type React from "react";
-import { AuthControls } from "@/components/auth/auth-controls";
-import { CollectorAvatar } from "@/components/profile/collector-avatar";
-import { SyncIndicator } from "@/components/sync/sync-indicator";
 import {
 	Collapsible,
 	CollapsibleContent,
@@ -45,7 +37,7 @@ import {
 	type NavTree,
 	seriesMonogram,
 } from "../../lib/nav-tree";
-import { useUserland } from "../../store/userland/userland-store";
+import { SidebarUserMenu } from "./sidebar-user-menu";
 
 interface AppSidebarProps {
 	tree: NavTree;
@@ -69,7 +61,7 @@ export function AppSidebar({ tree }: AppSidebarProps) {
 			</SidebarContent>
 
 			<SidebarFooter>
-				<SidebarFooterContent />
+				<SidebarUserMenu />
 			</SidebarFooter>
 		</Sidebar>
 	);
@@ -248,41 +240,6 @@ function SetItem({ set, seriesSlug }: SetItemProps) {
 				</Link>
 			</SidebarMenuSubButton>
 		</SidebarMenuSubItem>
-	);
-}
-
-function SidebarFooterContent() {
-	const profile = useUserland((s) => s.profile);
-	const { setOpenMobile } = useSidebar();
-	const displayName = profile?.displayName || "Collector";
-	const preset = profile?.avatarPreset ?? "dusk";
-
-	return (
-		<SidebarMenu>
-			<SidebarMenuItem>
-				<SidebarMenuButton size="lg" asChild>
-					<Link to="/profile" onClick={() => setOpenMobile(false)}>
-						<CollectorAvatar
-							displayName={displayName}
-							preset={preset}
-							className="text-sm"
-						/>
-						<div className="grid flex-1 text-left text-sm leading-tight">
-							<span className="truncate font-medium">{displayName}</span>
-						</div>
-						<UserIcon />
-					</Link>
-				</SidebarMenuButton>
-			</SidebarMenuItem>
-			{/* Cloud auth (magic-link sign-in / sign-out). Self-renders nothing
-			    when cloud is disabled. Hidden in the collapsed icon rail. */}
-			<SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
-				<ClientOnly fallback={null}>
-					<AuthControls />
-					<SyncIndicator />
-				</ClientOnly>
-			</SidebarMenuItem>
-		</SidebarMenu>
 	);
 }
 
