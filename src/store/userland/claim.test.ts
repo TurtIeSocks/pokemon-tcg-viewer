@@ -7,6 +7,7 @@ import { createStore, set, setMany } from "idb-keyval";
 import {
 	claimLocalToCloud,
 	dismissClaimPrompt,
+	importLocalExtras,
 	pendingClaimPrompt,
 } from "./claim";
 import {
@@ -249,6 +250,41 @@ test("pendingClaimPrompt: returns null after dismissClaimPrompt", () => {
 test("pendingClaimPrompt: returns null when descriptor is null", () => {
 	const uid = "uid-any";
 	expect(pendingClaimPrompt(uid, null)).toBeNull();
+});
+
+// ---------------------------------------------------------------------------
+// importLocalExtras
+// ---------------------------------------------------------------------------
+
+test("importLocalExtras: merges local stacks into cloud without removing cloud-only rows", async () => {
+	const local = makeIsolatedRepos();
+	const cloud = makeIsolatedRepos();
+
+	// Cloud already has a stack of its own.
+	await cloud.repos.collection.add({ cardId: "cloud-only" });
+	// Local has a different stack.
+	await local.repos.collection.add({ cardId: "local-only" });
+
+	await importLocalExtras(local.repos, cloud.repos);
+
+	// importAll should have been called once with mode "merge".
+	expect(cloud.importAllCalls).toHaveLength(1);
+	expect(cloud.importAllCalls[0]?.mode).toBe("merge");
+	// The snapshot passed in includes the local card.
+	const ids =
+		cloud.importAllCalls[0]?.snapshot.collection.map((s) => s.id) ?? [];
+	expect(ids.length).toBeGreaterThan(0);
+});
+
+test("importLocalExtras: local repos are untouched after the call", async () => {
+	const local = makeIsolatedRepos();
+	const cloud = makeIsolatedRepos();
+
+	const stack = await local.repos.collection.add({ cardId: "keep" });
+	await importLocalExtras(local.repos, cloud.repos);
+
+	const localStacks = await local.repos.collection.list();
+	expect(localStacks.map((s) => s.id)).toContain(stack.id);
 });
 
 test("dismissClaimPrompt: only affects the given uid", () => {

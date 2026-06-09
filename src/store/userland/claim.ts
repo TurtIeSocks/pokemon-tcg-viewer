@@ -79,6 +79,20 @@ export async function claimLocalToCloud(
 }
 
 /**
+ * Import local-only stacks/binders/profile into the cloud repos via a merge
+ * (upsert by id — adds rows absent from cloud, leaves existing cloud rows intact).
+ * Called when the user explicitly clicks "Import" on the claim prompt.
+ * Local repos are never modified.
+ */
+export async function importLocalExtras(
+	localRepos: UserlandRepos,
+	cloudRepos: UserlandRepos,
+): Promise<void> {
+	const snapshot = await localRepos.backup.exportAll();
+	await cloudRepos.backup.importAll(snapshot, "merge");
+}
+
+/**
  * Returns the pending claim prompt for `uid` if one exists and hasn't been
  * dismissed, otherwise `null`.
  *
