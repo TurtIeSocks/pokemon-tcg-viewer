@@ -2,35 +2,35 @@
 //
 // Tests for SyncIndicator: all 4 statuses render their label.
 // Uses statusOverride to bypass the real auth session (no network).
+//
+// NOTE: we use `spyOn` (restored in afterEach), NOT `mock.module` — module
+// mocks leak across test files under Bun and would poison later suites (e.g.
+// `client.test.ts`'s real `isCloudEnabled`).
 
-import { expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 import { render, screen } from "@testing-library/react";
+import * as authMod from "@/components/auth/use-auth-session";
+import * as clientMod from "@/lib/supabase/client";
 import type { SyncStatus } from "@/store/userland/sync/sync-status";
+import { SyncIndicator } from "./sync-indicator";
 
-// ---------------------------------------------------------------------------
-// Mock isCloudEnabled → true and useAuthSession → signed-in so the component
-// renders for all status tests.
-// ---------------------------------------------------------------------------
+let cloudSpy: ReturnType<typeof spyOn>;
+let authSpy: ReturnType<typeof spyOn>;
 
-mock.module("@/lib/supabase/client", () => ({
-	isCloudEnabled: () => true,
-	getBrowserClient: () => ({}),
-}));
-
-mock.module("@/components/auth/use-auth-session", () => ({
-	useAuthSession: () => ({
+beforeEach(() => {
+	// Cloud enabled + a signed-in session so the component renders.
+	cloudSpy = spyOn(clientMod, "isCloudEnabled").mockReturnValue(true);
+	authSpy = spyOn(authMod, "useAuthSession").mockReturnValue({
 		session: { user: { id: "u1" } },
 		email: "test@example.com",
 		ready: true,
-	}),
-}));
+	} as unknown as ReturnType<typeof authMod.useAuthSession>);
+});
 
-// Import AFTER the mock is in place.
-const { SyncIndicator } = await import("./sync-indicator");
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
+afterEach(() => {
+	cloudSpy.mockRestore();
+	authSpy.mockRestore();
+});
 
 const CASES: Array<[SyncStatus, string]> = [
 	["synced", "Synced"],
@@ -46,15 +46,8 @@ for (const [status, expectedLabel] of CASES) {
 	});
 }
 
-test("renders nothing when cloud is not enabled", async () => {
-	// Re-mock isCloudEnabled → false for this test only.
-	mock.module("@/lib/supabase/client", () => ({
-		isCloudEnabled: () => false,
-		getBrowserClient: () => ({}),
-	}));
-
-	// Re-import the component with the new mock in effect.
-	const { SyncIndicator: SyncIndicatorOff } = await import("./sync-indicator");
-	const { container } = render(<SyncIndicatorOff statusOverride="synced" />);
+test("renders nothing when cloud is not enabled", () => {
+	cloudSpy.mockReturnValue(false);
+	const { container } = render(<SyncIndicator statusOverride="synced" />);
 	expect(container.firstChild).toBeNull();
 });
