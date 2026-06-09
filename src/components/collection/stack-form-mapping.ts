@@ -21,6 +21,7 @@ export function itemToForm(i: Stack): StackFormValues {
 		quantity: String(i.quantity),
 		acquiredAt: dayMsToInput(i.acquiredAt),
 		pricePaid: minorUnitsToInput(i.pricePaid),
+		language: i.language ?? "en",
 		variant: i.variant ?? "",
 		notes: i.notes ?? "",
 		source: i.source ?? "",
@@ -30,6 +31,7 @@ export function itemToForm(i: Stack): StackFormValues {
 		gradingCompany:
 			(i.grading?.company as StackFormValues["gradingCompany"]) ?? "",
 		grade: i.grading?.grade == null ? "" : String(i.grading.grade),
+		gradingCert: i.grading?.cert ?? "",
 	};
 }
 
@@ -47,6 +49,7 @@ export function formToPatch(
 		quantity: Math.max(1, Math.floor(Number(values.quantity)) || 1),
 		acquiredAt: inputDayToMs(values.acquiredAt),
 		pricePaid: inputToMinorUnits(values.pricePaid),
+		language: values.language || "en",
 		variant: values.variant === "" ? null : values.variant,
 		notes: values.notes === "" ? null : values.notes,
 		source: values.source.trim() === "" ? null : values.source.trim(),
@@ -63,17 +66,18 @@ export function formToPatch(
 				? {
 						company: values.gradingCompany,
 						grade: values.grade === "" ? 0 : Number(values.grade),
+						cert: values.gradingCert.trim() || null,
 					}
 				: null,
 	};
 }
 
 /** Map a single changed field to a store patch. Caller supplies the form's current
- *  grading sub-values when persisting gradingCompany/grade (see notes in StackEditForm). */
+ *  grading sub-values when persisting gradingCompany/grade/gradingCert (see notes in StackEditForm). */
 export function formFieldToPatch(
 	field: keyof StackFormValues,
 	value: string,
-	ctx?: { gradingCompany?: string; grade?: string },
+	ctx?: { gradingCompany?: string; grade?: string; gradingCert?: string },
 ): StackPatch {
 	switch (field) {
 		case "quantity":
@@ -82,6 +86,8 @@ export function formFieldToPatch(
 			return { acquiredAt: inputDayToMs(value) };
 		case "pricePaid":
 			return { pricePaid: inputToMinorUnits(value) };
+		case "language":
+			return { language: value || "en" };
 		case "source":
 			return { source: value.trim() === "" ? null : value.trim() };
 		case "storageLocation":
@@ -99,13 +105,20 @@ export function formFieldToPatch(
 		case "state":
 			return value === "raw" ? { grading: null } : { condition: null };
 		case "gradingCompany":
-		case "grade": {
+		case "grade":
+		case "gradingCert": {
 			const company =
 				(field === "gradingCompany" ? value : ctx?.gradingCompany) ?? "";
 			const gradeStr = (field === "grade" ? value : ctx?.grade) ?? "";
+			const certStr =
+				(field === "gradingCert" ? value : ctx?.gradingCert) ?? "";
 			if (company === "") return { grading: null };
 			return {
-				grading: { company, grade: gradeStr === "" ? 0 : Number(gradeStr) },
+				grading: {
+					company,
+					grade: gradeStr === "" ? 0 : Number(gradeStr),
+					cert: certStr.trim() || null,
+				},
 			};
 		}
 		default:

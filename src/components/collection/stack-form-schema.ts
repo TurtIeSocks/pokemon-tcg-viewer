@@ -4,6 +4,8 @@ import { z } from "zod";
 export const CONDITIONS = ["NM", "LP", "MP", "HP", "DMG"] as const;
 /** Recognised third-party grading companies. */
 export const GRADERS = ["PSA", "BGS", "CGC", "TAG", "SGC", "Other"] as const;
+/** Supported card languages (ISO 639-1); extend as needed. */
+export const LANGUAGES = ["en", "ja", "zh", "fr", "de", "it", "es", "pt", "ko"] as const;
 
 /** Returns true for strings matching YYYY-MM-DD that parse to a valid calendar date. */
 export function isValidDateStr(s: string): boolean {
@@ -35,6 +37,7 @@ export const stackFormSchema = z.object({
 	quantity: z.string().refine(isPositiveIntStr, "Whole number ≥ 1"),
 	acquiredAt: z.string().refine(isValidDateStr, "Invalid date"),
 	pricePaid: z.string().refine(isMoneyOrEmpty, "Must be a number ≥ 0"),
+	language: z.string(),
 	variant: z.string(),
 	notes: z.string(),
 	source: z.string(),
@@ -43,6 +46,7 @@ export const stackFormSchema = z.object({
 	condition: z.enum(["", ...CONDITIONS]),
 	gradingCompany: z.enum(["", ...GRADERS]),
 	grade: z.string().refine(isGradeOrEmpty, "0-10"),
+	gradingCert: z.string(),
 });
 /** Inferred form-value type from {@link stackFormSchema}. */
 export type StackFormValues = z.infer<typeof stackFormSchema>;
