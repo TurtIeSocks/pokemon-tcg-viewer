@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { useStore } from "../../store";
 import { setsById } from "../../store/corpus/corpus-engine";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
@@ -14,8 +15,6 @@ import {
 	useUserland,
 } from "../../store/userland/userland-store";
 import { ImportDialog } from "./import-dialog";
-
-const BTN = "rounded border px-3 py-1.5 text-sm hover:bg-secondary";
 
 /** Export the full collection as a downloadable JSON backup. */
 async function exportBackup(): Promise<void> {
@@ -50,18 +49,18 @@ export function VaultBackupControls() {
 
 	return (
 		<div className="flex flex-wrap gap-2">
-			<button type="button" onClick={exportBackup} className={BTN}>
+			<Button variant="secondary" size="sm" onClick={exportBackup}>
 				Export backup
-			</button>
-			<button type="button" onClick={() => exportCsv("stack")} className={BTN}>
+			</Button>
+			<Button variant="secondary" size="sm" onClick={() => exportCsv("stack")}>
 				Export CSV (stacks)
-			</button>
-			<button type="button" onClick={() => exportCsv("copy")} className={BTN}>
+			</Button>
+			<Button variant="secondary" size="sm" onClick={() => exportCsv("copy")}>
 				Export CSV (per card)
-			</button>
-			<button type="button" onClick={() => setImportOpen(true)} className={BTN}>
+			</Button>
+			<Button variant="secondary" size="sm" onClick={() => setImportOpen(true)}>
 				Import backup
-			</button>
+			</Button>
 			<ImportDialog open={importOpen} onOpenChange={setImportOpen} />
 		</div>
 	);

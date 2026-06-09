@@ -1,5 +1,5 @@
 import { ClientOnly, createFileRoute } from "@tanstack/react-router";
-import { Eyebrow } from "@/components/ui/eyebrow";
+import { VaultPageHeader } from "@/components/vault/vault-page-header";
 import { OwnedCardsGrid } from "../../components/vault/owned-cards-grid";
 import { VaultBackupControls } from "../../components/vault/vault-backup-controls";
 
@@ -9,18 +9,16 @@ export const Route = createFileRoute("/vault/cards")({
 
 function VaultCards() {
 	return (
-		<div className="space-y-5">
-			<div className="flex flex-wrap items-center justify-between gap-3">
-				<div className="space-y-1.5">
-					<Eyebrow>Your vault</Eyebrow>
-					<h1 className="font-display text-2xl font-semibold tracking-tight text-[var(--ink)]">
-						All cards
-					</h1>
-				</div>
-				<ClientOnly fallback={null}>
-					<VaultBackupControls />
-				</ClientOnly>
-			</div>
+		<div className="space-y-8">
+			<VaultPageHeader
+				title="All Cards"
+				subtitle="Browse and manage every card you own."
+				actions={
+					<ClientOnly fallback={null}>
+						<VaultBackupControls />
+					</ClientOnly>
+				}
+			/>
 
 			<ClientOnly
 				fallback={

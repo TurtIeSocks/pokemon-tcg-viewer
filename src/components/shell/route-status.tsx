@@ -28,7 +28,7 @@ export function RouteNotFound() {
 		<div className="mx-auto flex h-full max-w-md flex-col items-center justify-center gap-3 px-4 py-16 text-center">
 			<h1 className="text-2xl font-bold">Not found</h1>
 			<p className="text-sm text-muted-foreground">
-				That page, set, or card doesn’t exist — it may have moved or never
+				That page, set, or card doesn’t exist. It may have moved or never
 				existed.
 			</p>
 			<Button asChild variant="outline" size="sm" className="mt-2">

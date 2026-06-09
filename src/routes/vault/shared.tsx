@@ -55,7 +55,7 @@ export function SharedBinderInner() {
 		return (
 			<div className="py-16 text-center space-y-2">
 				<p className="text-lg font-medium text-destructive">
-					Couldn't read this shared binder — the link may be broken or
+					Couldn't read this shared binder. The link may be broken or
 					incomplete.
 				</p>
 			</div>
@@ -72,7 +72,7 @@ export function SharedBinderInner() {
 				className="flex items-center gap-2 rounded-md border border-[color-mix(in_oklch,var(--warning)_40%,transparent)] bg-[color-mix(in_oklch,var(--warning)_12%,transparent)] px-4 py-3 text-[var(--warning)] text-sm font-medium"
 			>
 				<span aria-hidden="true">📸</span>
-				<span>Snapshot from {snapshotDate} — not live</span>
+				<span>Snapshot from {snapshotDate} · not live</span>
 			</div>
 
 			{/* Header */}

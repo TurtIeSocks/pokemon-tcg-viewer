@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { PokemonSet } from "../../server/card-mappers";
 import { useStore } from "../../store";
 import {
@@ -53,18 +54,18 @@ function ReviewRow({
 	}, [corpusIndex, sets, q]);
 
 	return (
-		<div className="rounded border border-[var(--border)] bg-[var(--glass)] p-2 flex flex-col gap-1.5">
+		<div className="rounded-[var(--r-control)] border border-[var(--border)] bg-[var(--glass)] p-2 flex flex-col gap-1.5">
 			<div className="text-xs text-[var(--ink-muted)]">
 				{row.card_name || "(no name)"}
 				{row.set_name ? ` · ${row.set_name}` : ""}
 				{row.number ? ` #${row.number}` : ""}
 			</div>
-			<input
+			<Input
 				value={q}
 				onChange={(e) => setQ(e.target.value)}
 				aria-label={`Search a card for row ${index + 1}`}
 				placeholder="Search a card…"
-				className="rounded border border-[var(--border)] bg-[var(--canvas)] px-2 py-1 text-sm"
+				className="text-sm"
 			/>
 			{candidates.length > 0 && (
 				<div className="flex flex-col gap-1">
@@ -160,9 +161,9 @@ export function CsvImportPanel({ rows, onClose }: CsvImportPanelProps) {
 									[field]: e.target.value || undefined,
 								}))
 							}
-							className="rounded border border-[var(--border)] bg-[var(--glass)] px-2 py-1"
+							className="rounded-[var(--r-control)] border border-[var(--border)] bg-[var(--glass)] px-2 py-1 text-[var(--ink)]"
 						>
-							<option value="">—</option>
+							<option value="">(none)</option>
 							{headers.map((h) => (
 								<option key={h} value={h}>
 									{h}

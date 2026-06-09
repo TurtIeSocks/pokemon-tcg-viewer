@@ -44,8 +44,7 @@ export function groupCardsByEra(cards: HoloCardData[]): CardEraGroup[] {
 		if (minDate !== null && maxDate !== null) {
 			const minYear = new Date(minDate).getUTCFullYear();
 			const maxYear = new Date(maxDate).getUTCFullYear();
-			yearLabel =
-				minYear === maxYear ? `${minYear}` : `${minYear} — ${maxYear}`;
+			yearLabel = minYear === maxYear ? `${minYear}` : `${minYear}-${maxYear}`;
 		}
 		result.push({
 			series,

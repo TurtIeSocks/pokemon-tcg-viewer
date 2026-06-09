@@ -9,9 +9,10 @@ import { BinderCard } from "@/components/binders/binder-card";
 import { BinderFormDialog } from "@/components/binders/binder-form-dialog";
 import { SetTile } from "@/components/shell/set-tile";
 import { Button } from "@/components/ui/button";
-import { Eyebrow } from "@/components/ui/eyebrow";
 import { GlassPanel } from "@/components/ui/glass";
 import { Stagger } from "@/components/ui/motion";
+import { VaultPageHeader } from "@/components/vault/vault-page-header";
+import { VaultSection } from "@/components/vault/vault-section";
 import { VaultSummaryHero } from "@/components/vault/vault-summary";
 import type { NavTree } from "../../lib/nav-tree";
 import { getNavTreeFn } from "../../server/nav-tree";
@@ -62,35 +63,28 @@ export function VaultOverviewInner({ tree }: { tree: NavTree }) {
 	return (
 		<Stagger className="space-y-0">
 			{/* Page head */}
-			<div className="space-y-1.5">
-				<Eyebrow>Your vault</Eyebrow>
-				<h1 className="font-display text-[clamp(2rem,4.5vw,2.75rem)] font-semibold leading-none tracking-tight text-[var(--ink)]">
-					Collection
-				</h1>
-				<p className="text-[15px] text-[var(--ink-muted)]">
-					Every copy you own, joined live to the corpus.
-				</p>
-			</div>
+			<VaultPageHeader
+				title="Overview"
+				subtitle="Every copy you own, joined live to the corpus."
+			/>
 
 			{/* Summary bezel */}
-			<div>
+			<div className="mt-7">
 				<VaultSummaryHero />
 			</div>
 
 			{/* Set completion */}
-			<section className="mt-8 space-y-3.5">
-				<div className="flex items-baseline justify-between">
-					<h2 className="font-display text-[21px] font-medium text-[var(--ink)]">
-						Set completion
-					</h2>
+			<VaultSection
+				title="Set completion"
+				action={
 					<Link
 						to="/vault/sets"
 						className="text-[12.5px] font-medium text-[var(--primary)] hover:underline"
 					>
 						View all sets →
 					</Link>
-				</div>
-
+				}
+			>
 				{hasOwnedCards ? (
 					<div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 						{ownedSetEntries.map(({ series, set }) => (
@@ -106,7 +100,7 @@ export function VaultOverviewInner({ tree }: { tree: NavTree }) {
 				) : (
 					<GlassPanel className="py-10 text-center">
 						<p className="text-[var(--ink-muted)]">
-							No cards yet —{" "}
+							No cards yet,{" "}
 							<Link to="/" className="text-[var(--primary)] hover:underline">
 								browse a set
 							</Link>{" "}
@@ -114,27 +108,25 @@ export function VaultOverviewInner({ tree }: { tree: NavTree }) {
 						</p>
 					</GlassPanel>
 				)}
-			</section>
+			</VaultSection>
 
 			{/* Binders */}
-			<section className="mt-8 space-y-3.5">
-				<div className="flex items-baseline justify-between">
-					<h2 className="font-display text-[21px] font-medium text-[var(--ink)]">
-						Binders
-					</h2>
+			<VaultSection
+				title="Binders"
+				action={
 					<Button
 						variant="soft"
 						size="sm"
 						onClick={() => setNewBinderOpen(true)}
 					>
-						New binder +
+						New binder
 					</Button>
-				</div>
-
+				}
+			>
 				{binders.length === 0 ? (
 					<GlassPanel className="py-10 text-center space-y-3">
 						<p className="text-[var(--ink-muted)]">
-							No binders yet — create one to organize your collection.
+							No binders yet. Create one to organize your collection.
 						</p>
 						<Button
 							variant="outline"
@@ -151,7 +143,7 @@ export function VaultOverviewInner({ tree }: { tree: NavTree }) {
 						))}
 					</div>
 				)}
-			</section>
+			</VaultSection>
 
 			<BinderFormDialog
 				open={newBinderOpen}
@@ -172,12 +164,10 @@ function VaultOverview() {
 		<ClientOnly
 			fallback={
 				<div className="space-y-4 py-6">
-					<div className="space-y-1.5">
-						<Eyebrow>Your vault</Eyebrow>
-						<h1 className="font-display text-3xl font-semibold text-[var(--ink)]">
-							Collection
-						</h1>
-					</div>
+					<VaultPageHeader
+						title="Overview"
+						subtitle="Every copy you own, joined live to the corpus."
+					/>
 				</div>
 			}
 		>

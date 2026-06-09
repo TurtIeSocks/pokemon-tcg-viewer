@@ -81,10 +81,10 @@ beforeEach(async () => {
 // Tests
 // ---------------------------------------------------------------------------
 
-test("renders page heading 'Collection'", async () => {
+test("renders page heading 'Overview'", async () => {
 	await renderOverview();
 	expect(
-		screen.getByRole("heading", { level: 1, name: /collection/i }),
+		screen.getByRole("heading", { level: 1, name: /overview/i }),
 	).toBeTruthy();
 });
 

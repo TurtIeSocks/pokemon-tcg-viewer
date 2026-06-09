@@ -123,9 +123,9 @@ function PokemonPageInner({
 	return (
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
 			<div className="mb-3 flex items-center gap-3">
-				<h1 className="text-xl font-bold">
+				<h1 className="font-display text-xl font-bold text-(--ink)">
 					{display}{" "}
-					<span className="ml-2 text-sm text-muted-foreground">
+					<span className="ml-2 font-mono text-sm tabular-nums text-(--ink-muted)">
 						{total} cards
 					</span>
 				</h1>

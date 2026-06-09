@@ -110,7 +110,7 @@ interface VaultChild {
 
 const VAULT_CHILDREN = [
 	{ label: "Overview", to: "/vault", icon: LayoutDashboard },
-	{ label: "All cards", to: "/vault/cards", icon: Layers },
+	{ label: "All Cards", to: "/vault/cards", icon: Layers },
 	{ label: "Sets", to: "/vault/sets", icon: Boxes },
 	{ label: "Binders", to: "/vault/binders", icon: BookOpen },
 ] as const satisfies VaultChild[];

@@ -1,5 +1,6 @@
 import { ClientOnly, createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { VaultPageHeader } from "@/components/vault/vault-page-header";
 import { SetTile } from "../../../components/shell/set-tile";
 import { Button } from "../../../components/ui/button";
 import { getNavTreeFn } from "../../../server/nav-tree";
@@ -34,33 +35,38 @@ export function VaultSetsInner() {
 	);
 
 	return (
-		<div className="space-y-6">
-			{/* Toggle */}
-			<div className="flex items-center gap-2">
-				<Button
-					variant={!showAll ? "default" : "outline"}
-					size="sm"
-					onClick={() => setShowAll(false)}
-					aria-pressed={!showAll}
-				>
-					Owned sets
-				</Button>
-				<Button
-					variant={showAll ? "default" : "outline"}
-					size="sm"
-					onClick={() => setShowAll(true)}
-					aria-pressed={showAll}
-				>
-					All sets
-				</Button>
-			</div>
+		<div className="space-y-8">
+			<VaultPageHeader
+				title="Sets"
+				subtitle="Track completion across every set."
+				actions={
+					<>
+						<Button
+							variant={!showAll ? "default" : "outline"}
+							size="sm"
+							onClick={() => setShowAll(false)}
+							aria-pressed={!showAll}
+						>
+							Owned sets
+						</Button>
+						<Button
+							variant={showAll ? "default" : "outline"}
+							size="sm"
+							onClick={() => setShowAll(true)}
+							aria-pressed={showAll}
+						>
+							All sets
+						</Button>
+					</>
+				}
+			/>
 
 			{/* Empty state */}
 			{!showAll && totalOwned === 0 ? (
 				<div className="py-12 text-center space-y-3">
 					<p className="text-muted-foreground">
-						You don't own any cards yet — your sets will appear here once you
-						add some.
+						You don't own any cards yet. Your sets will appear here once you add
+						some.
 					</p>
 					<Button variant="outline" size="sm" onClick={() => setShowAll(true)}>
 						Browse all sets

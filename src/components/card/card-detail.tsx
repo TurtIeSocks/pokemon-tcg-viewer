@@ -95,7 +95,7 @@ function CollectionButton({
 
 	if (owned) {
 		const baseClass = cn(
-			"flex w-full items-center justify-center gap-2 rounded-[10px] py-3 min-h-[44px]",
+			"flex w-full items-center justify-center gap-2 rounded-[var(--r-control)] py-3 min-h-[44px]",
 			"font-mono text-[13px] tracking-[0.04em] transition-colors",
 			"border border-white/15 text-[var(--ink)]",
 		);
@@ -124,7 +124,7 @@ function CollectionButton({
 			type="button"
 			onClick={() => void addStack(card.id)}
 			className={cn(
-				"w-full rounded-[10px] py-2.5 text-center font-mono text-[13px] tracking-[0.04em] transition-colors",
+				"w-full rounded-[var(--r-control)] py-2.5 text-center font-mono text-[13px] tracking-[0.04em] transition-colors",
 				"border border-white/15 text-[var(--ink)] hover:border-white/30",
 			)}
 		>

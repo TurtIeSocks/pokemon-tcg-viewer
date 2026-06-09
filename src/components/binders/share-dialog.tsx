@@ -94,7 +94,7 @@ export function ShareDialog({ open, onOpenChange, binder }: ShareDialogProps) {
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle className="font-display">Share Binder</DialogTitle>
-					<DialogDescription className="text-[var(--ink-muted)]">
+					<DialogDescription>
 						Generate a one-time shareable link for this binder.
 					</DialogDescription>
 				</DialogHeader>
@@ -171,15 +171,15 @@ export function ShareDialog({ open, onOpenChange, binder }: ShareDialogProps) {
 						</div>
 						{urlTooLong && (
 							<p role="alert" className="text-xs text-[var(--danger)]">
-								Link is very long — try narrowing the scope to Owned or Needed
-								to reduce its size.
+								Link is very long. Try narrowing the scope to Owned or Needed to
+								reduce its size.
 							</p>
 						)}
 					</div>
 
 					{/* Frozen-snapshot note */}
 					<p className="text-xs text-[var(--ink-muted)]">
-						This is a one-time snapshot of your binder as it is right now — it
+						This is a one-time snapshot of your binder as it is right now. It
 						won&apos;t update later.
 					</p>
 				</div>

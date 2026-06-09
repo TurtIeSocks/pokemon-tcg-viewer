@@ -97,7 +97,7 @@ export function StackManager({ cardId, variants }: StackManagerProps) {
 			{/* Stack tiles */}
 			{stacks.length === 0 && !addOpen ? (
 				<p className="text-sm text-[var(--ink-muted)] py-4 text-center">
-					No stacks yet — add one above.
+					No stacks yet. Add one above.
 				</p>
 			) : (
 				<div className="flex flex-col gap-2">

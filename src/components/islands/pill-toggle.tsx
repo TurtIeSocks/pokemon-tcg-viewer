@@ -11,7 +11,7 @@ export function ToggleButton({ className, ...props }: ToggleButtonProps) {
 			className={cn(
 				"inline-flex items-center gap-1.5 px-3 py-1.5 rounded-(--r-pill) border text-sm cursor-pointer transition-[background,color,border-color] duration-120 ease-out disabled:opacity-40 disabled:cursor-not-allowed",
 				props["aria-pressed"]
-					? "bg-primary border-transparent text-white font-semibold"
+					? "bg-primary border-transparent text-(--primary-ink) font-semibold"
 					: "bg-(--glass) border-border text-(--ink-muted) hover:text-(--ink)",
 				className,
 			)}

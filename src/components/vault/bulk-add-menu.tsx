@@ -137,12 +137,9 @@ export function BulkAddMenu({
 							<ChevronDown />
 						</Button>
 					) : (
-						<button
-							type="button"
-							className="rounded-[var(--r-pill)] border border-[var(--border)] bg-[var(--glass)] px-3 py-1.5 text-sm text-[var(--ink)] hover:bg-white/[0.09] transition-colors"
-						>
+						<Button type="button" variant="secondary" size="sm">
 							{label ?? "Add all"}
-						</button>
+						</Button>
 					)}
 				</DropdownMenuTrigger>
 				<DropdownMenuContent

@@ -132,7 +132,7 @@ export function ProfilePageInner({ tree }: { tree: NavTree }) {
 				) : (
 					<GlassPanel className="py-10 text-center space-y-3">
 						<p className="text-[var(--ink-muted)]">
-							No favorite set yet — pick one to show it off.
+							No favorite set yet. Pick one to show it off.
 						</p>
 						<Button
 							variant="outline"

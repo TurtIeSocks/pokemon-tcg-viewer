@@ -421,7 +421,7 @@ export function StackEditForm({
 									<SelectField
 										field={field}
 										label="Condition"
-										placeholder="Select condition..."
+										placeholder="Select condition…"
 										options={CONDITIONS}
 									/>
 								)}
@@ -437,7 +437,7 @@ export function StackEditForm({
 											field={field}
 											label="Grader / company"
 											ariaLabel="Grader / company"
-											placeholder="Select grader..."
+											placeholder="Select grader…"
 											options={GRADERS}
 										/>
 									)}
@@ -449,7 +449,7 @@ export function StackEditForm({
 										onBlur: ({ value }) => {
 											if (value === "") return undefined;
 											const n = Number(value);
-											if (!Number.isFinite(n) || n < 0 || n > 10) return "0–10";
+											if (!Number.isFinite(n) || n < 0 || n > 10) return "0-10";
 											return undefined;
 										},
 									}}
