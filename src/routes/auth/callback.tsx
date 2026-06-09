@@ -1,4 +1,4 @@
-import type { EmailOtpType } from "@supabase/supabase-js";
+import type { EmailOtpType, Session } from "@supabase/supabase-js";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { POST_SIGN_IN_PATH } from "@/components/auth/auth-actions";
@@ -40,6 +40,33 @@ export const Route = createFileRoute("/auth/callback")({
 
 type Phase = "exchanging" | "error";
 
+/**
+ * Resolve the current session, waiting briefly for the one `supabase-js`
+ * establishes ASYNCHRONOUSLY from a magic link's URL hash (implicit flow) —
+ * there's no query `code`/`token_hash` to act on in that case, but the session
+ * still lands a tick later via `detectSessionInUrl`. Returns null if none
+ * arrives within the timeout (genuinely bad/expired link).
+ */
+export async function waitForSession(
+	auth: ReturnType<typeof getBrowserClient>["auth"],
+	timeoutMs = 4000,
+): Promise<Session | null> {
+	const { data } = await auth.getSession();
+	if (data.session) return data.session;
+	return new Promise((resolve) => {
+		const { data: sub } = auth.onAuthStateChange((_event, session) => {
+			if (session) {
+				sub.subscription.unsubscribe();
+				resolve(session);
+			}
+		});
+		setTimeout(() => {
+			sub.subscription.unsubscribe();
+			resolve(null);
+		}, timeoutMs);
+	});
+}
+
 function AuthCallback() {
 	const search = Route.useSearch();
 	const navigate = useNavigate();
@@ -68,6 +95,10 @@ function AuthCallback() {
 
 			const auth = getBrowserClient().auth;
 			try {
+				// Act on whatever the link carried as a QUERY param (PKCE `code` or
+				// email-OTP `token_hash`). A magic link may instead deliver the session
+				// in the URL HASH (implicit flow), which supabase-js consumes on its own —
+				// nothing to do here for that case.
 				if (search.code) {
 					const { error } = await auth.exchangeCodeForSession(search.code);
 					if (error) return fail(error.message);
@@ -77,8 +108,16 @@ function AuthCallback() {
 						type: (search.type ?? "email") as EmailOtpType,
 					});
 					if (error) return fail(error.message);
-				} else {
-					return fail("This sign-in link is missing its verification token.");
+				}
+
+				// Success is defined by "a session now exists", however it arrived
+				// (exchange, verifyOtp, or the async hash flow) — NOT by which query
+				// param was present. Only fail if no session lands.
+				const session = await waitForSession(auth);
+				if (!session) {
+					return fail(
+						"This sign-in link is invalid or has expired. Request a new one.",
+					);
 				}
 			} catch (e) {
 				return fail(e instanceof Error ? e.message : "Sign-in failed.");
