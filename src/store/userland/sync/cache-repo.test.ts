@@ -1,12 +1,12 @@
 // src/store/userland/sync/cache-repo.test.ts
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { allRows, clearDirty, createCacheRepos, dirtyIds } from "./cache-repo";
 
 // fake-indexeddb is preloaded via bunfig.toml; no explicit import needed.
 // Each test uses distinct uid strings to achieve store isolation.
 
 const UID_A = crypto.randomUUID();
-const UID_B = crypto.randomUUID();
+const _UID_B = crypto.randomUUID();
 
 // ---------------------------------------------------------------------------
 // Collection (stack) dirty-marking tests

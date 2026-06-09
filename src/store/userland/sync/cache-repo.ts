@@ -10,7 +10,6 @@
 import {
 	clear,
 	createStore,
-	del,
 	entries,
 	get,
 	set,
