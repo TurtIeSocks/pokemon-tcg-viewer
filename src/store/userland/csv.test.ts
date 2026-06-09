@@ -217,7 +217,12 @@ test("header row contains language and grading_cert", () => {
 
 test("stacksToCsv exports language and grading_cert", () => {
 	const csv = stacksToCsv(
-		[stack({ language: "ja", grading: { company: "PSA", grade: 10, cert: "12345" } })],
+		[
+			stack({
+				language: "ja",
+				grading: { company: "PSA", grade: 10, cert: "12345" },
+			}),
+		],
 		"stack",
 		resolve,
 	);
@@ -268,7 +273,10 @@ test("detectColumns maps cert aliases to grading_cert", () => {
 });
 
 test("round-trip: language and grading_cert survive export → parse → import", () => {
-	const s = stack({ language: "fr", grading: { company: "CGC", grade: 9.5, cert: "CERT99" } });
+	const s = stack({
+		language: "fr",
+		grading: { company: "CGC", grade: 9.5, cert: "CERT99" },
+	});
 	const csv = stacksToCsv([s], "stack", resolve);
 	const { rows } = parseCsv(csv);
 	const ns = rowToNewStack("base1-4", rows[0]);

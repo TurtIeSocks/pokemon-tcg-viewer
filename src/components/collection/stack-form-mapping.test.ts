@@ -40,7 +40,9 @@ test("itemToForm: raw item with nulls → empty strings + raw state", () => {
 });
 
 test("itemToForm: graded item → graded state + company/grade", () => {
-	const f = itemToForm(item({ grading: { company: "PSA", grade: 10, cert: null } }));
+	const f = itemToForm(
+		item({ grading: { company: "PSA", grade: 10, cert: null } }),
+	);
 	expect(f.state).toBe("graded");
 	expect(f.gradingCompany).toBe("PSA");
 	expect(f.grade).toBe("10");
@@ -104,13 +106,21 @@ test("formFieldToPatch: gradingCompany empty company → clears grading", () => 
 
 test("formFieldToPatch: grade with grading ctx → grading object", () => {
 	expect(
-		formFieldToPatch("grade", "9", { gradingCompany: "BGS", grade: "9", gradingCert: "X1" }),
+		formFieldToPatch("grade", "9", {
+			gradingCompany: "BGS",
+			grade: "9",
+			gradingCert: "X1",
+		}),
 	).toEqual({ grading: { company: "BGS", grade: 9, cert: "X1" } });
 });
 
 test("formFieldToPatch: grade with empty grade → defaults to 0", () => {
 	expect(
-		formFieldToPatch("grade", "", { gradingCompany: "PSA", grade: "", gradingCert: "" }),
+		formFieldToPatch("grade", "", {
+			gradingCompany: "PSA",
+			grade: "",
+			gradingCert: "",
+		}),
 	).toEqual({ grading: { company: "PSA", grade: 0, cert: null } });
 });
 
@@ -169,12 +179,16 @@ test("itemToForm: null/missing language defaults to 'en'", () => {
 });
 
 test("itemToForm: graded item with cert populates gradingCert", () => {
-	const f = itemToForm(item({ grading: { company: "PSA", grade: 10, cert: "CERT123" } }));
+	const f = itemToForm(
+		item({ grading: { company: "PSA", grade: 10, cert: "CERT123" } }),
+	);
 	expect(f.gradingCert).toBe("CERT123");
 });
 
 test("itemToForm: graded item with null cert → empty gradingCert string", () => {
-	const f = itemToForm(item({ grading: { company: "PSA", grade: 10, cert: null } }));
+	const f = itemToForm(
+		item({ grading: { company: "PSA", grade: 10, cert: null } }),
+	);
 	expect(f.gradingCert).toBe("");
 });
 
@@ -190,12 +204,20 @@ test("formFieldToPatch: language → language patch", () => {
 
 test("formFieldToPatch: gradingCert in ctx folds into grading cert", () => {
 	expect(
-		formFieldToPatch("gradingCert", "CERT42", { gradingCompany: "PSA", grade: "10", gradingCert: "CERT42" }),
+		formFieldToPatch("gradingCert", "CERT42", {
+			gradingCompany: "PSA",
+			grade: "10",
+			gradingCert: "CERT42",
+		}),
 	).toEqual({ grading: { company: "PSA", grade: 10, cert: "CERT42" } });
 });
 
 test("formFieldToPatch: empty gradingCert → cert: null in grading", () => {
 	expect(
-		formFieldToPatch("gradingCert", "", { gradingCompany: "PSA", grade: "9", gradingCert: "" }),
+		formFieldToPatch("gradingCert", "", {
+			gradingCompany: "PSA",
+			grade: "9",
+			gradingCert: "",
+		}),
 	).toEqual({ grading: { company: "PSA", grade: 9, cert: null } });
 });

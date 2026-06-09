@@ -488,7 +488,10 @@ test("add() defaults language to 'en'", async () => {
 });
 
 test("add() preserves an explicit language", async () => {
-	const s = await freshCollectionRepo().add({ cardId: "base1-4", language: "ja" });
+	const s = await freshCollectionRepo().add({
+		cardId: "base1-4",
+		language: "ja",
+	});
 	expect(s.language).toBe("ja");
 });
 
