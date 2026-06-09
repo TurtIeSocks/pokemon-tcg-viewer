@@ -20,9 +20,9 @@ import {
 import appCss from "../app.css?url";
 import { CardOverlay } from "../components/islands/card-overlay";
 import { AppSidebar } from "../components/shell/app-sidebar";
-import { isCloudEnabled } from "../lib/supabase/client";
 import { LIST_SEARCH_DEFAULTS } from "../lib/list-search";
 import type { NavTree } from "../lib/nav-tree";
+import { isCloudEnabled } from "../lib/supabase/client";
 import { getNavTreeFn } from "../server/nav-tree";
 import { subscribeAuth } from "../store/userland/userland-store";
 
