@@ -10,6 +10,7 @@ import {
 import { Search } from "lucide-react";
 import type { ReactNode } from "react";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { PreviewLogin } from "@/components/dev/preview-login";
 import { AboutDialog } from "@/components/shell/about-dialog";
 import { RepoLink } from "@/components/shell/repo-link";
 import { SyncToastsWatcher } from "@/components/sync/sync-toasts";
@@ -219,6 +220,7 @@ function RootComponent() {
 				<CardOverlay />
 				<VersionToast />
 				<SyncToastsWatcher />
+				<PreviewLogin />
 				<Toaster />
 			</ClientOnly>
 		</RootDocument>
