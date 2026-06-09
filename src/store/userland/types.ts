@@ -8,6 +8,7 @@ export type CardCondition = "NM" | "LP" | "MP" | "HP" | "DMG";
 export interface CardGrading {
 	company: string; // "PSA" | "BGS" | "CGC" | "TAG" | "SGC" | … (UI offers a common set)
 	grade: number; // e.g. 9.5, 10
+	cert: string | null; // slab cert/serial; null = unrecorded
 }
 
 /** One physical stack a user owns. Dead value is null; every key is always present. */
@@ -22,6 +23,7 @@ export interface Stack {
 	label: string | null; // user-given name; null = derive from metadata
 	pricePaid: number | null; // PER-UNIT price in MINOR UNITS (e.g. cents); null = unknown (≠ 0 = free). Total cost = quantity × pricePaid.
 	currency: string; // ISO 4217 code for pricePaid (defaults "USD")
+	language: string; // ISO 639-1, default 'en'; distinguishes physical copies of a cardId
 	variant: string | null; // printing key, seeded from corpus card.variants
 	notes: string | null;
 	condition: CardCondition | null; // raw state
@@ -39,6 +41,7 @@ export type EditableStackFields = Pick<
 	| "acquiredAt"
 	| "pricePaid"
 	| "currency"
+	| "language"
 	| "variant"
 	| "notes"
 	| "condition"
@@ -128,12 +131,13 @@ export type ProfilePatch = Partial<
 >;
 
 /**
- * Import/export envelope. v4 = pricePaid in minor units (cents) + per-stack
- * currency + deletedAt tombstones; v3 added Profile; v2 added Stack.quantity +
- * provenance. Older backups upgrade on import (see backup.ts `upgrade`).
+ * Import/export envelope. v5 = language + grading cert; v4 = pricePaid in minor
+ * units (cents) + per-stack currency + deletedAt tombstones; v3 added Profile;
+ * v2 added Stack.quantity + provenance. Older backups upgrade on import (see
+ * backup.ts `upgrade`).
  */
 export interface UserDataSnapshot {
-	schemaVersion: 4;
+	schemaVersion: 5;
 	exportedAt: number;
 	collection: Stack[];
 	binders: Binder[];
