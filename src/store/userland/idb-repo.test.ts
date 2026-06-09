@@ -149,11 +149,11 @@ beforeEach(async () => {
 	await repos.profile.clear();
 });
 
-test("exportAll returns a v4 snapshot of current data", async () => {
+test("exportAll returns a v5 snapshot of current data", async () => {
 	await repos.collection.add({ cardId: "a", pricePaid: 3 });
 	await repos.binders.create({ name: "G" });
 	const snap = await repos.backup.exportAll();
-	expect(snap.schemaVersion).toBe(4);
+	expect(snap.schemaVersion).toBe(5);
 	expect(snap.collection).toHaveLength(1);
 	expect(snap.binders).toHaveLength(1);
 	expect(typeof snap.exportedAt).toBe("number");
@@ -163,7 +163,7 @@ test("exportAll returns a v4 snapshot of current data", async () => {
 test("importAll replace clears then writes, preserving ids", async () => {
 	await repos.collection.add({ cardId: "old" });
 	const snap: UserDataSnapshot = {
-		schemaVersion: 4,
+		schemaVersion: 5,
 		exportedAt: 0,
 		collection: [makeStack({ id: "fixed-1", cardId: "new" })],
 		binders: [],
@@ -179,7 +179,7 @@ test("importAll replace clears then writes, preserving ids", async () => {
 test("importAll merge upserts by id without clearing", async () => {
 	const existing = await repos.collection.add({ cardId: "keep" });
 	const snap: UserDataSnapshot = {
-		schemaVersion: 4,
+		schemaVersion: 5,
 		exportedAt: 0,
 		collection: [makeStack({ id: "added-1", cardId: "added" })],
 		binders: [],
@@ -217,7 +217,7 @@ test("backup round-trips a binder with rule + includeCardIds + excludeCardIds, p
 		updatedAt: 2000,
 	});
 	const snap: UserDataSnapshot = {
-		schemaVersion: 4,
+		schemaVersion: 5,
 		exportedAt: 0,
 		collection: [],
 		binders: [fullBinder],
@@ -237,7 +237,7 @@ test("backup round-trips a binder with rule + includeCardIds + excludeCardIds, p
 
 test("backup round-trips the profile via replace import", async () => {
 	const snap: UserDataSnapshot = {
-		schemaVersion: 4,
+		schemaVersion: 5,
 		exportedAt: 0,
 		collection: [],
 		binders: [],

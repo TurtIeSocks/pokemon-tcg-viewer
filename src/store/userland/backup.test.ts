@@ -4,7 +4,7 @@ import { isValidSnapshot, parseSnapshot, snapshotFilename } from "./backup";
 import type { UserDataSnapshot } from "./types";
 
 const good: UserDataSnapshot = {
-	schemaVersion: 4,
+	schemaVersion: 5,
 	exportedAt: 0,
 	collection: [
 		{
@@ -20,6 +20,7 @@ const good: UserDataSnapshot = {
 			label: null,
 			pricePaid: null,
 			currency: "USD",
+			language: "en",
 			variant: null,
 			notes: null,
 			condition: null,
@@ -110,7 +111,7 @@ test("parseSnapshot throws when binders is missing", () => {
 	expect(() => parseSnapshot(JSON.stringify(withoutBinders))).toThrow();
 });
 
-test("parseSnapshot upgrades a v1 snapshot to v4 (quantity=1, dollars→cents, null provenance)", () => {
+test("parseSnapshot upgrades a v1 snapshot to v5 (quantity=1, dollars→cents, null provenance, language=en)", () => {
 	const v1 = JSON.stringify({
 		schemaVersion: 1,
 		exportedAt: 0,
@@ -130,22 +131,25 @@ test("parseSnapshot upgrades a v1 snapshot to v4 (quantity=1, dollars→cents, n
 		binders: [],
 	});
 	const snap = parseSnapshot(v1);
-	expect(snap.schemaVersion).toBe(4);
+	expect(snap.schemaVersion).toBe(5);
 	expect(snap.collection[0].quantity).toBe(1);
 	expect(snap.collection[0].pricePaid).toBe(350); // $3.50 → 350 cents
 	expect(snap.collection[0].currency).toBe("USD");
+	expect(snap.collection[0].language).toBe("en");
 	expect(snap.collection[0].deletedAt).toBeNull();
 	expect(snap.collection[0].source).toBeNull();
 	expect(snap.collection[0].storageLocation).toBeNull();
 	expect(snap.profile).toBeNull();
 });
 
-test("parseSnapshot leaves a v4 snapshot's cents prices untouched (no double-scale)", () => {
+test("parseSnapshot leaves a v4 snapshot's cents prices untouched (no double-scale) and upgrades to v5", () => {
 	const v4 = {
 		...good,
+		schemaVersion: 4,
 		collection: [{ ...good.collection[0], pricePaid: 350 }],
 	};
 	const snap = parseSnapshot(JSON.stringify(v4));
+	expect(snap.schemaVersion).toBe(5);
 	expect(snap.collection[0].pricePaid).toBe(350);
 });
 
@@ -170,12 +174,13 @@ test("upgrade backfills required Stack fields on a minimal collection item", () 
 	expect(s.storageLocation).toBeNull();
 });
 
-test("isValidSnapshot accepts v1–v4; rejects other versions", () => {
+test("isValidSnapshot accepts v1–v5; rejects other versions", () => {
 	expect(isValidSnapshot({ ...good, schemaVersion: 1 })).toBe(true);
 	expect(isValidSnapshot({ ...good, schemaVersion: 2 })).toBe(true);
 	expect(isValidSnapshot({ ...good, schemaVersion: 3 })).toBe(true);
 	expect(isValidSnapshot({ ...good, schemaVersion: 4 })).toBe(true);
-	expect(isValidSnapshot({ ...good, schemaVersion: 5 })).toBe(false);
+	expect(isValidSnapshot({ ...good, schemaVersion: 5 })).toBe(true);
+	expect(isValidSnapshot({ ...good, schemaVersion: 6 })).toBe(false);
 });
 
 test("parseSnapshot keeps a valid profile on a v3 snapshot", () => {
@@ -220,4 +225,114 @@ test("snapshotFilename formats the date", () => {
 	expect(snapshotFilename(new Date("2026-06-02T10:00:00Z"))).toBe(
 		"pokemon-tcg-collection-2026-06-02.json",
 	);
+});
+
+// --- v5: language + grading cert ---
+
+const goodV5: UserDataSnapshot = {
+	schemaVersion: 5,
+	exportedAt: 0,
+	collection: [
+		{
+			id: "1",
+			cardId: "a",
+			quantity: 1,
+			source: null,
+			storageLocation: null,
+			acquiredAt: 1,
+			createdAt: 1,
+			updatedAt: 1,
+			deletedAt: null,
+			label: null,
+			pricePaid: null,
+			currency: "USD",
+			language: "en",
+			variant: null,
+			notes: null,
+			condition: null,
+			grading: null,
+			isPrimary: false,
+		},
+	],
+	binders: [],
+	profile: null,
+};
+
+test("isValidSnapshot accepts v5", () => {
+	expect(isValidSnapshot(goodV5)).toBe(true);
+});
+
+test("isValidSnapshot rejects v6", () => {
+	expect(isValidSnapshot({ ...goodV5, schemaVersion: 6 })).toBe(false);
+});
+
+test("parseSnapshot upgrades a v4 snapshot to v5 — backfills language=en + grading cert=null", () => {
+	const v4 = JSON.stringify({
+		schemaVersion: 4,
+		exportedAt: 0,
+		collection: [
+			{
+				id: "1",
+				cardId: "a",
+				quantity: 1,
+				acquiredAt: 1,
+				createdAt: 1,
+				updatedAt: 1,
+				deletedAt: null,
+				label: null,
+				pricePaid: null,
+				currency: "USD",
+				variant: null,
+				notes: null,
+				condition: null,
+				grading: { company: "PSA", grade: 10 },
+				source: null,
+				storageLocation: null,
+				isPrimary: false,
+			},
+		],
+		binders: [],
+	});
+	const snap = parseSnapshot(v4);
+	expect(snap.schemaVersion).toBe(5);
+	expect(snap.collection[0].language).toBe("en");
+	expect(snap.collection[0].grading?.cert).toBeNull();
+});
+
+test("parseSnapshot preserves language on v4 snapshot that already has it", () => {
+	const v4WithLang = JSON.stringify({
+		schemaVersion: 4,
+		exportedAt: 0,
+		collection: [
+			{
+				id: "1",
+				cardId: "a",
+				quantity: 1,
+				acquiredAt: 1,
+				createdAt: 1,
+				updatedAt: 1,
+				deletedAt: null,
+				label: null,
+				pricePaid: null,
+				currency: "USD",
+				language: "ja",
+				variant: null,
+				notes: null,
+				condition: null,
+				grading: null,
+				source: null,
+				storageLocation: null,
+				isPrimary: false,
+			},
+		],
+		binders: [],
+	});
+	const snap = parseSnapshot(v4WithLang);
+	expect(snap.collection[0].language).toBe("ja");
+});
+
+test("parseSnapshot passes a v5 snapshot through unchanged (language + cert preserved)", () => {
+	const snap = parseSnapshot(JSON.stringify(goodV5));
+	expect(snap.schemaVersion).toBe(5);
+	expect(snap.collection[0].language).toBe("en");
 });

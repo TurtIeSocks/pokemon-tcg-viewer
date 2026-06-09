@@ -147,7 +147,7 @@ function createIdbBackupRepo(
 				profile.get(),
 			]);
 			return {
-				schemaVersion: 4,
+				schemaVersion: 5 as const,
 				exportedAt: Date.now(),
 				collection: c,
 				binders: b,
