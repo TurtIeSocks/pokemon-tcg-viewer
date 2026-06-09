@@ -5,7 +5,17 @@ export const CONDITIONS = ["NM", "LP", "MP", "HP", "DMG"] as const;
 /** Recognised third-party grading companies. */
 export const GRADERS = ["PSA", "BGS", "CGC", "TAG", "SGC", "Other"] as const;
 /** Supported card languages (ISO 639-1); extend as needed. */
-export const LANGUAGES = ["en", "ja", "zh", "fr", "de", "it", "es", "pt", "ko"] as const;
+export const LANGUAGES = [
+	"en",
+	"ja",
+	"zh",
+	"fr",
+	"de",
+	"it",
+	"es",
+	"pt",
+	"ko",
+] as const;
 
 /** Returns true for strings matching YYYY-MM-DD that parse to a valid calendar date. */
 export function isValidDateStr(s: string): boolean {

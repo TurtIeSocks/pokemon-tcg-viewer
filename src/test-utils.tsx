@@ -114,6 +114,7 @@ export function makeStack(overrides: Partial<Stack> = {}): Stack {
 		label: null,
 		pricePaid: null,
 		currency: "USD",
+		language: "en",
 		variant: null,
 		notes: null,
 		condition: null,
@@ -159,14 +160,14 @@ export function makeProfile(overrides: Partial<Profile> = {}): Profile {
 	};
 }
 
-/** A current (v4) import/export envelope from the given stacks + binders (+ optional profile). */
+/** A current (v5) import/export envelope from the given stacks + binders (+ optional profile). */
 export function makeSnapshot(
 	collection: Stack[] = [],
 	binders: Binder[] = [],
 	profile: Profile | null = null,
 ): UserDataSnapshot {
 	return {
-		schemaVersion: 4,
+		schemaVersion: 5,
 		exportedAt: Date.now(),
 		collection,
 		binders,

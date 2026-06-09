@@ -83,7 +83,12 @@ export function normalizeStack(raw: Stack): Stack {
 		source: raw.source ?? null,
 		storageLocation: raw.storageLocation ?? null,
 		grading: raw.grading
-			? { ...raw.grading, cert: (raw.grading as typeof raw.grading & { cert?: string | null }).cert ?? null }
+			? {
+					...raw.grading,
+					cert:
+						(raw.grading as typeof raw.grading & { cert?: string | null })
+							.cert ?? null,
+				}
 			: null,
 		isPrimary: raw.isPrimary ?? false,
 	};

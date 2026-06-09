@@ -124,7 +124,7 @@ test("delete stack with data: removes after confirm", async () => {
 
 test("renders graded stack with grading summary badge", async () => {
 	const item = await addStack("c", {
-		grading: { company: "PSA", grade: 10 },
+		grading: { company: "PSA", grade: 10, cert: null },
 	});
 	render(<StackRow item={useUserland.getState().items[item.id]} />);
 	expect(screen.getByText(/PSA 10/)).toBeDefined();
@@ -132,7 +132,7 @@ test("renders graded stack with grading summary badge", async () => {
 
 test("graded stack delete triggers confirm (has non-null grading)", async () => {
 	const item = await addStack("c", {
-		grading: { company: "PSA", grade: 10 },
+		grading: { company: "PSA", grade: 10, cert: null },
 	});
 	const origConfirm = window.confirm;
 	let confirmCalled = false;

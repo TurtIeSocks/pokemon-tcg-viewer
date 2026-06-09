@@ -95,13 +95,16 @@ function upgrade(snap: RawSnapshot): UserDataSnapshot {
 						? Math.round(rawPrice * 100)
 						: rawPrice,
 			currency: typeof c.currency === "string" ? c.currency : "USD",
-			language:
-				typeof c.language === "string" ? c.language : "en",
+			language: typeof c.language === "string" ? c.language : "en",
 			variant: (c.variant as string | null | undefined) ?? null,
 			notes: (c.notes as string | null | undefined) ?? null,
 			condition: (c.condition as Stack["condition"] | undefined) ?? null,
 			grading: rawGrading
-				? { company: rawGrading.company, grade: rawGrading.grade, cert: rawGrading.cert ?? null }
+				? {
+						company: rawGrading.company,
+						grade: rawGrading.grade,
+						cert: rawGrading.cert ?? null,
+					}
 				: null,
 			source: (c.source as string | null | undefined) ?? null,
 			storageLocation: (c.storageLocation as string | null | undefined) ?? null,
