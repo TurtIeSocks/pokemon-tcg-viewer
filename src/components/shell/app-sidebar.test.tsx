@@ -156,12 +156,12 @@ test("Vault items are always visible (flat group, matches mock)", async () => {
 	expectVaultLinks();
 });
 
-test("footer links to the profile page", async () => {
+test("footer renders the account menu trigger", async () => {
 	await renderSidebar();
-	const profileLink = screen.getByRole("link", { name: /collector/i });
-	expect((profileLink as HTMLAnchorElement).getAttribute("href")).toBe(
-		"/profile",
-	);
+	// The footer is now a dropdown trigger (the profile link lives inside the
+	// menu as "Edit profile"); assert the account control is present as a menu.
+	const trigger = screen.getByRole("button", { name: /collector/i });
+	expect(trigger.getAttribute("aria-haspopup")).toBe("menu");
 });
 
 test("series rows show a 2-char monogram badge", async () => {
