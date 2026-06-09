@@ -76,7 +76,7 @@ describe("groupCardsByEra", () => {
 			}),
 		];
 		const result = groupCardsByEra(cards);
-		expect(result[0].yearLabel).toBe("2020 — 2022");
+		expect(result[0].yearLabel).toBe("2020-2022");
 	});
 
 	test("includes a count of cards in each era", () => {

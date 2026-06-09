@@ -130,7 +130,7 @@ test("garbage hash renders friendly error state", async () => {
 
 	expect(
 		screen.getByText(
-			/couldn't read this shared binder — the link may be broken or incomplete/i,
+			/couldn't read this shared binder\. the link may be broken or incomplete/i,
 		),
 	).toBeTruthy();
 });
@@ -142,7 +142,7 @@ test("empty hash renders friendly error state", async () => {
 
 	expect(
 		screen.getByText(
-			/couldn't read this shared binder — the link may be broken or incomplete/i,
+			/couldn't read this shared binder\. the link may be broken or incomplete/i,
 		),
 	).toBeTruthy();
 });

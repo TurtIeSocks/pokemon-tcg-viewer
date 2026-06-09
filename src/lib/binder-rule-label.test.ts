@@ -111,9 +111,9 @@ describe("binderRuleLabel — basics", () => {
 		expect(binderRuleLabel(q)).toBe("Trainer");
 	});
 
-	it("both yearMin and yearMax → range with en-dash", () => {
+	it("both yearMin and yearMax → hyphenated range (en-dashes removed from copy)", () => {
 		const q: SerializedQuery = { ...empty(), yearMin: 1999, yearMax: 2002 };
-		expect(binderRuleLabel(q)).toBe("1999–2002");
+		expect(binderRuleLabel(q)).toBe("1999-2002");
 	});
 
 	it("only yearMin → 'from YYYY'", () => {
@@ -146,7 +146,7 @@ describe("binderRuleLabel — basics", () => {
 		};
 		const label = binderRuleLabel(q, { setName: () => "Base" });
 		expect(label).toBe(
-			'Base · Pokémon · Basic · Rare Holo · Fire · "charizard" · 1999–2000',
+			'Base · Pokémon · Basic · Rare Holo · Fire · "charizard" · 1999-2000',
 		);
 	});
 });

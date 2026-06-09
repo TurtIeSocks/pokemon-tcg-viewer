@@ -163,10 +163,12 @@ test("binder name shown when binders exist", async () => {
 	});
 });
 
-test("'New binder +' button opens dialog", async () => {
+test("'New binder' button opens dialog", async () => {
 	await renderOverview();
 
-	const btn = screen.getByRole("button", { name: /new binder \+/i });
+	// Two "New binder" buttons render (section action + empty-state CTA); both
+	// open the dialog, so clicking either is fine.
+	const [btn] = screen.getAllByRole("button", { name: /new binder/i });
 	fireEvent.click(btn);
 
 	await waitFor(() => {
