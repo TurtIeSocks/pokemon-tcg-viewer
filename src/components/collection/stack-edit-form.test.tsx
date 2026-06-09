@@ -33,7 +33,7 @@ test("edit: changing price does NOT update store until Save is clicked", async (
 	// now click Save
 	fireEvent.click(screen.getByRole("button", { name: /save/i }));
 	await waitFor(() =>
-		expect(useUserland.getState().items[item.id].pricePaid).toBe(42),
+		expect(useUserland.getState().items[item.id].pricePaid).toBe(4200), // "42" dollars → cents
 	);
 });
 
@@ -238,7 +238,7 @@ test("create: Save calls addStack and a new stack exists", async () => {
 			(i) => i.cardId === "c",
 		);
 		expect(stacks).toHaveLength(1);
-		expect(stacks[0].pricePaid).toBe(25);
+		expect(stacks[0].pricePaid).toBe(2500); // "25" dollars → cents
 	});
 	expect(saved).toBe(true);
 });

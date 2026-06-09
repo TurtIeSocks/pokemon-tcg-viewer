@@ -1,6 +1,6 @@
 // src/store/userland/userland-store.ts
 import { create } from "zustand";
-import { getRepos } from "./idb-repo";
+import { getRepos, migrateUserlandData } from "./idb-repo";
 import type { UserlandRepos } from "./repo";
 import type {
 	Binder,
@@ -16,6 +16,7 @@ import type {
 	StackPatch,
 	UserDataSnapshot,
 } from "./types";
+import { uuidv7 } from "./uuid";
 
 /** Shape of the Zustand userland store slice. */
 interface UserlandState {
@@ -44,6 +45,8 @@ export const useUserland = create<UserlandState>(() => ({ ...initial }));
 
 // --- Repo wiring (the swap point; overridable in tests) ---
 let repos: UserlandRepos | null = null;
+/** True while a fake repo is injected — gates the real-IDB data migration off in tests. */
+let usingInjectedRepos = false;
 /** Return the active repo bundle, lazily initialising the IDB default. */
 export function activeRepos(): UserlandRepos {
 	if (!repos) repos = getRepos();
@@ -52,6 +55,7 @@ export function activeRepos(): UserlandRepos {
 /** Override the active repo bundle (pass null to reset to the IDB default). Used in tests. */
 export function setUserlandRepos(r: UserlandRepos | null): void {
 	repos = r;
+	usingInjectedRepos = r !== null;
 }
 
 // --- Hydration ---
@@ -81,6 +85,17 @@ export function loadUserland(): Promise<void> {
 	if (inFlight) return inFlight;
 	useUserland.setState({ loading: true });
 	inFlight = (async () => {
+		// Real IDB only: run the marker-gated one-time data migration before the
+		// first read (dollars→cents, tombstone backfill). Skipped under an injected
+		// fake repo — the migration targets the real idb-keyval stores directly, not
+		// the repo abstraction. A migration failure must not block hydration.
+		if (!usingInjectedRepos) {
+			try {
+				await migrateUserlandData();
+			} catch (e) {
+				console.error("Userland data migration failed; continuing", e);
+			}
+		}
 		const { items, binders, profile } = await fetchAll(activeRepos());
 		useUserland.setState({
 			items,
@@ -107,25 +122,16 @@ export async function addStack(
 	cardId: string,
 	fields: Partial<EditableStackFields> = {},
 ): Promise<Stack> {
-	// Auto-primary: first stack of this card becomes primary.
-	const existingCount = Object.values(useUserland.getState().items).filter(
+	// Auto-primary: first stack of this card becomes primary. fillStack persists
+	// isPrimary, so seed it at insert — no follow-up patch needed.
+	const isPrimary = !Object.values(useUserland.getState().items).some(
 		(i) => i.cardId === cardId,
-	).length;
-	const isPrimary = existingCount === 0 ? true : undefined;
+	);
 	const item = await activeRepos().collection.add({
 		cardId,
 		...fields,
-		...(isPrimary !== undefined ? { isPrimary } : {}),
+		isPrimary,
 	});
-	// If repo did not persist isPrimary (fillStack doesn't), patch it now.
-	if (isPrimary && !item.isPrimary) {
-		await activeRepos().collection.update(item.id, { isPrimary: true });
-		const patched = { ...item, isPrimary: true };
-		useUserland.setState((s) => ({
-			items: { ...s.items, [patched.id]: patched },
-		}));
-		return patched;
-	}
 	useUserland.setState((s) => ({ items: { ...s.items, [item.id]: item } }));
 	return item;
 }
@@ -139,7 +145,13 @@ export async function updateStack(
 	useUserland.setState((s) => {
 		const existing = s.items[id];
 		if (!existing) return s;
-		return { items: { ...s.items, [id]: { ...existing, ...patch } } };
+		// Mirror the repo's updatedAt bump so the optimistic copy matches.
+		return {
+			items: {
+				...s.items,
+				[id]: { ...existing, ...patch, updatedAt: Date.now() },
+			},
+		};
 	});
 }
 
@@ -454,7 +466,7 @@ export async function addRuleToBinder(
 ): Promise<void> {
 	const binder = useUserland.getState().binders[id];
 	if (!binder) return;
-	const rule: BinderRule = { id: crypto.randomUUID(), query };
+	const rule: BinderRule = { id: uuidv7(), query };
 	await updateBinder(id, { rules: [...binder.rules, rule] });
 }
 

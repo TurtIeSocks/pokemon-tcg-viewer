@@ -100,7 +100,7 @@ export function makeFocusCard(
 	};
 }
 
-/** One owned physical stack, every key present (null = unknown). */
+/** One owned physical stack, every key present (null = unknown). pricePaid is in cents. */
 export function makeStack(overrides: Partial<Stack> = {}): Stack {
 	const now = Date.now();
 	return {
@@ -109,13 +109,18 @@ export function makeStack(overrides: Partial<Stack> = {}): Stack {
 		quantity: 1,
 		acquiredAt: now,
 		createdAt: now,
+		updatedAt: now,
+		deletedAt: null,
+		label: null,
 		pricePaid: null,
+		currency: "USD",
 		variant: null,
 		notes: null,
 		condition: null,
 		grading: null,
 		source: null,
 		storageLocation: null,
+		isPrimary: false,
 		...overrides,
 	};
 }
@@ -133,6 +138,7 @@ export function makeBinder(overrides: Partial<Binder> = {}): Binder {
 		excludeCardIds: [],
 		createdAt: now,
 		updatedAt: now,
+		deletedAt: null,
 		...overrides,
 	};
 }
@@ -148,18 +154,19 @@ export function makeProfile(overrides: Partial<Profile> = {}): Profile {
 		favoriteSetId: null,
 		createdAt: now,
 		updatedAt: now,
+		deletedAt: null,
 		...overrides,
 	};
 }
 
-/** A v3 import/export envelope from the given stacks + binders (+ optional profile). */
+/** A current (v4) import/export envelope from the given stacks + binders (+ optional profile). */
 export function makeSnapshot(
 	collection: Stack[] = [],
 	binders: Binder[] = [],
 	profile: Profile | null = null,
 ): UserDataSnapshot {
 	return {
-		schemaVersion: 3,
+		schemaVersion: 4,
 		exportedAt: Date.now(),
 		collection,
 		binders,

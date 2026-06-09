@@ -1,3 +1,7 @@
+import {
+	inputToMinorUnits,
+	minorUnitsToInput,
+} from "../../store/userland/money";
 import type {
 	EditableStackFields,
 	Stack,
@@ -16,7 +20,7 @@ export function itemToForm(i: Stack): StackFormValues {
 		label: i.label ?? "",
 		quantity: String(i.quantity),
 		acquiredAt: dayMsToInput(i.acquiredAt),
-		pricePaid: i.pricePaid == null ? "" : String(i.pricePaid),
+		pricePaid: minorUnitsToInput(i.pricePaid),
 		variant: i.variant ?? "",
 		notes: i.notes ?? "",
 		source: i.source ?? "",
@@ -30,15 +34,19 @@ export function itemToForm(i: Stack): StackFormValues {
 }
 
 /**
- * Converts a complete set of form values to the full editable fields patch.
- * Handles the raw/graded split in one place; used by the draft→Save form.
+ * Converts a complete set of form values to the editable fields patch. Handles
+ * the raw/graded split in one place; used by the draft→Save form. Omits
+ * `currency`: the form has no currency input yet, so editing a stack must never
+ * clobber its currency (new stacks default to USD via the repo's fillStack).
  */
-export function formToPatch(values: StackFormValues): EditableStackFields {
+export function formToPatch(
+	values: StackFormValues,
+): Omit<EditableStackFields, "currency"> {
 	return {
 		label: values.label.trim() === "" ? null : values.label.trim(),
 		quantity: Math.max(1, Math.floor(Number(values.quantity)) || 1),
 		acquiredAt: inputDayToMs(values.acquiredAt),
-		pricePaid: values.pricePaid === "" ? null : Number(values.pricePaid),
+		pricePaid: inputToMinorUnits(values.pricePaid),
 		variant: values.variant === "" ? null : values.variant,
 		notes: values.notes === "" ? null : values.notes,
 		source: values.source.trim() === "" ? null : values.source.trim(),
@@ -73,7 +81,7 @@ export function formFieldToPatch(
 		case "acquiredAt":
 			return { acquiredAt: inputDayToMs(value) };
 		case "pricePaid":
-			return { pricePaid: value === "" ? null : Number(value) };
+			return { pricePaid: inputToMinorUnits(value) };
 		case "source":
 			return { source: value.trim() === "" ? null : value.trim() };
 		case "storageLocation":

@@ -33,7 +33,9 @@ The Vault (collection + **Binders**) is local-first but **DB-ready**. (Binders =
 - **Route files export `Route` + a component**, so react-doctor's `only-export-components` fires on every `src/routes/**` file — expected/unavoidable in TanStack Start.
 - **Tests must not hit the network.** A component that renders a card grid calls `loadCorpus()` (a real `fetch('/corpus')`). In any test rendering one, **pre-seed** `useCorpusRuntime.setState({ index: buildIndex([...]) })` so `loadCorpus` early-returns — otherwise the live corpus leaks into the shared `fake-indexeddb` and breaks other test files.
 - **TanStack Form** uses the render-prop `children={...}` (biome `noChildrenProp` suppressed per-field); read `value={x ?? ""}` at the boundary; map empty → `null` before persisting.
-- `crypto.randomUUID()` is the id source (Bun + browser).
+- **Userland record ids are UUIDv7** (`src/store/userland/uuid.ts`, `uuidv7()`) — time-ordered so the client-minted id works as the future Postgres PK without v4 index fragmentation. `crypto.randomUUID()` (v4) is still fine for ephemeral/non-persisted ids and test store names.
+- **Money is stored in minor units (cents), per stack, with a `currency` (ISO 4217, default "USD").** `Stack.pricePaid` is an integer (cents) or `null`. Convert at every boundary via `src/store/userland/money.ts` (`inputToMinorUnits`/`minorUnitsToInput`/`formatPrice`) — forms + CSV speak dollars, storage + `estValue` speak cents. No currency picker UI yet (USD-only); the field is a reserved slot.
+- **Local userland data is DB-ready + sync-ready.** Every entity carries `updatedAt` (last-write-wins key) and a `deletedAt` tombstone (`null` = live; reserved for the sync adapter — local deletes are still hard). `Stack.isPrimary` is always present (no longer optional). Snapshot is **v4**; `backup.ts upgrade()` rescales pre-v4 dollar prices → cents. Live IDB rows migrate once via `migrateUserlandData` (marker-gated in a `ptcg-meta` store; runs in `loadUserland`), never in `normalizeStack` (which must stay idempotent).
 
 ## Design system — Liquid Glass (reference: `src/components/shell/set-tile.tsx`)
 

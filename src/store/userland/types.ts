@@ -12,20 +12,23 @@ export interface CardGrading {
 
 /** One physical stack a user owns. Dead value is null; every key is always present. */
 export interface Stack {
-	id: string; // stack uuid = future DB PK
+	id: string; // stack uuidv7 = future DB PK (time-ordered; minted client-side)
 	cardId: string; // corpus card id (FK)
 	quantity: number; // ≥ 1; count of identical cards in this stack (legacy records normalize to 1)
 	acquiredAt: number; // ms epoch; default = add time; editable
 	createdAt: number; // ms epoch; record creation; immutable
-	label?: string | null; // user-given name; absent/null = derive from metadata (stacks persisted before this field lack the key)
-	pricePaid: number | null; // PER-UNIT price; null = unknown (≠ 0 = free). Total cost = quantity × pricePaid.
+	updatedAt: number; // ms epoch; bumped on every edit (last-write-wins key for sync)
+	deletedAt: number | null; // ms epoch tombstone; null = live. Reserved for the sync adapter — local deletes are hard.
+	label: string | null; // user-given name; null = derive from metadata
+	pricePaid: number | null; // PER-UNIT price in MINOR UNITS (e.g. cents); null = unknown (≠ 0 = free). Total cost = quantity × pricePaid.
+	currency: string; // ISO 4217 code for pricePaid (defaults "USD")
 	variant: string | null; // printing key, seeded from corpus card.variants
 	notes: string | null;
 	condition: CardCondition | null; // raw state
 	grading: CardGrading | null; // null, or a COMPLETE { company, grade }
 	source: string | null; // seller / where acquired
 	storageLocation: string | null; // binder / box location
-	isPrimary?: boolean; // user-designated sort key stack; absent = not primary
+	isPrimary: boolean; // user-designated sort-key stack
 }
 
 /** The user-editable fields of a stack. */
@@ -35,6 +38,7 @@ export type EditableStackFields = Pick<
 	| "quantity"
 	| "acquiredAt"
 	| "pricePaid"
+	| "currency"
 	| "variant"
 	| "notes"
 	| "condition"
@@ -46,6 +50,7 @@ export type EditableStackFields = Pick<
 /** add() input: cardId + any editable fields; repo assigns id/createdAt, defaults acquiredAt, null-fills the rest. */
 export type NewStack = {
 	cardId: string;
+	isPrimary?: boolean; // seed the first stack of a card as primary at insert; defaults false
 } & Partial<EditableStackFields>;
 
 /** update() patch: field: null clears; omitted key leaves untouched. */
@@ -88,6 +93,7 @@ export interface Binder {
 	excludeCardIds: string[];
 	createdAt: number;
 	updatedAt: number;
+	deletedAt: number | null; // ms epoch tombstone; null = live. Reserved for the sync adapter.
 }
 
 /** create() input. Repo assigns id/createdAt/updatedAt; fills description=null, rules=[], includeCardIds=[], excludeCardIds=[]. */
@@ -113,6 +119,7 @@ export interface Profile {
 	favoriteSetId: string | null; // corpus set id (FK); null = none picked
 	createdAt: number; // ms epoch; set on first save
 	updatedAt: number; // ms epoch; bumped each save
+	deletedAt: number | null; // ms epoch tombstone; null = live. Reserved for the sync adapter.
 }
 
 /** update() patch: omitted keys untouched; null clears nullable fields. */
@@ -120,9 +127,13 @@ export type ProfilePatch = Partial<
 	Pick<Profile, "displayName" | "bio" | "avatarPreset" | "favoriteSetId">
 >;
 
-/** Import/export envelope. v3 added Profile; v2 added Stack.quantity + provenance; older backups upgrade on import. */
+/**
+ * Import/export envelope. v4 = pricePaid in minor units (cents) + per-stack
+ * currency + deletedAt tombstones; v3 added Profile; v2 added Stack.quantity +
+ * provenance. Older backups upgrade on import (see backup.ts `upgrade`).
+ */
 export interface UserDataSnapshot {
-	schemaVersion: 3;
+	schemaVersion: 4;
 	exportedAt: number;
 	collection: Stack[];
 	binders: Binder[];

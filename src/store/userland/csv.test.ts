@@ -20,14 +20,18 @@ function stack(over: Partial<Stack>): Stack {
 		quantity: 1,
 		acquiredAt: 0,
 		createdAt: 0,
+		updatedAt: 0,
+		deletedAt: null,
 		label: null,
 		pricePaid: null,
+		currency: "USD",
 		variant: null,
 		notes: null,
 		condition: null,
 		grading: null,
 		source: null,
 		storageLocation: null,
+		isPrimary: false,
 		...over,
 	};
 }
@@ -43,7 +47,7 @@ test("header row matches CSV_COLUMNS", () => {
 
 test("per-stack mode emits one row with quantity N", () => {
 	const csv = stacksToCsv(
-		[stack({ quantity: 5, pricePaid: 2.5 })],
+		[stack({ quantity: 5, pricePaid: 250 })], // 250 cents = $2.50
 		"stack",
 		resolve,
 	);
@@ -51,7 +55,7 @@ test("per-stack mode emits one row with quantity N", () => {
 	expect(lines).toHaveLength(2);
 	expect(lines[1]).toContain("base1-4");
 	expect(lines[1]).toContain(",5,"); // quantity
-	expect(lines[1]).toContain("2.5"); // per-unit price
+	expect(lines[1]).toContain("2.5"); // per-unit price exported in dollars
 });
 
 test("per-copy mode explodes quantity into N rows of 1", () => {
@@ -110,7 +114,8 @@ test("csvToImport matches by card_id and builds a NewStack", () => {
 		cardId: "base1-4",
 		quantity: 3,
 		condition: "NM",
-		pricePaid: 2.5,
+		pricePaid: 250, // "2.5" dollars parsed to cents
+		currency: "USD",
 	});
 });
 
@@ -132,26 +137,7 @@ test("csvToImport reports unmatched rows", () => {
 });
 
 test("round-trip: export → parse → import preserves cardId + quantity", () => {
-	const csv = stacksToCsv(
-		[
-			{
-				id: "1",
-				cardId: "base1-4",
-				quantity: 4,
-				acquiredAt: 0,
-				createdAt: 0,
-				label: null,
-				pricePaid: null,
-				variant: null,
-				notes: null,
-				condition: null,
-				grading: null,
-				source: null,
-				storageLocation: null,
-			},
-		],
-		"stack",
-	);
+	const csv = stacksToCsv([stack({ cardId: "base1-4", quantity: 4 })], "stack");
 	const { rows } = parseCsv(csv);
 	const { matched } = csvToImport(rows, importResolver);
 	expect(matched[0]).toMatchObject({ cardId: "base1-4", quantity: 4 });

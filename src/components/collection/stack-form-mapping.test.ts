@@ -16,11 +16,16 @@ function item(over: Partial<Stack> = {}): Stack {
 		storageLocation: null,
 		acquiredAt: inputDayToMs("2024-03-01"),
 		createdAt: 0,
+		updatedAt: 0,
+		deletedAt: null,
+		label: null,
 		pricePaid: null,
+		currency: "USD",
 		variant: null,
 		notes: null,
 		condition: null,
 		grading: null,
+		isPrimary: false,
 		...over,
 	};
 }
@@ -40,9 +45,9 @@ test("itemToForm: graded item → graded state + company/grade", () => {
 	expect(f.grade).toBe("10");
 });
 
-test("formFieldToPatch: price '' clears, '5' → 5", () => {
+test("formFieldToPatch: price '' clears, '5' → 500 cents", () => {
 	expect(formFieldToPatch("pricePaid", "")).toEqual({ pricePaid: null });
-	expect(formFieldToPatch("pricePaid", "5")).toEqual({ pricePaid: 5 });
+	expect(formFieldToPatch("pricePaid", "5")).toEqual({ pricePaid: 500 });
 });
 
 test("formFieldToPatch: switching to raw clears grading; graded clears condition", () => {

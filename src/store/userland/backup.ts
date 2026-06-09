@@ -17,11 +17,11 @@ interface RawSnapshot {
 }
 
 /** Schema versions this build can read (and upgrade from). */
-const SUPPORTED_VERSIONS = new Set([1, 2, 3]);
+const SUPPORTED_VERSIONS = new Set([1, 2, 3, 4]);
 
 /**
  * Type guard: validates that v has the minimum shape of a supported snapshot
- * (schemaVersion in {1,2,3}; collection/binders arrays with required id fields).
+ * (schemaVersion in {1,2,3,4}; collection/binders arrays with required id fields).
  */
 export function isValidSnapshot(v: unknown): v is RawSnapshot {
 	if (!isRecord(v)) return false;
@@ -58,37 +58,57 @@ function upgradeProfile(raw: unknown): UserDataSnapshot["profile"] {
 			typeof raw.favoriteSetId === "string" ? raw.favoriteSetId : null,
 		createdAt: typeof raw.createdAt === "number" ? raw.createdAt : 0,
 		updatedAt: typeof raw.updatedAt === "number" ? raw.updatedAt : 0,
+		deletedAt: typeof raw.deletedAt === "number" ? raw.deletedAt : null,
 	};
 }
 
-/** Upgrade any supported snapshot to the current v3 shape (backfills quantity=1, null provenance, null profile). */
+/** Upgrade any supported snapshot to the current v4 shape (cents pricePaid, currency, deletedAt tombstones; backfills quantity=1, null provenance, null profile). */
 function upgrade(snap: RawSnapshot): UserDataSnapshot {
+	// Pre-v4 snapshots stored pricePaid in whole units (dollars); v4 stores minor
+	// units (cents). Only rescale when importing from an older version — a v4
+	// backup's prices are already cents and must pass through untouched.
+	const rescaleToCents = snap.schemaVersion < 4;
 	const collection = snap.collection.map((c) => {
 		// Older/hand-edited backups may omit fields Stack requires non-null. Backfill
 		// every one so import can't inject a malformed Stack (isValidSnapshot only
 		// guarantees id + cardId are strings).
 		const createdAt =
 			typeof c.createdAt === "number" ? c.createdAt : Date.now();
+		const rawPrice = typeof c.pricePaid === "number" ? c.pricePaid : null;
 		return {
 			...c,
 			quantity:
 				typeof c.quantity === "number" && c.quantity >= 1 ? c.quantity : 1,
 			createdAt,
+			updatedAt: typeof c.updatedAt === "number" ? c.updatedAt : createdAt,
 			acquiredAt: typeof c.acquiredAt === "number" ? c.acquiredAt : createdAt,
-			pricePaid: typeof c.pricePaid === "number" ? c.pricePaid : null,
+			deletedAt: typeof c.deletedAt === "number" ? c.deletedAt : null,
+			label: (c.label as string | null | undefined) ?? null,
+			pricePaid:
+				rawPrice == null
+					? null
+					: rescaleToCents
+						? Math.round(rawPrice * 100)
+						: rawPrice,
+			currency: typeof c.currency === "string" ? c.currency : "USD",
 			variant: (c.variant as string | null | undefined) ?? null,
 			notes: (c.notes as string | null | undefined) ?? null,
 			condition: (c.condition as Stack["condition"] | undefined) ?? null,
 			grading: (c.grading as Stack["grading"] | undefined) ?? null,
 			source: (c.source as string | null | undefined) ?? null,
 			storageLocation: (c.storageLocation as string | null | undefined) ?? null,
+			isPrimary: typeof c.isPrimary === "boolean" ? c.isPrimary : false,
 		};
 	}) as unknown as UserDataSnapshot["collection"];
+	const binders = snap.binders.map((b) => ({
+		...b,
+		deletedAt: typeof b.deletedAt === "number" ? b.deletedAt : null,
+	})) as unknown as UserDataSnapshot["binders"];
 	return {
-		schemaVersion: 3,
+		schemaVersion: 4,
 		exportedAt: typeof snap.exportedAt === "number" ? snap.exportedAt : 0,
 		collection,
-		binders: snap.binders as unknown as UserDataSnapshot["binders"],
+		binders,
 		profile: upgradeProfile(snap.profile),
 	};
 }

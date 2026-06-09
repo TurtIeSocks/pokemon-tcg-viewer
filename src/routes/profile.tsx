@@ -104,7 +104,10 @@ export function ProfilePageInner({ tree }: { tree: NavTree }) {
 								label="sets touched"
 							/>
 							{stats.estValue !== null && (
-								<Stat value={USD.format(stats.estValue)} label="est. value" />
+								<Stat
+									value={USD.format(stats.estValue / 100)}
+									label="est. value"
+								/>
 							)}
 							<Stat
 								value={sinceYear(stats.collectingSince)}

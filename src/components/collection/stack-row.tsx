@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { formatPrice } from "../../store/userland/money";
 import type { Stack } from "../../store/userland/types";
 import {
 	removeStack,
@@ -109,7 +110,7 @@ export function StackRow({ item, variants }: StackRowProps) {
 					{/* Price paid */}
 					{item.pricePaid != null && (
 						<span className="font-mono text-[11px] text-[var(--ink-muted)]">
-							${item.pricePaid}
+							{formatPrice(item.pricePaid, item.currency)}
 						</span>
 					)}
 				</div>

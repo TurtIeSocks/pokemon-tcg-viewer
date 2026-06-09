@@ -4,7 +4,7 @@ import { isValidSnapshot, parseSnapshot, snapshotFilename } from "./backup";
 import type { UserDataSnapshot } from "./types";
 
 const good: UserDataSnapshot = {
-	schemaVersion: 3,
+	schemaVersion: 4,
 	exportedAt: 0,
 	collection: [
 		{
@@ -15,11 +15,16 @@ const good: UserDataSnapshot = {
 			storageLocation: null,
 			acquiredAt: 1,
 			createdAt: 1,
+			updatedAt: 1,
+			deletedAt: null,
+			label: null,
 			pricePaid: null,
+			currency: "USD",
 			variant: null,
 			notes: null,
 			condition: null,
 			grading: null,
+			isPrimary: false,
 		},
 	],
 	binders: [
@@ -32,6 +37,7 @@ const good: UserDataSnapshot = {
 			excludeCardIds: [],
 			createdAt: 1,
 			updatedAt: 1,
+			deletedAt: null,
 		},
 	],
 	profile: null,
@@ -104,7 +110,7 @@ test("parseSnapshot throws when binders is missing", () => {
 	expect(() => parseSnapshot(JSON.stringify(withoutBinders))).toThrow();
 });
 
-test("parseSnapshot upgrades a v1 snapshot to v3 (quantity=1, null provenance)", () => {
+test("parseSnapshot upgrades a v1 snapshot to v4 (quantity=1, dollars→cents, null provenance)", () => {
 	const v1 = JSON.stringify({
 		schemaVersion: 1,
 		exportedAt: 0,
@@ -114,7 +120,7 @@ test("parseSnapshot upgrades a v1 snapshot to v3 (quantity=1, null provenance)",
 				cardId: "base1-4",
 				acquiredAt: 0,
 				createdAt: 0,
-				pricePaid: null,
+				pricePaid: 3.5, // dollars in the old schema
 				variant: null,
 				notes: null,
 				condition: null,
@@ -124,11 +130,23 @@ test("parseSnapshot upgrades a v1 snapshot to v3 (quantity=1, null provenance)",
 		binders: [],
 	});
 	const snap = parseSnapshot(v1);
-	expect(snap.schemaVersion).toBe(3);
+	expect(snap.schemaVersion).toBe(4);
 	expect(snap.collection[0].quantity).toBe(1);
+	expect(snap.collection[0].pricePaid).toBe(350); // $3.50 → 350 cents
+	expect(snap.collection[0].currency).toBe("USD");
+	expect(snap.collection[0].deletedAt).toBeNull();
 	expect(snap.collection[0].source).toBeNull();
 	expect(snap.collection[0].storageLocation).toBeNull();
 	expect(snap.profile).toBeNull();
+});
+
+test("parseSnapshot leaves a v4 snapshot's cents prices untouched (no double-scale)", () => {
+	const v4 = {
+		...good,
+		collection: [{ ...good.collection[0], pricePaid: 350 }],
+	};
+	const snap = parseSnapshot(JSON.stringify(v4));
+	expect(snap.collection[0].pricePaid).toBe(350);
 });
 
 test("upgrade backfills required Stack fields on a minimal collection item", () => {
@@ -152,11 +170,12 @@ test("upgrade backfills required Stack fields on a minimal collection item", () 
 	expect(s.storageLocation).toBeNull();
 });
 
-test("isValidSnapshot accepts both v1/v2/v3; rejects other versions", () => {
+test("isValidSnapshot accepts v1–v4; rejects other versions", () => {
 	expect(isValidSnapshot({ ...good, schemaVersion: 1 })).toBe(true);
 	expect(isValidSnapshot({ ...good, schemaVersion: 2 })).toBe(true);
 	expect(isValidSnapshot({ ...good, schemaVersion: 3 })).toBe(true);
-	expect(isValidSnapshot({ ...good, schemaVersion: 4 })).toBe(false);
+	expect(isValidSnapshot({ ...good, schemaVersion: 4 })).toBe(true);
+	expect(isValidSnapshot({ ...good, schemaVersion: 5 })).toBe(false);
 });
 
 test("parseSnapshot keeps a valid profile on a v3 snapshot", () => {
@@ -193,6 +212,7 @@ test("parseSnapshot backfills a partial v3 profile (no undefined fields)", () =>
 		favoriteSetId: null,
 		createdAt: 0,
 		updatedAt: 0,
+		deletedAt: null,
 	});
 });
 
