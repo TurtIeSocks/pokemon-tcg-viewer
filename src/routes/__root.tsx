@@ -17,6 +17,8 @@ import {
 	SidebarProvider,
 	SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { Toaster } from "@/components/ui/sonner";
+import { VersionToast } from "@/lib/version-check";
 import appCss from "../app.css?url";
 import { CardOverlay } from "../components/islands/card-overlay";
 import { AppSidebar } from "../components/shell/app-sidebar";
@@ -204,6 +206,8 @@ function RootComponent() {
 			</SidebarProvider>
 			<ClientOnly fallback={null}>
 				<CardOverlay />
+				<VersionToast />
+				<Toaster />
 			</ClientOnly>
 		</RootDocument>
 	);
