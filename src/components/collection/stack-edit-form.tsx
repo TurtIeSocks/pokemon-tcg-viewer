@@ -16,7 +16,12 @@ import { cn } from "@/lib/utils";
 import type { Stack } from "../../store/userland/types";
 import { addStack, updateStack } from "../../store/userland/userland-store";
 import { formToPatch, itemToForm } from "./stack-form-mapping";
-import { CONDITIONS, GRADERS, stackFormSchema } from "./stack-form-schema";
+import {
+	CONDITIONS,
+	GRADERS,
+	LANGUAGES,
+	stackFormSchema,
+} from "./stack-form-schema";
 
 /** Radix Select prohibits value="". Use this sentinel for the "Unspecified" item. */
 const NONE = "__none__";
@@ -281,6 +286,7 @@ const BLANK_DEFAULTS = {
 	quantity: "1",
 	acquiredAt: new Date().toISOString().slice(0, 10),
 	pricePaid: "",
+	language: "en",
 	variant: "",
 	notes: "",
 	source: "",
@@ -289,6 +295,7 @@ const BLANK_DEFAULTS = {
 	condition: "" as const,
 	gradingCompany: "" as const,
 	grade: "",
+	gradingCert: "",
 };
 
 /**
@@ -458,6 +465,18 @@ export function StackEditForm({
 										<TextField field={field} label="Grade" type="number" />
 									)}
 								/>
+
+								<form.Field
+									name="gradingCert"
+									// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
+									children={(field) => (
+										<TextField
+											field={field}
+											label="Cert / serial"
+											placeholder="Slab cert number (optional)"
+										/>
+									)}
+								/>
 							</>
 						)
 					}
@@ -492,6 +511,20 @@ export function StackEditForm({
 							type="number"
 							mono
 							ariaLabel="Price paid"
+						/>
+					)}
+				/>
+
+				{/* Language — ISO 639-1 select, default EN */}
+				<form.Field
+					name="language"
+					// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
+					children={(field) => (
+						<SelectField
+							field={field}
+							label="Language"
+							placeholder="Select language…"
+							options={[...LANGUAGES]}
 						/>
 					)}
 				/>

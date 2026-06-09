@@ -32,8 +32,8 @@ test("edit: changing price does NOT update store until Save is clicked", async (
 
 	// now click Save
 	fireEvent.click(screen.getByRole("button", { name: /save/i }));
-	await waitFor(() =>
-		expect(useUserland.getState().items[item.id].pricePaid).toBe(4200), // "42" dollars → cents
+	await waitFor(
+		() => expect(useUserland.getState().items[item.id].pricePaid).toBe(4200), // "42" dollars → cents
 	);
 });
 

@@ -38,6 +38,7 @@ function makeItem(overrides: Partial<Stack> & { cardId: string }): Stack {
 		label: null,
 		pricePaid: null,
 		currency: "USD",
+		language: "en",
 		variant: null,
 		notes: null,
 		condition: null,
@@ -173,7 +174,7 @@ describe("buildSnapshot includeGrades", () => {
 	const gradedCopy = makeItem({
 		cardId: "graded",
 		condition: "NM",
-		grading: { company: "PSA", grade: 10 },
+		grading: { company: "PSA", grade: 10, cert: null },
 		createdAt: 500,
 	});
 	const condOnlyCopy = makeItem({
@@ -259,7 +260,7 @@ describe("buildSnapshot includeGrades", () => {
 		const primary = makeItem({
 			cardId: "multi",
 			condition: "NM",
-			grading: { company: "BGS", grade: 9.5 },
+			grading: { company: "BGS", grade: 9.5, cert: null },
 			createdAt: 900,
 			isPrimary: true,
 		});

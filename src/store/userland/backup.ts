@@ -17,7 +17,7 @@ interface RawSnapshot {
 }
 
 /** Schema versions this build can read (and upgrade from). */
-const SUPPORTED_VERSIONS = new Set([1, 2, 3, 4]);
+const SUPPORTED_VERSIONS = new Set([1, 2, 3, 4, 5]);
 
 /**
  * Type guard: validates that v has the minimum shape of a supported snapshot
@@ -62,10 +62,10 @@ function upgradeProfile(raw: unknown): UserDataSnapshot["profile"] {
 	};
 }
 
-/** Upgrade any supported snapshot to the current v4 shape (cents pricePaid, currency, deletedAt tombstones; backfills quantity=1, null provenance, null profile). */
+/** Upgrade any supported snapshot to the current v5 shape (language + grading cert; backfills all prior fields). */
 function upgrade(snap: RawSnapshot): UserDataSnapshot {
-	// Pre-v4 snapshots stored pricePaid in whole units (dollars); v4 stores minor
-	// units (cents). Only rescale when importing from an older version — a v4
+	// Pre-v4 snapshots stored pricePaid in whole units (dollars); v4+ stores minor
+	// units (cents). Only rescale when importing from an older version — a v4+
 	// backup's prices are already cents and must pass through untouched.
 	const rescaleToCents = snap.schemaVersion < 4;
 	const collection = snap.collection.map((c) => {
@@ -75,6 +75,10 @@ function upgrade(snap: RawSnapshot): UserDataSnapshot {
 		const createdAt =
 			typeof c.createdAt === "number" ? c.createdAt : Date.now();
 		const rawPrice = typeof c.pricePaid === "number" ? c.pricePaid : null;
+		const rawGrading = c.grading as
+			| { company: string; grade: number; cert?: string | null }
+			| null
+			| undefined;
 		return {
 			...c,
 			quantity:
@@ -91,10 +95,17 @@ function upgrade(snap: RawSnapshot): UserDataSnapshot {
 						? Math.round(rawPrice * 100)
 						: rawPrice,
 			currency: typeof c.currency === "string" ? c.currency : "USD",
+			language: typeof c.language === "string" ? c.language : "en",
 			variant: (c.variant as string | null | undefined) ?? null,
 			notes: (c.notes as string | null | undefined) ?? null,
 			condition: (c.condition as Stack["condition"] | undefined) ?? null,
-			grading: (c.grading as Stack["grading"] | undefined) ?? null,
+			grading: rawGrading
+				? {
+						company: rawGrading.company,
+						grade: rawGrading.grade,
+						cert: rawGrading.cert ?? null,
+					}
+				: null,
 			source: (c.source as string | null | undefined) ?? null,
 			storageLocation: (c.storageLocation as string | null | undefined) ?? null,
 			isPrimary: typeof c.isPrimary === "boolean" ? c.isPrimary : false,
@@ -105,7 +116,7 @@ function upgrade(snap: RawSnapshot): UserDataSnapshot {
 		deletedAt: typeof b.deletedAt === "number" ? b.deletedAt : null,
 	})) as unknown as UserDataSnapshot["binders"];
 	return {
-		schemaVersion: 4,
+		schemaVersion: 5,
 		exportedAt: typeof snap.exportedAt === "number" ? snap.exportedAt : 0,
 		collection,
 		binders,

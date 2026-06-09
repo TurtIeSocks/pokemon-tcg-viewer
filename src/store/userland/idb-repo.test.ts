@@ -149,11 +149,11 @@ beforeEach(async () => {
 	await repos.profile.clear();
 });
 
-test("exportAll returns a v4 snapshot of current data", async () => {
+test("exportAll returns a v5 snapshot of current data", async () => {
 	await repos.collection.add({ cardId: "a", pricePaid: 3 });
 	await repos.binders.create({ name: "G" });
 	const snap = await repos.backup.exportAll();
-	expect(snap.schemaVersion).toBe(4);
+	expect(snap.schemaVersion).toBe(5);
 	expect(snap.collection).toHaveLength(1);
 	expect(snap.binders).toHaveLength(1);
 	expect(typeof snap.exportedAt).toBe("number");
@@ -163,7 +163,7 @@ test("exportAll returns a v4 snapshot of current data", async () => {
 test("importAll replace clears then writes, preserving ids", async () => {
 	await repos.collection.add({ cardId: "old" });
 	const snap: UserDataSnapshot = {
-		schemaVersion: 4,
+		schemaVersion: 5,
 		exportedAt: 0,
 		collection: [makeStack({ id: "fixed-1", cardId: "new" })],
 		binders: [],
@@ -179,7 +179,7 @@ test("importAll replace clears then writes, preserving ids", async () => {
 test("importAll merge upserts by id without clearing", async () => {
 	const existing = await repos.collection.add({ cardId: "keep" });
 	const snap: UserDataSnapshot = {
-		schemaVersion: 4,
+		schemaVersion: 5,
 		exportedAt: 0,
 		collection: [makeStack({ id: "added-1", cardId: "added" })],
 		binders: [],
@@ -217,7 +217,7 @@ test("backup round-trips a binder with rule + includeCardIds + excludeCardIds, p
 		updatedAt: 2000,
 	});
 	const snap: UserDataSnapshot = {
-		schemaVersion: 4,
+		schemaVersion: 5,
 		exportedAt: 0,
 		collection: [],
 		binders: [fullBinder],
@@ -237,7 +237,7 @@ test("backup round-trips a binder with rule + includeCardIds + excludeCardIds, p
 
 test("backup round-trips the profile via replace import", async () => {
 	const snap: UserDataSnapshot = {
-		schemaVersion: 4,
+		schemaVersion: 5,
 		exportedAt: 0,
 		collection: [],
 		binders: [],
@@ -478,4 +478,79 @@ test("migrateUserlandData backfills deletedAt on legacy binders + profile", asyn
 		(await idbGet<{ deletedAt: number | null }>("me", stores.profile))
 			?.deletedAt,
 	).toBeNull();
+});
+
+// --- v5: language + grading cert ---
+
+test("add() defaults language to 'en'", async () => {
+	const s = await freshCollectionRepo().add({ cardId: "base1-4" });
+	expect(s.language).toBe("en");
+});
+
+test("add() preserves an explicit language", async () => {
+	const s = await freshCollectionRepo().add({
+		cardId: "base1-4",
+		language: "ja",
+	});
+	expect(s.language).toBe("ja");
+});
+
+test("add() round-trips grading cert", async () => {
+	const s = await freshCollectionRepo().add({
+		cardId: "base1-4",
+		grading: { company: "PSA", grade: 10, cert: "12345678" },
+	});
+	expect(s.grading?.cert).toBe("12345678");
+});
+
+test("add() defaults grading cert to null when not provided", async () => {
+	const s = await freshCollectionRepo().add({
+		cardId: "base1-4",
+		grading: { company: "PSA", grade: 10, cert: null },
+	});
+	expect(s.grading?.cert).toBeNull();
+});
+
+test("normalizeStack backfills language on legacy records missing it", () => {
+	const legacy = {
+		id: "a",
+		cardId: "base1-4",
+		acquiredAt: 0,
+		createdAt: 0,
+		label: null,
+		pricePaid: null,
+		variant: null,
+		notes: null,
+		condition: null,
+		grading: null,
+	} as unknown as Stack;
+	const n = normalizeStack(legacy);
+	expect(n.language).toBe("en");
+	// idempotent: already-set language is preserved
+	expect(normalizeStack({ ...n, language: "ja" }).language).toBe("ja");
+});
+
+test("normalizeStack backfills cert on legacy grading records missing it", () => {
+	const legacy = {
+		id: "a",
+		cardId: "base1-4",
+		acquiredAt: 0,
+		createdAt: 0,
+		label: null,
+		pricePaid: null,
+		variant: null,
+		notes: null,
+		condition: null,
+		grading: { company: "PSA", grade: 10 },
+	} as unknown as Stack;
+	const n = normalizeStack(legacy);
+	expect(n.grading?.cert).toBeNull();
+	// idempotent
+	expect(normalizeStack(n).grading?.cert).toBeNull();
+	// cert present is preserved
+	const withCert = normalizeStack({
+		...legacy,
+		grading: { company: "PSA", grade: 10, cert: "999" },
+	} as unknown as Stack);
+	expect(withCert.grading?.cert).toBe("999");
 });

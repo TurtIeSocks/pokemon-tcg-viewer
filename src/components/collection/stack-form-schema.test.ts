@@ -25,6 +25,7 @@ test("schema accepts a valid raw stack and rejects bad price", () => {
 		quantity: "1",
 		acquiredAt: "2024-03-01",
 		pricePaid: "5",
+		language: "en",
 		variant: "",
 		notes: "",
 		source: "",
@@ -33,6 +34,7 @@ test("schema accepts a valid raw stack and rejects bad price", () => {
 		condition: "NM" as const,
 		gradingCompany: "" as const,
 		grade: "",
+		gradingCert: "",
 	};
 	expect(stackFormSchema.safeParse(base).success).toBe(true);
 	expect(stackFormSchema.safeParse({ ...base, pricePaid: "-3" }).success).toBe(

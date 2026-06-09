@@ -17,6 +17,8 @@
 		"deploy:worker": "cd worker && bunx wrangler deploy"
 	},
 	"dependencies": {
+		"@supabase/ssr": "^0.12.0",
+		"@supabase/supabase-js": "^2.108.0",
 		"@tailwindcss/vite": "^4.3.0",
 		"@tanstack/react-form": "^1.33.0",
 		"@tanstack/react-router": "^1.170.10",

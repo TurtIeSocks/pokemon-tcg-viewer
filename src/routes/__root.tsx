@@ -9,7 +9,7 @@ import {
 } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 import type { ReactNode } from "react";
-import { type FormEvent, useCallback, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { AboutDialog } from "@/components/shell/about-dialog";
 import { RepoLink } from "@/components/shell/repo-link";
 import {
@@ -24,7 +24,9 @@ import { CardOverlay } from "../components/islands/card-overlay";
 import { AppSidebar } from "../components/shell/app-sidebar";
 import { LIST_SEARCH_DEFAULTS } from "../lib/list-search";
 import type { NavTree } from "../lib/nav-tree";
+import { isCloudEnabled } from "../lib/supabase/client";
 import { getNavTreeFn } from "../server/nav-tree";
+import { subscribeAuth } from "../store/userland/userland-store";
 
 export const Route = createRootRoute({
 	loader: () => getNavTreeFn(),
@@ -193,6 +195,14 @@ function ShellHeader({ tree }: { tree: NavTree }) {
 
 function RootComponent() {
 	const tree = Route.useLoaderData();
+
+	// Wire Supabase auth listener once at app mount (client-side only).
+	// No-ops when cloud is disabled (no env vars set).
+	useEffect(() => {
+		if (!isCloudEnabled()) return;
+		void subscribeAuth();
+	}, []);
+
 	return (
 		<RootDocument>
 			<SidebarProvider defaultOpen={true}>

@@ -45,8 +45,8 @@ test("edit: changing price does NOT update store until Save is clicked", async (
 	expect(useUserland.getState().items[item.id].pricePaid).toBeNull();
 
 	fireEvent.click(screen.getByRole("button", { name: /save/i }));
-	await waitFor(() =>
-		expect(useUserland.getState().items[item.id].pricePaid).toBe(5500), // "55" dollars → cents
+	await waitFor(
+		() => expect(useUserland.getState().items[item.id].pricePaid).toBe(5500), // "55" dollars → cents
 	);
 	// form collapses after save
 	await waitFor(() =>
@@ -124,7 +124,7 @@ test("delete stack with data: removes after confirm", async () => {
 
 test("renders graded stack with grading summary badge", async () => {
 	const item = await addStack("c", {
-		grading: { company: "PSA", grade: 10 },
+		grading: { company: "PSA", grade: 10, cert: null },
 	});
 	render(<StackRow item={useUserland.getState().items[item.id]} />);
 	expect(screen.getByText(/PSA 10/)).toBeDefined();
@@ -132,7 +132,7 @@ test("renders graded stack with grading summary badge", async () => {
 
 test("graded stack delete triggers confirm (has non-null grading)", async () => {
 	const item = await addStack("c", {
-		grading: { company: "PSA", grade: 10 },
+		grading: { company: "PSA", grade: 10, cert: null },
 	});
 	const origConfirm = window.confirm;
 	let confirmCalled = false;
