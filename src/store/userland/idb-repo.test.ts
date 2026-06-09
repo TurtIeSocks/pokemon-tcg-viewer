@@ -149,11 +149,11 @@ beforeEach(async () => {
 	await repos.profile.clear();
 });
 
-test("exportAll returns a v3 snapshot of current data", async () => {
+test("exportAll returns a v4 snapshot of current data", async () => {
 	await repos.collection.add({ cardId: "a", pricePaid: 3 });
 	await repos.binders.create({ name: "G" });
 	const snap = await repos.backup.exportAll();
-	expect(snap.schemaVersion).toBe(3);
+	expect(snap.schemaVersion).toBe(4);
 	expect(snap.collection).toHaveLength(1);
 	expect(snap.binders).toHaveLength(1);
 	expect(typeof snap.exportedAt).toBe("number");
@@ -163,7 +163,7 @@ test("exportAll returns a v3 snapshot of current data", async () => {
 test("importAll replace clears then writes, preserving ids", async () => {
 	await repos.collection.add({ cardId: "old" });
 	const snap: UserDataSnapshot = {
-		schemaVersion: 3,
+		schemaVersion: 4,
 		exportedAt: 0,
 		collection: [makeStack({ id: "fixed-1", cardId: "new" })],
 		binders: [],
@@ -179,7 +179,7 @@ test("importAll replace clears then writes, preserving ids", async () => {
 test("importAll merge upserts by id without clearing", async () => {
 	const existing = await repos.collection.add({ cardId: "keep" });
 	const snap: UserDataSnapshot = {
-		schemaVersion: 3,
+		schemaVersion: 4,
 		exportedAt: 0,
 		collection: [makeStack({ id: "added-1", cardId: "added" })],
 		binders: [],
@@ -217,7 +217,7 @@ test("backup round-trips a binder with rule + includeCardIds + excludeCardIds, p
 		updatedAt: 2000,
 	});
 	const snap: UserDataSnapshot = {
-		schemaVersion: 3,
+		schemaVersion: 4,
 		exportedAt: 0,
 		collection: [],
 		binders: [fullBinder],
@@ -237,7 +237,7 @@ test("backup round-trips a binder with rule + includeCardIds + excludeCardIds, p
 
 test("backup round-trips the profile via replace import", async () => {
 	const snap: UserDataSnapshot = {
-		schemaVersion: 3,
+		schemaVersion: 4,
 		exportedAt: 0,
 		collection: [],
 		binders: [],
@@ -249,6 +249,7 @@ test("backup round-trips the profile via replace import", async () => {
 			favoriteSetId: "base1",
 			createdAt: 1,
 			updatedAt: 2,
+			deletedAt: null,
 		},
 	};
 	await repos.backup.importAll(snap, "replace");
@@ -313,6 +314,12 @@ test("normalizeStack backfills legacy records (missing quantity/source/storageLo
 	expect(n.quantity).toBe(1);
 	expect(n.source).toBeNull();
 	expect(n.storageLocation).toBeNull();
+	// v4 fields also backfilled (without rescaling pricePaid).
+	expect(n.currency).toBe("USD");
+	expect(n.deletedAt).toBeNull();
+	expect(n.isPrimary).toBe(false);
+	expect(n.updatedAt).toBe(0); // falls back to createdAt
+	expect(n.pricePaid).toBeNull(); // unit migration is NOT normalizeStack's job
 	expect(normalizeStack({ ...legacy, quantity: 5 } as Stack).quantity).toBe(5);
 });
 
@@ -355,4 +362,120 @@ test("profile clear() removes the stored record", async () => {
 	await repo.save({ displayName: "Misty" });
 	await repo.clear();
 	expect(await repo.get()).toBeNull();
+});
+
+// --- v3→v4 data migration (dollars→cents) ---
+import { get as idbGet, set as idbSet } from "idb-keyval";
+import { CURRENT_DATA_VERSION, migrateUserlandData } from "./idb-repo";
+
+/** Four isolated stores so each migration test runs on its own data. */
+function migrationStores() {
+	const tag = crypto.randomUUID();
+	return {
+		collection: createStore(`mig-col-${tag}`, "items"),
+		binders: createStore(`mig-bin-${tag}`, "binders"),
+		profile: createStore(`mig-prof-${tag}`, "profile"),
+		meta: createStore(`mig-meta-${tag}`, "meta"),
+	};
+}
+
+test("migrateUserlandData rescales legacy dollar prices to cents, exactly once", async () => {
+	const stores = migrationStores();
+	// Legacy (pre-v4) row: pricePaid in dollars, none of the v4 fields present.
+	await idbSet(
+		"s1",
+		{
+			id: "s1",
+			cardId: "base1-4",
+			quantity: 2,
+			acquiredAt: 0,
+			createdAt: 0,
+			pricePaid: 3.5,
+			variant: null,
+			notes: null,
+			condition: null,
+			grading: null,
+			source: null,
+			storageLocation: null,
+		},
+		stores.collection,
+	);
+
+	await migrateUserlandData(stores);
+
+	const m = await idbGet<Stack>("s1", stores.collection);
+	expect(m?.pricePaid).toBe(350); // $3.50 → 350 cents
+	expect(m?.currency).toBe("USD");
+	expect(m?.deletedAt).toBeNull();
+	expect(m?.updatedAt).toBe(0); // backfilled from createdAt
+	expect(await idbGet<number>("userlandDataVersion", stores.meta)).toBe(
+		CURRENT_DATA_VERSION,
+	);
+
+	// Idempotent: the marker gates re-entry, so prices are never doubled.
+	await migrateUserlandData(stores);
+	expect((await idbGet<Stack>("s1", stores.collection))?.pricePaid).toBe(350);
+});
+
+test("migrateUserlandData leaves an unknown (null) price null", async () => {
+	const stores = migrationStores();
+	await idbSet(
+		"s1",
+		{
+			id: "s1",
+			cardId: "c",
+			quantity: 1,
+			acquiredAt: 0,
+			createdAt: 0,
+			pricePaid: null,
+			variant: null,
+			notes: null,
+			condition: null,
+			grading: null,
+			source: null,
+			storageLocation: null,
+		},
+		stores.collection,
+	);
+	await migrateUserlandData(stores);
+	expect((await idbGet<Stack>("s1", stores.collection))?.pricePaid).toBeNull();
+});
+
+test("migrateUserlandData backfills deletedAt on legacy binders + profile", async () => {
+	const stores = migrationStores();
+	await idbSet(
+		"b1",
+		{
+			id: "b1",
+			name: "Legacy",
+			description: null,
+			rules: [],
+			includeCardIds: [],
+			excludeCardIds: [],
+			createdAt: 0,
+			updatedAt: 0,
+		},
+		stores.binders,
+	);
+	await idbSet(
+		"me",
+		{
+			id: "me",
+			displayName: "Ash",
+			bio: null,
+			avatarPreset: "dusk",
+			favoriteSetId: null,
+			createdAt: 0,
+			updatedAt: 0,
+		},
+		stores.profile,
+	);
+
+	await migrateUserlandData(stores);
+
+	expect((await idbGet<Binder>("b1", stores.binders))?.deletedAt).toBeNull();
+	expect(
+		(await idbGet<{ deletedAt: number | null }>("me", stores.profile))
+			?.deletedAt,
+	).toBeNull();
 });

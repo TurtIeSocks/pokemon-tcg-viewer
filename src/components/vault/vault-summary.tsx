@@ -17,8 +17,8 @@ const USD_FORMAT = new Intl.NumberFormat("en-US", {
 	maximumFractionDigits: 0,
 });
 function formatDollars(cents: number): string {
-	// pricePaid is stored as a number; treat as dollars (consistent with edit UI)
-	return USD_FORMAT.format(cents);
+	// estValue is summed in minor units (cents); the hero shows whole dollars.
+	return USD_FORMAT.format(cents / 100);
 }
 
 /**

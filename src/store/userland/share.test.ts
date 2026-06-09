@@ -22,6 +22,7 @@ const baseBinder: Binder = {
 	excludeCardIds: [],
 	createdAt: 1000,
 	updatedAt: 2000,
+	deletedAt: null,
 };
 
 function makeItem(overrides: Partial<Stack> & { cardId: string }): Stack {
@@ -29,14 +30,19 @@ function makeItem(overrides: Partial<Stack> & { cardId: string }): Stack {
 		id: `stack-${overrides.cardId}`,
 		acquiredAt: 1000,
 		createdAt: 1000,
+		updatedAt: 1000,
+		deletedAt: null,
 		quantity: 1,
 		source: null,
 		storageLocation: null,
+		label: null,
 		pricePaid: null,
+		currency: "USD",
 		variant: null,
 		notes: null,
 		condition: null,
 		grading: null,
+		isPrimary: false,
 		...overrides,
 	};
 }

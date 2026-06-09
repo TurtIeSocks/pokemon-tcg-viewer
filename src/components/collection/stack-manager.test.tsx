@@ -55,7 +55,7 @@ test("Add stack → fill → Save creates the stack and collapses form", async (
 			(i) => i.cardId === "c",
 		);
 		expect(stacks).toHaveLength(1);
-		expect(stacks[0].pricePaid).toBe(7.5);
+		expect(stacks[0].pricePaid).toBe(750); // "7.5" dollars → cents
 	});
 	// form collapsed — Save button gone
 	await waitFor(() =>

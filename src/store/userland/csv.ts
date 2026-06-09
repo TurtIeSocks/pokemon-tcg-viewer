@@ -1,8 +1,9 @@
 import Papa from "papaparse";
 import { dayMsToInput } from "../../utils/day";
+import { inputToMinorUnits, minorUnitsToInput } from "./money";
 import type { CardCondition, NewStack, Stack } from "./types";
 
-/** Canonical Cardstack CSV column order (v1). */
+/** Canonical Cardstack CSV column order (v1). price_paid_unit is in MAJOR units (dollars); currency added alongside it. */
 export const CSV_COLUMNS = [
 	"card_id",
 	"card_name",
@@ -15,6 +16,7 @@ export const CSV_COLUMNS = [
 	"grading_company",
 	"grading_grade",
 	"price_paid_unit",
+	"currency",
 	"acquired_at",
 	"source",
 	"storage_location",
@@ -51,7 +53,9 @@ function rowValues(
 		condition: s.condition ?? "",
 		grading_company: s.grading?.company ?? "",
 		grading_grade: s.grading == null ? "" : String(s.grading.grade),
-		price_paid_unit: s.pricePaid == null ? "" : String(s.pricePaid),
+		// Stored in cents; CSV is human-facing + round-trippable, so export dollars.
+		price_paid_unit: minorUnitsToInput(s.pricePaid),
+		currency: s.pricePaid == null ? "" : s.currency,
 		acquired_at: dayMsToInput(s.acquiredAt),
 		source: s.source ?? "",
 		storage_location: s.storageLocation ?? "",
@@ -117,6 +121,7 @@ const ALIASES: Record<CanonicalField, string[]> = {
 	grading_company: ["grading_company", "grader", "grading"],
 	grading_grade: ["grading_grade", "grade"],
 	price_paid_unit: ["price_paid_unit", "price", "price_paid", "paid", "cost"],
+	currency: ["currency", "curr", "ccy"],
 	acquired_at: ["acquired_at", "acquired", "date", "purchase_date"],
 	source: ["source", "seller", "acquired_from"],
 	storage_location: [
@@ -259,7 +264,9 @@ export function rowToNewStack(
 		cardId,
 		quantity: qty && qty >= 1 ? Math.floor(qty) : 1,
 		...(acquired != null ? { acquiredAt: acquired } : {}),
-		pricePaid: num(row.price_paid_unit),
+		// CSV price is in dollars (major units); store cents. Currency defaults USD.
+		pricePaid: inputToMinorUnits(row.price_paid_unit ?? ""),
+		currency: row.currency?.trim() || "USD",
 		variant: row.variant?.trim() || null,
 		notes: row.notes?.trim() || null,
 		condition: cond && CONDITIONS.has(cond) ? (cond as CardCondition) : null,

@@ -22,6 +22,7 @@ export interface CollectionStats {
 	cardsOwned: number;
 	setsTouched: number;
 	completionPct: number;
+	/** Total cost basis in MINOR UNITS (cents); null when no priced stacks. Format via money.formatPrice or ÷100. */
 	estValue: number | null;
 	thisWeek: number;
 	collectingSince: number | null;
