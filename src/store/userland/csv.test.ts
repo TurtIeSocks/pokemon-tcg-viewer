@@ -25,6 +25,7 @@ function stack(over: Partial<Stack>): Stack {
 		label: null,
 		pricePaid: null,
 		currency: "USD",
+		language: "en",
 		variant: null,
 		notes: null,
 		condition: null,
@@ -198,4 +199,79 @@ test("matchRow + rowToNewStack expose the per-row import pieces", () => {
 	expect(
 		rowToNewStack("base1-4", { quantity: "3", condition: "NM" }),
 	).toMatchObject({ cardId: "base1-4", quantity: 3, condition: "NM" });
+});
+
+// --- v5: language + grading_cert CSV columns ---
+
+test("CSV_COLUMNS includes language and grading_cert", () => {
+	expect(CSV_COLUMNS).toContain("language");
+	expect(CSV_COLUMNS).toContain("grading_cert");
+});
+
+test("header row contains language and grading_cert", () => {
+	const csv = stacksToCsv([], "stack", resolve);
+	const header = csv.trim();
+	expect(header).toContain("language");
+	expect(header).toContain("grading_cert");
+});
+
+test("stacksToCsv exports language and grading_cert", () => {
+	const csv = stacksToCsv(
+		[stack({ language: "ja", grading: { company: "PSA", grade: 10, cert: "12345" } })],
+		"stack",
+		resolve,
+	);
+	const lines = csv.trim().split("\n");
+	const headers = lines[0].split(",");
+	const row = lines[1].split(",");
+	const langIdx = headers.indexOf("language");
+	const certIdx = headers.indexOf("grading_cert");
+	expect(row[langIdx]).toBe("ja");
+	expect(row[certIdx]).toBe("12345");
+});
+
+test("rowToNewStack: language field imports correctly; missing defaults to 'en'", () => {
+	const withLang = rowToNewStack("base1-4", { language: "ja" });
+	expect(withLang.language).toBe("ja");
+	const defaultLang = rowToNewStack("base1-4", {});
+	expect(defaultLang.language).toBe("en");
+});
+
+test("rowToNewStack: grading_cert is imported into grading.cert", () => {
+	const withCert = rowToNewStack("base1-4", {
+		grading_company: "PSA",
+		grading_grade: "10",
+		grading_cert: "ABCDE",
+	});
+	expect(withCert.grading?.cert).toBe("ABCDE");
+});
+
+test("rowToNewStack: empty grading_cert → null", () => {
+	const noCert = rowToNewStack("base1-4", {
+		grading_company: "PSA",
+		grading_grade: "10",
+		grading_cert: "",
+	});
+	expect(noCert.grading?.cert).toBeNull();
+});
+
+test("detectColumns maps 'Language' to language", () => {
+	const map = detectColumns(["Language"]);
+	expect(map.language).toBe("Language");
+});
+
+test("detectColumns maps cert aliases to grading_cert", () => {
+	expect(detectColumns(["cert"]).grading_cert).toBe("cert");
+	expect(detectColumns(["certification"]).grading_cert).toBe("certification");
+	expect(detectColumns(["cert_number"]).grading_cert).toBe("cert_number");
+	expect(detectColumns(["serial"]).grading_cert).toBe("serial");
+});
+
+test("round-trip: language and grading_cert survive export → parse → import", () => {
+	const s = stack({ language: "fr", grading: { company: "CGC", grade: 9.5, cert: "CERT99" } });
+	const csv = stacksToCsv([s], "stack", resolve);
+	const { rows } = parseCsv(csv);
+	const ns = rowToNewStack("base1-4", rows[0]);
+	expect(ns.language).toBe("fr");
+	expect(ns.grading?.cert).toBe("CERT99");
 });

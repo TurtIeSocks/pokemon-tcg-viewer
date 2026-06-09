@@ -10,11 +10,13 @@ export const CSV_COLUMNS = [
 	"set_id",
 	"set_name",
 	"number",
+	"language",
 	"variant",
 	"quantity",
 	"condition",
 	"grading_company",
 	"grading_grade",
+	"grading_cert",
 	"price_paid_unit",
 	"currency",
 	"acquired_at",
@@ -48,11 +50,13 @@ function rowValues(
 		set_id: info?.setId ?? "",
 		set_name: info?.setName ?? "",
 		number: info?.number ?? "",
+		language: s.language,
 		variant: s.variant ?? "",
 		quantity: String(s.quantity),
 		condition: s.condition ?? "",
 		grading_company: s.grading?.company ?? "",
 		grading_grade: s.grading == null ? "" : String(s.grading.grade),
+		grading_cert: s.grading?.cert ?? "",
 		// Stored in cents; CSV is human-facing + round-trippable, so export dollars.
 		price_paid_unit: minorUnitsToInput(s.pricePaid),
 		currency: s.pricePaid == null ? "" : s.currency,
@@ -115,11 +119,13 @@ const ALIASES: Record<CanonicalField, string[]> = {
 	set_id: ["set_id", "set_code"],
 	set_name: ["set_name", "set", "expansion", "series"],
 	number: ["number", "card_number", "no", "collector_number", "card_no"],
+	language: ["language", "lang"],
 	variant: ["variant", "printing", "foil", "finish", "edition"],
 	quantity: ["quantity", "qty", "count", "amount", "have", "haves", "owned"],
 	condition: ["condition", "cond"],
 	grading_company: ["grading_company", "grader", "grading"],
 	grading_grade: ["grading_grade", "grade"],
+	grading_cert: ["grading_cert", "cert", "certification", "cert_number", "serial"],
 	price_paid_unit: ["price_paid_unit", "price", "price_paid", "paid", "cost"],
 	currency: ["currency", "curr", "ccy"],
 	acquired_at: ["acquired_at", "acquired", "date", "purchase_date"],
@@ -258,6 +264,7 @@ export function rowToNewStack(
 	const qty = num(row.quantity);
 	const company = row.grading_company?.trim();
 	const grade = num(row.grading_grade);
+	const cert = row.grading_cert?.trim() || null;
 	const cond = row.condition?.trim();
 	const acquired = row.acquired_at ? ymdToMs(row.acquired_at) : null;
 	return {
@@ -267,10 +274,11 @@ export function rowToNewStack(
 		// CSV price is in dollars (major units); store cents. Currency defaults USD.
 		pricePaid: inputToMinorUnits(row.price_paid_unit ?? ""),
 		currency: row.currency?.trim() || "USD",
+		language: row.language?.trim() || "en",
 		variant: row.variant?.trim() || null,
 		notes: row.notes?.trim() || null,
 		condition: cond && CONDITIONS.has(cond) ? (cond as CardCondition) : null,
-		grading: company ? { company, grade: grade ?? 0 } : null,
+		grading: company ? { company, grade: grade ?? 0, cert } : null,
 		source: row.source?.trim() || null,
 		storageLocation: row.storage_location?.trim() || null,
 		label: row.label?.trim() || null,
