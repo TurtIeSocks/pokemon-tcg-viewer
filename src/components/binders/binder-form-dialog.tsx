@@ -89,7 +89,7 @@ export function BinderFormDialog({
 					<DialogTitle className="font-display">
 						{isEdit ? "Edit Binder" : "New Binder"}
 					</DialogTitle>
-					<DialogDescription className="text-[var(--ink-muted)]">
+					<DialogDescription>
 						{isEdit
 							? "Update this binder's name and description."
 							: "Create a new binder to organize your card collection."}
@@ -172,7 +172,7 @@ export function BinderFormDialog({
 										Cancel
 									</Button>
 									<Button type="submit" disabled={!canSubmit || isSubmitting}>
-										{isSubmitting ? "Saving..." : isEdit ? "Save" : "Create"}
+										{isSubmitting ? "Saving…" : isEdit ? "Save" : "Create"}
 									</Button>
 								</>
 							)}

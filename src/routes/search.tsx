@@ -148,7 +148,9 @@ function SearchPageInner({
 					{q && <Eyebrow>Search results</Eyebrow>}
 				</div>
 				{q ? (
-					<span className="text-sm text-(--ink-muted)">{total} cards</span>
+					<span className="font-mono text-sm tabular-nums text-(--ink-muted)">
+						{total} cards
+					</span>
 				) : null}
 				<div className="ml-auto flex items-center gap-2">
 					{q ? (

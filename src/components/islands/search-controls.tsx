@@ -238,7 +238,7 @@ export function SearchControls({
 						onChange={(yearMin) => onChange({ yearMin })}
 					/>
 					<span className="text-sm text-muted-foreground" aria-hidden="true">
-						–
+						-
 					</span>
 					<YearSelect
 						label="To"

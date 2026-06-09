@@ -1,3 +1,4 @@
+import { Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -9,26 +10,6 @@ import {
 } from "@/components/ui/dialog";
 
 const REPO_URL = "https://github.com/TurtIeSocks/pokemon-tcg-viewer";
-
-// Inlined lucide-style "info" glyph (stroke, 24-grid) so it matches the Menu /
-// Package / X icons already in the shell. The Button's `[&_svg]:size-4` sizes it.
-function InfoIcon() {
-	return (
-		<svg
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth={2}
-			strokeLinecap="round"
-			strokeLinejoin="round"
-			aria-hidden="true"
-		>
-			<circle cx="12" cy="12" r="10" />
-			<path d="M12 16v-4" />
-			<path d="M12 8h.01" />
-		</svg>
-	);
-}
 
 interface Credit {
 	title: string;
@@ -63,13 +44,13 @@ export function AboutDialog() {
 		<Dialog>
 			<DialogTrigger asChild>
 				<Button variant="ghost" size="icon" aria-label="About & credits">
-					<InfoIcon />
+					<Info aria-hidden="true" />
 				</Button>
 			</DialogTrigger>
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle className="font-display">About</DialogTitle>
-					<DialogDescription className="text-[var(--ink-muted)]">
+					<DialogDescription>
 						A fan-made browser for the Pokémon Trading Card Game. With thanks
 						to:
 					</DialogDescription>

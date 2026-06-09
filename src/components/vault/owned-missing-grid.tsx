@@ -97,7 +97,7 @@ export function OwnedMissingGrid({
 							<button
 								type="button"
 								aria-label={`${owned ? "Remove" : "Add"} ${card.name}`}
-								className="flex flex-col gap-1 cursor-pointer hover:opacity-80 transition-opacity text-left w-full"
+								className="flex flex-col gap-1 cursor-pointer hover:opacity-80 transition-opacity motion-reduce:transition-none text-left w-full"
 								onClick={() => onToggleOwned(card.id)}
 							>
 								{cardInner}

@@ -81,8 +81,8 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle className="font-display">Import backup</DialogTitle>
-					<DialogDescription className="text-[var(--ink-muted)]">
+					<DialogTitle className="font-display">Import Backup</DialogTitle>
+					<DialogDescription>
 						Choose a JSON backup (restore) or a CSV file (add matched cards).
 					</DialogDescription>
 				</DialogHeader>

@@ -133,7 +133,9 @@ function SetPageInner({
 				<div className="flex flex-col gap-0.5">
 					<Eyebrow>Card Set</Eyebrow>
 				</div>
-				<span className="text-sm text-(--ink-muted)">{cards.length} cards</span>
+				<span className="font-mono text-sm tabular-nums text-(--ink-muted)">
+					{cards.length} cards
+				</span>
 				<ClientOnly fallback={null}>
 					<div className="ml-auto flex items-center gap-2">
 						<SelectAndBulkAdd

@@ -7,7 +7,7 @@ import { useState } from "react";
 import { BinderCard } from "@/components/binders/binder-card";
 import { BinderFormDialog } from "@/components/binders/binder-form-dialog";
 import { Button } from "@/components/ui/button";
-import { Eyebrow } from "@/components/ui/eyebrow";
+import { VaultPageHeader } from "@/components/vault/vault-page-header";
 import { useEnsureCorpus } from "@/store/corpus/use-ensure-corpus";
 import type { Binder } from "@/store/userland/types";
 import { useUserland } from "@/store/userland/userland-store";
@@ -32,20 +32,16 @@ export function VaultBindersInner() {
 	}
 
 	return (
-		<div className="space-y-6">
-			<div className="flex items-center justify-between gap-4">
-				<div className="space-y-1.5">
-					<Eyebrow>Binders</Eyebrow>
-					<h1 className="font-display text-2xl font-semibold tracking-tight text-[var(--ink)]">
-						Your Binders
-					</h1>
-				</div>
-				<Button onClick={() => setNewOpen(true)}>New binder</Button>
-			</div>
+		<div className="space-y-8">
+			<VaultPageHeader
+				title="Binders"
+				subtitle="Curated lists with smart rules and manual picks."
+				actions={<Button onClick={() => setNewOpen(true)}>New binder</Button>}
+			/>
 
 			{binders.length === 0 ? (
 				<p className="py-12 text-center text-muted-foreground">
-					No binders yet — create one to organize your card collection.
+					No binders yet. Create one to organize your card collection.
 				</p>
 			) : (
 				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

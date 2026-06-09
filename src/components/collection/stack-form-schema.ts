@@ -42,7 +42,7 @@ export const stackFormSchema = z.object({
 	state: z.enum(["raw", "graded"]),
 	condition: z.enum(["", ...CONDITIONS]),
 	gradingCompany: z.enum(["", ...GRADERS]),
-	grade: z.string().refine(isGradeOrEmpty, "0–10"),
+	grade: z.string().refine(isGradeOrEmpty, "0-10"),
 });
 /** Inferred form-value type from {@link stackFormSchema}. */
 export type StackFormValues = z.infer<typeof stackFormSchema>;

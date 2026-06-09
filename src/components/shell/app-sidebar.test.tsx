@@ -74,7 +74,7 @@ function renderSidebar(
 /** Assert the four Vault child links are present. */
 function expectVaultLinks() {
 	expect(screen.getByRole("link", { name: "Overview" })).toBeDefined();
-	expect(screen.getByRole("link", { name: "All cards" })).toBeDefined();
+	expect(screen.getByRole("link", { name: "All Cards" })).toBeDefined();
 	expect(screen.getByRole("link", { name: "Sets" })).toBeDefined();
 	expect(screen.getByRole("link", { name: "Binders" })).toBeDefined();
 }
@@ -90,7 +90,7 @@ test("active series auto-expands to reveal its sets", async () => {
 	expect(screen.getByText("Brilliant Stars")).toBeDefined();
 });
 
-test("Vault group renders Overview / All cards / Sets / Binders links at /vault", async () => {
+test("Vault group renders Overview / All Cards / Sets / Binders links at /vault", async () => {
 	await renderSidebar({ initialPath: "/vault" });
 	expectVaultLinks();
 });
@@ -101,9 +101,9 @@ test("Vault Overview link points to /vault", async () => {
 	expect((overview as HTMLAnchorElement).getAttribute("href")).toBe("/vault");
 });
 
-test("Vault All cards link points to /vault/cards", async () => {
+test("Vault All Cards link points to /vault/cards", async () => {
 	await renderSidebar({ initialPath: "/vault" });
-	const cards = screen.getByRole("link", { name: "All cards" });
+	const cards = screen.getByRole("link", { name: "All Cards" });
 	expect((cards as HTMLAnchorElement).getAttribute("href")).toBe(
 		"/vault/cards",
 	);

@@ -55,7 +55,7 @@ export function binderRuleLabel(
 	}
 
 	if (q.yearMin !== null && q.yearMax !== null) {
-		parts.push(`${q.yearMin}–${q.yearMax}`);
+		parts.push(`${q.yearMin}-${q.yearMax}`);
 	} else if (q.yearMax !== null) {
 		parts.push(`before ${q.yearMax + 1}`);
 	} else if (q.yearMin !== null) {

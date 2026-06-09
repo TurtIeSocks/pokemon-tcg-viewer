@@ -1,7 +1,12 @@
 import { Link, type LinkProps } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import { rollPack } from "../../utils/roll-pack";
 import { BoosterPack, type PackArt } from "../booster-pack/booster-pack";
 import { CollectionToggle } from "../collection-toggle";
@@ -63,9 +68,11 @@ export function PackDialog({
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
-				<DialogTitle className="font-display text-[var(--ink)]">
-					{`Open a ${art.name} pack`}
-				</DialogTitle>
+				<DialogHeader>
+					<DialogTitle className="font-display">
+						{`Open a ${art.name} pack`}
+					</DialogTitle>
+				</DialogHeader>
 				{!pack ? (
 					<div className="flex justify-center py-6">
 						<BoosterPack art={art} ripped={ripped} onRip={onRip} />

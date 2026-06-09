@@ -51,16 +51,14 @@ export function BinderPickerDialog({
 				<DialogHeader>
 					<DialogTitle className="font-display">{title}</DialogTitle>
 					{description ? (
-						<DialogDescription className="text-[var(--ink-muted)]">
-							{description}
-						</DialogDescription>
+						<DialogDescription>{description}</DialogDescription>
 					) : null}
 				</DialogHeader>
 
 				<div className="flex flex-col gap-1">
 					{binders.length === 0 ? (
 						<p className="px-1 py-2 text-sm text-[var(--ink-muted)]">
-							No binders yet — create one below.
+							No binders yet. Create one below.
 						</p>
 					) : (
 						binders.map((b) => (

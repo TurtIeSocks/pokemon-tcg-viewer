@@ -103,8 +103,8 @@ export function ProfileFormDialog({
 		>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle className="font-display">Edit profile</DialogTitle>
-					<DialogDescription className="text-[var(--ink-muted)]">
+					<DialogTitle className="font-display">Edit Profile</DialogTitle>
+					<DialogDescription>
 						Your collector identity. Shown across the app.
 					</DialogDescription>
 				</DialogHeader>
@@ -244,7 +244,7 @@ export function ProfileFormDialog({
 										Cancel
 									</Button>
 									<Button type="submit" disabled={!canSubmit || isSubmitting}>
-										{isSubmitting ? "Saving..." : "Save"}
+										{isSubmitting ? "Saving…" : "Save"}
 									</Button>
 								</>
 							)}
