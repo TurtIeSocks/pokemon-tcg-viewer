@@ -358,33 +358,55 @@ returns boolean language sql stable security definer set search_path = '' as $$
     );
 $$;
 
--- R8: REVOKE from everyone. Policies call these as the function owner regardless of caller
--- grant, so the gate still works — but no client can probe who-pays.
+-- R8: keep is_pro(uuid) + billing_on() server-internal — revoked from clients so no
+-- one can probe an ARBITRARY uid's pay status.
 revoke all on function public.billing_on()  from public, anon, authenticated;
 revoke all on function public.is_pro(uuid)  from public, anon, authenticated;
 
--- Split the existing FOR-ALL owner policies into ungated read + gated write.
+-- CORRECTION (verified live via RLS tests): a policy that calls a function evaluates it
+-- as the CALLING role, which must hold EXECUTE. is_pro(uuid) is revoked, so a policy
+-- calling it directly fails ("permission denied for function is_pro"). Use a self-only
+-- SECURITY DEFINER wrapper: its body runs as the owner (can call revoked is_pro),
+-- auth.uid() still reads the caller's jwt, and it is safe to grant (reveals only the
+-- caller's own status, already readable from their subscriptions row).
+create or replace function public.is_pro_self()
+returns boolean language sql stable security definer set search_path = '' as $$
+  select public.is_pro((select auth.uid()));
+$$;
+revoke all on function public.is_pro_self() from public, anon;
+grant execute on function public.is_pro_self() to authenticated;
+
+-- CORRECTION (verified live): a single FOR-ALL policy with `with check (is_pro)` also
+-- gates UPDATE's NEW row, locking a LAPSED user out of editing/soft-deleting their own
+-- existing rows (violates the retain-existing rule). Split per command: read/update/
+-- delete are owner-only; only INSERT (net-new state) requires entitlement.
 drop policy stacks_owner on public.stacks;
-create policy stacks_read_own on public.stacks
+create policy stacks_select on public.stacks
   for select using ((select auth.uid()) = user_id);
-create policy stacks_write_pro on public.stacks
-  for all
-  using ((select auth.uid()) = user_id)                       -- owner-only: lapsed user CAN UPDATE/soft-delete existing rows
-  with check (
+create policy stacks_insert on public.stacks
+  for insert with check (
     (select auth.uid()) = user_id
-    and (select public.is_pro((select auth.uid())))           -- new state requires entitlement (or billing off)
+    and (select public.is_pro_self())                          -- net-new requires entitlement (or billing off)
   );
+create policy stacks_update on public.stacks
+  for update using ((select auth.uid()) = user_id)             -- lapsed user keeps full control of existing rows
+  with check ((select auth.uid()) = user_id);
+create policy stacks_delete on public.stacks
+  for delete using ((select auth.uid()) = user_id);
 
 drop policy binders_owner on public.binders;
-create policy binders_read_own on public.binders
+create policy binders_select on public.binders
   for select using ((select auth.uid()) = user_id);
-create policy binders_write_pro on public.binders
-  for all
-  using ((select auth.uid()) = user_id)
-  with check (
+create policy binders_insert on public.binders
+  for insert with check (
     (select auth.uid()) = user_id
-    and (select public.is_pro((select auth.uid())))
+    and (select public.is_pro_self())
   );
+create policy binders_update on public.binders
+  for update using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+create policy binders_delete on public.binders
+  for delete using ((select auth.uid()) = user_id);
 ```
 
 **Why no row cap.** The hosted free tier syncs 0 stacks and 0 binders, so there is no numeric cap to meter or enforce. The write gate collapses to the binary `is_pro` check above: a free signed-in user's net-new push is rejected outright (until they subscribe), a paid user's is allowed, and a self-hoster (`billing_on()` false) is uncapped. No per-row counting, no statement-level trigger, no claim-exemption flow.
