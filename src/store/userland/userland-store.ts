@@ -5,7 +5,12 @@ import { getRepos, migrateUserlandData } from "./idb-repo";
 import type { UserlandRepos } from "./repo";
 import { createSupabaseRepo } from "./supabase-repo";
 import { createCacheRepos } from "./sync/cache-repo";
-import { startSync, stopSync, syncOnce } from "./sync/sync-engine";
+import {
+	EntitlementError,
+	startSync,
+	stopSync,
+	syncOnce,
+} from "./sync/sync-engine";
 import { syncStatus } from "./sync/sync-status-singleton";
 import type {
 	Binder,
@@ -146,10 +151,16 @@ async function handleSignedIn(uid: string): Promise<void> {
 		await syncOnce(uid, client);
 		await syncStatus.onSyncSuccess(uid);
 	} catch (e) {
-		console.error("Initial sync warm failed; serving the cache as-is", e);
-		syncStatus.onSyncError(
-			typeof navigator !== "undefined" && !navigator.onLine,
-		);
+		if (e instanceof EntitlementError) {
+			// Free/lapsed: the warm push was RLS-rejected. Cache still serves; dirty
+			// rows stay queued and push once subscribed. Show the upgrade CTA.
+			syncStatus.onEntitlementBlocked();
+		} else {
+			console.error("Initial sync warm failed; serving the cache as-is", e);
+			syncStatus.onSyncError(
+				typeof navigator !== "undefined" && !navigator.onLine,
+			);
+		}
 	}
 
 	// (c) Start background sync; re-hydrate the store after every pass so a
@@ -165,6 +176,10 @@ async function handleSignedIn(uid: string): Promise<void> {
 			void rehydrateFromCache();
 		},
 		onSyncError: (err) => {
+			if (err instanceof EntitlementError) {
+				syncStatus.onEntitlementBlocked();
+				return;
+			}
 			console.error("Background sync pass failed", err);
 			// Treat a fetch failure / offline signal as offline; anything else = error.
 			const offline = typeof navigator !== "undefined" && !navigator.onLine;

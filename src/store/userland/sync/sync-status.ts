@@ -24,7 +24,12 @@ import { createStore, get, set } from "idb-keyval";
 // Types
 // ---------------------------------------------------------------------------
 
-export type SyncStatus = "offline" | "syncing" | "synced" | "error";
+export type SyncStatus =
+	| "offline"
+	| "syncing"
+	| "synced"
+	| "error"
+	| "needs_upgrade"; // a cloud write was RLS-rejected (free/lapsed) → show upgrade CTA
 
 export type SyncTransitionEvent =
 	| "went-offline"
@@ -73,6 +78,10 @@ export interface SyncStatusStore {
 	/** Call when a syncOnce pass fails (network error / fetch failure). */
 	onSyncError(offline: boolean): void;
 
+	/** Call when a pass failed because a cloud WRITE was entitlement-rejected
+	 *  (EntitlementError / 42501). Not a retryable error — drives an upgrade CTA. */
+	onEntitlementBlocked(): void;
+
 	/** Subscribe to transition events. Returns an unsubscribe function. */
 	subscribe(listener: SyncTransitionListener): () => void;
 }
@@ -109,6 +118,13 @@ export function createSyncStatusStore(): SyncStatusStore {
 		onSyncStart() {
 			setStatus("syncing");
 			// "syncing" is a transient state — no events on entry
+		},
+
+		onEntitlementBlocked() {
+			// Distinct from "error": a deterministic policy block, not a transient
+			// failure. No retry counter, no event — the UI shows a persistent upgrade
+			// CTA; dirty rows stay queued and push once the user is entitled.
+			setStatus("needs_upgrade");
 		},
 
 		async onSyncSuccess(uid: string) {

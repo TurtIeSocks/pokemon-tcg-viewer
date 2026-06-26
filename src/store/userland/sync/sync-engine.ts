@@ -98,6 +98,20 @@ async function pullTable<Row>(
 // Push helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * Thrown when a cloud WRITE is rejected by the entitlement RLS (SQLSTATE 42501) —
+ * a free/lapsed user can't push net-new state. NOT a transient error: the caller
+ * surfaces an upgrade prompt instead of "sync failed", and (critically) the dirty
+ * rows are NEVER cleared — they push automatically once the user is entitled.
+ */
+export class EntitlementError extends Error {
+	readonly kind = "needs_upgrade" as const;
+	constructor(message = "cloud write requires an active plan") {
+		super(message);
+		this.name = "EntitlementError";
+	}
+}
+
 async function pushRows<Row extends object>(
 	client: SupabaseClient,
 	table: string,
@@ -105,8 +119,12 @@ async function pushRows<Row extends object>(
 ): Promise<Row[]> {
 	if (rows.length === 0) return [];
 	const { data, error } = await client.from(table).upsert(rows).select();
-	if (error)
+	if (error) {
+		// 42501 = RLS with-check rejection = no entitlement to write new state.
+		// Throw before clearDirty so the rows stay dirty and retry once entitled.
+		if (error.code === "42501") throw new EntitlementError(error.message);
 		throw new Error(`syncOnce: push ${table} failed: ${error.message}`);
+	}
 	return (data ?? []) as Row[];
 }
 

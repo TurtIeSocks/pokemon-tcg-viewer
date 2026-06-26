@@ -250,4 +250,15 @@ describe("SyncStatusStore — transition events", () => {
 		store.onSyncError(true);
 		expect(events).toHaveLength(1); // still 1
 	});
+
+	test("onEntitlementBlocked sets needs_upgrade without emitting an event", async () => {
+		const store = createSyncStatusStore();
+		const events = await captureEvents(store, (s) => {
+			s.onSyncStart();
+			s.onEntitlementBlocked();
+		});
+		expect(store.status).toBe("needs_upgrade");
+		// Deterministic policy block, not a transient error → no transition event.
+		expect(events).toHaveLength(0);
+	});
 });
