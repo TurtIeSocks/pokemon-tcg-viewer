@@ -38,6 +38,10 @@ export const SYNC_STATUS_DISPLAY: Record<SyncStatus, SyncStatusDisplay> = {
 		label: "Sync error",
 		dotClass: "bg-amber-400",
 	},
+	needs_upgrade: {
+		label: "Upgrade to sync",
+		dotClass: "bg-[var(--primary)]",
+	},
 };
 
 /**

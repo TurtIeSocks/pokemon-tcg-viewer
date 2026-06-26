@@ -1,7 +1,13 @@
 "use client";
 
 import { Link } from "@tanstack/react-router";
-import { ChevronsUpDown, LogIn, LogOut, UserRound } from "lucide-react";
+import {
+	ChevronsUpDown,
+	CreditCard,
+	LogIn,
+	LogOut,
+	UserRound,
+} from "lucide-react";
 import { useState } from "react";
 import { signOut } from "@/components/auth/auth-actions";
 import { SignIn } from "@/components/auth/sign-in";
@@ -119,6 +125,14 @@ export function SidebarUserMenu() {
 										Edit profile
 									</Link>
 								</DropdownMenuItem>
+								{signedIn && (
+									<DropdownMenuItem asChild>
+										<Link to="/billing" onClick={() => setOpenMobile(false)}>
+											<CreditCard />
+											Billing &amp; plan
+										</Link>
+									</DropdownMenuItem>
+								)}
 								{signedIn && (
 									<DropdownMenuItem
 										onSelect={() => {

@@ -11,6 +11,10 @@ export default defineConfig({
 	resolve: {
 		alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
 	},
+	// R6: the private billing plugin is never bundled. Combined with the runtime-
+	// computed import specifier in load-plugin.ts, this lets `vite build` succeed
+	// with @tcgvault/cloud absent (the open-core default).
+	ssr: { external: ["@tcgvault/cloud"] },
 	plugins: [
 		// First so its dev middleware registers ahead of nitro's catch-all
 		// (otherwise GET /version.json falls through to the SPA handler → 404).
