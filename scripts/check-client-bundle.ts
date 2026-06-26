@@ -42,6 +42,33 @@ const FORBIDDEN: { pattern: string; why: string }[] = [
 		pattern: "/corpus fetch failed",
 		why: "corpus-server loader (server-only) in the client bundle",
 	},
+	// Billing (Phase C): Stripe + service_role secrets must never reach the client.
+	// Value-shape markers survive minification (load-bearing); env-name markers are
+	// best-effort (a name can appear without the secret leaking).
+	{
+		pattern: "sk_live_",
+		why: "Stripe live secret key value in the client bundle",
+	},
+	{
+		pattern: "sk_test_",
+		why: "Stripe test secret key value in the client bundle",
+	},
+	{
+		pattern: "whsec_",
+		why: "Stripe webhook signing secret value in the client bundle",
+	},
+	{
+		pattern: '"role":"service_role"',
+		why: "service_role JWT (full RLS bypass) in the client bundle",
+	},
+	{
+		pattern: "STRIPE_SECRET_KEY",
+		why: "Stripe secret env-name in the client bundle (best-effort)",
+	},
+	{
+		pattern: "SUPABASE_SERVICE_ROLE_KEY",
+		why: "service_role env-name in the client bundle (best-effort)",
+	},
 ];
 
 function walk(dir: string, acc: string[] = []): string[] {
