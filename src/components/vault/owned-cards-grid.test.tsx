@@ -53,7 +53,7 @@ afterEach(() => {
 
 test("renders empty state when no owned cards", async () => {
 	await renderGrid();
-	expect(screen.getByText(/your binder is empty/i)).toBeDefined();
+	expect(screen.getByText(/nothing here yet/i)).toBeDefined();
 });
 
 test("renders without crashing", async () => {

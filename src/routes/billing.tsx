@@ -21,20 +21,20 @@ export const Route = createFileRoute("/billing")({
 		search.upgraded === "1" || search.upgraded === 1 || search.upgraded === true
 			? { upgraded: true }
 			: {},
-	head: () => ({ meta: [{ title: "Billing & plan — Pokémon TCG" }] }),
+	head: () => ({ meta: [{ title: "Billing & plan · Cardstack" }] }),
 	component: BillingPage,
 });
 
 const PLUS_FEATURES = [
-	"Unlimited multi-device cloud sync",
-	"Every stack + binder synced",
-	"Sync across phone, tablet, desktop",
+	"Sync every card, every device",
+	"Stacks and binders kept in sync",
+	"Pick up on phone, tablet, or desktop",
 ] as const;
 
 const FREE_FEATURES = [
-	"Full local Vault — uncapped, offline",
-	"CSV import + export, always on",
-	"Edit, delete, and export anytime",
+	"Your full Vault, offline, no caps",
+	"CSV import and export, always on",
+	"Edit, delete, or export it anytime. It's your data.",
 ] as const;
 
 function BillingPage() {
@@ -47,7 +47,7 @@ function BillingPage() {
 		if (!upgraded) return;
 		void reconcileBilling().then(() => {
 			refresh();
-			toast.success("Welcome to Plus — your Vault now syncs everywhere.");
+			toast.success("You're on Plus. Your Vault now syncs everywhere.");
 		});
 	}, [upgraded, refresh]);
 
@@ -76,19 +76,19 @@ function BillingPage() {
 				Billing &amp; plan
 			</h1>
 			<p className="mb-6 text-(--ink-muted) text-sm">
-				The whole app is free and local-first. Plus adds hosted multi-device
-				sync — self-hosters get it unbilled.
+				The whole app is free and local-first. Plus pays for the sync servers,
+				not for access to your own cards. Self-hosters get it unbilled.
 			</p>
 
 			{!isCloudEnabled() ? (
 				<GlassPanel className="p-4 text-(--ink-muted) text-sm">
-					Cloud is disabled on this build — the Vault is local-only. Nothing to
-					bill.
+					Cloud is off on this build. Your Vault lives on this device, and
+					there's nothing to bill.
 				</GlassPanel>
 			) : !loading && !billingEnabled ? (
 				<GlassPanel className="p-4 text-(--ink-muted) text-sm">
-					This instance doesn't have hosted billing enabled — all cloud features
-					are free (self-hosted). Nothing to upgrade.
+					This instance runs self-hosted, so every cloud feature is already
+					free. Nothing to upgrade.
 				</GlassPanel>
 			) : (
 				<div className="grid gap-4 sm:grid-cols-2">
@@ -121,7 +121,7 @@ function BillingPage() {
 									onClick={() => go(startCheckout)}
 								>
 									<Sparkles className="size-4" />
-									Upgrade to Plus
+									Get Plus
 								</Button>
 							)
 						}

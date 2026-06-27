@@ -32,7 +32,7 @@ export function OwnedCardsGrid() {
 	if (rows.length === 0) {
 		return (
 			<p className="py-12 text-center text-muted-foreground">
-				Your binder is empty. Add cards from any set.
+				Nothing here yet. Add a card from any set to start the stack.
 			</p>
 		);
 	}

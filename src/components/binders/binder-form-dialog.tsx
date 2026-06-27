@@ -91,8 +91,8 @@ export function BinderFormDialog({
 					</DialogTitle>
 					<DialogDescription>
 						{isEdit
-							? "Update this binder's name and description."
-							: "Create a new binder to organize your card collection."}
+							? "Rename this binder or tweak its description."
+							: "A binder to sort your cards however you like. Sets, types, the chase pile."}
 					</DialogDescription>
 				</DialogHeader>
 

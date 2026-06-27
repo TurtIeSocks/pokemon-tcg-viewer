@@ -19,7 +19,7 @@ import { useUserland } from "../store/userland/userland-store";
 
 export const Route = createFileRoute("/profile")({
 	loader: () => getNavTreeFn(),
-	head: () => ({ meta: [{ title: "Your Profile — Pokémon TCG" }] }),
+	head: () => ({ meta: [{ title: "Your profile · Cardstack" }] }),
 	component: ProfilePage,
 });
 
@@ -71,7 +71,7 @@ export function ProfilePageInner({ tree }: { tree: NavTree }) {
 							{displayName}
 						</h1>
 						<p className="text-[15px] text-[var(--ink-muted)]">
-							{profile?.bio || "No bio yet."}
+							{profile?.bio || "No bio yet. Add the cards you chase."}
 						</p>
 					</div>
 					<Button variant="soft" size="sm" onClick={() => setEditOpen(true)}>
@@ -135,14 +135,14 @@ export function ProfilePageInner({ tree }: { tree: NavTree }) {
 				) : (
 					<GlassPanel className="py-10 text-center space-y-3">
 						<p className="text-[var(--ink-muted)]">
-							No favorite set yet. Pick one to show it off.
+							No favorite set yet. Pick the one you'd show off first.
 						</p>
 						<Button
 							variant="outline"
 							size="sm"
 							onClick={() => setEditOpen(true)}
 						>
-							Choose favorite set
+							Pick favorite set
 						</Button>
 					</GlassPanel>
 				)}

@@ -21,19 +21,19 @@ interface Credit {
 const CREDITS: Credit[] = [
 	{
 		title: "Pokémon",
-		body: "Pokémon and all related names are trademarks of Nintendo, Creatures Inc., and GAME FREAK inc. This is an unofficial, non-commercial fan project and is not affiliated with, endorsed, or sponsored by them.",
+		body: "Pokémon and all related names are trademarks of Nintendo, Creatures Inc., and GAME FREAK inc. Cardstack is an unofficial, non-commercial fan project. It is not affiliated with, endorsed, or sponsored by them.",
 		href: "https://www.pokemon.com",
 		linkLabel: "pokemon.com",
 	},
 	{
 		title: "Card data & images",
-		body: "All card data and imagery are served by the Pokémon TCG API.",
+		body: "Every card you browse and collect is served by the Pokémon TCG API.",
 		href: "https://pokemontcg.io",
 		linkLabel: "pokemontcg.io",
 	},
 	{
 		title: "Holographic card effects",
-		body: "The holo and foil card shaders are adapted from Pokémon Cards CSS by Simon Goellner (@simeydotme).",
+		body: "The holo and foil shaders that make the chase cards glint are adapted from Pokémon Cards CSS by Simon Goellner (@simeydotme).",
 		href: "https://github.com/simeydotme/pokemon-cards-css",
 		linkLabel: "simeydotme/pokemon-cards-css",
 	},
@@ -49,10 +49,11 @@ export function AboutDialog() {
 			</DialogTrigger>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle className="font-display">About</DialogTitle>
+					<DialogTitle className="font-display">About Cardstack</DialogTitle>
 					<DialogDescription>
-						A fan-made browser for the Pokémon Trading Card Game. With thanks
-						to:
+						Cardstack is a fan-made, open-source collection manager for the
+						Pokémon TCG. Local-first, your data, no ads, no snooping. Built by
+						collectors, with thanks to:
 					</DialogDescription>
 				</DialogHeader>
 				<ul className="flex flex-col gap-4">
@@ -77,14 +78,14 @@ export function AboutDialog() {
 					))}
 				</ul>
 				<div className="border-t border-[var(--border)] pt-4 text-sm text-[var(--ink-muted)]">
-					Source code:{" "}
+					Open source, top to bottom. No landlord, no lock-in.{" "}
 					<a
 						href={REPO_URL}
 						target="_blank"
 						rel="noreferrer noopener"
 						className="font-medium text-[var(--primary)] underline-offset-4 hover:underline"
 					>
-						TurtIeSocks/pokemon-tcg-viewer
+						View source on GitHub
 					</a>
 				</div>
 			</DialogContent>

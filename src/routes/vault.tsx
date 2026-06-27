@@ -2,7 +2,7 @@ import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { ClaimPromptBanner } from "@/components/vault/claim-prompt";
 
 export const Route = createFileRoute("/vault")({
-	head: () => ({ meta: [{ title: "Your Vault — Pokémon TCG" }] }),
+	head: () => ({ meta: [{ title: "Your Vault · Cardstack" }] }),
 	component: VaultLayout,
 });
 

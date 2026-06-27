@@ -11,8 +11,8 @@ function VaultCards() {
 	return (
 		<div className="space-y-8">
 			<VaultPageHeader
-				title="All Cards"
-				subtitle="Browse and manage every card you own."
+				title="All cards"
+				subtitle="Every card you own, yours to sort and track."
 				actions={
 					<ClientOnly fallback={null}>
 						<VaultBackupControls />
@@ -23,7 +23,7 @@ function VaultCards() {
 			<ClientOnly
 				fallback={
 					<p className="py-12 text-center text-muted-foreground">
-						Loading your collection…
+						Pulling your cards…
 					</p>
 				}
 			>

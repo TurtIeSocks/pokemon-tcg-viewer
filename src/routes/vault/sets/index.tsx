@@ -38,7 +38,7 @@ export function VaultSetsInner() {
 		<div className="space-y-8">
 			<VaultPageHeader
 				title="Sets"
-				subtitle="Track completion across every set."
+				subtitle="See how close you are on every set."
 				actions={
 					<>
 						<Button
@@ -65,8 +65,7 @@ export function VaultSetsInner() {
 			{!showAll && totalOwned === 0 ? (
 				<div className="py-12 text-center space-y-3">
 					<p className="text-muted-foreground">
-						You don't own any cards yet. Your sets will appear here once you add
-						some.
+						No cards yet, so no sets to track. Add a few and they show up here.
 					</p>
 					<Button variant="outline" size="sm" onClick={() => setShowAll(true)}>
 						Browse all sets

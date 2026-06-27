@@ -68,7 +68,7 @@ export function VaultOverviewInner({ tree }: { tree: NavTree }) {
 			{/* Page head */}
 			<VaultPageHeader
 				title="Overview"
-				subtitle="Every copy you own, joined live to the corpus."
+				subtitle="Every copy you own, in one place."
 			/>
 
 			{/* Summary bezel */}
@@ -103,11 +103,7 @@ export function VaultOverviewInner({ tree }: { tree: NavTree }) {
 				) : (
 					<GlassPanel className="py-10 text-center">
 						<p className="text-[var(--ink-muted)]">
-							No cards yet,{" "}
-							<Link to="/" className="text-[var(--primary)] hover:underline">
-								browse a set
-							</Link>{" "}
-							to start your collection.
+							No cards yet. Find your first one and the chase begins.
 						</p>
 					</GlassPanel>
 				)}
@@ -129,7 +125,7 @@ export function VaultOverviewInner({ tree }: { tree: NavTree }) {
 				{binderIds.length === 0 ? (
 					<GlassPanel className="py-10 text-center space-y-3">
 						<p className="text-[var(--ink-muted)]">
-							No binders yet. Create one to organize your collection.
+							No binders yet. Make your first one.
 						</p>
 						<Button
 							variant="outline"
@@ -169,7 +165,7 @@ function VaultOverview() {
 				<div className="space-y-4 py-6">
 					<VaultPageHeader
 						title="Overview"
-						subtitle="Every copy you own, joined live to the corpus."
+						subtitle="Every copy you own, in one place."
 					/>
 				</div>
 			}

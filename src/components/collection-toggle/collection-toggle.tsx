@@ -55,7 +55,7 @@ export function CollectionToggle({ card }: CollectionToggleProps) {
 		<button
 			type="button"
 			className={`${BASE_CLASSES} ${UNOWNED_CLASSES}`}
-			aria-label={`Add ${card.name} to collection`}
+			aria-label={`Add ${card.name} to Vault`}
 			aria-pressed={false}
 			onClick={(e) => {
 				e.preventDefault();

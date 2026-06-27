@@ -6,9 +6,9 @@ import { HomeHero } from "./index";
 test("HomeHero renders the title and a search input", async () => {
 	await renderInRouter(<HomeHero />);
 	expect(screen.getByRole("heading", { level: 1 }).textContent).toContain(
-		"Holo Playground",
+		"Cardstack",
 	);
 	expect(
-		screen.getByRole("searchbox", { name: /search cards/i }),
+		screen.getByRole("searchbox", { name: /search any card/i }),
 	).toBeDefined();
 });

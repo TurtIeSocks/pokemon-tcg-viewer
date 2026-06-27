@@ -49,7 +49,7 @@ describe("<CollectionToggle />", () => {
 	test("renders '+' when not owned", async () => {
 		await renderInRouter(<CollectionToggle card={card} />);
 		const btn = await screen.findByRole("button", {
-			name: /add .* collection/i,
+			name: /add .* vault/i,
 		});
 		expect(btn.textContent).toBe("+");
 	});
