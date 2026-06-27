@@ -1,8 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
+import { setResponseHeader } from "@tanstack/react-start/server";
 import type { ListSearch } from "../lib/card-query";
 import { LIST_SEARCH_DEFAULTS } from "../lib/list-search";
 import { findSet } from "../lib/nav-tree";
 import type { SearchMode } from "../store/corpus/fuzzy";
+import { cacheControl } from "./cache-headers";
 import { nameByDex } from "./pokemon-dex";
 import { boundedInt, nonEmptyString } from "./validate";
 
@@ -96,6 +98,11 @@ export const getCardForRouteFn = createServerFn({ method: "GET" })
 		};
 	})
 	.handler(async ({ data }) => {
+		// Card detail is effectively static (prices drift slowly). Let the CDN/edge
+		// serve repeat opens across users + survive server cold starts — far beyond
+		// the per-process memo in card-data-fetch. SWR keeps it instant while stale.
+		setResponseHeader("Cache-Control", cacheControl("ssr"));
+
 		const { loadNavTree } = await import("./nav-tree");
 		const { resolveCardInSet } = await import("./card-resolve");
 		const { getCardByIdCached, getPokemonListCached } = await import(

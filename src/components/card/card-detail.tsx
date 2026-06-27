@@ -1,6 +1,8 @@
 import { ClientOnly } from "@tanstack/react-router";
 import { Layers } from "lucide-react";
 import type { CSSProperties } from "react";
+import { GlassPanel } from "@/components/ui/glass";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import type { FocusCardData } from "../../server/card-mappers";
 import { useIsOwned } from "../../store/userland/selectors";
@@ -27,11 +29,14 @@ export function CardDetail({
 	card,
 	crossLinks,
 	onManage,
+	pending,
 }: {
 	card: FocusCardData;
 	crossLinks: CrossLink[];
 	/** Called when the user activates "Manage Collection". Disabled when absent. */
 	onManage?: () => void;
+	/** True while the full detail is still loading (only the optimistic card is shown). */
+	pending?: boolean;
 }) {
 	const holo = toHoloCardData(card);
 	const accent = getReadableAccent(getCardAccent(card.types));
@@ -71,15 +76,36 @@ export function CardDetail({
 			<div className="min-w-0 flex-1">
 				<CardInfo
 					card={card}
+					pending={pending}
 					footer={
-						<>
-							<CardPrices card={card} />
-							<CardCrossLinks links={crossLinks} />
-						</>
+						pending ? (
+							<PriceGhost />
+						) : (
+							<>
+								<CardPrices card={card} />
+								<CardCrossLinks links={crossLinks} />
+							</>
+						)
 					}
 				/>
 			</div>
 		</div>
+	);
+}
+
+/** Shimmer stand-in for the price panel while the detail RPC is in flight. */
+function PriceGhost() {
+	return (
+		<GlassPanel className="mt-2 p-3.5" aria-hidden="true">
+			<div className="flex flex-col gap-2.5">
+				{["a", "b"].map((k) => (
+					<div key={k} className="flex items-center justify-between gap-3">
+						<Skeleton className="h-3 w-20" />
+						<Skeleton className="h-3 w-14" />
+					</div>
+				))}
+			</div>
+		</GlassPanel>
 	);
 }
 

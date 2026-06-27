@@ -1,23 +1,33 @@
 import { useRouter, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import type { FocusCardData } from "../../server/card-mappers";
-import { getCardForRouteFn } from "../../server/corpus-server";
+import { useEffect, useMemo, useReducer } from "react";
+import {
+	getCardDetail,
+	optimisticCardFromCorpus,
+	parseCardOverlayParam,
+	peekCardDetail,
+} from "../../lib/card-detail";
+import { useStore } from "../../store";
+import {
+	useCorpusRuntime,
+	useSlugIndex,
+} from "../../store/corpus/corpus-runtime";
 import { CardModal } from "./card-modal";
-import type { CrossLink } from "./cross-links";
-
-interface Detail {
-	card: FocusCardData;
-	crossLinks: CrossLink[];
-}
 
 /**
  * Root-level card overlay. When history state carries a `cardOverlay` target
  * ("series/set/slug", set by in-app card links with the URL masked to
- * /$series/$set/$card), fetch the card and show it as a modal over the current
- * page. The grid behind stays mounted because the active route never changed —
- * only history state did. Closing pops that history entry, back to the grid. A
- * cold load of the masked URL has no such state, so it falls through to the
- * full-page $card route instead.
+ * /$series/$set/$card), show it as a modal over the current page. The grid
+ * behind stays mounted because the active route never changed — only history
+ * state did. Closing pops that history entry, back to the grid. A cold load of
+ * the masked URL has no such state, so it falls through to the full-page $card
+ * route instead.
+ *
+ * Two-stage render so the modal is never blank: it mounts IMMEDIATELY from the
+ * in-memory corpus (image, name, set — no network), then swaps in the full
+ * detail (battle stats, prices, cross-links) when `getCardDetail` resolves. The
+ * focus art therefore starts loading in parallel with the RPC instead of after
+ * it. `getCardDetail` caches per card, so a re-open (or a hover-prefetched card)
+ * skips the round trip entirely.
  */
 export function CardOverlay() {
 	const cardParam = useRouterState({
@@ -27,38 +37,50 @@ export function CardOverlay() {
 		select: (s) => s.location.state.cardManage,
 	});
 	const router = useRouter();
-	const [detail, setDetail] = useState<Detail | null>(null);
+	const slugIndex = useSlugIndex();
+	const index = useCorpusRuntime((s) => s.index);
+	const sets = useStore((s) => s.sets);
 
+	const params = useMemo(() => parseCardOverlayParam(cardParam), [cardParam]);
+
+	// Instant, network-free card from the corpus — shown until detail arrives.
+	const optimistic = useMemo(
+		() =>
+			params ? optimisticCardFromCorpus(params, slugIndex, index, sets) : null,
+		[params, slugIndex, index, sets],
+	);
+
+	// Kick the RPC for any card whose detail isn't already settled, and re-render
+	// when it lands. `peekCardDetail` (read at render below) is the source of
+	// truth, so a warm/prefetched card resolves synchronously with no loading flash.
+	const [, forceTick] = useReducer((x: number) => x + 1, 0);
 	useEffect(() => {
-		if (!cardParam) {
-			setDetail(null);
-			return;
-		}
-		const [series, set, card] = cardParam.split("/");
-		if (!series || !set || !card) {
-			setDetail(null);
-			return;
-		}
+		if (!params || peekCardDetail(params) !== undefined) return;
 		let cancelled = false;
-		setDetail(null);
-		getCardForRouteFn({ data: { series, set, card } })
-			.then((r) => {
-				if (!cancelled) setDetail(r ?? null);
-			})
-			.catch(() => {
-				if (!cancelled) setDetail(null);
-			});
+		getCardDetail(params).finally(() => {
+			if (!cancelled) forceTick();
+		});
 		return () => {
 			cancelled = true;
 		};
-	}, [cardParam]);
+	}, [params]);
 
-	if (!cardParam || !detail) return null;
+	if (!cardParam || !params) return null;
+	const settled = peekCardDetail(params); // value | null = settled; undefined = in flight
+	const detail = settled ?? null;
+	// Prefer the full detail once it lands; fall back to the optimistic corpus
+	// card meanwhile. Null only when neither the corpus nor the server has it.
+	const card = detail?.card ?? optimistic;
+	if (!card) return null;
+	// Showing the optimistic card while the RPC is still in flight → ghost the
+	// detail-only sections (stats, prices) so the gap reads as loading.
+	const pending = settled === undefined;
 	return (
 		<CardModal
-			card={detail.card}
-			crossLinks={detail.crossLinks}
+			card={card}
+			crossLinks={detail?.crossLinks ?? []}
 			manage={cardManage}
+			pending={pending}
 			onClose={() => router.history.back()}
 		/>
 	);

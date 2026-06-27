@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { FocusCardData } from "../../server/card-mappers";
 import { EnergyIcon } from "./energy-icon";
 
@@ -123,22 +124,63 @@ function StatStrip({ card }: { card: FocusCardData }) {
 	);
 }
 
+/** Shimmer body shown while the battle stats are still loading (optimistic card). */
+function BodyGhost() {
+	return (
+		<div aria-hidden="true">
+			<div className={SECTION}>
+				<Skeleton className="h-2.5 w-16" />
+			</div>
+			{["a", "b"].map((k) => (
+				<div key={k} className="border-t border-white/[0.07] py-3">
+					<div className="flex items-center justify-between gap-3">
+						<Skeleton className="h-4 w-32" />
+						<Skeleton className="h-4 w-10" />
+					</div>
+					<Skeleton className="mt-2 h-3 w-full" />
+					<Skeleton className="mt-1.5 h-3 w-3/5" />
+				</div>
+			))}
+		</div>
+	);
+}
+
+/** Shimmer stand-in for the weak/resist/retreat strip while detail loads. */
+function StatStripGhost() {
+	return (
+		<div
+			className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.07] pt-3.5"
+			aria-hidden="true"
+		>
+			<Skeleton className="h-3 w-24" />
+			<Skeleton className="h-3 w-20" />
+			<Skeleton className="h-3 w-16" />
+		</div>
+	);
+}
+
 /**
  * The info column of the card focus view: kicker, header (name + HP),
  * descriptor, a growing body (abilities / attacks / rules), and a bottom
  * group (stat strip + the `footer` slot for prices + cross-links) that
  * stays aligned to the bottom of the card plate.
+ *
+ * `pending` (only the optimistic corpus card is shown, detail still loading)
+ * swaps the detail-only regions — HP, body, stat strip — for shimmer ghosts.
  */
 export function CardInfo({
 	card,
 	footer,
+	pending,
 }: {
 	card: FocusCardData;
 	footer?: ReactNode;
+	pending?: boolean;
 }) {
 	const hasAbilities = !!card.abilities?.length;
 	const hasAttacks = !!card.attacks?.length;
 	const hasRules = !!card.rules?.length;
+	const emptyBody = !hasAbilities && !hasAttacks && !hasRules;
 	return (
 		<div className="flex min-w-0 flex-1 flex-col text-[var(--ink)]">
 			<div className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--ink-muted)]">
@@ -156,6 +198,8 @@ export function CardInfo({
 						</b>{" "}
 						HP
 					</span>
+				) : pending ? (
+					<Skeleton className="h-7 w-14 shrink-0" aria-hidden="true" />
 				) : null}
 			</div>
 			<div className="mt-1 flex items-center justify-between gap-3">
@@ -202,10 +246,12 @@ export function CardInfo({
 						))}
 					</>
 				) : null}
+
+				{emptyBody && pending ? <BodyGhost /> : null}
 			</div>
 
 			<div>
-				<StatStrip card={card} />
+				{pending ? <StatStripGhost /> : <StatStrip card={card} />}
 				{footer ? (
 					<div className="mt-4 border-t border-white/[0.07] pt-3.5">
 						{footer}

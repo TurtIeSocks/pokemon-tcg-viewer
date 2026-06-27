@@ -2,17 +2,20 @@ import { Link, type LinkProps } from "@tanstack/react-router";
 import { Check } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { VirtuosoGrid } from "react-virtuoso";
+import { prefetchCardDetail, prefetchFocusImage } from "../../lib/card-detail";
 import {
 	buildCorpusQuery,
 	type ListContext,
 	type ListSearch,
 } from "../../lib/card-query";
+import { cardRouteParams } from "../../lib/card-route";
 import { useStore } from "../../store";
 import {
 	loadCorpus,
 	makeCorpusFetcher,
 	type OwnedFilter,
 	useCorpusRuntime,
+	useSlugIndex,
 } from "../../store/corpus/corpus-runtime";
 import { useOwnedCardIdSet } from "../../store/userland/selectors";
 import { CollectionToggle } from "../collection-toggle";
@@ -58,6 +61,7 @@ export function CardGridIsland({
 	const pageRef = useRef(1);
 	const loadingMoreRef = useRef(false);
 
+	const slugIndex = useSlugIndex();
 	const ownedCardIds = useOwnedCardIdSet();
 	const ownedFilter: OwnedFilter | undefined =
 		search.owned === "all" ? undefined : { mode: search.owned, ownedCardIds };
@@ -143,10 +147,22 @@ export function CardGridIsland({
 	const renderCard = (card: HoloCardData) => {
 		const isSelected = selected.has(card.id);
 
+		// Warm the detail RPC + focus art on hover/focus so the click-to-modal is
+		// near-instant. Skip in select mode (a click toggles selection, no modal).
+		const params = slugIndex ? cardRouteParams(slugIndex, card) : null;
+		const onPrefetch =
+			selectActive || !params
+				? undefined
+				: () => {
+						prefetchCardDetail(params);
+						prefetchFocusImage(card.imageUrl);
+					};
+
 		const cardContent = (
 			<FlipCard imageUrl={card.imageUrlSmall ?? card.imageUrl}>
 				<HoloCardIsland
 					{...holoCardProps(card)}
+					onPrefetch={onPrefetch}
 					hoverOverlay={
 						selectActive ? undefined : <CollectionToggle card={card} />
 					}
