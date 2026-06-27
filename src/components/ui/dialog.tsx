@@ -59,7 +59,11 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-[var(--r-panel)] border border-[var(--border)] bg-[var(--bg)] p-6 shadow-[var(--shadow)] backdrop-blur-xl duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg",
+          // Tinted ethereal glass: the dark-violet --bg color at partial alpha
+          // (--glass-tint) instead of the opaque slab, so the modal keeps its
+          // purple cast but now blurs the page through it + carries the toast's
+          // bright-top / dark-bottom inset edges. Same glass physics as the toast.
+          "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-[var(--r-panel)] border border-white/10 bg-[var(--glass-tint)] p-6 shadow-[0_24px_60px_-24px_oklch(0_0_0/0.7),inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(0,0,0,0.35)] backdrop-blur-2xl duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg",
           className
         )}
         {...props}
