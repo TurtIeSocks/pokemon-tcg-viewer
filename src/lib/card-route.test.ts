@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import type { CorpusCard } from "../store/corpus/corpus-types";
-import { cardManageLinkPropsFor, cardRouteProps } from "./card-route";
+import {
+	cardManageLinkPropsFor,
+	cardModalLinkPropsFor,
+	cardPricesLinkPropsFor,
+	cardRouteProps,
+} from "./card-route";
 import { buildSlugIndex, resolveCard, type SluggableSet } from "./slug";
 
 const sets: SluggableSet[] = [
@@ -92,5 +97,46 @@ describe("cardRouteProps", () => {
 
 	test("returns null when the card id is unknown in a known set", () => {
 		expect(cardRouteProps(idx, { id: "base1-999", setId: "base1" })).toBeNull();
+	});
+});
+
+const readState = (props: ReturnType<typeof cardModalLinkPropsFor>) =>
+	(props.state as (prev: Record<string, unknown>) => Record<string, unknown>)(
+		{},
+	);
+
+describe("cardTab on the three tab helpers", () => {
+	test("detail helper sets cardTab=details and cardManage=false", () => {
+		const s = readState(cardModalLinkPropsFor(p));
+		expect(s.cardTab).toBe("details");
+		expect(s.cardManage).toBe(false);
+		expect(s.cardOverlay).toBe("sword-shield/brilliant-stars/charizard");
+	});
+
+	test("manage helper sets cardTab=collection and cardManage=true", () => {
+		const s = readState(cardManageLinkPropsFor(p));
+		expect(s.cardTab).toBe("collection");
+		expect(s.cardManage).toBe(true);
+	});
+
+	test("prices helper sets cardTab=pricing and masks to /prices", () => {
+		const props = cardPricesLinkPropsFor(p);
+		const s = readState(props);
+		expect(s.cardTab).toBe("pricing");
+		expect(s.cardOverlay).toBe("sword-shield/brilliant-stars/charizard");
+		expect((props.mask as { to: string }).to).toBe(
+			"/$series/$set/$card/prices",
+		);
+		expect((props.mask as { params: typeof p }).params).toEqual(p);
+	});
+
+	test("prices helper preserves existing state keys", () => {
+		const s = (
+			cardPricesLinkPropsFor(p).state as (
+				prev: Record<string, unknown>,
+			) => Record<string, unknown>
+		)({ keep: "me" });
+		expect(s.keep).toBe("me");
+		expect(s.cardTab).toBe("pricing");
 	});
 });
