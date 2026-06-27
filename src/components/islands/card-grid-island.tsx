@@ -2,7 +2,7 @@ import { Link, type LinkProps } from "@tanstack/react-router";
 import { Check } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { VirtuosoGrid } from "react-virtuoso";
-import { prefetchCardDetail, prefetchFocusImage } from "../../lib/card-detail";
+import { prefetchCardDetail } from "../../lib/card-detail";
 import {
 	buildCorpusQuery,
 	type ListContext,
@@ -151,16 +151,13 @@ export function CardGridIsland({
 	const renderCard = (card: HoloCardData) => {
 		const isSelected = selected.has(card.id);
 
-		// Warm the detail RPC + focus art on hover/focus so the click-to-modal is
-		// near-instant. Skip in select mode (a click toggles selection, no modal).
+		// Warm the detail RPC (data only) on hover/focus so the click-to-modal is
+		// near-instant. The full-res image is deliberately NOT prefetched here, to
+		// avoid pulling a ~84KB hires for every card skimmed; it loads on open over
+		// a cached thumbnail. Skip in select mode (a click toggles selection).
 		const params = slugIndex ? cardRouteParams(slugIndex, card) : null;
 		const onPrefetch =
-			selectActive || !params
-				? undefined
-				: () => {
-						prefetchCardDetail(params);
-						prefetchFocusImage(card.imageUrl);
-					};
+			selectActive || !params ? undefined : () => prefetchCardDetail(params);
 
 		const cardContent = (
 			<FlipCard imageUrl={card.imageUrlSmall ?? card.imageUrl}>

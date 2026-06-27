@@ -1,4 +1,3 @@
-import { cdnImage } from "../components/holo-card/cdn-image";
 import type { CrossLink } from "../components/islands/cross-links";
 import type { FocusCardData, PokemonSet } from "../server/card-mappers";
 import { getCardForRouteFn } from "../server/corpus-server";
@@ -86,15 +85,6 @@ export function peekCardDetail(
 /** Warm the card-detail RPC on hover/focus. Fire-and-forget; errors swallowed. */
 export function prefetchCardDetail(params: CardRouteParams): void {
 	void getCardDetail(params).catch(() => {});
-}
-
-/** Warm the focus-size card art (1x + 2x) on hover/focus so the modal paints fast. */
-export function prefetchFocusImage(imageUrl: string): void {
-	if (typeof Image === "undefined") return;
-	for (const dpr of [1, 2]) {
-		const img = new Image();
-		img.src = cdnImage(imageUrl, { w: 734, dpr });
-	}
 }
 
 /**

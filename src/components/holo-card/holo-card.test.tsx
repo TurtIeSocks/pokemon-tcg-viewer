@@ -123,8 +123,10 @@ describe("<HoloCard />", () => {
 				size="focus"
 			/>,
 		);
+		// The full-res layer (over the thumbnail placeholder) carries the large
+		// URL and the eager/high-priority hints.
 		const img = container.querySelector(
-			"img.holo-card-image",
+			"img.holo-card-image--full",
 		) as HTMLImageElement;
 		expect(img.getAttribute("src")).toBe("https://img/large.png");
 		expect(img.getAttribute("loading")).toBe("eager");
@@ -175,5 +177,30 @@ describe("<HoloCard />", () => {
 		expect(source.getAttribute("srcset")).toContain(
 			encodeURIComponent("https://images.pokemontcg.io/swsh4/43_hires.png"),
 		);
+	});
+
+	test("focus layers a w=300 thumbnail placeholder under the full-res image", () => {
+		const { container } = render(
+			<HoloCard
+				imageUrl="https://images.pokemontcg.io/swsh4/43_hires.png"
+				name="Pikachu"
+				size="focus"
+			/>,
+		);
+		const placeholder = container.querySelector(
+			".holo-card-image--placeholder",
+		);
+		const full = container.querySelector(".holo-card-image--full");
+		expect(placeholder).not.toBeNull();
+		expect(full).not.toBeNull();
+		// Placeholder reuses the cached grid thumbnail (w=300), not the 734 hires.
+		expect(placeholder?.getAttribute("src")).toContain("w=300");
+	});
+
+	test("grid renders a single image, no placeholder / HD layers", () => {
+		const { container } = render(<HoloCard {...baseProps} size="grid" />);
+		expect(container.querySelector(".holo-card-image--placeholder")).toBeNull();
+		expect(container.querySelector(".holo-card-image--full")).toBeNull();
+		expect(container.querySelector(".holo-card-hd")).toBeNull();
 	});
 });
