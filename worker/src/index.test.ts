@@ -33,22 +33,45 @@ const ctx = {
 	},
 	passThroughOnException: () => {},
 };
+const CORPUS = {
+	get: async (key: string) => {
+		if (key === "corpus/latest.json.gz")
+			return {
+				body: "GZBYTES",
+				etag: "abc123",
+				writeHttpMetadata: (_h: Headers) => {},
+			};
+		if (key === "corpus/detail-latest.json.gz")
+			return { body: new Blob(["DETAIL_GZ"]).stream(), etag: "detailtag" };
+		if (key === "corpus/detail-meta.json")
+			return {
+				body: new Blob(['{"version":"abc","count":2,"builtAt":"x"}']).stream(),
+				etag: "metatag",
+			};
+		return null;
+	},
+};
+
 const env = {
 	POKEMONTCG_API_KEY: "secret",
 	ALLOW_ORIGIN: "https://x.github.io",
-};
+	CORPUS,
+} as unknown as { POKEMONTCG_API_KEY: string; ALLOW_ORIGIN: string };
 
 function envWithCorpus(obj: { body: string; etag: string } | null) {
 	return {
 		...env,
 		CORPUS: {
 			get: async (key: string) => {
-				if (key !== "corpus/latest.json.gz" || !obj) return null;
-				return {
-					body: obj.body,
-					etag: obj.etag,
-					writeHttpMetadata: (_h: Headers) => {},
-				};
+				if (key === "corpus/latest.json.gz") {
+					if (!obj) return null;
+					return {
+						body: obj.body,
+						etag: obj.etag,
+						writeHttpMetadata: (_h: Headers) => {},
+					};
+				}
+				return CORPUS.get(key);
 			},
 		},
 	} as unknown as typeof env;
@@ -125,13 +148,17 @@ describe("worker", () => {
 		expect(res.status).toBe(200);
 		expect(res.headers.get("ETag")).toBe('"abc123"');
 		expect(res.headers.get("Content-Type")).toBe("application/octet-stream");
-		expect(res.headers.get("Access-Control-Allow-Origin")).toBe("https://x.github.io");
+		expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
+			"https://x.github.io",
+		);
 		expect(await res.text()).toBe("GZBYTES");
 	});
 
 	test("/corpus returns 304 when If-None-Match matches", async () => {
 		const res = await worker.fetch(
-			new Request("https://proxy.test/corpus", { headers: { "If-None-Match": '"abc123"' } }),
+			new Request("https://proxy.test/corpus", {
+				headers: { "If-None-Match": '"abc123"' },
+			}),
 			envWithCorpus({ body: "GZBYTES", etag: "abc123" }),
 			ctx,
 		);
@@ -142,6 +169,37 @@ describe("worker", () => {
 		const res = await worker.fetch(
 			new Request("https://proxy.test/corpus"),
 			envWithCorpus(null),
+			ctx,
+		);
+		expect(res.status).toBe(503);
+	});
+
+	test("/corpus-detail serves the blob with an ETag and CORS", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus-detail"),
+			env,
+			ctx,
+		);
+		expect(res.status).toBe(200);
+		expect(res.headers.get("ETag")).toBe('"detailtag"');
+		expect(res.headers.get("Access-Control-Allow-Origin")).toBeTruthy();
+	});
+
+	test("/corpus-detail/version serves the meta JSON", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus-detail/version"),
+			env,
+			ctx,
+		);
+		expect(res.status).toBe(200);
+		expect(await res.json()).toMatchObject({ version: "abc", count: 2 });
+	});
+
+	test("/corpus-detail returns 503 when the object is missing", async () => {
+		const emptyEnv = { ...env, CORPUS: { get: async () => null } };
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus-detail"),
+			emptyEnv,
 			ctx,
 		);
 		expect(res.status).toBe(503);

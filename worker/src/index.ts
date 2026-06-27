@@ -98,6 +98,43 @@ export default {
 			return serveCorpus(res, request, env);
 		}
 
+		if (url.pathname === "/corpus-detail/version") {
+			const obj = await env.CORPUS.get("corpus/detail-meta.json");
+			if (!obj) {
+				return new Response("Detail not built yet", {
+					status: 503,
+					headers: corsHeaders(env),
+				});
+			}
+			return new Response(obj.body, {
+				headers: {
+					...corsHeaders(env),
+					"Content-Type": "application/json",
+					"Cache-Control":
+						"public, max-age=60, s-maxage=300, stale-while-revalidate=86400",
+				},
+			});
+		}
+
+		if (url.pathname === "/corpus-detail") {
+			const obj = await env.CORPUS.get("corpus/detail-latest.json.gz");
+			if (!obj) {
+				return new Response("Detail not built yet", {
+					status: 503,
+					headers: corsHeaders(env),
+				});
+			}
+			const res = new Response(obj.body, {
+				headers: {
+					"Content-Type": "application/octet-stream",
+					ETag: `"${obj.etag}"`,
+					"Cache-Control":
+						"public, s-maxage=3600, stale-while-revalidate=86400",
+				},
+			});
+			return serveCorpus(res, request, env);
+		}
+
 		if (!url.pathname.startsWith("/v2/")) {
 			return new Response("Not Found", {
 				status: 404,
