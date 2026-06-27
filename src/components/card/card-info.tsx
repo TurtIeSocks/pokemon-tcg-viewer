@@ -187,8 +187,8 @@ export function CardInfo({
 				{card.setName} · #{card.cardNumber}
 			</div>
 
-			<div className="mt-1.5 flex items-baseline justify-between gap-3.5">
-				<h2 className="font-display text-[2.5rem] font-light leading-none tracking-[-0.01em]">
+			<div className="mt-1.5 flex items-baseline justify-between gap-3">
+				<h2 className="min-w-0 break-words font-display text-[clamp(1.75rem,6vw,2.5rem)] font-light leading-[1.05] tracking-[-0.01em]">
 					{card.name}
 				</h2>
 				{card.hp ? (
@@ -202,12 +202,12 @@ export function CardInfo({
 					<Skeleton className="h-7 w-14 shrink-0" aria-hidden="true" />
 				) : null}
 			</div>
-			<div className="mt-1 flex items-center justify-between gap-3">
-				<div className="font-display text-sm text-[var(--ink-muted)]">
+			<div className="mt-1.5 flex items-start justify-between gap-3">
+				<div className="min-w-0 font-display text-sm text-[var(--ink-muted)]">
 					{describe(card)}
 				</div>
 				{card.rarity ? (
-					<Badge variant="default" className="shrink-0">
+					<Badge variant="default" className="mt-0.5 shrink-0">
 						✦ {card.rarity}
 					</Badge>
 				) : null}

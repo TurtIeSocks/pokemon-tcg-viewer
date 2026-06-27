@@ -11,6 +11,7 @@ interface RecentsState {
 	addRecentSearch: (q: string) => void;
 	addRecentlyViewed: (card: HoloCardData) => void;
 	clearRecentSearches: () => void;
+	clearRecentlyViewed: () => void;
 }
 
 /**
@@ -41,6 +42,7 @@ export const useRecentsStore = create<RecentsState>()(
 					].slice(0, MAX_VIEWED),
 				})),
 			clearRecentSearches: () => set({ recentSearches: [] }),
+			clearRecentlyViewed: () => set({ recentlyViewed: [] }),
 		}),
 		{
 			name: "ptcgv-recents",

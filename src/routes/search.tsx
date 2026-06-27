@@ -10,7 +10,7 @@ import { CardGridIsland } from "../components/islands/card-grid-island";
 import { CardSelectionProvider } from "../components/islands/card-selection";
 import { SearchControls } from "../components/islands/search-controls";
 import { ViewModeToggle } from "../components/islands/view-mode-toggle";
-import { Eyebrow } from "../components/ui/eyebrow";
+import { ResultsBar } from "../components/results-bar";
 import { SelectAndBulkAdd } from "../components/vault/select-and-bulk-add";
 import { buildCorpusQuery } from "../lib/card-query";
 import { cardModalLinkProps } from "../lib/card-route";
@@ -143,30 +143,7 @@ function SearchPageInner({
 }: SearchPageInnerProps) {
 	return (
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
-			<div className="mb-3 flex items-center gap-3">
-				<div className="flex flex-col gap-0.5">
-					{q && <Eyebrow>Search results</Eyebrow>}
-				</div>
-				{q ? (
-					<span className="font-mono text-sm tabular-nums text-(--ink-muted)">
-						{total} cards
-					</span>
-				) : null}
-				<div className="ml-auto flex items-center gap-2">
-					{q ? (
-						<SelectAndBulkAdd
-							cardIds={bulkCardIds}
-							ruleQuery={toSerializedQuery(search, {})}
-						/>
-					) : null}
-					<ViewModeToggle
-						value={search.view}
-						disabled={!q}
-						onChange={(view) => onChange({ view })}
-					/>
-				</div>
-			</div>
-			<div className="mb-4 shrink-0">
+			<div className="mb-3 shrink-0">
 				<SearchControls
 					value={search}
 					options={options}
@@ -176,6 +153,19 @@ function SearchPageInner({
 					showPokemonFilter
 				/>
 			</div>
+			<ResultsBar count={q ? total : null}>
+				{q ? (
+					<SelectAndBulkAdd
+						cardIds={bulkCardIds}
+						ruleQuery={toSerializedQuery(search, {})}
+					/>
+				) : null}
+				<ViewModeToggle
+					value={search.view}
+					disabled={!q}
+					onChange={(view) => onChange({ view })}
+				/>
+			</ResultsBar>
 			<div className="min-h-0 flex-1">
 				<CardGridIsland
 					key={q || "empty"}

@@ -209,9 +209,21 @@ test("selecting a mode in the menu fires onChange({ mode })", async () => {
 	expect(onChange).toHaveBeenCalledWith({ mode: "exact" });
 });
 
-test("the decorative search magnifier is present and aria-hidden", () => {
-	const { container } = renderControls();
-	expect(container.querySelector('[aria-hidden="true"]')).not.toBeNull();
+test("the filter toggle button is present (replaces the old vanity magnifier)", () => {
+	renderControls();
+	expect(screen.getByRole("button", { name: "Toggle filters" })).toBeDefined();
+});
+
+test("active-filter count badge reflects the number of applied filters", () => {
+	renderControls({ value: { ...defaultValue, rarity: ["Rare Holo"] } });
+	const toggle = screen.getByRole("button", { name: "Toggle filters" });
+	expect(toggle.textContent).toContain("1");
+});
+
+test("no count badge when no filters are applied", () => {
+	renderControls();
+	const toggle = screen.getByRole("button", { name: "Toggle filters" });
+	expect(toggle.textContent?.trim()).toBe("");
 });
 
 test("yearMin value reflects prop", () => {

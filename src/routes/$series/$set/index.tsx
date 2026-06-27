@@ -15,7 +15,7 @@ import { CardGridIsland } from "../../../components/islands/card-grid-island";
 import { CardSelectionProvider } from "../../../components/islands/card-selection";
 import { PackDialog } from "../../../components/islands/pack-dialog";
 import { SearchControls } from "../../../components/islands/search-controls";
-import { Eyebrow } from "../../../components/ui/eyebrow";
+import { ResultsBar } from "../../../components/results-bar";
 import { SelectAndBulkAdd } from "../../../components/vault/select-and-bulk-add";
 import { cardModalLinkPropsFor } from "../../../lib/card-route";
 import { buildSetCardSlugs } from "../../../lib/card-slugs";
@@ -129,34 +129,8 @@ function SetPageInner({
 }: SetPageInnerProps) {
 	return (
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
-			<div className="mb-3 flex items-center gap-3">
-				<div className="flex flex-col gap-0.5">
-					<Eyebrow>Card Set</Eyebrow>
-				</div>
-				<span className="font-mono text-sm tabular-nums text-(--ink-muted)">
-					{cards.length} cards
-				</span>
-				<ClientOnly fallback={null}>
-					<div className="ml-auto flex items-center gap-2">
-						<SelectAndBulkAdd
-							cardIds={cards.map((c: HoloCardData) => c.id)}
-							ruleQuery={toSerializedQuery(search, { setId: set.id })}
-							search={search}
-							context={{ setId: set.id }}
-						/>
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={() => setPackOpen(true)}
-						>
-							<Package className="size-4 sm:mr-2" />
-							<span className="hidden sm:inline">Open Packs</span>
-						</Button>
-					</div>
-				</ClientOnly>
-			</div>
 			<ClientOnly fallback={null}>
-				<div className="mb-4 shrink-0">
+				<div className="mb-3 shrink-0">
 					<SearchControls
 						value={search}
 						options={facets}
@@ -166,6 +140,20 @@ function SetPageInner({
 					/>
 				</div>
 			</ClientOnly>
+			<ResultsBar count={cards.length}>
+				<ClientOnly fallback={null}>
+					<SelectAndBulkAdd
+						cardIds={cards.map((c: HoloCardData) => c.id)}
+						ruleQuery={toSerializedQuery(search, { setId: set.id })}
+						search={search}
+						context={{ setId: set.id }}
+					/>
+					<Button variant="outline" size="sm" onClick={() => setPackOpen(true)}>
+						<Package className="size-4 sm:mr-2" />
+						<span className="hidden sm:inline">Open Packs</span>
+					</Button>
+				</ClientOnly>
+			</ResultsBar>
 			<div className="min-h-0 flex-1">
 				<ClientOnly
 					fallback={

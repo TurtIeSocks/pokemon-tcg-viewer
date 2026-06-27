@@ -4,16 +4,17 @@ import {
 	HeadContent,
 	Outlet,
 	Scripts,
-	useNavigate,
 	useRouterState,
 } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 import type { ReactNode } from "react";
-import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { useEffect } from "react";
 import { PreviewLogin } from "@/components/dev/preview-login";
 import { AboutDialog } from "@/components/shell/about-dialog";
+import { CommandPalette } from "@/components/shell/command-palette";
 import { RepoLink } from "@/components/shell/repo-link";
 import { SyncToastsWatcher } from "@/components/sync/sync-toasts";
+import { Button } from "@/components/ui/button";
 import {
 	SidebarInset,
 	SidebarProvider,
@@ -24,10 +25,11 @@ import { VersionToast } from "@/lib/version-check";
 import appCss from "../app.css?url";
 import { CardOverlay } from "../components/islands/card-overlay";
 import { AppSidebar } from "../components/shell/app-sidebar";
-import { LIST_SEARCH_DEFAULTS } from "../lib/list-search";
 import type { NavTree } from "../lib/nav-tree";
+import { titleCaseSlug } from "../lib/slug";
 import { isCloudEnabled } from "../lib/supabase/client";
 import { getNavTreeFn } from "../server/nav-tree";
+import { useCommandPalette } from "../store/command-palette";
 import { subscribeAuth } from "../store/userland/userland-store";
 
 export const Route = createRootRoute({
@@ -108,6 +110,10 @@ function useBreadcrumb(tree: NavTree): string[] {
 		return ["Vault"];
 	}
 	if (parts[0] === "search") return ["Search"];
+	// /pokemon/{name} — species page (not in the series/set nav tree).
+	if (parts[0] === "pokemon" && parts[1]) {
+		return ["Browse", "Pokémon", titleCaseSlug(parts[1])];
+	}
 
 	// /{series}/{set}/{card?}
 	const seriesSlug = parts[0];
@@ -138,21 +144,7 @@ function ShellHeader({ tree }: { tree: NavTree }) {
 		isFirst: i === 0,
 		isLast: i === crumbs.length - 1,
 	}));
-	const navigate = useNavigate();
-	const [q, setQ] = useState("");
-
-	const handleSearch = useCallback(
-		(e: FormEvent) => {
-			e.preventDefault();
-			const trimmed = q.trim();
-			if (!trimmed) return;
-			void navigate({
-				to: "/search",
-				search: { ...LIST_SEARCH_DEFAULTS, q: trimmed },
-			});
-		},
-		[q, navigate],
-	);
+	const openPalette = useCommandPalette((s) => s.setOpen);
 
 	return (
 		<header className="sticky top-0 z-30 flex h-14 items-center gap-2 justify-between border-b border-[var(--hairline)] px-4 backdrop-blur-md">
@@ -180,18 +172,16 @@ function ShellHeader({ tree }: { tree: NavTree }) {
 				))}
 			</div>
 
-			{/* Search pill */}
-			<form onSubmit={handleSearch} className="relative shrink-0">
-				<Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-[var(--faint)] pointer-events-none" />
-				<input
-					type="search"
-					aria-label="Search cards"
-					value={q}
-					onChange={(e) => setQ(e.target.value)}
-					placeholder="Search the catalog…"
-					className="h-8 w-48 rounded-[var(--r-pill)] bg-[var(--glass)] border border-[var(--border)] pl-7 pr-3 text-xs text-[var(--ink)] placeholder:text-[var(--faint)] outline-none focus:border-[var(--primary)] focus:ring-0 transition-colors sm:w-56"
-				/>
-			</form>
+			{/* Search / command palette (⌘K) */}
+			<Button
+				variant="ghost"
+				size="icon"
+				aria-label="Search and commands"
+				title="Search  ⌘K"
+				onClick={() => openPalette(true)}
+			>
+				<Search />
+			</Button>
 			<RepoLink />
 			<AboutDialog />
 		</header>
@@ -234,6 +224,7 @@ function RootComponent() {
 				</SidebarInset>
 			</SidebarProvider>
 			<ClientOnly fallback={null}>
+				<CommandPalette tree={tree} />
 				<CardOverlay />
 				<VersionToast />
 				<SyncToastsWatcher />

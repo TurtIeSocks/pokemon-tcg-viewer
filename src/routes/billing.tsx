@@ -4,7 +4,6 @@ import { Check, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Eyebrow } from "@/components/ui/eyebrow";
 import { GlassPanel } from "@/components/ui/glass";
 import {
 	openPortal,
@@ -71,7 +70,6 @@ function BillingPage() {
 
 	return (
 		<div className="mx-auto w-full max-w-3xl px-4 py-8">
-			<Eyebrow>Plan</Eyebrow>
 			<h1 className="mb-1 font-display font-semibold text-2xl text-(--ink)">
 				Billing &amp; plan
 			</h1>

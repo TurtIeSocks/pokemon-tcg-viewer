@@ -10,6 +10,7 @@ import {
 	DropdownMenuRadioItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 import type { SearchMode } from "@/store/corpus/fuzzy";
 
 interface SearchModeMeta {
@@ -46,18 +47,25 @@ interface SearchModeMenuProps {
 	value: SearchMode;
 	onChange: (mode: SearchMode) => void;
 	disabled?: boolean;
+	/**
+	 * Extra trigger classes. Overrides the default `rounded-none` (ButtonGroup
+	 * fusion) so the picker can also stand alone — e.g. inside the collapsed
+	 * filter body on mobile, where it renders rounded + full-width.
+	 */
+	className?: string;
 }
 
 /**
  * Three-mode search picker (Exact / Contains / Fuzzy) designed to compose
- * inside a `<ButtonGroup>` next to the search input. The trigger shows the
- * active mode's icon (always) plus its label on `sm:`+ — icon-only on mobile,
- * with `aria-label`/`title` carrying the meaning when the label is hidden.
+ * inside a `<ButtonGroup>` next to the search input. The trigger always shows
+ * the active mode's icon + label so it reads clearly both fused in the bar and
+ * standalone; `aria-label`/`title` carry the meaning for assistive tech.
  */
 export function SearchModeMenu({
 	value,
 	onChange,
 	disabled = false,
+	className,
 }: SearchModeMenuProps) {
 	const active = SEARCH_MODES.find((m) => m.mode === value) ?? SEARCH_MODES[2];
 	const ActiveIcon = active.icon;
@@ -71,10 +79,13 @@ export function SearchModeMenu({
 					disabled={disabled}
 					aria-label="Search mode"
 					title={`Search mode: ${active.label} — ${active.description}`}
-					className="rounded-none border-[var(--border)] bg-[var(--glass)] text-[var(--ink-muted)] hover:bg-white/[0.07] hover:text-[var(--ink)]"
+					className={cn(
+						"rounded-none border-[var(--border)] bg-[var(--glass)] text-[var(--ink-muted)] hover:bg-white/[0.07] hover:text-[var(--ink)]",
+						className,
+					)}
 				>
 					<ActiveIcon className="size-4" />
-					<span className="hidden sm:inline">{active.label}</span>
+					<span>{active.label}</span>
 					<ChevronDown className="size-4 opacity-70" />
 				</Button>
 			</DropdownMenuTrigger>

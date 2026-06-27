@@ -41,53 +41,55 @@ export function CardDetail({
 	const holo = toHoloCardData(card);
 	const accent = getReadableAccent(getCardAccent(card.types));
 	return (
-		<div
-			className="flex flex-col gap-6 p-6 md:flex-row md:items-start md:gap-8 md:p-8"
-			style={{ "--accent": accent } as CSSProperties}
-		>
-			<div className="shrink-0">
-				<div
-					className="rounded-2xl border border-white/[0.06] p-5"
-					style={{
-						background:
-							"radial-gradient(120% 60% at 50% 0%, color-mix(in oklab, var(--primary) 8%, transparent), transparent 55%), var(--bg)",
-					}}
-				>
-					<div className="flex flex-col items-center md:sticky md:top-8">
-						<div className="flex w-[180px] flex-col gap-4 md:w-[212px]">
-							<ClientOnly
-								fallback={
-									<img
-										src={card.imageUrl}
-										alt={card.name}
-										className="w-full rounded-xl"
-									/>
-								}
-							>
-								<HoloCard {...holoCardProps(card)} size="focus" />
-							</ClientOnly>
-							<CollectionButton card={holo} onManage={onManage} />
+		// @container: the card art + info switch to a side-by-side row based on the
+		// width actually available here — not the viewport — so it lays out correctly
+		// both on the page (where the sidebar steals width) and inside the modal.
+		<div className="@container" style={{ "--accent": accent } as CSSProperties}>
+			<div className="flex flex-col gap-6 p-6 @3xl:flex-row @3xl:items-start @3xl:gap-8 @3xl:p-8">
+				<div className="shrink-0">
+					<div
+						className="rounded-2xl border border-white/[0.06] p-5"
+						style={{
+							background:
+								"radial-gradient(120% 60% at 50% 0%, color-mix(in oklab, var(--primary) 8%, transparent), transparent 55%), var(--bg)",
+						}}
+					>
+						<div className="flex flex-col items-center @3xl:sticky @3xl:top-8">
+							<div className="flex w-[180px] flex-col gap-4 @3xl:w-[212px]">
+								<ClientOnly
+									fallback={
+										<img
+											src={card.imageUrl}
+											alt={card.name}
+											className="w-full rounded-xl"
+										/>
+									}
+								>
+									<HoloCard {...holoCardProps(card)} size="focus" />
+								</ClientOnly>
+								<CollectionButton card={holo} onManage={onManage} />
+							</div>
 						</div>
 					</div>
 				</div>
-			</div>
 
-			{/* min-w-0 lets the info column wrap instead of overflowing the dialog */}
-			<div className="min-w-0 flex-1">
-				<CardInfo
-					card={card}
-					pending={pending}
-					footer={
-						pending ? (
-							<PriceGhost />
-						) : (
-							<>
-								<CardPrices card={card} />
-								<CardCrossLinks links={crossLinks} />
-							</>
-						)
-					}
-				/>
+				{/* min-w-0 lets the info column wrap instead of overflowing the dialog */}
+				<div className="min-w-0 flex-1">
+					<CardInfo
+						card={card}
+						pending={pending}
+						footer={
+							pending ? (
+								<PriceGhost />
+							) : (
+								<>
+									<CardPrices card={card} />
+									<CardCrossLinks links={crossLinks} />
+								</>
+							)
+						}
+					/>
+				</div>
 			</div>
 		</div>
 	);
