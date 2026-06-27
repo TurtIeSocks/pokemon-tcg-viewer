@@ -6,6 +6,7 @@ import {
 	CreditCard,
 	LogIn,
 	LogOut,
+	Settings,
 	UserRound,
 } from "lucide-react";
 import { useState } from "react";
@@ -39,9 +40,7 @@ import {
 } from "@/components/ui/sidebar";
 import { isCloudEnabled } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import { checkStale } from "@/store/corpus/detail-runtime";
 import { useUserland } from "@/store/userland/userland-store";
-import { OfflineToggle } from "./offline-toggle";
 
 /**
  * Sidebar footer account control. Collapses the former three-row footer (profile
@@ -72,11 +71,7 @@ export function SidebarUserMenu() {
 		<>
 			<SidebarMenu>
 				<SidebarMenuItem>
-					<DropdownMenu
-						onOpenChange={(open) => {
-							if (open) void checkStale();
-						}}
-					>
+					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
 							<SidebarMenuButton
 								size="lg"
@@ -123,15 +118,14 @@ export function SidebarUserMenu() {
 
 							<DropdownMenuSeparator />
 
-							{/* Offline detail group. */}
-							<DropdownMenuGroup>
-								<OfflineToggle />
-							</DropdownMenuGroup>
-
-							<DropdownMenuSeparator />
-
 							{/* Action group. */}
 							<DropdownMenuGroup>
+								<DropdownMenuItem asChild>
+									<Link to="/settings" onClick={() => setOpenMobile(false)}>
+										<Settings />
+										Settings
+									</Link>
+								</DropdownMenuItem>
 								<DropdownMenuItem asChild>
 									<Link to="/profile" onClick={() => setOpenMobile(false)}>
 										<UserRound />
