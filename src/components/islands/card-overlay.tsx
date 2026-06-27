@@ -11,7 +11,15 @@ import {
 	useCorpusRuntime,
 	useSlugIndex,
 } from "../../store/corpus/corpus-runtime";
+import { useDetailRuntime } from "../../store/corpus/detail-runtime";
 import { CardModal } from "./card-modal";
+
+function detailHasCard(
+	detailById: Map<string, unknown> | null,
+	card: { id: string } | null,
+): boolean {
+	return Boolean(card && detailById?.has(card.id));
+}
 
 /**
  * Root-level card overlay. When history state carries a `cardOverlay` target
@@ -40,14 +48,18 @@ export function CardOverlay() {
 	const slugIndex = useSlugIndex();
 	const index = useCorpusRuntime((s) => s.index);
 	const sets = useStore((s) => s.sets);
+	const detailById = useDetailRuntime((s) => s.detailById);
 
 	const params = useMemo(() => parseCardOverlayParam(cardParam), [cardParam]);
 
 	// Instant, network-free card from the corpus — shown until detail arrives.
+	// When the offline blob is present, also includes battle fields immediately.
 	const optimistic = useMemo(
 		() =>
-			params ? optimisticCardFromCorpus(params, slugIndex, index, sets) : null,
-		[params, slugIndex, index, sets],
+			params
+				? optimisticCardFromCorpus(params, slugIndex, index, sets, detailById)
+				: null,
+		[params, slugIndex, index, sets, detailById],
 	);
 
 	// Kick the RPC for any card whose detail isn't already settled, and re-render
@@ -74,7 +86,10 @@ export function CardOverlay() {
 	if (!card) return null;
 	// Showing the optimistic card while the RPC is still in flight → ghost the
 	// detail-only sections (stats, prices) so the gap reads as loading.
-	const pending = settled === undefined;
+	// When the offline blob already covers this card, battle data is present
+	// immediately — suppress the ghost (prices still fill in via the RPC).
+	const pending =
+		settled === undefined && !detailHasCard(detailById, optimistic);
 	return (
 		<CardModal
 			card={card}
