@@ -43,9 +43,8 @@ export function HomeHero() {
 						className="mt-4 text-5xl font-semibold tracking-[-0.01em] text-balance md:text-6xl"
 						style={{ fontFamily: "var(--font-display)" }}
 					>
-						No ads. No snooping.
-						<br />
-						No landlord. Just your cards.
+						{/* ponytail: placeholder wordmark; real hero headline TBD (workshop) */}
+						Cardstack
 					</h1>
 
 					<p className="mt-3 text-base text-[var(--ink-muted)]">
