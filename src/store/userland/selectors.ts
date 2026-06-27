@@ -84,22 +84,52 @@ function useCorpusJoinInputs() {
 	return { index, sets };
 }
 
+// Module-level single-entry memo for the grouped owned index. `groupByCardId` is
+// O(stacks); running it in a per-component `useMemo` made it the expensive-selector
+// trap — useIsOwned/useOwnedCount render inside CollectionToggle (one per card in
+// the virtualized grid), so every stack write re-derived the whole index N×(×2).
+// Keying on the `items` reference (which only changes on a write) collapses that to
+// a single derive per write, shared across every subscriber. This is the skill's
+// "compute once via a shared memoized selector" remedy for the S3 expensive bound.
+let ownedIndexCache: {
+	items: Record<string, Stack>;
+	index: Map<string, Stack[]>;
+} | null = null;
+function ownedIndexOf(items: Record<string, Stack>): Map<string, Stack[]> {
+	if (!ownedIndexCache || ownedIndexCache.items !== items) {
+		ownedIndexCache = { items, index: groupByCardId(Object.values(items)) };
+	}
+	return ownedIndexCache.index;
+}
+
 /** Hook: returns all stacks grouped by cardId; triggers hydration as a side-effect. */
 export function useOwnedIndex(): Map<string, Stack[]> {
 	useEnsureUserland();
-	const items = useUserland((s) => s.items);
-	return useMemo(() => groupByCardId(Object.values(items)), [items]);
+	// Selector returns the shared memoized Map — stable ref while `items` is
+	// unchanged, so consumers only re-render when the collection actually changes.
+	return useUserland((s) => ownedIndexOf(s.items));
 }
 
-/** Hook: true if the user owns at least one stack of the given card. */
+/**
+ * Hook: true if the user owns at least one stack of the given card. S3 — the
+ * selector returns a primitive boolean, so a card tile re-renders only when *its
+ * own* ownership flips, not on every unrelated stack write.
+ */
 export function useIsOwned(cardId: string): boolean {
-	return useOwnedIndex().has(cardId);
+	useEnsureUserland();
+	return useUserland((s) => ownedIndexOf(s.items).has(cardId));
 }
 
-/** Hook: total cards owned for the given card across its stacks (0 if none). */
+/**
+ * Hook: total cards owned for the given card across its stacks (0 if none). S3 —
+ * returns a primitive number, isolating the tile's re-render to its own count.
+ */
 export function useOwnedCount(cardId: string): number {
-	const stacks = useOwnedIndex().get(cardId);
-	return stacks ? sumQuantity(stacks) : 0;
+	useEnsureUserland();
+	return useUserland((s) => {
+		const stacks = ownedIndexOf(s.items).get(cardId);
+		return stacks ? sumQuantity(stacks) : 0;
+	});
 }
 
 /** Distinct owned cards joined with the corpus. [] until corpus + sets load. */

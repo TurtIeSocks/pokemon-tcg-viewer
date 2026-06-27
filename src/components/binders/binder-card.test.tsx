@@ -54,8 +54,10 @@ function testBinder(overrides: Partial<Binder> = {}): Binder {
 	});
 }
 
+// BinderCard now subscribes to its own binder by id; every test seeds the store
+// with the binder before rendering, so passing the id is all that's needed.
 const renderBinderCard = (binder: Binder) =>
-	renderInRouter(<BinderCard binder={binder} />);
+	renderInRouter(<BinderCard binderId={binder.id} />);
 
 // ---------------------------------------------------------------------------
 // Setup

@@ -1,5 +1,5 @@
 import { Link, type LinkProps } from "@tanstack/react-router";
-import { useOwnedIndex } from "../../store/userland/selectors";
+import { useIsOwned } from "../../store/userland/selectors";
 import { CollectionToggle } from "../collection-toggle";
 import { HoloCard, type HoloCardData, holoCardProps } from "../holo-card";
 import { groupCardsByEra } from "../pokemon-timeline/group-cards-by-era";
@@ -11,13 +11,36 @@ interface PokemonTimelineProps {
 	onEndReached?: () => void;
 }
 
+/**
+ * One timeline cell. Subscribes to its own card's ownership (S3) so adding/removing
+ * one card re-renders only that cell — not the whole timeline (which previously read
+ * a parent-level useOwnedIndex and re-rendered every card on any collection change).
+ */
+function TimelineCard({
+	card,
+	cardHref,
+}: {
+	card: HoloCardData;
+	cardHref: (card: HoloCardData) => LinkProps;
+}) {
+	const owned = useIsOwned(card.id);
+	return (
+		<Link {...cardHref(card)} className="block">
+			<HoloCard
+				{...holoCardProps(card)}
+				owned={owned}
+				hoverOverlay={<CollectionToggle card={card} />}
+				style={{ width: 300 }}
+			/>
+		</Link>
+	);
+}
+
 export function PokemonTimeline({
 	cards,
 	cardHref,
 	onEndReached,
 }: PokemonTimelineProps) {
-	const ownedIndex = useOwnedIndex();
-
 	if (cards.length === 0) {
 		return (
 			<div className="pokemon-timeline-empty">
@@ -44,14 +67,7 @@ export function PokemonTimeline({
 					</header>
 					<div className="pokemon-timeline-era-cards">
 						{era.cards.map((card) => (
-							<Link key={card.id} {...cardHref(card)} className="block">
-								<HoloCard
-									{...holoCardProps(card)}
-									owned={ownedIndex.has(card.id)}
-									hoverOverlay={<CollectionToggle card={card} />}
-									style={{ width: 300 }}
-								/>
-							</Link>
+							<TimelineCard key={card.id} card={card} cardHref={cardHref} />
 						))}
 					</div>
 				</section>

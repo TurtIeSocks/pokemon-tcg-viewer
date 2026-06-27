@@ -79,6 +79,8 @@ let supabaseRepos: UserlandRepos | null = null;
 const cacheReposByUid = new Map<string, UserlandRepos>();
 /** The notifyWrite handle from the running engine, used to debounce a post-write push. */
 let syncHandle: { notifyWrite: () => void } | null = null;
+/** uid the background sync engine is running for; guards a double-start when more than one auth event resolves the same session. */
+let syncRunningUid: string | null = null;
 
 /**
  * Test seam: override `isCloudEnabled()` so the signed-in cache-selection branch
@@ -120,6 +122,14 @@ export async function subscribeAuth(): Promise<void> {
 		if (event === "SIGNED_IN") {
 			const uid = sess?.user.id ?? "";
 			if (uid) void handleSignedIn(uid);
+		} else if (event === "INITIAL_SESSION") {
+			// Page reload with a restored session: supabase-js v2 fires INITIAL_SESSION
+			// (NOT SIGNED_IN) here. Without handling it, the cache repo never warms,
+			// background sync never starts, and a route's loadUserland that raced ahead
+			// of getSession() leaves the store hydrated against the empty signed-out
+			// Vault. handleRestoredSession warms + starts sync + re-hydrates the cache.
+			const uid = sess?.user?.id ?? "";
+			if (uid) void handleRestoredSession(uid);
 		} else if (event === "SIGNED_OUT") {
 			handleSignedOut();
 		}
@@ -134,16 +144,50 @@ export async function subscribeAuth(): Promise<void> {
  */
 async function handleSignedIn(uid: string): Promise<void> {
 	const { claimLocalToCloud, pendingClaimPrompt } = await import("./claim");
-	const client = getBrowserClient();
 	const localRepos = getRepos();
 	const cloudRemote = _getOrCreateSupabaseRepos();
 
 	// (a) Claim: local IDB Vault → cloud if cloud is empty; otherwise compute the
 	// prompt descriptor. The cloud remote is the claim target (NOT the cache).
+	// Only the fresh-sign-in path claims — a reload (handleRestoredSession) must not.
 	const descriptor = await claimLocalToCloud(localRepos, cloudRemote, uid);
 	const prompt = pendingClaimPrompt(uid, descriptor);
 
-	// (b) Warm the cache: pull cloud (incl. the just-claimed data) into the cache.
+	// (b)(c)(d) Warm the cache, start background sync, re-hydrate the store.
+	await warmStartSyncAndHydrate(uid);
+
+	if (prompt) useUserland.setState({ claimPrompt: prompt });
+}
+
+/**
+ * Restored session on a page reload — supabase-js v2 fires INITIAL_SESSION, not
+ * SIGNED_IN, so {@link handleSignedIn} never runs and none of the warm/sync/hydrate
+ * tail fires. This re-runs that tail (NO claim — the local→cloud migration belongs
+ * only to a fresh sign-in), which both starts background sync on reload and fixes
+ * the cold-boot race where a route's loadUserland hydrated the empty signed-out
+ * Vault before getSession() resolved the session.
+ */
+async function handleRestoredSession(uid: string): Promise<void> {
+	await warmStartSyncAndHydrate(uid);
+}
+
+/**
+ * Shared tail of the sign-in / restore sequence: warm the cache (pull cloud → cache,
+ * best-effort), start the background sync engine, then reset + re-hydrate the store
+ * from the warm cache. Guarded against a double-start when more than one auth event
+ * resolves the same session (e.g. INITIAL_SESSION then SIGNED_IN for one sign-in).
+ */
+async function warmStartSyncAndHydrate(uid: string): Promise<void> {
+	// Already running for this uid (a second event for the same session) — just make
+	// sure the store reflects the cache; don't warm or start a second engine.
+	if (syncRunningUid === uid) {
+		await rehydrateFromCache();
+		return;
+	}
+
+	const client = getBrowserClient();
+
+	// (b) Warm the cache: pull cloud (incl. any just-claimed data) into the cache.
 	// A warm failure (offline at sign-in) must not block hydration — the cache
 	// still serves whatever it already holds.
 	try {
@@ -186,11 +230,11 @@ async function handleSignedIn(uid: string): Promise<void> {
 			syncStatus.onSyncError(offline);
 		},
 	});
+	syncRunningUid = uid;
 
 	// (d) Reset + hydrate the store from the warm cache.
 	resetUserland();
 	await loadUserland();
-	if (prompt) useUserland.setState({ claimPrompt: prompt });
 }
 
 /** Tear down the engine + cache for the signed-out uid and return to the IDB Vault. */
@@ -199,6 +243,7 @@ function handleSignedOut(): void {
 	cacheReposByUid.clear();
 	supabaseRepos = null; // next SIGNED_IN gets a fresh remote
 	syncHandle = null;
+	syncRunningUid = null;
 	useUserland.setState({ claimPrompt: null });
 	resetUserland();
 	void loadUserland();
@@ -322,6 +367,7 @@ export function resetUserlandForTests(): void {
 	supabaseRepos = null;
 	cacheReposByUid.clear();
 	syncHandle = null;
+	syncRunningUid = null;
 	cloudEnabledOverride = null;
 	useUserland.setState({ ...initial });
 }

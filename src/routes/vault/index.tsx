@@ -5,6 +5,7 @@ import {
 	useNavigate,
 } from "@tanstack/react-router";
 import { useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { BinderCard } from "@/components/binders/binder-card";
 import { BinderFormDialog } from "@/components/binders/binder-form-dialog";
 import { SetTile } from "@/components/shell/set-tile";
@@ -35,8 +36,10 @@ export function VaultOverviewInner({ tree }: { tree: NavTree }) {
 	const navigate = useNavigate();
 	const [newBinderOpen, setNewBinderOpen] = useState(false);
 	const countBySet = useOwnedCountBySet();
-	const bindersMap = useUserland((s) => s.binders);
-	const binders = Object.values(bindersMap);
+	// Subscribe to the binder id-list (structure), not the binder data — narrow
+	// useShallow keeps the array stable across content edits, so editing a binder
+	// re-renders only its own card (S3), not this list.
+	const binderIds = useUserland(useShallow((s) => Object.keys(s.binders)));
 
 	function handleBinderSaved(binder: Binder) {
 		void navigate({
@@ -123,7 +126,7 @@ export function VaultOverviewInner({ tree }: { tree: NavTree }) {
 					</Button>
 				}
 			>
-				{binders.length === 0 ? (
+				{binderIds.length === 0 ? (
 					<GlassPanel className="py-10 text-center space-y-3">
 						<p className="text-[var(--ink-muted)]">
 							No binders yet. Create one to organize your collection.
@@ -138,8 +141,8 @@ export function VaultOverviewInner({ tree }: { tree: NavTree }) {
 					</GlassPanel>
 				) : (
 					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-						{binders.map((binder) => (
-							<BinderCard key={binder.id} binder={binder} />
+						{binderIds.map((id) => (
+							<BinderCard key={id} binderId={id} />
 						))}
 					</div>
 				)}
