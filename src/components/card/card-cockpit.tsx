@@ -148,10 +148,7 @@ function CollectionButton({
 			type="button"
 			onClick={() => void addStack(cardId)}
 			aria-label="Add to Vault"
-			className={cn(
-				"w-full rounded-[var(--r-control)] py-2.5 text-center font-mono text-[13px] tracking-[0.04em] transition-colors",
-				"border border-white/15 text-[var(--ink)] hover:border-white/30",
-			)}
+			className={base}
 		>
 			＋ Add to Vault
 		</button>

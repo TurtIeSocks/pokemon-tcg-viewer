@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { CardCockpit } from "../../../components/card/card-cockpit";
-import type { CardTab } from "../../../lib/card-route";
+import { TAB_MASK } from "../../../lib/card-route";
 import { LIST_SEARCH_DEFAULTS } from "../../../lib/list-search";
 import { getCardForRouteFn } from "../../../server/corpus-server";
 import { useRecentsStore } from "../../../store/recents";
@@ -68,18 +68,8 @@ function CardPage() {
 		});
 	}, [card, addRecentlyViewed]);
 
-	const ROUTE: Record<
-		CardTab,
-		| "/$series/$set/$card"
-		| "/$series/$set/$card/manage"
-		| "/$series/$set/$card/prices"
-	> = {
-		details: "/$series/$set/$card",
-		collection: "/$series/$set/$card/manage",
-		pricing: "/$series/$set/$card/prices",
-	};
-	const onTabChange = (tab: CardTab) =>
-		void navigate({ to: ROUTE[tab], params });
+	const onTabChange = (tab: keyof typeof TAB_MASK) =>
+		void navigate({ to: TAB_MASK[tab], params });
 
 	return (
 		<div className="mx-auto w-full max-w-4xl overflow-y-auto px-4 py-6">

@@ -35,7 +35,7 @@ export function CardPricingTab({
 }) {
 	return (
 		<div className="flex flex-col gap-5">
-			<section>
+			<section aria-label="Market prices">
 				<div className={SECTION}>Market prices</div>
 				<div className="mt-2">
 					{pending ? <PriceGhost /> : <CardPrices card={card} />}

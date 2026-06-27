@@ -1,6 +1,6 @@
 import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import { CardCockpit } from "../../../components/card/card-cockpit";
-import type { CardTab } from "../../../lib/card-route";
+import { TAB_MASK } from "../../../lib/card-route";
 import { getCardForRouteFn } from "../../../server/corpus-server";
 
 export const Route = createFileRoute("/$series/$set/$card_/manage")({
@@ -23,27 +23,17 @@ export const Route = createFileRoute("/$series/$set/$card_/manage")({
 // mask) — this route is the fallback when that URL is loaded directly or
 // shared.
 function ManagePage() {
-	const { card } = Route.useLoaderData();
+	const { card, crossLinks } = Route.useLoaderData();
 	const params = Route.useParams();
 	const navigate = useNavigate();
-	const ROUTE: Record<
-		CardTab,
-		| "/$series/$set/$card"
-		| "/$series/$set/$card/manage"
-		| "/$series/$set/$card/prices"
-	> = {
-		details: "/$series/$set/$card",
-		collection: "/$series/$set/$card/manage",
-		pricing: "/$series/$set/$card/prices",
-	};
 	return (
 		<div className="mx-auto w-full max-w-4xl overflow-y-auto px-4 py-6">
 			<div className="rounded-2xl border border-white/10 bg-[var(--bg)]">
 				<CardCockpit
 					card={card}
-					crossLinks={[]}
+					crossLinks={crossLinks}
 					tab="collection"
-					onTabChange={(tab) => void navigate({ to: ROUTE[tab], params })}
+					onTabChange={(tab) => void navigate({ to: TAB_MASK[tab], params })}
 				/>
 			</div>
 		</div>

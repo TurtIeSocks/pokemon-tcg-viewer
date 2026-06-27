@@ -12,7 +12,7 @@ declare module "@tanstack/react-router" {
 		 */
 		cardOverlay?: string;
 		/** Active card-overlay tab. Masked to the tab's canonical route. */
-		cardTab?: "details" | "collection" | "pricing";
+		cardTab?: CardTab;
 	}
 }
 
@@ -22,11 +22,11 @@ export interface CardRouteParams {
 	card: string;
 }
 
-const TAB_MASK: Record<CardTab, LinkProps["to"]> = {
+export const TAB_MASK = {
 	details: "/$series/$set/$card",
 	collection: "/$series/$set/$card/manage",
 	pricing: "/$series/$set/$card/prices",
-};
+} as const satisfies Record<CardTab, LinkProps["to"]>;
 
 /**
  * Shared masked-overlay nav for a given tab: stay on the current route, set
@@ -94,11 +94,11 @@ export function cardModalLinkProps(
 }
 
 /**
- * In-app overlay navigation that opens the manage (collection) face over the
- * current page. Identical to {@link cardModalLinkPropsFor} but also sets
- * `state.cardManage = true` and masks the URL to `/$series/$set/$card/manage`.
- * The root overlay reads both state keys; a cold load of the masked URL falls
- * through to the real `$card_/manage` route.
+ * In-app overlay navigation that opens the collection (manage) face over the
+ * current page. Delegates to {@link cardTabLinkPropsFor} with `"collection"`,
+ * which sets `cardTab: "collection"` in history state and masks the URL to
+ * `/$series/$set/$card/manage`. A cold load of the masked URL falls through
+ * to the real `$card_/manage` route.
  */
 export function cardManageLinkPropsFor(p: CardRouteParams): LinkProps {
 	return cardTabLinkPropsFor(p, "collection");

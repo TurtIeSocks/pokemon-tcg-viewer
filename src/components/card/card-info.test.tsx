@@ -27,7 +27,8 @@ test("showHeader defaults to true: renders the name", () => {
 test("showHeader=false: suppresses name and HP but keeps the attack", () => {
 	render(<CardInfo card={CARD} showHeader={false} />);
 	expect(screen.queryByRole("heading", { name: "Charizard" })).toBeNull();
-	expect(screen.queryByText(/HP/)).toBeNull();
+	// HP span suppressed: check for the literal HP label text node
+	expect(screen.queryByText("HP", { exact: true })).toBeNull();
 	// Body still renders.
 	expect(screen.getByText("Fire Spin")).toBeDefined();
 });

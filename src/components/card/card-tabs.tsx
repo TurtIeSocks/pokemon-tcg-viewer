@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import type { CardTab } from "../../lib/card-route";
 
@@ -21,6 +22,20 @@ export function CardTabs({
 	onChange: (t: CardTab) => void;
 	idBase?: string;
 }) {
+	const listRef = useRef<HTMLDivElement>(null);
+
+	// APG roving focus: when the active tab changes AND focus is already inside
+	// the tablist, move focus to the newly-active tab. Does NOT steal focus on
+	// mount or route-change.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: tab is intentional — re-run when selection changes
+	useEffect(() => {
+		const list = listRef.current;
+		if (!list?.contains(document.activeElement)) return;
+		list
+			.querySelector<HTMLButtonElement>('[role="tab"][aria-selected="true"]')
+			?.focus();
+	}, [tab]);
+
 	const move = (dir: 1 | -1) => {
 		const i = TABS.findIndex((t) => t.value === tab);
 		const next = TABS[(i + dir + TABS.length) % TABS.length];
@@ -28,6 +43,7 @@ export function CardTabs({
 	};
 	return (
 		<div
+			ref={listRef}
 			role="tablist"
 			aria-label="Card views"
 			className="inline-flex gap-1 rounded-[var(--r-pill)] border border-white/10 bg-white/[0.04] p-1"
