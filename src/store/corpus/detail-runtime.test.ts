@@ -11,7 +11,13 @@ import {
 } from "./detail-runtime";
 
 const RECORDS = [{ id: "base1-4", hp: "120", artist: "Arita" }];
-const blob = () => gzipSync(Buffer.from(JSON.stringify(RECORDS))).buffer;
+// Slice to the exact gzip bytes: a Node Buffer's `.buffer` is the shared
+// allocation pool (data at `byteOffset`), so passing it raw to
+// DecompressionStream reads pool junk and flakes across test files.
+const blob = () => {
+	const b = gzipSync(Buffer.from(JSON.stringify(RECORDS)));
+	return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
+};
 
 beforeEach(async () => {
 	await resetDetailRuntimeForTests();
