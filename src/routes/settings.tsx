@@ -1,5 +1,6 @@
 import { ClientOnly, createFileRoute } from "@tanstack/react-router";
 import { CardDatabaseSetting } from "@/components/settings/card-database-setting";
+import { ImageCacheSetting } from "@/components/settings/image-cache-setting";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { getNavTreeFn } from "../server/nav-tree";
 
@@ -18,6 +19,7 @@ function SettingsPage() {
 			</header>
 			<ClientOnly fallback={null}>
 				<CardDatabaseSetting />
+				<ImageCacheSetting />
 			</ClientOnly>
 		</div>
 	);
