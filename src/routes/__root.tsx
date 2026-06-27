@@ -205,6 +205,20 @@ function RootComponent() {
 		void subscribeAuth();
 	}, []);
 
+	// Browse-cache Service Worker (always on; caches viewed card images).
+	useEffect(() => {
+		void (async () => {
+			const { registerBrowseCacheSW } = await import(
+				"../store/offline-images/browse-cache"
+			);
+			const { loadThumbCap } = await import(
+				"../store/offline-images/images-runtime"
+			);
+			await registerBrowseCacheSW();
+			await loadThumbCap();
+		})();
+	}, []);
+
 	return (
 		<RootDocument>
 			<SidebarProvider defaultOpen={true}>
