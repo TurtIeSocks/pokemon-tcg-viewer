@@ -1,6 +1,7 @@
 import { cdnImage } from "../components/holo-card/cdn-image";
 import type { CrossLink } from "../components/islands/cross-links";
 import type { FocusCardData, PokemonSet } from "../server/card-mappers";
+import { getCardForRouteFn } from "../server/corpus-server";
 import {
 	type CorpusIndex,
 	hydrateCard,
@@ -27,13 +28,16 @@ export function parseCardOverlayParam(
 
 type DetailFetcher = (params: CardRouteParams) => Promise<CardRouteData | null>;
 
-// Server-only corpus-server is imported dynamically (mirrors its own pattern) so
-// this client/test-reachable module never pulls the server handler graph at the
-// top level. The createServerFn stub it returns RPCs to our server on call.
-const defaultFetcher: DetailFetcher = async (params) => {
-	const { getCardForRouteFn } = await import("../server/corpus-server");
-	return (await getCardForRouteFn({ data: params })) as CardRouteData | null;
-};
+// STATIC import of the server fn (matches how routes + the old card-overlay
+// already pull it). Do NOT switch this to a dynamic `import("../server/...")`:
+// corpus-server is also statically imported by the route bundle, so a dynamic
+// import here forces it into its own chunk that the main bundle both statically
+// and dynamically imports — a cross-chunk circular import whose eval order left
+// createServerFn in the TDZ ("undefined is not a function") and crashed
+// hydration in prod. createServerFn's client stub RPCs to the server; the
+// handler body (node:zlib, external fetches) is stripped from the client bundle.
+const defaultFetcher: DetailFetcher = async (params) =>
+	(await getCardForRouteFn({ data: params })) as CardRouteData | null;
 
 // Client-side cache of the per-card RPC result, keyed by the slug triple. Caching
 // the PROMISE dedupes concurrent opens/prefetches; a same-session re-open is then
