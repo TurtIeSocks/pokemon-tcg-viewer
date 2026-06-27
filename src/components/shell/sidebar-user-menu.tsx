@@ -39,7 +39,9 @@ import {
 } from "@/components/ui/sidebar";
 import { isCloudEnabled } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { checkStale } from "@/store/corpus/detail-runtime";
 import { useUserland } from "@/store/userland/userland-store";
+import { OfflineToggle } from "./offline-toggle";
 
 /**
  * Sidebar footer account control. Collapses the former three-row footer (profile
@@ -70,7 +72,11 @@ export function SidebarUserMenu() {
 		<>
 			<SidebarMenu>
 				<SidebarMenuItem>
-					<DropdownMenu>
+					<DropdownMenu
+						onOpenChange={(open) => {
+							if (open) void checkStale();
+						}}
+					>
 						<DropdownMenuTrigger asChild>
 							<SidebarMenuButton
 								size="lg"
@@ -114,6 +120,13 @@ export function SidebarUserMenu() {
 									</div>
 								</div>
 							</DropdownMenuLabel>
+
+							<DropdownMenuSeparator />
+
+							{/* Offline detail group. */}
+							<DropdownMenuGroup>
+								<OfflineToggle />
+							</DropdownMenuGroup>
 
 							<DropdownMenuSeparator />
 
