@@ -69,3 +69,14 @@ describe("clearRecentSearches", () => {
 		expect(useRecentsStore.getState().recentlyViewed).toHaveLength(1);
 	});
 });
+
+describe("clearRecentlyViewed", () => {
+	it("empties viewed but keeps searches", () => {
+		const s = useRecentsStore.getState();
+		s.addRecentSearch("x");
+		s.addRecentlyViewed(card("a"));
+		s.clearRecentlyViewed();
+		expect(useRecentsStore.getState().recentlyViewed).toEqual([]);
+		expect(useRecentsStore.getState().recentSearches).toHaveLength(1);
+	});
+});

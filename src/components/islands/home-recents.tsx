@@ -15,6 +15,7 @@ function RecentsInner() {
 	const recentSearches = useRecentsStore((s) => s.recentSearches);
 	const recentlyViewed = useRecentsStore((s) => s.recentlyViewed);
 	const clearRecentSearches = useRecentsStore((s) => s.clearRecentSearches);
+	const clearRecentlyViewed = useRecentsStore((s) => s.clearRecentlyViewed);
 
 	// Recents store only id/setId/name — resolving the card-detail link needs the
 	// corpus + sets slug index, so load them when there are cards to link. Both
@@ -58,7 +59,16 @@ function RecentsInner() {
 			)}
 			{recentlyViewed.length > 0 && (
 				<section>
-					<h2 className={`mb-2 ${LABEL_CLS}`}>Recently viewed</h2>
+					<div className="mb-2 flex items-center justify-between">
+						<h2 className={LABEL_CLS}>Recently viewed</h2>
+						<button
+							type="button"
+							onClick={clearRecentlyViewed}
+							className="text-[10.5px] text-[var(--faint)] transition-colors hover:text-[var(--ink-muted)]"
+						>
+							Clear
+						</button>
+					</div>
 					<div className="flex gap-3 overflow-x-auto pb-2">
 						{recentlyViewed.map((card) => {
 							// Real card-detail link once the slug index is ready; until then
