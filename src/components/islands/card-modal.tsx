@@ -21,6 +21,12 @@ interface CardModalProps {
 	 * Both faces pop one history entry on back/close via `onClose`.
 	 */
 	manage?: boolean;
+	/**
+	 * True while only the optimistic corpus card is shown and the full detail
+	 * (battle stats, prices, cross-links) is still loading — drives ghost
+	 * placeholders on the detail face.
+	 */
+	pending?: boolean;
 }
 
 /**
@@ -42,6 +48,7 @@ export function CardModal({
 	crossLinks,
 	onClose,
 	manage,
+	pending,
 }: CardModalProps) {
 	const holo = toHoloCardData(card);
 	const isManage = Boolean(manage);
@@ -110,6 +117,7 @@ export function CardModal({
 							card={card}
 							crossLinks={crossLinks}
 							onManage={handleManage}
+							pending={pending}
 						/>
 					</div>
 
