@@ -39,47 +39,6 @@ const idx = buildSlugIndex(sets, cards);
 
 const p = { series: "sword-shield", set: "brilliant-stars", card: "charizard" };
 
-describe("cardManageLinkPropsFor", () => {
-	test("sets cardManage: true in state", () => {
-		const props = cardManageLinkPropsFor(p);
-		const state = (
-			props.state as (prev: Record<string, unknown>) => Record<string, unknown>
-		)({});
-		expect(state.cardManage).toBe(true);
-	});
-
-	test("also sets cardOverlay to series/set/card", () => {
-		const props = cardManageLinkPropsFor(p);
-		const state = (
-			props.state as (prev: Record<string, unknown>) => Record<string, unknown>
-		)({});
-		expect(state.cardOverlay).toBe("sword-shield/brilliant-stars/charizard");
-	});
-
-	test("mask.to is /$series/$set/$card/manage", () => {
-		const props = cardManageLinkPropsFor(p);
-		expect((props.mask as { to: string }).to).toBe(
-			"/$series/$set/$card/manage",
-		);
-	});
-
-	test("mask.params matches the input params", () => {
-		const props = cardManageLinkPropsFor(p);
-		expect((props.mask as { to: string; params: typeof p }).params).toEqual(p);
-	});
-
-	test("state updater preserves existing state keys", () => {
-		const props = cardManageLinkPropsFor(p);
-		const state = (
-			props.state as (prev: Record<string, unknown>) => Record<string, unknown>
-		)({
-			someOtherKey: "preserved",
-		});
-		expect(state.someOtherKey).toBe("preserved");
-		expect(state.cardManage).toBe(true);
-	});
-});
-
 describe("cardRouteProps", () => {
 	test("builds /$series/$set/$card props that resolve back to the same card id", () => {
 		const props = cardRouteProps(idx, { id: "swsh9-18", setId: "swsh9" });
@@ -106,17 +65,15 @@ const readState = (props: ReturnType<typeof cardModalLinkPropsFor>) =>
 	);
 
 describe("cardTab on the three tab helpers", () => {
-	test("detail helper sets cardTab=details and cardManage=false", () => {
+	test("detail helper sets cardTab=details", () => {
 		const s = readState(cardModalLinkPropsFor(p));
 		expect(s.cardTab).toBe("details");
-		expect(s.cardManage).toBe(false);
 		expect(s.cardOverlay).toBe("sword-shield/brilliant-stars/charizard");
 	});
 
-	test("manage helper sets cardTab=collection and cardManage=true", () => {
+	test("manage helper sets cardTab=collection", () => {
 		const s = readState(cardManageLinkPropsFor(p));
 		expect(s.cardTab).toBe("collection");
-		expect(s.cardManage).toBe(true);
 	});
 
 	test("prices helper sets cardTab=pricing and masks to /prices", () => {

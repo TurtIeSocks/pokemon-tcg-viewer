@@ -13,13 +13,6 @@ declare module "@tanstack/react-router" {
 		cardOverlay?: string;
 		/** Active card-overlay tab. Masked to the tab's canonical route. */
 		cardTab?: "details" | "collection" | "pricing";
-		/**
-		 * Set to `true` when the overlay should show the manage (collection) face
-		 * instead of card detail. URL is masked to `/$series/$set/$card/manage`.
-		 * A cold load of that URL has no state and falls through to the real
-		 * `$card_/manage` route.
-		 */
-		cardManage?: boolean;
 	}
 }
 
@@ -51,9 +44,6 @@ export function cardTabLinkPropsFor(
 			...prev,
 			cardOverlay: `${p.series}/${p.set}/${p.card}`,
 			cardTab: tab,
-			// Transitional: keep cardManage in sync until CardOverlay reads cardTab
-			// (removed in the cleanup task). Lets the old overlay keep working.
-			cardManage: tab === "collection",
 		}),
 		mask: { to: TAB_MASK[tab], params: p },
 	} as LinkProps;
