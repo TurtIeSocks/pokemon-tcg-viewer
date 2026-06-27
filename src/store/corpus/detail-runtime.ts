@@ -105,17 +105,18 @@ export async function enableOffline(): Promise<void> {
 			fetchBlob(),
 		]);
 		const records = JSON.parse(await gunzip(gz)) as DetailRecord[];
-		const syncedAt = useDetailRuntime.getState().syncedAt ?? 0;
-		const now = syncedAt + 1; // monotonic without Date.now (kept deterministic for tests)
-		await writeDetail(gz, { version, syncedAt: now, count, enabled: true });
+		const syncedAt = Date.now();
+		await writeDetail(gz, { version, syncedAt, count, enabled: true });
 		useDetailRuntime.setState({
 			detailById: buildMap(records),
 			version,
-			syncedAt: now,
+			syncedAt,
 			status: "ready",
 		});
 	} catch {
-		useDetailRuntime.setState({ status: "error" });
+		// Nothing persisted on failure; drop the in-memory enabled flag so a retry
+		// starts clean and a reload (loadDetail) sees the feature off.
+		useDetailRuntime.setState({ status: "error", enabled: false });
 	}
 }
 

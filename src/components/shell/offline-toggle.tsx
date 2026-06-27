@@ -9,6 +9,16 @@ import {
 
 const SIZE = "~2.1 MiB";
 
+/** "3 days ago" / "yesterday" style label for the last sync. */
+function relativeTime(ms: number): string {
+	const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+	const min = Math.round((Date.now() - ms) / 60000);
+	if (min < 60) return rtf.format(-min, "minute");
+	const hr = Math.round(min / 60);
+	if (hr < 24) return rtf.format(-hr, "hour");
+	return rtf.format(-Math.round(hr / 24), "day");
+}
+
 /** Sidebar menu control for the optional offline card-detail blob. */
 export function OfflineToggle() {
 	// S3: per-field selectors in the consuming component.
@@ -39,7 +49,9 @@ export function OfflineToggle() {
 	}
 
 	if (status === "ready") {
-		const savedLabel = syncedAt ? `Card details saved.` : "Card details saved.";
+		const savedLabel = syncedAt
+			? `Card details saved. Synced ${relativeTime(syncedAt)}.`
+			: "Card details saved.";
 		return (
 			<>
 				<DropdownMenuItem disabled>
