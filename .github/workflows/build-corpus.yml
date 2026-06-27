@@ -26,3 +26,9 @@ jobs:
           bunx wrangler r2 object put \
             pokemon-tcg-corpus/corpus/latest.json.gz \
             --file=corpus.json.gz --remote
+          bunx wrangler r2 object put \
+            pokemon-tcg-corpus/corpus/detail-latest.json.gz \
+            --file=corpus-detail.json.gz --remote
+          bunx wrangler r2 object put \
+            pokemon-tcg-corpus/corpus/detail-meta.json \
+            --file=corpus-detail.meta.json --remote

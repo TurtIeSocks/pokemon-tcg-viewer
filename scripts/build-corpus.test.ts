@@ -1,5 +1,5 @@
 import { afterEach, expect, mock, test } from "bun:test";
-import { fetchPage, trimCard } from "./build-corpus";
+import { detailCard, detailVersion, fetchPage, trimCard } from "./build-corpus";
 
 const apiCard = {
 	id: "hgss4-1",
@@ -77,4 +77,66 @@ test("fetchPage fails fast on an auth error (no retry)", async () => {
 	}) as unknown as typeof fetch;
 	await expect(fetchPage("key", 1, { baseMs: 0 })).rejects.toThrow();
 	expect(n).toBe(1);
+});
+
+const detailApiCard = {
+	id: "base1-4",
+	name: "Charizard",
+	number: "4",
+	images: { small: "s.png", large: "l.png" },
+	rarity: "Rare Holo",
+	subtypes: ["Stage 2"],
+	supertype: "Pokémon",
+	types: ["Fire"],
+	set: { id: "base1" },
+	nationalPokedexNumbers: [6],
+	tcgplayer: { prices: { holofoil: { market: 100 } } },
+	hp: "120",
+	evolvesFrom: "Charmeleon",
+	abilities: [{ name: "Energy Burn", text: "...", type: "Pokémon Power" }],
+	attacks: [
+		{
+			name: "Fire Spin",
+			cost: ["Fire", "Fire"],
+			convertedEnergyCost: 2,
+			damage: "100",
+			text: "Discard 2 Energy.",
+		},
+	],
+	rules: ["VMAX rule"],
+	weaknesses: [{ type: "Water", value: "×2" }],
+	resistances: [{ type: "Fighting", value: "-30" }],
+	retreatCost: ["Colorless", "Colorless", "Colorless"],
+	flavorText: "Spits fire hot enough to melt boulders.",
+	artist: "Mitsuhiro Arita",
+};
+
+test("detailCard keeps battle/flavor fields and drops prices", () => {
+	const d = detailCard(detailApiCard);
+	expect(d.id).toBe("base1-4");
+	expect(d.hp).toBe("120");
+	expect(d.attacks?.[0]).toEqual({
+		name: "Fire Spin",
+		cost: ["Fire", "Fire"],
+		damage: "100",
+		text: "Discard 2 Energy.",
+	});
+	expect(d.flavorText).toContain("boulders");
+	expect(d.artist).toBe("Mitsuhiro Arita");
+	// No prices and no convertedEnergyCost leak in.
+	expect(JSON.stringify(d)).not.toContain("market");
+	expect(JSON.stringify(d)).not.toContain("convertedEnergyCost");
+});
+
+test("detailVersion is deterministic and content-addressed", () => {
+	const a = [detailCard(detailApiCard)];
+	const b = [detailCard({ ...detailApiCard })];
+	expect(detailVersion(a)).toBe(detailVersion(b)); // same data, same hash
+	const changed = [detailCard({ ...detailApiCard, flavorText: "Different." })];
+	expect(detailVersion(changed)).not.toBe(detailVersion(a)); // real change flips it
+	expect(detailVersion(a)).toMatch(/^[0-9a-f]{64}$/); // sha256 hex
+});
+
+test("trimCard still excludes battle fields", () => {
+	expect(JSON.stringify(trimCard(detailApiCard))).not.toContain("Fire Spin");
 });
