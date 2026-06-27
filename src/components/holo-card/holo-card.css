@@ -52,6 +52,65 @@
 	z-index: 1;
 }
 
+/* Focus: the full-res image fades in over a cached thumbnail (blur-up). */
+.holo-card-image--placeholder {
+	z-index: 1;
+	filter: blur(10px) saturate(1.1);
+	transform: scale(1.04);
+	transition:
+		filter 0.4s var(--ease),
+		transform 0.4s var(--ease);
+}
+.holo-card-image--placeholder.is-loaded {
+	filter: none;
+	transform: none;
+}
+.holo-card-image--full {
+	z-index: 2;
+	opacity: 0;
+	transition: opacity 0.4s var(--ease);
+}
+.holo-card-image--full.is-loaded {
+	opacity: 1;
+}
+
+/* "Loading full image" cue: a soft pill, gently pulsing (no spinner). */
+.holo-card-hd {
+	position: absolute;
+	left: 0.5rem;
+	bottom: 0.5rem;
+	z-index: 3;
+	padding: 0.2rem 0.5rem;
+	border-radius: 999px;
+	font-family: var(--font-mono, monospace);
+	font-size: 10px;
+	letter-spacing: 0.04em;
+	color: rgba(255, 255, 255, 0.85);
+	background: rgba(0, 0, 0, 0.45);
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	backdrop-filter: blur(6px);
+	pointer-events: none;
+	animation: holo-hd-pulse 1.4s ease-in-out infinite;
+}
+@keyframes holo-hd-pulse {
+	0%,
+	100% {
+		opacity: 0.6;
+	}
+	50% {
+		opacity: 1;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.holo-card-image--placeholder,
+	.holo-card-image--full {
+		transition: none;
+	}
+	.holo-card-hd {
+		animation: none;
+	}
+}
+
 .holo-card-overlay {
 	position: absolute;
 	inset: 0;

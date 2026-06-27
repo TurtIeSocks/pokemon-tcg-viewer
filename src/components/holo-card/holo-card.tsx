@@ -1,4 +1,6 @@
 import type React from "react";
+import { useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 import "./holo-card.css";
 import "./rarity-styles.css";
 import { cdnImage } from "./cdn-image";
@@ -98,6 +100,17 @@ export function HoloCard({
 		}
 	}
 
+	// Focus only: paint the (cached) thumbnail immediately, then fade the full-res
+	// image in once it loads. Reset on card change; a cached HD may already be
+	// `complete` before onLoad can fire, so detect that too.
+	const [hdLoaded, setHdLoaded] = useState(false);
+	const fullRef = useRef<HTMLImageElement>(null);
+	useEffect(() => {
+		setHdLoaded(false);
+		const img = fullRef.current;
+		if (img?.complete && img.naturalWidth > 0) setHdLoaded(true);
+	}, [imageUrl]);
+
 	return (
 		// biome-ignore lint/a11y/useSemanticElements: <div> is intentional — a <button> cannot contain block-level children like <img>+overlay
 		<div
@@ -113,27 +126,61 @@ export function HoloCard({
 			aria-label={name}
 			{...dataAttrs}
 		>
-			{(() => {
-				const width = size === "focus" ? 734 : 300;
-				const fallbackSrc =
-					size === "focus" ? imageUrl : (imageUrlSmall ?? imageUrl);
-				return (
+			{size === "focus" ? (
+				<>
+					{/* Thumbnail placeholder: same URL the grid used, so it is a cache
+					    hit and paints instantly. Blurred until the full-res lands. */}
+					<img
+						className={cn(
+							"holo-card-image holo-card-image--placeholder",
+							hdLoaded && "is-loaded",
+						)}
+						src={cdnImage(imageUrl, { w: 300 })}
+						alt=""
+						aria-hidden="true"
+					/>
+					{/* Full-res, fetched only on open (never on hover). Fades in on load. */}
 					<picture>
 						<source
 							type="image/webp"
-							srcSet={`${cdnImage(imageUrl, { w: width })} 1x, ${cdnImage(imageUrl, { w: width, dpr: 2 })} 2x`}
+							srcSet={`${cdnImage(imageUrl, { w: 734 })} 1x, ${cdnImage(imageUrl, { w: 734, dpr: 2 })} 2x`}
 						/>
 						<img
-							className="holo-card-image"
-							src={fallbackSrc}
+							ref={fullRef}
+							className={cn(
+								"holo-card-image holo-card-image--full",
+								hdLoaded && "is-loaded",
+							)}
+							src={imageUrl}
 							alt=""
-							loading={size === "focus" ? "eager" : "lazy"}
-							decoding={size === "focus" ? "auto" : "async"}
-							fetchPriority={size === "focus" ? "high" : "auto"}
+							loading="eager"
+							decoding="async"
+							fetchPriority="high"
+							onLoad={() => setHdLoaded(true)}
 						/>
 					</picture>
-				);
-			})()}
+					{!hdLoaded && (
+						<span className="holo-card-hd" aria-hidden="true">
+							Loading full image
+						</span>
+					)}
+				</>
+			) : (
+				<picture>
+					<source
+						type="image/webp"
+						srcSet={`${cdnImage(imageUrl, { w: 300 })} 1x, ${cdnImage(imageUrl, { w: 300, dpr: 2 })} 2x`}
+					/>
+					<img
+						className="holo-card-image"
+						src={imageUrlSmall ?? imageUrl}
+						alt=""
+						loading="lazy"
+						decoding="async"
+						fetchPriority="auto"
+					/>
+				</picture>
+			)}
 			<div className="holo-card-overlay">{hoverOverlay}</div>
 			{owned && (
 				<span
