@@ -12,87 +12,39 @@ import { CardModal } from "./card-modal";
 const CARD = makeFocusCard({
 	id: "base1-4",
 	name: "Charizard",
-	imageUrl: "https://example.com/charizard.png",
 	setName: "Base Set",
 	cardNumber: "4",
+	attacks: [
+		{ name: "Fire Spin", cost: ["Fire"], damage: "100", text: "Discard 2." },
+	],
 });
 
 beforeEach(async () => {
-	// Pre-seed corpus so loadCorpus() early-returns without network.
 	seedCorpusFor(CARD);
 	await setupUserlandTest();
 });
 
-// Dialog renders into a portal — query document.body, not container.
-function getTrack(): Element | null {
-	// The slide track is the only element carrying `transition-transform`.
-	return document.body.querySelector('[class*="transition-transform"]');
-}
-
-function getPanels(): NodeListOf<Element> {
-	// Each panel is a flex item with `basis-full`.
-	return document.body.querySelectorAll('[class*="basis-full"]');
-}
-
-test("manage=false: card detail face is active (track has translate-x-0)", async () => {
+test("renders the cockpit with a tablist", async () => {
 	await renderInRouter(
-		<CardModal card={CARD} crossLinks={[]} onClose={() => {}} manage={false} />,
+		<CardModal card={CARD} crossLinks={[]} onClose={() => {}} tab="details" />,
 	);
-
-	const track = getTrack();
-	expect(track).not.toBeNull();
-	expect(track?.className).toContain("translate-x-0");
-	expect(track?.className).not.toContain("-translate-x-full");
+	expect(screen.getByRole("tablist")).toBeDefined();
+	expect(
+		screen.getByRole("tab", { name: "Details" }).getAttribute("aria-selected"),
+	).toBe("true");
 });
 
-test("manage=true: manager face is active (track has -translate-x-full)", async () => {
+test("tab='details' shows the Details body", async () => {
 	await renderInRouter(
-		<CardModal card={CARD} crossLinks={[]} onClose={() => {}} manage={true} />,
+		<CardModal card={CARD} crossLinks={[]} onClose={() => {}} tab="details" />,
 	);
-
-	const track = getTrack();
-	expect(track).not.toBeNull();
-	expect(track?.className).toContain("-translate-x-full");
-	expect(track?.className).not.toContain("translate-x-0");
+	expect(screen.getByText("Fire Spin")).toBeDefined();
 });
 
-test("manage=true: 'Card Details' button is present and not aria-hidden", async () => {
+test("tab='pricing' shows the pricing pane", async () => {
 	await renderInRouter(
-		<CardModal card={CARD} crossLinks={[]} onClose={() => {}} manage={true} />,
+		<CardModal card={CARD} crossLinks={[]} onClose={() => {}} tab="pricing" />,
 	);
-
-	const backBtn = screen.getByRole("button", { name: /card details/i });
-	expect(backBtn).not.toBeNull();
-
-	// The panel containing the back button must not itself be aria-hidden
-	const hiddenAncestor = backBtn.closest("[aria-hidden='true']");
-	expect(hiddenAncestor).toBeNull();
-});
-
-test("manage=false: detail panel not aria-hidden; manager panel is aria-hidden", async () => {
-	await renderInRouter(
-		<CardModal card={CARD} crossLinks={[]} onClose={() => {}} manage={false} />,
-	);
-
-	const panels = getPanels();
-	expect(panels.length).toBeGreaterThanOrEqual(2);
-
-	// Panel A (detail): no aria-hidden
-	expect(panels[0]?.getAttribute("aria-hidden")).toBeNull();
-	// Panel B (manager): aria-hidden="true"
-	expect(panels[1]?.getAttribute("aria-hidden")).toBe("true");
-});
-
-test("manage=true: detail panel is aria-hidden; manager panel is not", async () => {
-	await renderInRouter(
-		<CardModal card={CARD} crossLinks={[]} onClose={() => {}} manage={true} />,
-	);
-
-	const panels = getPanels();
-	expect(panels.length).toBeGreaterThanOrEqual(2);
-
-	// Panel A (detail): aria-hidden="true"
-	expect(panels[0]?.getAttribute("aria-hidden")).toBe("true");
-	// Panel B (manager): no aria-hidden
-	expect(panels[1]?.getAttribute("aria-hidden")).toBeNull();
+	expect(screen.getByText(/market prices/i)).toBeDefined();
+	expect(screen.queryByText("Fire Spin")).toBeNull();
 });

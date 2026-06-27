@@ -5,7 +5,8 @@ import {
 	useNavigate,
 } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { CardDetail } from "../../../components/card/card-detail";
+import { CardCockpit } from "../../../components/card/card-cockpit";
+import type { CardTab } from "../../../lib/card-route";
 import { LIST_SEARCH_DEFAULTS } from "../../../lib/list-search";
 import { getCardForRouteFn } from "../../../server/corpus-server";
 import { useRecentsStore } from "../../../store/recents";
@@ -67,17 +68,18 @@ function CardPage() {
 		});
 	}, [card, addRecentlyViewed]);
 
-	// Push — so browser-back from the manage page returns here.
-	function handleManage() {
-		void navigate({
-			to: "/$series/$set/$card/manage",
-			params: {
-				series: params.series,
-				set: params.set,
-				card: params.card,
-			},
-		});
-	}
+	const ROUTE: Record<
+		CardTab,
+		| "/$series/$set/$card"
+		| "/$series/$set/$card/manage"
+		| "/$series/$set/$card/prices"
+	> = {
+		details: "/$series/$set/$card",
+		collection: "/$series/$set/$card/manage",
+		pricing: "/$series/$set/$card/prices",
+	};
+	const onTabChange = (tab: CardTab) =>
+		void navigate({ to: ROUTE[tab], params });
 
 	return (
 		<div className="mx-auto w-full max-w-4xl overflow-y-auto px-4 py-6">
@@ -92,10 +94,11 @@ function CardPage() {
 				</Link>
 			</div>
 			<div className="rounded-2xl border border-white/10 bg-[var(--bg)]">
-				<CardDetail
+				<CardCockpit
 					card={card}
 					crossLinks={crossLinks}
-					onManage={handleManage}
+					tab="details"
+					onTabChange={onTabChange}
 				/>
 			</div>
 		</div>

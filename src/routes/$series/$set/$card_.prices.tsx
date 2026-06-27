@@ -3,27 +3,19 @@ import { CardCockpit } from "../../../components/card/card-cockpit";
 import type { CardTab } from "../../../lib/card-route";
 import { getCardForRouteFn } from "../../../server/corpus-server";
 
-export const Route = createFileRoute("/$series/$set/$card_/manage")({
+export const Route = createFileRoute("/$series/$set/$card_/prices")({
 	loader: async ({ params }) => {
 		const result = await getCardForRouteFn({
-			data: {
-				series: params.series,
-				set: params.set,
-				card: params.card,
-			},
+			data: { series: params.series, set: params.set, card: params.card },
 		});
 		if (!result) throw notFound();
 		return result;
 	},
-	component: ManagePage,
+	component: PricesPage,
 });
 
-// Cold-load / direct-navigation view for the collection manager. In-app
-// clicks open this face as an overlay (via cardTab history state + URL
-// mask) — this route is the fallback when that URL is loaded directly or
-// shared.
-function ManagePage() {
-	const { card } = Route.useLoaderData();
+function PricesPage() {
+	const { card, crossLinks } = Route.useLoaderData();
 	const params = Route.useParams();
 	const navigate = useNavigate();
 	const ROUTE: Record<
@@ -41,8 +33,8 @@ function ManagePage() {
 			<div className="rounded-2xl border border-white/10 bg-[var(--bg)]">
 				<CardCockpit
 					card={card}
-					crossLinks={[]}
-					tab="collection"
+					crossLinks={crossLinks}
+					tab="pricing"
 					onTabChange={(tab) => void navigate({ to: ROUTE[tab], params })}
 				/>
 			</div>

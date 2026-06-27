@@ -41,8 +41,8 @@ export function CardOverlay() {
 	const cardParam = useRouterState({
 		select: (s) => s.location.state.cardOverlay,
 	});
-	const cardManage = useRouterState({
-		select: (s) => s.location.state.cardManage,
+	const cardTab = useRouterState({
+		select: (s) => s.location.state.cardTab,
 	});
 	const router = useRouter();
 	const slugIndex = useSlugIndex();
@@ -94,7 +94,7 @@ export function CardOverlay() {
 		<CardModal
 			card={card}
 			crossLinks={detail?.crossLinks ?? []}
-			manage={cardManage}
+			tab={cardTab ?? "details"}
 			pending={pending}
 			onClose={() => router.history.back()}
 		/>

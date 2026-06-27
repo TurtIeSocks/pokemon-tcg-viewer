@@ -1,143 +1,54 @@
 import { useRouter } from "@tanstack/react-router";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
-	cardManageLinkPropsFor,
-	cardModalLinkPropsFor,
+	type CardTab,
 	cardRouteParams,
+	cardTabLinkPropsFor,
 } from "../../lib/card-route";
 import type { FocusCardData } from "../../server/card-mappers";
 import { useSlugIndex } from "../../store/corpus/corpus-runtime";
-import { CardDetail } from "../card/card-detail";
-import { toHoloCardData } from "../card/to-holo";
-import { CardCollectionManager } from "../collection/card-collection-manager";
+import { CardCockpit } from "../card/card-cockpit";
 import type { CrossLink } from "./cross-links";
 
 interface CardModalProps {
 	card: FocusCardData;
 	crossLinks: CrossLink[];
 	onClose: () => void;
-	/**
-	 * When true, slides to the manage (collection) face.
-	 * Both faces pop one history entry on back/close via `onClose`.
-	 */
-	manage?: boolean;
-	/**
-	 * True while only the optimistic corpus card is shown and the full detail
-	 * (battle stats, prices, cross-links) is still loading — drives ghost
-	 * placeholders on the detail face.
-	 */
+	tab: CardTab;
 	pending?: boolean;
 }
 
-/**
- * In-app card overlay: two faces (detail + manager) in a horizontal slide
- * track. Sliding is driven by the `manage` prop with a CSS transition so the
- * same modal instance transitions between faces without remounting.
- *
- * Face switching uses `replace: true` so navigating detail ↔ manage does NOT
- * grow the history stack — the modal remains one entry and the Dialog X /
- * `onClose` = `router.history.back()` returns to the origin grid/vault.
- *
- * Accessibility: the off-screen panel carries `aria-hidden` and
- * `pointer-events-none` so keyboard/AT cannot reach it while inactive.
- * `motion-reduce:transition-none` (Tailwind) respects the OS reduced-motion
- * preference.
- */
 export function CardModal({
 	card,
 	crossLinks,
 	onClose,
-	manage,
+	tab,
 	pending,
 }: CardModalProps) {
-	const holo = toHoloCardData(card);
-	const isManage = Boolean(manage);
 	const router = useRouter();
 	const slugIndex = useSlugIndex();
-
-	// Resolve route params once; null when corpus/sets not yet loaded.
 	const p = slugIndex ? cardRouteParams(slugIndex, card) : null;
 
-	/** Switch TO the manage face (replace — no new history entry). */
-	const handleManage = p
-		? () => {
-				void router.navigate({
-					...cardManageLinkPropsFor(p),
-					replace: true,
-				});
-			}
-		: undefined;
-
-	/** Switch BACK to the detail face (replace — no new history entry). */
-	const handleBack = p
-		? () => {
-				void router.navigate({
-					...cardModalLinkPropsFor(p),
-					replace: true,
-				});
-			}
-		: undefined;
+	const onTabChange = (next: CardTab) => {
+		if (!p) return;
+		void router.navigate({ ...cardTabLinkPropsFor(p, next), replace: true });
+	};
 
 	return (
 		<Dialog open onOpenChange={(o) => !o && onClose()}>
 			<DialogContent
 				aria-describedby={undefined}
 				className="max-w-4xl overflow-hidden p-0 sm:max-w-4xl"
-				/**
-				 * No overflow-y-auto here — each panel owns its own scroll so only
-				 * the active face scrolls. The outer container is clipping-only.
-				 */
 			>
 				<DialogTitle className="sr-only">{card.name}</DialogTitle>
-
-				{/*
-				 * Horizontal slide track. The inner flex row holds two equal-width
-				 * panels. `translateX(-50%)` shifts to panel B (manager).
-				 */}
-				<div
-					className={[
-						// w-full track + basis-full panels: each panel is exactly the
-						// dialog width. min-w-0 is REQUIRED — DialogContent is display:grid,
-						// so this track is a grid item (default min-width:auto) and would
-						// otherwise refuse to shrink below its content, overflowing the dialog.
-						"flex w-full min-w-0 items-start",
-						"transition-transform duration-300 ease-out",
-						"motion-reduce:transition-none",
-						isManage ? "-translate-x-full" : "translate-x-0",
-					].join(" ")}
-					aria-live="polite"
-				>
-					{/* Panel A — Card Detail */}
-					<div
-						className="basis-full shrink-0 min-w-0 max-h-[90vh] overflow-x-hidden overflow-y-auto"
-						aria-hidden={isManage || undefined}
-						inert={isManage || undefined}
-					>
-						<CardDetail
-							card={card}
-							crossLinks={crossLinks}
-							onManage={handleManage}
-							pending={pending}
-						/>
-					</div>
-
-					{/* Panel B — Collection Manager */}
-					<div
-						className="basis-full shrink-0 min-w-0 max-h-[90vh] overflow-x-hidden overflow-y-auto"
-						aria-hidden={!isManage || undefined}
-						inert={!isManage || undefined}
-					>
-						<CardCollectionManager
-							cardId={card.id}
-							cardName={card.name}
-							setName={card.setName}
-							cardNumber={card.cardNumber}
-							imageUrl={card.imageUrl}
-							variants={holo.variants}
-							card={card}
-							onBack={handleBack ?? onClose}
-						/>
-					</div>
+				<div className="max-h-[90vh] overflow-y-auto">
+					<CardCockpit
+						card={card}
+						crossLinks={crossLinks}
+						tab={tab}
+						onTabChange={onTabChange}
+						pending={pending}
+					/>
 				</div>
 			</DialogContent>
 		</Dialog>
