@@ -68,3 +68,12 @@ test("owned card with onManage: clicking 'Manage Collection' invokes the callbac
 	fireEvent.click(manageBtn);
 	expect(onManage).toHaveBeenCalledTimes(1);
 });
+
+test("renders flavor text when present", async () => {
+	const card = {
+		...CARD,
+		flavorText: "Spits fire that melts boulders.",
+	};
+	await renderInRouter(<CardDetail card={card} crossLinks={[]} />);
+	expect(await screen.findByText(/melts boulders/i)).toBeTruthy();
+});
