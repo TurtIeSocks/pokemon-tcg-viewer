@@ -5,7 +5,6 @@ import { CollectorAvatar } from "@/components/profile/collector-avatar";
 import { ProfileFormDialog } from "@/components/profile/profile-form-dialog";
 import { SetTile } from "@/components/shell/set-tile";
 import { Button } from "@/components/ui/button";
-import { Eyebrow } from "@/components/ui/eyebrow";
 import { BezelPanel, GlassPanel } from "@/components/ui/glass";
 import { Stagger } from "@/components/ui/motion";
 import { ProgressRing } from "@/components/ui/progress-ring";
@@ -56,10 +55,7 @@ export function ProfilePageInner({ tree }: { tree: NavTree }) {
 	return (
 		<Stagger className="space-y-0">
 			{/* Hero */}
-			<div className="space-y-1.5">
-				<Eyebrow>Your profile</Eyebrow>
-			</div>
-			<BezelPanel className="mt-2">
+			<BezelPanel>
 				<div className="flex flex-wrap items-center gap-5">
 					<CollectorAvatar
 						displayName={displayName}
@@ -169,7 +165,6 @@ function ProfilePage() {
 				<ClientOnly
 					fallback={
 						<div className="space-y-1.5">
-							<Eyebrow>Your profile</Eyebrow>
 							<h1 className="font-display text-3xl font-semibold text-[var(--ink)]">
 								Collector
 							</h1>

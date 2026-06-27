@@ -88,11 +88,6 @@ test("renders page heading 'Overview'", async () => {
 	).toBeTruthy();
 });
 
-test("renders eyebrow 'Your vault'", async () => {
-	await renderOverview();
-	expect(screen.getByText(/your vault/i)).toBeTruthy();
-});
-
 test("renders section headings 'Set completion' and 'Binders'", async () => {
 	await renderOverview();
 	expect(

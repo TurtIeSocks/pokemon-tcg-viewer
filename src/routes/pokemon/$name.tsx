@@ -11,6 +11,7 @@ import { CardGridIsland } from "../../components/islands/card-grid-island";
 import { CardSelectionProvider } from "../../components/islands/card-selection";
 import { SearchControls } from "../../components/islands/search-controls";
 import { ViewModeToggle } from "../../components/islands/view-mode-toggle";
+import { ResultsBar } from "../../components/results-bar";
 import { SelectAndBulkAdd } from "../../components/vault/select-and-bulk-add";
 import { cardModalLinkProps } from "../../lib/card-route";
 import {
@@ -58,7 +59,7 @@ export const Route = createFileRoute("/pokemon/$name")({
 });
 
 function PokemonPage() {
-	const { display, dex, cards, total } = Route.useLoaderData();
+	const { dex, cards, total } = Route.useLoaderData();
 	const search = Route.useSearch();
 	const params = Route.useParams();
 	const navigate = useNavigate({ from: Route.fullPath });
@@ -86,7 +87,6 @@ function PokemonPage() {
 	return (
 		<CardSelectionProvider>
 			<PokemonPageInner
-				display={display}
 				dex={dex}
 				cards={cards}
 				total={total}
@@ -100,7 +100,6 @@ function PokemonPage() {
 }
 
 interface PokemonPageInnerProps {
-	display: string;
 	dex: number;
 	cards: HoloCardData[];
 	total: number;
@@ -111,7 +110,6 @@ interface PokemonPageInnerProps {
 }
 
 function PokemonPageInner({
-	display,
 	dex,
 	cards,
 	total,
@@ -122,30 +120,22 @@ function PokemonPageInner({
 }: PokemonPageInnerProps) {
 	return (
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
-			<div className="mb-3 flex items-center gap-3">
-				<h1 className="font-display text-xl font-bold text-(--ink)">
-					{display}{" "}
-					<span className="ml-2 font-mono text-sm tabular-nums text-(--ink-muted)">
-						{total} cards
-					</span>
-				</h1>
-				<div className="ml-auto flex items-center gap-2">
-					<SelectAndBulkAdd
-						cardIds={cards.map((c) => c.id)}
-						ruleQuery={toSerializedQuery(search, { dexNumber: dex })}
-						search={search}
-						context={{ dexNumber: dex }}
-					/>
-					<ViewModeToggle
-						value={search.view}
-						disabled={false}
-						onChange={(view) => onChange({ view })}
-					/>
-				</div>
-			</div>
-			<div className="mb-4 shrink-0">
+			<div className="mb-3 shrink-0">
 				<SearchControls value={search} options={options} onChange={onChange} />
 			</div>
+			<ResultsBar count={total}>
+				<SelectAndBulkAdd
+					cardIds={cards.map((c) => c.id)}
+					ruleQuery={toSerializedQuery(search, { dexNumber: dex })}
+					search={search}
+					context={{ dexNumber: dex }}
+				/>
+				<ViewModeToggle
+					value={search.view}
+					disabled={false}
+					onChange={(view) => onChange({ view })}
+				/>
+			</ResultsBar>
 			<div className="min-h-0 flex-1">
 				<CardGridIsland
 					key={dex}
