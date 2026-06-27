@@ -23,8 +23,8 @@ export const Route = createFileRoute("/$series/$set/$card")({
 	},
 	head: ({ loaderData }) => {
 		const card = loaderData?.card;
-		if (!card) return { meta: [{ title: "Card — Pokémon TCG" }] };
-		const title = `${card.name} · ${card.setName} — Pokémon TCG`;
+		if (!card) return { meta: [{ title: "Card · Pokémon TCG" }] };
+		const title = `${card.name} · ${card.setName} · Pokémon TCG`;
 		const desc = `${card.name} (${card.rarity ?? "card"}) from ${card.setName}, #${card.cardNumber}.`;
 		return {
 			meta: [

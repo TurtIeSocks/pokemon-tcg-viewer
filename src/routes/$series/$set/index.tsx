@@ -58,7 +58,7 @@ export const Route = createFileRoute("/$series/$set/")({
 	},
 	head: ({ loaderData }) => ({
 		meta: [
-			{ title: `${loaderData?.set.name ?? "Set"} — Pokémon TCG cards` },
+			{ title: `${loaderData?.set.name ?? "Set"} · Pokémon TCG cards` },
 			{
 				name: "description",
 				content: `All ${loaderData?.cards.length ?? 0} cards in ${loaderData?.set.name ?? ""}.`,

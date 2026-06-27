@@ -50,8 +50,8 @@ export const Route = createFileRoute("/search")({
 		meta: [
 			{
 				title: loaderData?.q
-					? `"${loaderData.q}" — Pokémon TCG search`
-					: "Search — Pokémon TCG",
+					? `"${loaderData.q}" · Pokémon TCG search`
+					: "Search · Pokémon TCG",
 			},
 			{
 				name: "description",

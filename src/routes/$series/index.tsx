@@ -20,7 +20,7 @@ export const Route = createFileRoute("/$series/")({
 	},
 	head: ({ loaderData }) => ({
 		meta: [
-			{ title: `${loaderData?.name ?? "Series"} — Pokémon TCG sets` },
+			{ title: `${loaderData?.name ?? "Series"} · Pokémon TCG sets` },
 			{
 				name: "description",
 				content: `Browse every ${loaderData?.name ?? ""} set.`,

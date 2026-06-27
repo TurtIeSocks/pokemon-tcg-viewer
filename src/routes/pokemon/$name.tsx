@@ -45,12 +45,12 @@ export const Route = createFileRoute("/pokemon/$name")({
 		const d = loaderData?.display ?? "Pokémon";
 		return {
 			meta: [
-				{ title: `${d} — every Pokémon TCG card` },
+				{ title: `${d} · every Pokémon TCG card` },
 				{
 					name: "description",
 					content: `Browse all ${loaderData?.total ?? ""} ${d} cards across every set.`,
 				},
-				{ property: "og:title", content: `${d} — Pokémon TCG cards` },
+				{ property: "og:title", content: `${d} · Pokémon TCG cards` },
 			],
 		};
 	},
