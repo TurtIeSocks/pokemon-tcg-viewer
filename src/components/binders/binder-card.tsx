@@ -7,30 +7,42 @@ import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/ui/glass";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { useBinderProgress } from "../../store/userland/selectors";
-import type { Binder } from "../../store/userland/types";
+import { useUserland } from "../../store/userland/userland-store";
 import { ShareDialog } from "./share-dialog";
 
 /** Props for {@link BinderCard}. */
 interface BinderCardProps {
-	/** Binder to display in summary form. */
-	binder: Binder;
+	/** Id of the binder to display; the card subscribes to its own slice (S3). */
+	binderId: string;
 }
 
-/** Summary card linking to a binder's detail page; shows progress bar, rule/card counts, and share action. */
-export function BinderCard({ binder }: BinderCardProps) {
+/**
+ * Summary card linking to a binder's detail page; shows progress bar, rule/card
+ * counts, and share action. Subscribes to its own binder by id (S3) so editing
+ * one binder re-renders only that card, not the whole list.
+ */
+export function BinderCard({ binderId }: BinderCardProps) {
 	const [shareOpen, setShareOpen] = useState(false);
-	const progress = useBinderProgress(binder.id);
+	const binder = useUserland((s) => s.binders[binderId]);
+	const progress = useBinderProgress(binderId);
 
 	const countLine = useMemo(
 		() =>
-			`${binder.rules.length} ${binder.rules.length === 1 ? "rule" : "rules"} · ${binder.includeCardIds.length} ${binder.includeCardIds.length === 1 ? "card" : "cards"}`,
-		[binder.rules.length, binder.includeCardIds.length],
+			binder
+				? `${binder.rules.length} ${binder.rules.length === 1 ? "rule" : "rules"} · ${binder.includeCardIds.length} ${binder.includeCardIds.length === 1 ? "card" : "cards"}`
+				: "",
+		[binder],
 	);
 
 	const pct =
 		progress && progress.total > 0
 			? Math.round((progress.owned / progress.total) * 100)
 			: 0;
+
+	// Guard the brief window where the parent still lists an id the store dropped
+	// (e.g. mid-delete) — the row unmounts on the parent's next render. All hooks
+	// run above this point so the early return never reorders them.
+	if (!binder) return null;
 
 	return (
 		<>

@@ -4,6 +4,7 @@ import {
 	useNavigate,
 } from "@tanstack/react-router";
 import { useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { BinderCard } from "@/components/binders/binder-card";
 import { BinderFormDialog } from "@/components/binders/binder-form-dialog";
 import { Button } from "@/components/ui/button";
@@ -21,8 +22,9 @@ export function VaultBindersInner() {
 	useEnsureCorpus();
 	const navigate = useNavigate();
 	const [newOpen, setNewOpen] = useState(false);
-	const bindersMap = useUserland((s) => s.binders);
-	const binders = Object.values(bindersMap);
+	// Subscribe to the id-list (structure) only; each BinderCard reads its own
+	// binder by id (S3), so a content edit re-renders just that card.
+	const binderIds = useUserland(useShallow((s) => Object.keys(s.binders)));
 
 	function handleSaved(binder: Binder) {
 		void navigate({
@@ -39,14 +41,14 @@ export function VaultBindersInner() {
 				actions={<Button onClick={() => setNewOpen(true)}>New binder</Button>}
 			/>
 
-			{binders.length === 0 ? (
+			{binderIds.length === 0 ? (
 				<p className="py-12 text-center text-muted-foreground">
 					No binders yet. Create one to organize your card collection.
 				</p>
 			) : (
 				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-					{binders.map((binder) => (
-						<BinderCard key={binder.id} binder={binder} />
+					{binderIds.map((id) => (
+						<BinderCard key={id} binderId={id} />
 					))}
 				</div>
 			)}
