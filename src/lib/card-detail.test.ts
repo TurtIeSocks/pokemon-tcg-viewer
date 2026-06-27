@@ -104,6 +104,17 @@ test("peekCardDetail is undefined until resolved, then the value (no flash)", as
 	expect(peekCardDetail(params)).toBe(data);
 });
 
+test("optimisticCardFromCorpus merges local detail when provided", () => {
+	const detailById = new Map([["base1-4", { hp: "120", attacks: [{ name: "Fire Spin", damage: "100" }], artist: "Arita" }]]);
+	const card = optimisticCardFromCorpus(params, slugIndex, index, sets, detailById);
+	expect(card?.hp).toBe("120");
+	expect(card?.attacks?.[0]?.name).toBe("Fire Spin");
+	expect(card?.artist).toBe("Arita");
+	// Without the map, battle fields stay absent (today's behaviour).
+	const bare = optimisticCardFromCorpus(params, slugIndex, index, sets);
+	expect(bare?.hp).toBeUndefined();
+});
+
 test("getCardDetail evicts on error so the next open retries", async () => {
 	let calls = 0;
 	const failing = async () => {

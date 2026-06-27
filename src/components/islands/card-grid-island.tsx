@@ -17,6 +17,7 @@ import {
 	useCorpusRuntime,
 	useSlugIndex,
 } from "../../store/corpus/corpus-runtime";
+import { loadDetail } from "../../store/corpus/detail-runtime";
 import { useOwnedCardIdSet } from "../../store/userland/selectors";
 import { CollectionToggle } from "../collection-toggle";
 import { type HoloCardData, holoCardProps } from "../holo-card";
@@ -90,6 +91,9 @@ export function CardGridIsland({
 		// is freshness-gated + idempotent; the legacy SPA boot that called it was
 		// removed during the migration, orphaning the slice.
 		void useStore.getState().loadSets();
+		// Hydrate the offline card-detail blob from IDB on boot. No-op when the
+		// feature is disabled (the user has not opted in).
+		void loadDetail();
 	}, []);
 
 	// (Re)load page 1 from the corpus whenever the query or readiness changes.

@@ -18,3 +18,22 @@ export interface CorpusCard {
 	nationalPokedexNumbers?: number[];
 	variants?: string[];
 }
+
+/**
+ * Per-card battle/flavor detail, stored in the optional offline detail blob
+ * (corpus-detail.json.gz). Mirrors the CardStats fields the focus view renders,
+ * minus prices (which drift) and setLogo (joined). Optional fields are omitted
+ * when absent, matching CorpusCard.
+ */
+export interface DetailCard {
+	hp?: string;
+	evolvesFrom?: string;
+	abilities?: { name: string; text: string; type: string }[];
+	attacks?: { name: string; cost?: string[]; damage?: string; text?: string }[];
+	rules?: string[];
+	weaknesses?: { type: string; value: string }[];
+	resistances?: { type: string; value: string }[];
+	retreatCost?: string[];
+	flavorText?: string;
+	artist?: string;
+}

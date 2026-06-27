@@ -247,6 +247,20 @@ export function CardInfo({
 					</>
 				) : null}
 
+				{card.flavorText ? (
+					<p className="mt-4 border-t border-white/[0.07] pt-3 font-display text-[13px] italic leading-relaxed text-[var(--ink-muted)]">
+						{card.flavorText}
+					</p>
+				) : pending ? (
+					<div
+						aria-hidden="true"
+						className="mt-4 border-t border-white/[0.07] pt-3"
+					>
+						<Skeleton className="h-3 w-full" />
+						<Skeleton className="mt-1.5 h-3 w-4/5" />
+					</div>
+				) : null}
+
 				{emptyBody && pending ? <BodyGhost /> : null}
 			</div>
 
