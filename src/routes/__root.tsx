@@ -36,18 +36,21 @@ export const Route = createRootRoute({
 		meta: [
 			{ charSet: "utf-8" },
 			{ name: "viewport", content: "width=device-width, initial-scale=1" },
-			{ title: "Pokémon TCG Holo Playground" },
+			{ title: "Cardstack: track your Pokémon TCG collection" },
 			{ name: "theme-color", content: "#0d0a16" },
 			{ name: "apple-mobile-web-app-capable", content: "yes" },
 			{
 				name: "apple-mobile-web-app-status-bar-style",
 				content: "black-translucent",
 			},
-			{ property: "og:title", content: "Pokémon TCG Holo Playground" },
+			{
+				property: "og:title",
+				content: "Cardstack: track your Pokémon TCG collection",
+			},
 			{
 				property: "og:description",
 				content:
-					"Browse the Pokémon TCG catalog with interactive holographic card effects.",
+					"Browse the whole Pokémon TCG catalog free, then track every copy you own. Local-first and open-source, so your cards stay yours.",
 			},
 			{ property: "og:type", content: "website" },
 			// Site-level OG url (homepage). Per-page routes can override in their own
@@ -185,7 +188,7 @@ function ShellHeader({ tree }: { tree: NavTree }) {
 					aria-label="Search cards"
 					value={q}
 					onChange={(e) => setQ(e.target.value)}
-					placeholder="Search 20,000 cards…"
+					placeholder="Search the catalog…"
 					className="h-8 w-48 rounded-[var(--r-pill)] bg-[var(--glass)] border border-[var(--border)] pl-7 pr-3 text-xs text-[var(--ink)] placeholder:text-[var(--faint)] outline-none focus:border-[var(--primary)] focus:ring-0 transition-colors sm:w-56"
 				/>
 			</form>

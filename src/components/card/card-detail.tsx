@@ -154,7 +154,7 @@ function CollectionButton({
 				"border border-white/15 text-[var(--ink)] hover:border-white/30",
 			)}
 		>
-			＋ Add to collection
+			＋ Add to Vault
 		</button>
 	);
 }

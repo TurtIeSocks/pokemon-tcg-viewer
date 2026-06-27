@@ -24,10 +24,10 @@ beforeEach(async () => {
 	await setupUserlandTest();
 });
 
-test("unowned card renders '＋ Add to collection' button", async () => {
+test("unowned card renders '＋ Add to Vault' button", async () => {
 	await renderInRouter(<CardDetail card={CARD} crossLinks={[]} />);
 
-	const addBtn = screen.getByRole("button", { name: /add to collection/i });
+	const addBtn = screen.getByRole("button", { name: /add to vault/i });
 	expect(addBtn).not.toBeNull();
 
 	// Should NOT show "Manage Collection"
@@ -37,7 +37,7 @@ test("unowned card renders '＋ Add to collection' button", async () => {
 	expect(screen.queryByRole("link", { name: /manage collection/i })).toBeNull();
 });
 
-test("owned card renders 'Manage Collection' button (not 'Add to collection')", async () => {
+test("owned card renders 'Manage Collection' button (not 'Add to Vault')", async () => {
 	// Seed a copy so the card is owned.
 	await addStack("base1-4");
 
@@ -47,10 +47,8 @@ test("owned card renders 'Manage Collection' button (not 'Add to collection')", 
 	const manageEl = screen.queryByRole("button", { name: /manage collection/i });
 	expect(manageEl).not.toBeNull();
 
-	// "Add to collection" should NOT be present
-	expect(
-		screen.queryByRole("button", { name: /add to collection/i }),
-	).toBeNull();
+	// "Add to Vault" should NOT be present
+	expect(screen.queryByRole("button", { name: /add to vault/i })).toBeNull();
 });
 
 test("owned card with onManage: clicking 'Manage Collection' invokes the callback", async () => {

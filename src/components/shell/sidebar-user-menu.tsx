@@ -159,10 +159,11 @@ export function SidebarUserMenu() {
 			<Dialog open={signInOpen} onOpenChange={setSignInOpen}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle className="font-display">Sign in</DialogTitle>
+						<DialogTitle className="font-display">Sign in to sync</DialogTitle>
 						<DialogDescription>
-							Sync your Vault across devices. We'll email you a magic link — no
-							password needed.
+							Sign-in is just for sync. Browse and collect work fine without it.
+							Want your Vault on every device? We'll email a magic link. No
+							password, no snooping.
 						</DialogDescription>
 					</DialogHeader>
 					<SignIn />

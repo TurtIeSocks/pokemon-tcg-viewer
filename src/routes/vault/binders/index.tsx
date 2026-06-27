@@ -37,13 +37,13 @@ export function VaultBindersInner() {
 		<div className="space-y-8">
 			<VaultPageHeader
 				title="Binders"
-				subtitle="Curated lists with smart rules and manual picks."
+				subtitle="Lists that fill themselves by rule, plus the ones you hand-pick."
 				actions={<Button onClick={() => setNewOpen(true)}>New binder</Button>}
 			/>
 
 			{binderIds.length === 0 ? (
 				<p className="py-12 text-center text-muted-foreground">
-					No binders yet. Create one to organize your card collection.
+					No binders yet. Make one to group the cards that go together.
 				</p>
 			) : (
 				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

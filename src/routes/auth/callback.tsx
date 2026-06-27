@@ -34,7 +34,7 @@ export const Route = createFileRoute("/auth/callback")({
 				? search.error_description
 				: undefined,
 	}),
-	head: () => ({ meta: [{ title: "Signing in… — Pokémon TCG" }] }),
+	head: () => ({ meta: [{ title: "Signing in… · Cardstack" }] }),
 	component: AuthCallback,
 });
 
@@ -84,7 +84,7 @@ function AuthCallback() {
 
 		async function run() {
 			if (!isCloudEnabled()) {
-				fail("Cloud sign-in is not enabled in this build.");
+				fail("Cloud sync is off in this build. Your cards still work locally.");
 				return;
 			}
 			// Provider rejected the link (expired, already used, etc.).
@@ -116,11 +116,15 @@ function AuthCallback() {
 				const session = await waitForSession(auth);
 				if (!session) {
 					return fail(
-						"This sign-in link is invalid or has expired. Request a new one.",
+						"This link is expired or already used. Ask for a fresh one and you're back in.",
 					);
 				}
 			} catch (e) {
-				return fail(e instanceof Error ? e.message : "Sign-in failed.");
+				return fail(
+					e instanceof Error
+						? e.message
+						: "Sign-in hit a snag. Try the link again.",
+				);
 			}
 
 			if (!cancelled) {
@@ -144,14 +148,14 @@ function AuthCallback() {
 							Signing you in…
 						</p>
 						<p className="text-sm text-[var(--ink-muted)]">
-							Verifying your magic link.
+							Checking your magic link. One sec.
 						</p>
 					</div>
 				) : (
 					<div className="space-y-4 py-4">
 						<div className="space-y-1.5">
 							<p className="font-display text-lg font-semibold text-[var(--ink)]">
-								Sign-in link didn't work
+								That link didn't work
 							</p>
 							<p className="text-sm text-[var(--ink-muted)]">{message}</p>
 						</div>

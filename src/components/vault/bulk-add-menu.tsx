@@ -188,7 +188,7 @@ export function BulkAddMenu({
 					if (!o) setPicker(null);
 				}}
 				title={`Add ${targetIds.length} ${targetIds.length === 1 ? "card" : "cards"} to a binder`}
-				description="Pick a binder to add these cards to."
+				description="Drop these cards into a binder."
 				binders={binderList}
 				onPick={(id) => void addCardsToBinder(id, targetIds)}
 				onCreateNew={() => openNewBinder({ kind: "cards", targetIds })}

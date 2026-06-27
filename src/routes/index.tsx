@@ -37,19 +37,21 @@ export function HomeHero() {
 				<Stagger className="relative flex flex-col items-center gap-0">
 					<img src="/logo-64.png" alt="" className="size-14" />
 
-					<Eyebrow className="mt-5">Browse · collect · admire the holo</Eyebrow>
+					<Eyebrow className="mt-5">Browse · Collect · Own it</Eyebrow>
 
 					<h1
 						className="mt-4 text-5xl font-semibold tracking-[-0.01em] text-balance md:text-6xl"
 						style={{ fontFamily: "var(--font-display)" }}
 					>
-						Pokémon TCG
+						No ads. No snooping.
 						<br />
-						Holo Playground
+						No landlord. Just your cards.
 					</h1>
 
 					<p className="mt-3 text-base text-[var(--ink-muted)]">
-						Search the catalog · admire the holo
+						Track your whole Pokémon TCG collection. Local-first and
+						open-source, so it's actually yours. No account to start, no
+						judgment about the fourth Charizard.
 					</p>
 
 					{/* Glass pill search form */}
@@ -62,8 +64,8 @@ export function HomeHero() {
 							<input
 								type="search"
 								name="q"
-								placeholder="Search cards by name…"
-								aria-label="Search cards by name"
+								placeholder="Search any card by name…"
+								aria-label="Search any card by name"
 								className="h-11 w-full bg-transparent px-3 text-sm text-[var(--ink)] outline-none placeholder:text-[var(--faint)]"
 							/>
 						</div>
@@ -94,13 +96,12 @@ export const Route = createFileRoute("/")({
 	head: () => ({
 		meta: [
 			{
-				title:
-					"Pokémon TCG Holo Playground — browse & admire holographic cards",
+				title: "Cardstack: track your Pokémon TCG collection, local-first",
 			},
 			{
 				name: "description",
 				content:
-					"Browse the full Pokémon Trading Card Game catalog by series and set, search any card, and view interactive holographic renders.",
+					"Cardstack tracks your whole Pokémon TCG collection. Local-first and open-source, so your data stays yours. Browse the full catalog free, no account needed.",
 			},
 		],
 	}),

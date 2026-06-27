@@ -71,7 +71,7 @@ function SidebarHeaderContent(): React.JSX.Element {
 	return (
 		<SidebarMenu>
 			<SidebarMenuItem>
-				<SidebarMenuButton size="lg" asChild tooltip="CardStack — home">
+				<SidebarMenuButton size="lg" asChild tooltip="Cardstack, home">
 					<Link to="/">
 						<div
 							className="grid size-9 shrink-0 place-items-center rounded-[11px] shadow-[0_6px_18px_-6px_var(--primary)] group-data-[collapsible=icon]:size-8"
@@ -91,7 +91,9 @@ function SidebarHeaderContent(): React.JSX.Element {
 							<span className="truncate font-display text-sm font-semibold">
 								Cardstack
 							</span>
-							<span className="font-mono text-[10px] text-(--faint)">Home</span>
+							<span className="font-mono text-[10px] text-(--faint)">
+								Your cards. Your call.
+							</span>
 						</div>
 					</Link>
 				</SidebarMenuButton>
