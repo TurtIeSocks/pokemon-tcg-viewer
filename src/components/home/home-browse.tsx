@@ -86,6 +86,9 @@ export function HomeBrowse({ tree }: { tree: NavTree }) {
 				<HomeSection title="Browse by card type">
 					<div className="flex flex-wrap justify-center gap-2">
 						<Button variant="soft" size="sm" asChild>
+							<Link to="/pokemon">Pokémon</Link>
+						</Button>
+						<Button variant="soft" size="sm" asChild>
 							<Link to="/trainer" search={LIST_SEARCH_DEFAULTS}>
 								Trainers
 							</Link>
