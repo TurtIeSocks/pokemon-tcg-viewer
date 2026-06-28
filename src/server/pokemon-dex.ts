@@ -43,7 +43,7 @@ function topKey(counts: Map<string, number>): string | null {
 /**
  * Aggregate the corpus into one directory row per species that has at least one
  * card. `count` = cards referencing that national-dex number; `type` = the
- * most-frequent first energy type across those cards. Sorted ascending by dex.
+ * most-frequent first type (Fire/Water/...) across those cards. Sorted ascending by dex.
  */
 export function buildPokedex(
 	cards: HoloCardData[],

@@ -3,7 +3,7 @@ export interface PokedexRow {
 	dex: number;
 	name: string;
 	count: number;
-	/** Most-frequent first energy type across this species' cards, or null. */
+	/** Most-frequent first type (Fire/Water/...) across this species' cards, or null. */
 	type: string | null;
 }
 
