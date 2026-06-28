@@ -2,10 +2,15 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { PokedexControls } from "../../components/pokedex/pokedex-controls";
 import { PokedexGrid } from "../../components/pokedex/pokedex-grid";
+import { ResultsBar } from "../../components/results-bar";
+import { SortControl } from "../../components/sort-control";
 import {
 	applyPokedexFilter,
+	naturalPokedexDir,
 	POKEDEX_FILTER_DEFAULTS,
+	POKEDEX_SORT_OPTIONS,
 	type PokedexFilter,
+	type PokedexSortMode,
 	pokedexTypeOptions,
 } from "../../lib/pokedex";
 import { getPokedexFn } from "../../server/corpus-server";
@@ -42,6 +47,23 @@ function PokedexPage() {
 					typeOptions={typeOptions}
 					onChange={(patch) => setFilter((f) => ({ ...f, ...patch }))}
 				/>
+			</div>
+			<div className="shrink-0">
+				<ResultsBar count={visible.length} unit="species">
+					<SortControl
+						mode={filter.sortMode}
+						dir={filter.sortDir}
+						options={POKEDEX_SORT_OPTIONS}
+						onModeChange={(sortMode: PokedexSortMode) =>
+							setFilter((f) => ({
+								...f,
+								sortMode,
+								sortDir: naturalPokedexDir(sortMode),
+							}))
+						}
+						onDirChange={(sortDir) => setFilter((f) => ({ ...f, sortDir }))}
+					/>
+				</ResultsBar>
 			</div>
 			<div className="min-h-0 flex-1">
 				<PokedexGrid rows={visible} />
