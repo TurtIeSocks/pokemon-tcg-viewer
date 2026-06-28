@@ -37,11 +37,10 @@ export function CardCockpit({
 	const variants = holo.variants;
 	return (
 		<div className="@container" style={{ "--accent": accent } as CSSProperties}>
-			{/* Header: breadcrumb + tabs */}
-			<div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.07] px-5 py-3 @3xl:px-6">
-				<span className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-					{card.setName} · #{card.cardNumber}
-				</span>
+			{/* Header: tabs hard-left. The close (X) sits at the dialog's top-right
+			    in the overlay; the right padding clears it so the tabs never run
+			    under it (and is harmless on the cold-load page, which has no X). */}
+			<div className="flex items-center border-b border-white/[0.07] px-5 py-3 pr-14 @3xl:px-6 @3xl:pr-16">
 				<CardTabs tab={tab} onChange={onTabChange} idBase={ID_BASE} />
 			</div>
 
@@ -69,19 +68,14 @@ export function CardCockpit({
 							<h2 className="font-display text-[22px] font-semibold leading-tight text-[var(--ink)]">
 								{card.name}
 							</h2>
-							<div className="font-display text-sm text-[var(--ink-muted)]">
-								{describeCard(card)}
+							<div className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--ink-muted)]">
+								{card.setName} · #{card.cardNumber}
 							</div>
-							<div className="flex items-center gap-2">
-								{card.hp ? (
-									<span className="font-mono text-[12px] text-[var(--ink-muted)]">
-										<b className="text-[color:var(--primary)]">{card.hp}</b> HP
-									</span>
-								) : null}
-								{card.rarity ? (
-									<Badge variant="default">✦ {card.rarity}</Badge>
-								) : null}
-							</div>
+							{card.rarity ? (
+								<Badge variant="default" className="mt-0.5 self-start">
+									✦ {card.rarity}
+								</Badge>
+							) : null}
 						</div>
 						<CollectionButton
 							cardId={card.id}
@@ -98,12 +92,25 @@ export function CardCockpit({
 					className="min-w-0 flex-1"
 				>
 					{tab === "details" ? (
-						<CardInfo
-							card={card}
-							showHeader={false}
-							pending={pending}
-							footer={<CardCrossLinks links={crossLinks} />}
-						/>
+						<>
+							{/* Descriptor + HP header (moved here from the rail so the
+							    Details pane leads with card context above ATTACKS). */}
+							<div className="mb-4 flex flex-wrap items-baseline gap-x-2 border-b border-white/[0.07] pb-3 font-display text-sm text-[var(--ink-muted)]">
+								<span>{describeCard(card)}</span>
+								{card.hp ? (
+									<span className="font-mono text-[12px]">
+										· <b className="text-[color:var(--primary)]">{card.hp}</b>{" "}
+										HP
+									</span>
+								) : null}
+							</div>
+							<CardInfo
+								card={card}
+								showHeader={false}
+								pending={pending}
+								footer={<CardCrossLinks links={crossLinks} />}
+							/>
+						</>
 					) : tab === "collection" ? (
 						<GlassPanel className="min-w-0 overflow-hidden p-5">
 							<StackManager cardId={card.id} variants={variants} />

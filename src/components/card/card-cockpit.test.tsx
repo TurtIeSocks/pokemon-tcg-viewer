@@ -15,6 +15,7 @@ const CARD = makeFocusCard({
 	setName: "Base Set",
 	cardNumber: "4",
 	hp: "120",
+	rarity: "Rare Holo",
 	attacks: [
 		{
 			name: "Fire Spin",
@@ -56,8 +57,28 @@ test("Collection tab shows the StackManager; name still present on the rail", as
 	);
 	expect(screen.getByRole("button", { name: /add stack/i })).toBeDefined();
 	expect(screen.getByRole("heading", { name: "Charizard" })).toBeDefined();
+	// Rail identity persists: set·# and rarity show on every tab.
+	expect(screen.getByText(/Base Set · #4/)).toBeDefined();
+	expect(screen.getByText(/Rare Holo/)).toBeDefined();
 	// Attacks (Details body) are NOT shown on the Collection tab.
 	expect(screen.queryByText("Fire Spin")).toBeNull();
+	// HP moved to the Details pane header — absent on Collection.
+	expect(screen.queryByText(/120/)).toBeNull();
+});
+
+test("Details pane leads with the descriptor + HP header; rail keeps rarity", async () => {
+	await renderInRouter(
+		<CardCockpit
+			card={CARD}
+			crossLinks={[]}
+			tab="details"
+			onTabChange={() => {}}
+		/>,
+	);
+	// HP now lives in the Details pane header (moved off the rail).
+	expect(screen.getByText(/120/)).toBeDefined();
+	// Rarity stays on the persistent rail.
+	expect(screen.getByText(/Rare Holo/)).toBeDefined();
 });
 
 test("Pricing tab shows the pricing pane", async () => {
@@ -70,6 +91,9 @@ test("Pricing tab shows the pricing pane", async () => {
 		/>,
 	);
 	expect(screen.getByText(/market prices/i)).toBeDefined();
+	// Rail persists rarity; HP/descriptor are Details-only (absent here).
+	expect(screen.getByText(/Rare Holo/)).toBeDefined();
+	expect(screen.queryByText(/120/)).toBeNull();
 });
 
 test("clicking the Collection tab calls onTabChange('collection')", async () => {
