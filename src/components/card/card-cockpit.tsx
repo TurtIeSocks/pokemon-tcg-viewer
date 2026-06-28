@@ -48,7 +48,7 @@ export function CardCockpit({
 			<div className="flex flex-col gap-6 p-5 @3xl:flex-row @3xl:items-start @3xl:gap-8 @3xl:p-6">
 				{/* Rail (persistent) */}
 				<div className="shrink-0 @3xl:sticky @3xl:top-6">
-					<div className="flex w-full flex-col gap-4 @3xl:w-[200px]">
+					<div className="mx-auto flex w-full max-w-[240px] flex-col gap-4 @3xl:mx-0 @3xl:w-[200px] @3xl:max-w-none">
 						<ClientOnly
 							fallback={
 								<img
