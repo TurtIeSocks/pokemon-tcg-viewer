@@ -122,6 +122,8 @@ export function applyPokedexFilter(
 	if (f.sortMode === "name")
 		out.sort((a, b) => sign * a.name.localeCompare(b.name));
 	else if (f.sortMode === "count")
+		// Primary: count (signed by direction). Tie-break: ascending dex, always
+		// (direction-independent) so equal-count species keep a stable order.
 		out.sort((a, b) => sign * (a.count - b.count) || a.dex - b.dex);
 	else out.sort((a, b) => sign * (a.dex - b.dex));
 	return out;
