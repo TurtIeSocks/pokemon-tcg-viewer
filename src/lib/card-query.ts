@@ -1,9 +1,28 @@
 import type { CorpusQuery } from "../store/corpus/corpus-engine";
 import type { SearchMode } from "../store/corpus/fuzzy";
 import type { FilterClauses } from "../utils/build-filter-clauses";
+import type { SortDir, SortOption } from "./sort";
 
 export type ViewMode = "grid" | "timeline";
 export type OwnedMode = "all" | "owned" | "missing";
+
+// NOTE: this union must stay in sync with the inline `sort` union on CorpusQuery
+// in src/store/corpus/corpus-engine.ts (kept inline there to avoid a type cycle).
+export type CardSortMode = "default" | "dex" | "number" | "name" | "released";
+
+/** Sort modes offered by the card pages' SortControl. */
+export const CARD_SORT_OPTIONS: SortOption<CardSortMode>[] = [
+	{ value: "default", label: "Default" },
+	{ value: "dex", label: "Dex #" },
+	{ value: "number", label: "Card #" },
+	{ value: "name", label: "Name" },
+	{ value: "released", label: "Release date" },
+];
+
+/** Natural direction when switching card sort mode (all ascending). */
+export function naturalCardDir(): SortDir {
+	return "asc";
+}
 
 /** Typed list-page search params (shared validateSearch shape). */
 export interface ListSearch {
@@ -22,6 +41,10 @@ export interface ListSearch {
 	pokemon: number | null;
 	/** Search mode: "exact" (whole name), "contains" (prefix+substring), or "fuzzy" (default). */
 	mode: SearchMode;
+	/** Explicit sort; "default" keeps the context order (relevance/release/number). */
+	sort: CardSortMode;
+	/** Sort direction for an explicit `sort` ("default" ignores it). */
+	dir: SortDir;
 }
 
 /** Page context: which entity the list is anchored to. */

@@ -124,3 +124,30 @@ test("mode: full round-trip serialize → parse", () => {
 		"contains",
 	);
 });
+
+test("sort: defaults to 'default' and dir to 'asc'", () => {
+	expect(LIST_SEARCH_DEFAULTS.sort).toBe("default");
+	expect(LIST_SEARCH_DEFAULTS.dir).toBe("asc");
+});
+test("sort: validates the modes from the URL, else 'default'", () => {
+	expect(validateListSearch({ sort: "name" }).sort).toBe("name");
+	expect(validateListSearch({ sort: "dex" }).sort).toBe("dex");
+	expect(validateListSearch({ sort: "number" }).sort).toBe("number");
+	expect(validateListSearch({ sort: "released" }).sort).toBe("released");
+	expect(validateListSearch({ sort: "junk" }).sort).toBe("default");
+});
+test("dir: validates 'desc', else 'asc'", () => {
+	expect(validateListSearch({ dir: "desc" }).dir).toBe("desc");
+	expect(validateListSearch({ dir: "nonsense" }).dir).toBe("asc");
+});
+test("sort/dir: defaults stripped from URL; non-defaults serialized", () => {
+	expect(listSearchToUrl({ sort: "default" }).sort).toBeUndefined();
+	expect(listSearchToUrl({ sort: "name" }).sort).toBe("name");
+	expect(listSearchToUrl({ dir: "asc" }).dir).toBeUndefined();
+	expect(listSearchToUrl({ dir: "desc" }).dir).toBe("desc");
+});
+test("sort: full round-trip serialize → parse", () => {
+	expect(validateListSearch(listSearchToUrl({ sort: "released" })).sort).toBe(
+		"released",
+	);
+});

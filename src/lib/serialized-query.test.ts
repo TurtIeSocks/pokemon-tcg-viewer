@@ -14,6 +14,8 @@ const baseSearch = (): ListSearch => ({
 	yearMax: null,
 	pokemon: null,
 	mode: "fuzzy",
+	sort: "default",
+	dir: "asc",
 });
 
 const baseCtx = (): ListContext => ({});

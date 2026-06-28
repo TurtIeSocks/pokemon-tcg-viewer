@@ -15,6 +15,8 @@ const defaultValue: ListSearch = {
 	yearMax: null,
 	pokemon: null,
 	mode: "fuzzy" as const,
+	sort: "default",
+	dir: "asc",
 };
 
 const options = {

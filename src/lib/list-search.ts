@@ -1,5 +1,11 @@
 import type { SearchMode } from "../store/corpus/fuzzy";
-import type { ListSearch, OwnedMode, ViewMode } from "./card-query";
+import type {
+	CardSortMode,
+	ListSearch,
+	OwnedMode,
+	ViewMode,
+} from "./card-query";
+import type { SortDir } from "./sort";
 
 /**
  * Default value for every list-search field. Paired with the TanStack
@@ -20,6 +26,8 @@ export const LIST_SEARCH_DEFAULTS: ListSearch = {
 	yearMax: null,
 	pokemon: null,
 	mode: "fuzzy",
+	sort: "default",
+	dir: "asc",
 };
 
 const VALID_SEARCH_PARAMS = [
@@ -80,6 +88,13 @@ export function validateListSearch(
 			if (m === "exact" || m === "contains" || m === "fuzzy") return m;
 			return "fuzzy";
 		})(),
+		sort: ((): CardSortMode => {
+			const s = search.sort;
+			return s === "dex" || s === "number" || s === "name" || s === "released"
+				? s
+				: "default";
+		})(),
+		dir: (search.dir === "desc" ? "desc" : "asc") as SortDir,
 	};
 }
 
@@ -104,6 +119,10 @@ export function listSearchToUrl(
 		out.pokemon = s.pokemon != null ? String(s.pokemon) : undefined;
 	// Omit "mode" from URL when it's the default ("fuzzy") to keep URLs clean.
 	if (s.mode !== undefined) out.mode = s.mode !== "fuzzy" ? s.mode : undefined;
+	// Omit "default"/"asc" so crawlable URLs stay clean.
+	if (s.sort !== undefined)
+		out.sort = s.sort !== "default" ? s.sort : undefined;
+	if (s.dir !== undefined) out.dir = s.dir !== "asc" ? s.dir : undefined;
 
 	return out;
 }
