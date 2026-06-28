@@ -4,7 +4,7 @@ import {
 	stripSearchParams,
 	useNavigate,
 } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { HoloCardData } from "../components/holo-card";
 import { CardGridIsland } from "../components/islands/card-grid-island";
 import { CardSelectionProvider } from "../components/islands/card-selection";
@@ -83,12 +83,36 @@ function SearchPage() {
 	useEffect(() => {
 		addRecentSearch(q);
 	}, [q, addRecentSearch]);
-	const onChange = (patch: Parameters<typeof listSearchToUrl>[0]) =>
-		navigate({
-			search: (prev) => ({ ...prev, ...listSearchToUrl(patch) }),
-			// In-page filter/view change: keep it instant, don't crossfade.
-			viewTransition: false,
-		});
+	// Push a search-param patch to the URL (re-runs the loader). viewTransition off:
+	// in-page filter/view changes shouldn't crossfade.
+	const applyPatch = useCallback(
+		(patch: Parameters<typeof listSearchToUrl>[0]) =>
+			navigate({
+				search: (prev) => ({ ...prev, ...listSearchToUrl(patch) }),
+				viewTransition: false,
+			}),
+		[navigate],
+	);
+	// Debounce search-as-you-type: the q loader re-runs a server-fn RPC on every URL
+	// change, while the live grid already filters the in-memory corpus instantly — so
+	// only the URL/loader waits for a typing pause (filter/view/sort apply at once).
+	// The uncontrolled search input shows each keystroke live regardless.
+	const qTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+	useEffect(
+		() => () => {
+			if (qTimer.current) clearTimeout(qTimer.current);
+		},
+		[],
+	);
+	const onChange = useCallback(
+		(patch: Parameters<typeof listSearchToUrl>[0]) => {
+			const isTyping = "q" in patch && Object.keys(patch).length === 1;
+			if (!isTyping) return applyPatch(patch);
+			if (qTimer.current) clearTimeout(qTimer.current);
+			qTimer.current = setTimeout(() => applyPatch(patch), 250);
+		},
+		[applyPatch],
+	);
 
 	// Corpus + sets for BulkAddMenu cardIds derivation.
 	const index = useCorpusRuntime((s) => s.index);
