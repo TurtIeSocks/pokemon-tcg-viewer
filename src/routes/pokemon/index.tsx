@@ -1,5 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import {
+	createFileRoute,
+	stripSearchParams,
+	useNavigate,
+} from "@tanstack/react-router";
+import { useMemo } from "react";
 import { PokedexControls } from "../../components/pokedex/pokedex-controls";
 import { PokedexGrid } from "../../components/pokedex/pokedex-grid";
 import { ResultsBar } from "../../components/results-bar";
@@ -12,10 +16,13 @@ import {
 	type PokedexFilter,
 	type PokedexSortMode,
 	pokedexTypeOptions,
+	validatePokedexSearch,
 } from "../../lib/pokedex";
 import { getPokedexFn } from "../../server/corpus-server";
 
 export const Route = createFileRoute("/pokemon/")({
+	validateSearch: validatePokedexSearch,
+	search: { middlewares: [stripSearchParams(POKEDEX_FILTER_DEFAULTS)] },
 	loader: () => getPokedexFn(),
 	head: ({ loaderData }) => ({
 		meta: [
@@ -32,7 +39,14 @@ export const Route = createFileRoute("/pokemon/")({
 
 function PokedexPage() {
 	const rows = Route.useLoaderData();
-	const [filter, setFilter] = useState<PokedexFilter>(POKEDEX_FILTER_DEFAULTS);
+	const filter = Route.useSearch();
+	const navigate = useNavigate({ from: Route.fullPath });
+	const onChange = (patch: Partial<PokedexFilter>) =>
+		navigate({
+			search: (prev) => ({ ...prev, ...patch }),
+			// In-page filter/sort change: keep it instant, don't crossfade.
+			viewTransition: false,
+		});
 	const typeOptions = useMemo(() => pokedexTypeOptions(rows), [rows]);
 	const visible = useMemo(
 		() => applyPokedexFilter(rows, filter),
@@ -45,7 +59,7 @@ function PokedexPage() {
 				<PokedexControls
 					value={filter}
 					typeOptions={typeOptions}
-					onChange={(patch) => setFilter((f) => ({ ...f, ...patch }))}
+					onChange={onChange}
 				/>
 			</div>
 			<div className="shrink-0">
@@ -55,13 +69,12 @@ function PokedexPage() {
 						dir={filter.sortDir}
 						options={POKEDEX_SORT_OPTIONS}
 						onModeChange={(sortMode: PokedexSortMode) =>
-							setFilter((f) => ({
-								...f,
+							onChange({
 								sortMode,
 								sortDir: naturalPokedexDir(sortMode),
-							}))
+							})
 						}
-						onDirChange={(sortDir) => setFilter((f) => ({ ...f, sortDir }))}
+						onDirChange={(sortDir) => onChange({ sortDir })}
 					/>
 				</ResultsBar>
 			</div>

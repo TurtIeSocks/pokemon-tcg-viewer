@@ -6,6 +6,7 @@ import { Eyebrow } from "@/components/ui/eyebrow";
 import { Stagger } from "@/components/ui/motion";
 import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import type { NavTree } from "../../lib/nav-tree";
+import { POKEDEX_FILTER_DEFAULTS } from "../../lib/pokedex";
 import {
 	loadCorpus,
 	useCorpusRuntime,
@@ -86,7 +87,9 @@ export function HomeBrowse({ tree }: { tree: NavTree }) {
 				<HomeSection title="Browse by card type">
 					<div className="flex flex-wrap justify-center gap-2">
 						<Button variant="soft" size="sm" asChild>
-							<Link to="/pokemon">Pokémon</Link>
+							<Link to="/pokemon" search={POKEDEX_FILTER_DEFAULTS}>
+								Pokémon
+							</Link>
 						</Button>
 						<Button variant="soft" size="sm" asChild>
 							<Link to="/trainer" search={LIST_SEARCH_DEFAULTS}>

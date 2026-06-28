@@ -64,6 +64,31 @@ export const POKEDEX_FILTER_DEFAULTS: PokedexFilter = {
 	sortDir: "asc",
 };
 
+/**
+ * Validate URL search params into a full PokedexFilter (every field present),
+ * so the /pokemon route's filter state is URL-backed like the card routes.
+ * The param names ARE the PokedexFilter keys; enum-guard the rest to defaults.
+ * Pair with `stripSearchParams(POKEDEX_FILTER_DEFAULTS)` so default params stay
+ * out of the URL.
+ */
+export function validatePokedexSearch(
+	search: Record<string, unknown>,
+): PokedexFilter {
+	const orNull = (v: unknown): string | null =>
+		typeof v === "string" && v ? v : null;
+	const sm = search.searchMode;
+	const so = search.sortMode;
+	return {
+		query: typeof search.query === "string" ? search.query : "",
+		searchMode:
+			sm === "exact" || sm === "contains" || sm === "fuzzy" ? sm : "fuzzy",
+		type: orNull(search.type),
+		generation: orNull(search.generation),
+		sortMode: so === "name" || so === "count" || so === "dex" ? so : "dex",
+		sortDir: search.sortDir === "desc" ? "desc" : "asc",
+	};
+}
+
 /** Sort modes offered by the /pokemon SortControl. */
 export const POKEDEX_SORT_OPTIONS: SortOption<PokedexSortMode>[] = [
 	{ value: "dex", label: "Dex #" },

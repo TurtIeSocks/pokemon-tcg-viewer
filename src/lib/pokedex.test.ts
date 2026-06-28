@@ -8,7 +8,48 @@ import {
 	type PokedexRow,
 	pokedexTypeOptions,
 	spriteUrl,
+	validatePokedexSearch,
 } from "./pokedex";
+
+describe("validatePokedexSearch", () => {
+	test("empty params return the defaults", () => {
+		expect(validatePokedexSearch({})).toEqual(POKEDEX_FILTER_DEFAULTS);
+	});
+	test("reads every field through verbatim", () => {
+		expect(
+			validatePokedexSearch({
+				query: "char",
+				searchMode: "exact",
+				type: "Fire",
+				generation: "Gen 1",
+				sortMode: "count",
+				sortDir: "desc",
+			}),
+		).toEqual({
+			query: "char",
+			searchMode: "exact",
+			type: "Fire",
+			generation: "Gen 1",
+			sortMode: "count",
+			sortDir: "desc",
+		});
+	});
+	test("invalid enum values fall back to defaults", () => {
+		const r = validatePokedexSearch({
+			searchMode: "bogus",
+			sortMode: "bogus",
+			sortDir: "bogus",
+		});
+		expect(r.searchMode).toBe("fuzzy");
+		expect(r.sortMode).toBe("dex");
+		expect(r.sortDir).toBe("asc");
+	});
+	test("empty type/generation strings normalize to null", () => {
+		const r = validatePokedexSearch({ type: "", generation: "" });
+		expect(r.type).toBeNull();
+		expect(r.generation).toBeNull();
+	});
+});
 
 describe("spriteUrl", () => {
 	test("builds the PokéAPI national-dex sprite URL for a dex number", () => {

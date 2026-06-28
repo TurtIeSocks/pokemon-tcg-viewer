@@ -105,6 +105,15 @@ an optional `unit` prop (default `"cards"`); `/pokemon` passes `unit="species"`.
 `count` + `desc`). On mode change the route resets `sortDir` to that mode's
 natural default.
 
+### URL persistence
+The whole `PokedexFilter` is URL-backed, matching the card routes (closes the
+original Pokédex spec's deferred URL-param item): `validatePokedexSearch`
+(param names = `PokedexFilter` keys, enum-guarded to defaults) is the route's
+`validateSearch`, paired with `stripSearchParams(POKEDEX_FILTER_DEFAULTS)` so
+default params stay out of the URL. The route reads `Route.useSearch()` and
+patches via `navigate`; every field is a primitive so no array-to-CSV transform
+is needed. The home `/pokemon` pill passes `search={POKEDEX_FILTER_DEFAULTS}`.
+
 ### Phase-1 testing
 - `applyPokedexFilter`: search-mode matching (exact/contains/fuzzy + numeric dex
   fallback); each sort mode × both directions.
