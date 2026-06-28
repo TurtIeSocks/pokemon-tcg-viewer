@@ -9,6 +9,7 @@ import { useCallback } from "react";
 import type { HoloCardData } from "../../components/holo-card";
 import { CardGridIsland } from "../../components/islands/card-grid-island";
 import { CardSelectionProvider } from "../../components/islands/card-selection";
+import { CardSortControl } from "../../components/islands/card-sort-control";
 import { SearchControls } from "../../components/islands/search-controls";
 import { ViewModeToggle } from "../../components/islands/view-mode-toggle";
 import { ResultsBar } from "../../components/results-bar";
@@ -135,6 +136,7 @@ function PokemonPageInner({
 					disabled={false}
 					onChange={(view) => onChange({ view })}
 				/>
+				<CardSortControl value={search} onChange={onChange} />
 			</ResultsBar>
 			<div className="min-h-0 flex-1">
 				<CardGridIsland

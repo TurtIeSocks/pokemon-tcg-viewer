@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import type { HoloCardData } from "../../../components/holo-card";
 import { CardGridIsland } from "../../../components/islands/card-grid-island";
 import { CardSelectionProvider } from "../../../components/islands/card-selection";
+import { CardSortControl } from "../../../components/islands/card-sort-control";
 import { PackDialog } from "../../../components/islands/pack-dialog";
 import { SearchControls } from "../../../components/islands/search-controls";
 import { ResultsBar } from "../../../components/results-bar";
@@ -152,6 +153,7 @@ function SetPageInner({
 						<Package className="size-4 sm:mr-2" />
 						<span className="hidden sm:inline">Open Packs</span>
 					</Button>
+					<CardSortControl value={search} onChange={onChange} />
 				</ClientOnly>
 			</ResultsBar>
 			<div className="min-h-0 flex-1">
