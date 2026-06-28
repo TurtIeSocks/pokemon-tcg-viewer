@@ -24,12 +24,12 @@ export function SpeciesTile({ row }: { row: PokedexRow }) {
 			to="/pokemon/$name"
 			params={{ name: row.name }}
 			search={LIST_SEARCH_DEFAULTS}
-			className="group block rounded-2xl border border-white/10 bg-white/[0.05] p-2.5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(0,0,0,0.35)] transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] motion-reduce:transition-none"
+			className="group block overflow-hidden rounded-2xl border border-white/10 bg-white/[0.05] p-2.5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(0,0,0,0.35)] transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] motion-reduce:transition-none"
 		>
 			<div className="relative flex h-24 items-center justify-center">
 				<span
 					aria-hidden="true"
-					className="absolute h-20 w-20 rounded-full opacity-50 blur-2xl"
+					className="absolute h-20 w-20 rounded-full opacity-50 blur-2xl transition-[opacity,transform] duration-300 ease-out group-hover:scale-125 group-hover:opacity-75 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
 					style={{ background: glow }}
 				/>
 				<img
