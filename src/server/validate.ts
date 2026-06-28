@@ -11,6 +11,14 @@ export function nonEmptyString(value: unknown, label: string): string {
 	return value;
 }
 
+/** Reject anything that isn't a known card supertype. */
+export function supertypeName(value: unknown): string {
+	const v = nonEmptyString(value, "supertype");
+	if (v !== "Pokémon" && v !== "Trainer" && v !== "Energy")
+		throw new Error("supertype must be Pokémon, Trainer, or Energy");
+	return v;
+}
+
 /** Coerce to a number and reject anything outside the integer range [min, max]. */
 export function boundedInt(
 	value: unknown,

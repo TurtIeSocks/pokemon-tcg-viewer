@@ -82,7 +82,9 @@ describe("buildCorpusQuery", () => {
 	});
 
 	test("pokemon filter sets dexNumber in the global branch", () => {
-		expect(buildCorpusQuery({ ...empty, pokemon: 112 }, {}).dexNumber).toBe(112);
+		expect(buildCorpusQuery({ ...empty, pokemon: 112 }, {}).dexNumber).toBe(
+			112,
+		);
 	});
 	test("pokemon filter sets dexNumber within a set", () => {
 		const q = buildCorpusQuery({ ...empty, pokemon: 25 }, { setId: "swsh9" });
@@ -98,5 +100,35 @@ describe("buildCorpusQuery", () => {
 		expect(
 			buildCorpusQuery(empty, { setId: "swsh9" }).dexNumber,
 		).toBeUndefined();
+	});
+
+	test("supertype context → locked supertype, chronological, no query relevance", () => {
+		const q = buildCorpusQuery(empty, { supertype: "Trainer" });
+		expect(q.setId).toBeNull();
+		expect(q.filters?.supertypes).toEqual(["Trainer"]);
+		expect(q.chronological).toBe(true);
+		expect(q.nameSlug).toBeUndefined();
+		expect(q.relevance).toBe(false);
+	});
+	test("supertype + nameSlug context → name-anchored", () => {
+		const q = buildCorpusQuery(empty, {
+			supertype: "Trainer",
+			nameSlug: "rare-candy",
+		});
+		expect(q.nameSlug).toBe("rare-candy");
+		expect(q.filters?.supertypes).toEqual(["Trainer"]);
+	});
+	test("supertype context + query → relevance on", () => {
+		expect(
+			buildCorpusQuery({ ...empty, q: "candy" }, { supertype: "Trainer" })
+				.relevance,
+		).toBe(true);
+	});
+	test("supertype lock overrides the user's supertype filter", () => {
+		const q = buildCorpusQuery(
+			{ ...empty, supertype: ["Pokémon"] },
+			{ supertype: "Energy" },
+		);
+		expect(q.filters?.supertypes).toEqual(["Energy"]);
 	});
 });

@@ -3,10 +3,11 @@ import { setResponseHeader } from "@tanstack/react-start/server";
 import type { ListSearch } from "../lib/card-query";
 import { LIST_SEARCH_DEFAULTS } from "../lib/list-search";
 import { findSet } from "../lib/nav-tree";
+import { slugify } from "../lib/slug";
 import type { SearchMode } from "../store/corpus/fuzzy";
 import { cacheControl } from "./cache-headers";
 import { nameByDex } from "./pokemon-dex";
-import { boundedInt, nonEmptyString } from "./validate";
+import { boundedInt, nonEmptyString, supertypeName } from "./validate";
 
 // National Pokédex upper bound — matches the species-list fetch limit.
 const MAX_DEX = 1025;
@@ -21,6 +22,8 @@ interface RouteCrossLink {
 	label: string;
 	link:
 		| { to: "/pokemon/$name"; params: { name: string } }
+		| { to: "/trainer/$name"; params: { name: string } }
+		| { to: "/energy/$name"; params: { name: string } }
 		| {
 				to: "/$series/$set";
 				params: { series: string; set: string };
@@ -72,6 +75,39 @@ export const getDexCardsFn = createServerFn({ method: "GET" })
 	.handler(async ({ data: dex }) => {
 		const { queryCorpusServer } = await import("./corpus-loader");
 		return queryCorpusServer({ dexNumber: dex, setId: null, relevance: false });
+	});
+
+/** All cards of one supertype (Trainer/Energy category browse), across sets. */
+export const getSupertypeCardsFn = createServerFn({ method: "GET" })
+	.inputValidator((s: unknown) => supertypeName(s))
+	.handler(async ({ data: supertype }) => {
+		const { queryCorpusServer } = await import("./corpus-loader");
+		return queryCorpusServer({
+			setId: null,
+			filters: { supertypes: [supertype] },
+			chronological: true,
+			relevance: false,
+		});
+	});
+
+/** All printings of one named card within a supertype, across sets. */
+export const getNamedCardsFn = createServerFn({ method: "GET" })
+	.inputValidator((input: unknown) => {
+		const o = (input ?? {}) as { supertype?: unknown; name?: unknown };
+		return {
+			supertype: supertypeName(o.supertype),
+			name: nonEmptyString(o.name, "name"),
+		};
+	})
+	.handler(async ({ data }) => {
+		const { queryCorpusServer } = await import("./corpus-loader");
+		return queryCorpusServer({
+			setId: null,
+			filters: { supertypes: [data.supertype] },
+			nameSlug: data.name,
+			chronological: true,
+			relevance: false,
+		});
 	});
 
 /**
@@ -130,6 +166,16 @@ export const getCardForRouteFn = createServerFn({ method: "GET" })
 					link: { to: "/pokemon/$name", params: { name } },
 				});
 			}
+		}
+		// Trainer/Energy cards recur by name (no dex); link to their per-name page.
+		if (card.supertype === "Trainer" || card.supertype === "Energy") {
+			crossLinks.push({
+				label: `View all ${card.name}`,
+				link: {
+					to: card.supertype === "Trainer" ? "/trainer/$name" : "/energy/$name",
+					params: { name: slugify(card.name) },
+				},
+			});
 		}
 		crossLinks.push({
 			label: `Go to ${card.setName}`,

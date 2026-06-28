@@ -1,4 +1,5 @@
 import type { HoloCardData } from "../../components/holo-card";
+import { slugify } from "../../lib/slug";
 import type { PokemonSet } from "../../server/card-mappers";
 import type { FilterClauses } from "../../utils/build-filter-clauses";
 import type { CorpusCard } from "./corpus-types";
@@ -10,6 +11,10 @@ export interface CorpusQuery {
 	query?: string;
 	setId?: string | null;
 	dexNumber?: number | null;
+	/** Slug of a single card name (e.g. "rare-candy"). Keeps only printings whose slugified name matches. */
+	nameSlug?: string | null;
+	/** Order results by release date (then number) instead of plain number order — for cross-set views. */
+	chronological?: boolean;
 	filters?: FilterClauses;
 	/** Inclusive lower bound on release year (YYYY). Null/undefined → no lower bound. */
 	yearMin?: number | null;
@@ -126,6 +131,12 @@ export function queryCorpus(
 			!card.nationalPokedexNumbers?.includes(q.dexNumber)
 		)
 			continue;
+		// Name-anchored views (Trainer/Energy per-name pages) group by slugified
+		// name across sets — no dex exists for non-Pokémon cards. Slugify on the fly
+		// (only when nameSlug is set) to avoid bloating the index for every query.
+		// ponytail: two distinct names that slugify identically would merge onto one
+		// page (near-zero in the real card set); split by exact name if it ever bites.
+		if (q.nameSlug != null && slugify(card.name) !== q.nameSlug) continue;
 		if (!passesFilters(card, filters)) continue;
 		if (q.yearMin != null || q.yearMax != null) {
 			const year = Number(setsById.get(card.setId)?.releaseDate?.slice(0, 4));
@@ -159,7 +170,7 @@ export function queryCorpus(
 		}
 		const ra = relAt(a.card.setId);
 		const rb = relAt(b.card.setId);
-		if (q.dexNumber != null || q.relevance) {
+		if (q.dexNumber != null || q.relevance || q.chronological) {
 			if (ra !== rb) return ra.localeCompare(rb);
 		}
 		return compareCardNumber(a.card.number, b.card.number);

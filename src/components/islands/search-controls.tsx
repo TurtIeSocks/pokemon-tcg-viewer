@@ -42,6 +42,8 @@ interface SearchControlsProps {
 	showYearFilter?: boolean;
 	/** When true, renders the Pokémon (species) filter select. Defaults to false. */
 	showPokemonFilter?: boolean;
+	/** When true, hides the Card Type (supertype) dropdown — the page locks it. */
+	lockSupertype?: boolean;
 }
 
 // A single-select that maps to a string[] param (one active value at a time —
@@ -153,13 +155,14 @@ export function SearchControls({
 	placeholder = "Search cards by name",
 	showYearFilter = false,
 	showPokemonFilter = false,
+	lockSupertype = false,
 }: SearchControlsProps) {
 	// Count of active filter dimensions (q lives in the always-visible search box,
 	// so it's excluded). Single-select dimensions hold 0 or 1 value, so `.length`
 	// sums cleanly. Surfaced as a badge on the toggle so applied filters stay
 	// visible even when the panel is collapsed.
 	const activeFilters =
-		value.supertype.length +
+		(lockSupertype ? 0 : value.supertype.length) +
 		value.subtypes.length +
 		value.rarity.length +
 		value.types.length +
@@ -229,15 +232,20 @@ export function SearchControls({
 					)}
 					<div
 						className={`grid grid-cols-2 gap-2 ${
-							showPokemonFilter ? "sm:grid-cols-6" : "sm:grid-cols-5"
+							// Columns = active control count (4 base + Card Type? + Pokémon?).
+							["sm:grid-cols-4", "sm:grid-cols-5", "sm:grid-cols-6"][
+								(lockSupertype ? 0 : 1) + (showPokemonFilter ? 1 : 0)
+							]
 						}`}
 					>
-						<FilterSelect
-							label="Card Type"
-							value={value.supertype}
-							options={options.supertypes}
-							onChange={(v) => onChange({ supertype: v })}
-						/>
+						{!lockSupertype && (
+							<FilterSelect
+								label="Card Type"
+								value={value.supertype}
+								options={options.supertypes}
+								onChange={(v) => onChange({ supertype: v })}
+							/>
+						)}
 						<FilterSelect
 							label="Subtype"
 							value={value.subtypes}

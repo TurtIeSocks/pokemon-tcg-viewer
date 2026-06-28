@@ -82,6 +82,22 @@ export function HomeBrowse({ tree }: { tree: NavTree }) {
 					</div>
 				</HomeSection>
 
+				{/* Browse by card type — the non-Pokémon supertypes get their own pages. */}
+				<HomeSection title="Browse by card type">
+					<div className="flex flex-wrap justify-center gap-2">
+						<Button variant="soft" size="sm" asChild>
+							<Link to="/trainer" search={LIST_SEARCH_DEFAULTS}>
+								Trainers
+							</Link>
+						</Button>
+						<Button variant="soft" size="sm" asChild>
+							<Link to="/energy" search={LIST_SEARCH_DEFAULTS}>
+								Energy
+							</Link>
+						</Button>
+					</div>
+				</HomeSection>
+
 				{/* Latest sets — the newest releases as browse-variant tiles. */}
 				<HomeSection title="Latest sets">
 					<div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4">
