@@ -28,6 +28,10 @@ export interface ListSearch {
 export interface ListContext {
 	setId?: string;
 	dexNumber?: number;
+	/** Locks the page to one supertype (Trainer/Energy category + per-name pages). */
+	supertype?: string;
+	/** Locks the page to one card name slug (Trainer/Energy per-name pages). */
+	nameSlug?: string;
 }
 
 const orUndef = (a: string[]): string[] | undefined =>
@@ -43,7 +47,9 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 	const filters: FilterClauses = {
 		types: orUndef(s.types),
 		rarities: orUndef(s.rarity),
-		supertypes: orUndef(s.supertype),
+		// A supertype-locked page (trainers/energies + their per-name pages) fixes
+		// the supertype; its Card Type dropdown is hidden so no user value overrides.
+		supertypes: ctx.supertype ? [ctx.supertype] : orUndef(s.supertype),
 		subtypes: orUndef(s.subtypes),
 	};
 	const query = s.q.trim() || undefined;
@@ -73,6 +79,21 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 			yearMax,
 			mode,
 			relevance: false,
+		};
+	}
+	// Supertype-anchored page (Trainer/Energy category or one named card across
+	// sets): global scope, chronological order, name-slug locked when present.
+	if (ctx.supertype != null) {
+		return {
+			setId: null,
+			nameSlug: ctx.nameSlug,
+			chronological: true,
+			query,
+			filters,
+			yearMin,
+			yearMax,
+			mode,
+			relevance: !!query,
 		};
 	}
 	return {

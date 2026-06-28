@@ -10,9 +10,10 @@
 		},
 		{
 			"name": "preview",
-			"runtimeExecutable": "bun",
-			"runtimeArgs": ["run", "preview"],
-			"port": 4173
+			"runtimeExecutable": "node",
+			"runtimeArgs": ["--env-file-if-exists=.env", ".output/server/index.mjs"],
+			"port": 3100,
+			"env": { "PORT": "3100" }
 		}
 	]
 }

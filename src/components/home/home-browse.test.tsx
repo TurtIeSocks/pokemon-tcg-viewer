@@ -43,10 +43,20 @@ test("HomeBrowse renders the proof line, an era pill per series, and set tiles",
 	expect(getByText(/always free/)).toBeTruthy();
 
 	// Section headings + one era pill per series (soft-variant button links).
+	// Exclude the card-type pills (which are also soft-variant links).
 	expect(getByText("Browse by era")).toBeTruthy();
 	expect(getByText("Latest sets")).toBeTruthy();
-	const eraPills = container.querySelectorAll('a[data-variant="soft"]');
+	const softPills = [...container.querySelectorAll('a[data-variant="soft"]')];
+	const eraPills = softPills.filter((a) => {
+		const href = a.getAttribute("href") ?? "";
+		return !href.startsWith("/trainer") && !href.startsWith("/energy");
+	});
 	expect(eraPills.length).toBe(3);
+
+	// Browse-by-card-type section links to the Trainer + Energy category pages.
+	expect(getByText("Browse by card type")).toBeTruthy();
+	expect(container.querySelector('a[href^="/trainer"]')).toBeTruthy();
+	expect(container.querySelector('a[href^="/energy"]')).toBeTruthy();
 
 	// Browse-variant set tiles (link to /$series/$set, never /vault).
 	const tiles = container.querySelectorAll('a[aria-label^="Browse"]');

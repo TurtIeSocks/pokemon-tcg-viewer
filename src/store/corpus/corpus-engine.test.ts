@@ -104,6 +104,78 @@ test("pokedex: filters by national dex number", () => {
 	expect(r.map((c) => c.id)).toEqual(["base1-58"]);
 });
 
+// --- nameSlug (Trainer/Energy per-name pages) ---
+
+const namedIndex = buildIndex([
+	card({
+		id: "base1-83",
+		name: "Rare Candy",
+		setId: "base1",
+		number: "83",
+		supertype: "Trainer",
+		subtypes: ["Item"],
+	}),
+	card({
+		id: "swsh1-191",
+		name: "Rare Candy",
+		setId: "swsh1",
+		number: "191",
+		supertype: "Trainer",
+		subtypes: ["Item"],
+	}),
+	card({
+		id: "swsh1-192",
+		name: "Boss's Orders",
+		setId: "swsh1",
+		number: "192",
+		supertype: "Trainer",
+		subtypes: ["Supporter"],
+	}),
+]);
+
+test("nameSlug: keeps only printings whose slugified name matches", () => {
+	const r = queryCorpus(
+		namedIndex,
+		{
+			nameSlug: "rare-candy",
+			filters: { supertypes: ["Trainer"] },
+			chronological: true,
+			relevance: false,
+		},
+		setsById,
+	);
+	// Both Rare Candy printings, oldest set first (chronological).
+	expect(r.map((c) => c.id)).toEqual(["base1-83", "swsh1-191"]);
+});
+
+test("nameSlug + supertype excludes a same-supertype different name", () => {
+	// slugify drops apostrophes (no hyphen): "Boss's Orders" -> "bosss-orders".
+	const r = queryCorpus(
+		namedIndex,
+		{
+			nameSlug: "bosss-orders",
+			filters: { supertypes: ["Trainer"] },
+			relevance: false,
+		},
+		setsById,
+	);
+	expect(r.map((c) => c.id)).toEqual(["swsh1-192"]);
+});
+
+test("chronological: cross-set results ordered oldest set first", () => {
+	const r = queryCorpus(
+		namedIndex,
+		{
+			filters: { supertypes: ["Trainer"] },
+			chronological: true,
+			relevance: false,
+		},
+		setsById,
+	);
+	// base1 (1999) before swsh1 (2020), regardless of card number.
+	expect(r[0].setId).toBe("base1");
+});
+
 test("missing set falls back to setId as name", () => {
 	const orphan = buildIndex([card({ id: "x-1", name: "Mew", setId: "ghost" })]);
 	const r = queryCorpus(orphan, { setId: "ghost", relevance: false }, setsById);
