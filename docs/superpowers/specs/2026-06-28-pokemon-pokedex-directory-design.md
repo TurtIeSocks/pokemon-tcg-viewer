@@ -1,8 +1,18 @@
 # `/pokemon` — Pokédex species directory
 
 **Date:** 2026-06-28
-**Status:** Approved (brainstorm), ready for plan
+**Status:** Implemented
 **Branch:** c/recursing-wilson-38e051
+
+> **Revision (post-build):** the navigation layer changed from a bespoke search
+> input + a Generation jump-bar (scroll-to) to the app's standard search bar +
+> expandable filters chrome (matching `SearchControls`): a glass `Collapsible`
+> with **Type**, **Generation**, and **Sort** (`Dex number` / `Name` / `Most
+> cards`) dropdowns. Generation now **filters** rather than jumps, so the grid's
+> scroll-ref machinery was removed. Filter state is local route state (no URL
+> params, per the deferred list). Pure logic lives in `applyPokedexFilter` /
+> `pokedexTypeOptions` (`src/lib/pokedex.ts`); the bar is
+> `src/components/pokedex/pokedex-controls.tsx`.
 
 ## Summary
 

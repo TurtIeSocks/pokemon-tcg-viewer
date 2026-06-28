@@ -40,11 +40,50 @@ export function generationOf(dex: number): string | null {
 	return g ? g.label : null;
 }
 
-/** Filter rows by a query matching the species name (substring) or dex number. */
-export function filterPokedex(rows: PokedexRow[], query: string): PokedexRow[] {
-	const q = query.trim().toLowerCase();
-	if (!q) return rows;
-	return rows.filter(
-		(r) => r.name.toLowerCase().includes(q) || String(r.dex).includes(q),
+export type PokedexSort = "dex" | "name" | "count";
+
+/** Active directory filter + sort. `null` on a dimension = no filter on it. */
+export interface PokedexFilter {
+	query: string;
+	type: string | null;
+	generation: string | null;
+	sort: PokedexSort;
+}
+
+export const POKEDEX_FILTER_DEFAULTS: PokedexFilter = {
+	query: "",
+	type: null,
+	generation: null,
+	sort: "dex",
+};
+
+/** Distinct species types present in the rows, sorted, for the Type dropdown. */
+export function pokedexTypeOptions(rows: PokedexRow[]): string[] {
+	const present = new Set(
+		rows.map((r) => r.type).filter((t): t is string => t != null),
 	);
+	return [...present].sort();
+}
+
+/** Apply the search + type + generation filters, then sort. Pure. */
+export function applyPokedexFilter(
+	rows: PokedexRow[],
+	f: PokedexFilter,
+): PokedexRow[] {
+	const q = f.query.trim().toLowerCase();
+	const gen = f.generation
+		? (GENERATIONS.find((g) => g.label === f.generation) ?? null)
+		: null;
+	const out = rows.filter((r) => {
+		if (q && !(r.name.toLowerCase().includes(q) || String(r.dex).includes(q)))
+			return false;
+		if (f.type && r.type !== f.type) return false;
+		if (gen && !(r.dex >= gen.start && r.dex <= gen.end)) return false;
+		return true;
+	});
+	// "dex" is the corpus order buildPokedex already produced; filter preserves it.
+	if (f.sort === "name") out.sort((a, b) => a.name.localeCompare(b.name));
+	else if (f.sort === "count")
+		out.sort((a, b) => b.count - a.count || a.dex - b.dex);
+	return out;
 }

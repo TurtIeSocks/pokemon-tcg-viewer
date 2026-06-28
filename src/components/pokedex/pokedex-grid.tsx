@@ -1,6 +1,4 @@
-// src/components/pokedex/pokedex-grid.tsx
-import { forwardRef } from "react";
-import { VirtuosoGrid, type VirtuosoGridHandle } from "react-virtuoso";
+import { VirtuosoGrid } from "react-virtuoso";
 import type { PokedexRow } from "../../lib/pokedex";
 import { SpeciesTile } from "./species-tile";
 
@@ -14,11 +12,8 @@ const isTestEnv =
 	(typeof window !== "undefined" && !("ResizeObserver" in window)) ||
 	(typeof process !== "undefined" && process.env.NODE_ENV === "test");
 
-/** Virtualized national-dex grid of species tiles. Ref forwards to VirtuosoGrid for jump-scroll. */
-export const PokedexGrid = forwardRef<
-	VirtuosoGridHandle,
-	{ rows: PokedexRow[] }
->(function PokedexGrid({ rows }, ref) {
+/** Virtualized national-dex grid of species tiles. */
+export function PokedexGrid({ rows }: { rows: PokedexRow[] }) {
 	if (rows.length === 0) {
 		return (
 			<p className="py-16 text-center font-sans text-sm text-[var(--ink-muted)]">
@@ -39,7 +34,6 @@ export const PokedexGrid = forwardRef<
 	}
 	return (
 		<VirtuosoGrid
-			ref={ref}
 			className="h-full"
 			totalCount={rows.length}
 			listClassName={GRID_CLASS}
@@ -49,4 +43,4 @@ export const PokedexGrid = forwardRef<
 			}}
 		/>
 	);
-});
+}

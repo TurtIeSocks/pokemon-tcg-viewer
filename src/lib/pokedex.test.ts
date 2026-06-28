@@ -1,9 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import {
-	filterPokedex,
+	applyPokedexFilter,
 	GENERATIONS,
 	generationOf,
+	POKEDEX_FILTER_DEFAULTS,
 	type PokedexRow,
+	pokedexTypeOptions,
 	spriteUrl,
 } from "./pokedex";
 
@@ -33,18 +35,59 @@ describe("GENERATIONS / generationOf", () => {
 	});
 });
 
-describe("filterPokedex", () => {
+describe("pokedexTypeOptions", () => {
+	test("returns the distinct present types, sorted, dropping nulls", () => {
+		const rows: PokedexRow[] = [
+			{ dex: 6, name: "charizard", count: 9, type: "Fire" },
+			{ dex: 9, name: "blastoise", count: 7, type: "Water" },
+			{ dex: 3, name: "venusaur", count: 6, type: "Fire" },
+			{ dex: 132, name: "ditto", count: 4, type: null },
+		];
+		expect(pokedexTypeOptions(rows)).toEqual(["Fire", "Water"]);
+	});
+});
+
+describe("applyPokedexFilter", () => {
 	const rows: PokedexRow[] = [
 		{ dex: 6, name: "charizard", count: 9, type: "Fire" },
-		{ dex: 25, name: "pikachu", count: 9, type: "Lightning" },
+		{ dex: 25, name: "pikachu", count: 30, type: "Lightning" },
+		{ dex: 152, name: "chikorita", count: 4, type: "Grass" },
 	];
-	test("empty query returns all rows", () => {
-		expect(filterPokedex(rows, "")).toHaveLength(2);
+	const f = (over: Partial<typeof POKEDEX_FILTER_DEFAULTS> = {}) => ({
+		...POKEDEX_FILTER_DEFAULTS,
+		...over,
 	});
-	test("matches by name substring, case-insensitive", () => {
-		expect(filterPokedex(rows, "Char")).toEqual([rows[0]]);
+
+	test("defaults return every row in dex order", () => {
+		expect(applyPokedexFilter(rows, f()).map((r) => r.dex)).toEqual([
+			6, 25, 152,
+		]);
 	});
-	test("matches by dex number", () => {
-		expect(filterPokedex(rows, "25")).toEqual([rows[1]]);
+	test("query matches name substring (case-insensitive) or dex number", () => {
+		expect(applyPokedexFilter(rows, f({ query: "Char" }))).toEqual([rows[0]]);
+		expect(applyPokedexFilter(rows, f({ query: "25" }))).toEqual([rows[1]]);
+	});
+	test("type filter keeps only that type", () => {
+		expect(applyPokedexFilter(rows, f({ type: "Grass" }))).toEqual([rows[2]]);
+	});
+	test("generation filter keeps only that generation's dex range", () => {
+		expect(
+			applyPokedexFilter(rows, f({ generation: "Gen 2" })).map((r) => r.dex),
+		).toEqual([152]);
+	});
+	test("sort=name orders alphabetically", () => {
+		expect(
+			applyPokedexFilter(rows, f({ sort: "name" })).map((r) => r.name),
+		).toEqual(["charizard", "chikorita", "pikachu"]);
+	});
+	test("sort=count orders by card count descending", () => {
+		expect(
+			applyPokedexFilter(rows, f({ sort: "count" })).map((r) => r.dex),
+		).toEqual([25, 6, 152]);
+	});
+	test("filters compose (type + generation)", () => {
+		expect(
+			applyPokedexFilter(rows, f({ type: "Fire", generation: "Gen 2" })),
+		).toEqual([]);
 	});
 });
