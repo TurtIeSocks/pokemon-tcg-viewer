@@ -34,6 +34,15 @@ export const Route = createFileRoute("/search")({
 	validateSearch: validateListSearch,
 	search: { middlewares: [stripSearchParams(LIST_SEARCH_DEFAULTS)] },
 	loaderDeps: ({ search }) => ({ q: search.q, mode: search.mode }),
+	// Search-as-you-type re-runs the loader on every keystroke (q is a loaderDep).
+	// The app-wide RoutePending swap (defaultPendingMs 150ms) would replace this
+	// whole route mid-type, unmounting the search box and stealing focus + flashing
+	// the page. `Infinity` is TanStack's sentinel that disables the pending timeout
+	// (router-core checks `pendingMs !== Infinity`), so stale-while-revalidate keeps
+	// the current results mounted while the next search resolves — no flash, no blur.
+	// ponytail: per-keystroke server RPC remains (the live grid already searches the
+	// in-memory corpus); add a debounce or drop q from loaderDeps if it becomes a cost.
+	pendingMs: Number.POSITIVE_INFINITY,
 	loader: async ({ deps }) => {
 		const q = deps.q.trim();
 		if (!q) return { q, cards: [], total: 0, facets: deriveFacets([]) };
@@ -170,7 +179,6 @@ function SearchPageInner({
 			</ResultsBar>
 			<div className="min-h-0 flex-1">
 				<CardGridIsland
-					key={q || "empty"}
 					search={search}
 					context={{}}
 					seedCards={cards}
