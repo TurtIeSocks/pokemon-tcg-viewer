@@ -9,6 +9,9 @@ export interface CorpusCard {
 	name: string;
 	imageUrl: string;
 	imageUrlSmall: string;
+	/** Language-invariant TCGdex image tail "{serie}/{set}/{localId}"; null => no
+	 * localized image, use imageUrl (which is then a pokemontcg.io fallback). */
+	imageBase: string | null;
 	rarity?: string;
 	subtypes?: string[];
 	supertype: string;

@@ -1,5 +1,66 @@
 import { afterEach, expect, mock, test } from "bun:test";
-import { detailCard, detailVersion, fetchPage, trimCard } from "./build-corpus";
+import {
+	detailCard,
+	detailVersion,
+	fetchPage,
+	type TcgdexCard,
+	trimCard,
+} from "./build-corpus";
+
+const withImage: TcgdexCard = {
+	id: "swsh3-136",
+	localId: "136",
+	name: "Furret",
+	category: "Pokemon",
+	image: "https://assets.tcgdex.net/en/swsh/swsh3/136",
+	rarity: "Uncommon",
+	set: { id: "swsh3" },
+	dexId: [162],
+	types: ["Colorless"],
+	stage: "Stage1",
+	variants: {
+		firstEdition: false,
+		holo: false,
+		normal: true,
+		reverse: true,
+		wPromo: false,
+	},
+};
+
+const noImage: TcgdexCard = {
+	id: "sm3.5-1",
+	localId: "1",
+	name: "Articuno",
+	category: "Pokemon",
+	set: { id: "sm3.5" },
+	variants: { normal: true },
+};
+
+test("trimCard maps a TCGdex card with an image", () => {
+	const c = trimCard(withImage);
+	expect(c.id).toBe("swsh3-136");
+	expect(c.name).toBe("Furret");
+	expect(c.setId).toBe("swsh3");
+	expect(c.number).toBe("136");
+	expect(c.imageBase).toBe("swsh/swsh3/136");
+	expect(c.imageUrl).toBe(
+		"https://assets.tcgdex.net/en/swsh/swsh3/136/high.webp",
+	);
+	expect(c.imageUrlSmall).toBe(
+		"https://assets.tcgdex.net/en/swsh/swsh3/136/low.webp",
+	);
+	expect(c.supertype).toBe("Pokémon");
+	expect(c.variants).toEqual(["normal", "reverse"]);
+	expect(c.nationalPokedexNumbers).toEqual([162]);
+});
+
+test("trimCard falls back to pokemontcg.io image when TCGdex has none", () => {
+	const c = trimCard(noImage);
+	expect(c.imageBase).toBeNull();
+	// sm3.5 -> ptcg sm35 (reverse table), localId 1
+	expect(c.imageUrl).toBe("https://images.pokemontcg.io/sm35/1_hires.png");
+	expect(c.imageUrlSmall).toBe("https://images.pokemontcg.io/sm35/1.png");
+});
 
 const apiCard = {
 	id: "hgss4-1",
