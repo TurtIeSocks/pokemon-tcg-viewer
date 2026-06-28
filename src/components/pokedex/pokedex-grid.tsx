@@ -37,6 +37,9 @@ export function PokedexGrid({ rows }: { rows: PokedexRow[] }) {
 			className="h-full"
 			totalCount={rows.length}
 			listClassName={GRID_CLASS}
+			// Key by dex so a species keeps its element identity when the list
+			// reorders (sort/filter), instead of index-reuse swapping props.
+			computeItemKey={(index) => rows[index]?.dex ?? index}
 			itemContent={(index) => {
 				const r = rows[index];
 				return r ? <SpeciesTile row={r} /> : null;

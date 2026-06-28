@@ -6,9 +6,9 @@ import {
 	createRouter,
 	RouterProvider,
 } from "@tanstack/react-router";
-import { fireEvent, render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
-import { spriteUrl } from "../../lib/pokedex";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { type ReactNode, useState } from "react";
+import { type PokedexRow, spriteUrl } from "../../lib/pokedex";
 import { SpeciesTile } from "./species-tile";
 
 async function mount(ui: ReactNode) {
@@ -49,4 +49,26 @@ test("falls back to a placeholder when the sprite fails to load", async () => {
 	}) as HTMLImageElement;
 	fireEvent.error(img);
 	expect(img.getAttribute("src")).not.toBe(spriteUrl(9999));
+});
+
+test("updates the sprite when the row prop changes without remounting", async () => {
+	// The virtualized grid keys items by index, so on sort/filter it reuses a
+	// tile instance and only swaps the `row` prop. The sprite must follow the
+	// new dex, not stay seeded from the first render.
+	let setRow!: (r: PokedexRow) => void;
+	function Harness() {
+		const [row, set] = useState<PokedexRow>({
+			dex: 1,
+			name: "bulbasaur",
+			count: 5,
+			type: "Grass",
+		});
+		setRow = set;
+		return <SpeciesTile row={row} />;
+	}
+	await mount(<Harness />);
+	expect((screen.getByRole("img") as HTMLImageElement).src).toBe(spriteUrl(1));
+
+	act(() => setRow({ dex: 25, name: "pikachu", count: 9, type: "Lightning" }));
+	expect((screen.getByRole("img") as HTMLImageElement).src).toBe(spriteUrl(25));
 });

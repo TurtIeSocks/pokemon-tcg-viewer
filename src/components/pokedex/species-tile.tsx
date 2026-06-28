@@ -12,7 +12,12 @@ const FALLBACK_SPRITE =
 
 /** One species in the Pokédex directory: pixel sprite + name + dex # + card count. */
 export function SpeciesTile({ row }: { row: PokedexRow }) {
-	const [src, setSrc] = useState(spriteUrl(row.dex));
+	// Derive the sprite from the current dex rather than seeding state once: the
+	// virtualized grid reuses a tile instance across rows when the list reorders
+	// (sort/filter), so a stored src would go stale. Failure is tracked by dex so
+	// a reused instance still shows the right sprite for its new species.
+	const [failedDex, setFailedDex] = useState<number | null>(null);
+	const src = failedDex === row.dex ? FALLBACK_SPRITE : spriteUrl(row.dex);
 	const glow = getCardAccent(row.type ? [row.type] : undefined);
 	return (
 		<Link
@@ -31,9 +36,7 @@ export function SpeciesTile({ row }: { row: PokedexRow }) {
 					src={src}
 					alt={row.name}
 					loading="lazy"
-					onError={() =>
-						setSrc((s) => (s === FALLBACK_SPRITE ? s : FALLBACK_SPRITE))
-					}
+					onError={() => setFailedDex(row.dex)}
 					className="relative z-10 h-20 w-20 [image-rendering:pixelated]"
 				/>
 			</div>
