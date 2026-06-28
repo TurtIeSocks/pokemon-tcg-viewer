@@ -180,6 +180,24 @@ export function SearchControls({
 	const setFiltersOpen = useUiPrefs((s) => s.setFiltersOpen);
 	const open = filtersOpen ?? !isMobile;
 
+	// The Energy Type filter only makes sense where cards actually carry energy
+	// types — hide it on Trainer/Energy pages (whose cards have none), where the
+	// facet is empty and the filter would be a dead control.
+	const showEnergyType = options.types.length > 0;
+	// Visible filter-grid controls: Subtype + Rarity + Collection are always on;
+	// the rest are conditional. Drives the responsive column count.
+	const filterCols =
+		3 +
+		(lockSupertype ? 0 : 1) +
+		(showEnergyType ? 1 : 0) +
+		(showPokemonFilter ? 1 : 0);
+	const gridColsClass = {
+		3: "sm:grid-cols-3",
+		4: "sm:grid-cols-4",
+		5: "sm:grid-cols-5",
+		6: "sm:grid-cols-6",
+	}[filterCols];
+
 	return (
 		<Collapsible
 			open={open}
@@ -230,14 +248,7 @@ export function SearchControls({
 							/>
 						</div>
 					)}
-					<div
-						className={`grid grid-cols-2 gap-2 ${
-							// Columns = active control count (4 base + Card Type? + Pokémon?).
-							["sm:grid-cols-4", "sm:grid-cols-5", "sm:grid-cols-6"][
-								(lockSupertype ? 0 : 1) + (showPokemonFilter ? 1 : 0)
-							]
-						}`}
-					>
+					<div className={`grid grid-cols-2 gap-2 ${gridColsClass}`}>
 						{!lockSupertype && (
 							<FilterSelect
 								label="Card Type"
@@ -258,12 +269,14 @@ export function SearchControls({
 							options={options.rarities}
 							onChange={(v) => onChange({ rarity: v })}
 						/>
-						<FilterSelect
-							label="Energy Type"
-							value={value.types}
-							options={options.types}
-							onChange={(v) => onChange({ types: v })}
-						/>
+						{showEnergyType && (
+							<FilterSelect
+								label="Energy Type"
+								value={value.types}
+								options={options.types}
+								onChange={(v) => onChange({ types: v })}
+							/>
+						)}
 						{showPokemonFilter && (
 							<PokemonFilterSelect
 								value={value.pokemon}

@@ -6,7 +6,7 @@ import { findSet } from "../lib/nav-tree";
 import { slugify } from "../lib/slug";
 import type { SearchMode } from "../store/corpus/fuzzy";
 import { cacheControl } from "./cache-headers";
-import { nameByDex } from "./pokemon-dex";
+import { buildPokedex, nameByDex } from "./pokemon-dex";
 import { boundedInt, nonEmptyString, supertypeName } from "./validate";
 
 // National Pokédex upper bound — matches the species-list fetch limit.
@@ -188,3 +188,22 @@ export const getCardForRouteFn = createServerFn({ method: "GET" })
 
 		return { card, crossLinks };
 	});
+
+/**
+ * National-dex directory: one light row per species that has at least one card.
+ * Joins the cached species list with a single pass over the server corpus.
+ * Highly cacheable (corpus is static) so let the edge serve repeats.
+ */
+export const getPokedexFn = createServerFn({ method: "GET" }).handler(
+	async () => {
+		setResponseHeader("Cache-Control", cacheControl("ssr"));
+		const [{ queryCorpusServer }, { getPokemonListCached }] = await Promise.all(
+			[import("./corpus-loader"), import("./card-data-fetch")],
+		);
+		const [cards, list] = await Promise.all([
+			queryCorpusServer({ setId: null, relevance: false }),
+			getPokemonListCached(),
+		]);
+		return buildPokedex(cards, list);
+	},
+);

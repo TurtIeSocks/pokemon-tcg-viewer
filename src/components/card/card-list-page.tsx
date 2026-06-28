@@ -6,6 +6,7 @@ import type { SerializedQuery } from "../../store/userland/types";
 import type { HoloCardData } from "../holo-card";
 import { CardGridIsland } from "../islands/card-grid-island";
 import { CardSelectionProvider } from "../islands/card-selection";
+import { CardSortControl } from "../islands/card-sort-control";
 import { SearchControls } from "../islands/search-controls";
 import { ViewModeToggle } from "../islands/view-mode-toggle";
 import { ResultsBar } from "../results-bar";
@@ -72,6 +73,7 @@ export function CardListPage({
 						disabled={false}
 						onChange={(view) => onChange({ view })}
 					/>
+					<CardSortControl value={search} onChange={onChange} />
 				</ResultsBar>
 				<div className="min-h-0 flex-1">
 					<CardGridIsland

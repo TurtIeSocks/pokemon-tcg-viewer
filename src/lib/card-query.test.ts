@@ -131,4 +131,13 @@ describe("buildCorpusQuery", () => {
 		);
 		expect(q.filters?.supertypes).toEqual(["Energy"]);
 	});
+
+	test("forwards sort + dir to the corpus query", () => {
+		const q = buildCorpusQuery({ ...empty, sort: "name", dir: "desc" }, {});
+		expect(q.sort).toBe("name");
+		expect(q.dir).toBe("desc");
+	});
+	test("default sort still forwards (engine treats it as the context order)", () => {
+		expect(buildCorpusQuery(empty, {}).sort).toBe("default");
+	});
 });

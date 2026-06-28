@@ -37,6 +37,8 @@ const defaultSearch = {
 	yearMax: null,
 	pokemon: null,
 	mode: "fuzzy" as const,
+	sort: "default" as const,
+	dir: "asc" as const,
 };
 
 beforeEach(() => {

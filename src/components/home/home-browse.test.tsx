@@ -49,12 +49,17 @@ test("HomeBrowse renders the proof line, an era pill per series, and set tiles",
 	const softPills = [...container.querySelectorAll('a[data-variant="soft"]')];
 	const eraPills = softPills.filter((a) => {
 		const href = a.getAttribute("href") ?? "";
-		return !href.startsWith("/trainer") && !href.startsWith("/energy");
+		return (
+			!href.startsWith("/pokemon") &&
+			!href.startsWith("/trainer") &&
+			!href.startsWith("/energy")
+		);
 	});
 	expect(eraPills.length).toBe(3);
 
-	// Browse-by-card-type section links to the Trainer + Energy category pages.
+	// Browse-by-card-type section links to the Pokémon + Trainer + Energy pages.
 	expect(getByText("Browse by card type")).toBeTruthy();
+	expect(container.querySelector('a[href^="/pokemon"]')).toBeTruthy();
 	expect(container.querySelector('a[href^="/trainer"]')).toBeTruthy();
 	expect(container.querySelector('a[href^="/energy"]')).toBeTruthy();
 

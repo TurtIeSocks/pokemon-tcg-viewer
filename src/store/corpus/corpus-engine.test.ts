@@ -331,3 +331,47 @@ test("contains mode: typo rejected", () => {
 	);
 	expect(r).toEqual([]);
 });
+
+test("sort name: asc alphabetical, desc reversed", () => {
+	expect(
+		queryCorpus(
+			index,
+			{ sort: "name", dir: "asc", relevance: false },
+			setsById,
+		).map((c) => c.id),
+	).toEqual(["base1-2", "base1-4", "swsh1-25", "base1-58"]);
+	expect(
+		queryCorpus(
+			index,
+			{ sort: "name", dir: "desc", relevance: false },
+			setsById,
+		).map((c) => c.id),
+	).toEqual(["base1-58", "swsh1-25", "base1-4", "base1-2"]);
+});
+test("sort released desc puts the newest set first, base1 cards tie-break by number", () => {
+	expect(
+		queryCorpus(
+			index,
+			{ sort: "released", dir: "desc", relevance: false },
+			setsById,
+		).map((c) => c.id),
+	).toEqual(["swsh1-25", "base1-2", "base1-4", "base1-58"]);
+});
+test("sort dex asc puts dex-bearing cards first (others sentinel-last)", () => {
+	expect(
+		queryCorpus(
+			index,
+			{ sort: "dex", dir: "asc", relevance: false },
+			setsById,
+		).map((c) => c.id),
+	).toEqual(["base1-58", "base1-2", "base1-4", "swsh1-25"]);
+});
+test("sort default preserves the existing card-number order", () => {
+	expect(
+		queryCorpus(
+			index,
+			{ sort: "default", dir: "asc", relevance: false },
+			setsById,
+		).map((c) => c.id),
+	).toEqual(["base1-2", "base1-4", "swsh1-25", "base1-58"]);
+});

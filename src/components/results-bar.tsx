@@ -9,10 +9,13 @@ import type { ReactNode } from "react";
  */
 export function ResultsBar({
 	count,
+	unit = "cards",
 	children,
 }: {
-	/** Card count shown as "{count} cards"; `null` hides it (e.g. an empty search). */
+	/** Item count shown as "{count} {unit}"; `null` hides it. */
 	count: number | null;
+	/** Noun for the count label. Defaults to "cards". */
+	unit?: string;
 	/** Right-aligned actions. */
 	children: ReactNode;
 }) {
@@ -20,7 +23,7 @@ export function ResultsBar({
 		<div className="mb-3 flex items-center gap-3">
 			{count != null && (
 				<span className="font-mono text-sm tabular-nums text-(--ink-muted)">
-					{count} cards
+					{count} {unit}
 				</span>
 			)}
 			<div className="ml-auto flex items-center gap-2">{children}</div>
