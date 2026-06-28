@@ -1,5 +1,6 @@
 import type { HoloCardData } from "../../components/holo-card";
 import { slugify } from "../../lib/slug";
+import type { SortDir } from "../../lib/sort";
 import type { PokemonSet } from "../../server/card-mappers";
 import type { FilterClauses } from "../../utils/build-filter-clauses";
 import type { CorpusCard } from "./corpus-types";
@@ -22,6 +23,13 @@ export interface CorpusQuery {
 	yearMax?: number | null;
 	/** Search mode: "exact" (whole name only), "contains" (prefix+substring), or "fuzzy" (default, adds typo tolerance). */
 	mode?: SearchMode;
+	/**
+	 * Explicit user sort. "default"/undefined keeps the context order (relevance /
+	 * release-date / number). Union kept inline (must match CardSortMode in
+	 * src/lib/card-query.ts) to avoid a type cycle with that module.
+	 */
+	sort?: "default" | "dex" | "number" | "name" | "released";
+	dir?: SortDir;
 	/** True for global name search (relevance order); false for set/dex (natural order). */
 	relevance: boolean;
 }
@@ -159,8 +167,26 @@ export function queryCorpus(
 	}
 
 	const relAt = (id: string) => setsById.get(id)?.releaseDate ?? "";
+	const DEX_LAST = Number.MAX_SAFE_INTEGER;
 
 	hits.sort((a, b) => {
+		// Explicit user sort (SortControl) overrides relevance/chronological order.
+		if (q.sort && q.sort !== "default") {
+			const sign = q.dir === "desc" ? -1 : 1;
+			let c = 0;
+			if (q.sort === "name") c = a.card.name.localeCompare(b.card.name);
+			else if (q.sort === "number")
+				c = compareCardNumber(a.card.number, b.card.number);
+			else if (q.sort === "released")
+				c = relAt(a.card.setId).localeCompare(relAt(b.card.setId));
+			else if (q.sort === "dex")
+				c =
+					(a.card.nationalPokedexNumbers?.[0] ?? DEX_LAST) -
+					(b.card.nationalPokedexNumbers?.[0] ?? DEX_LAST);
+			if (c !== 0) return sign * c;
+			// Stable, direction-independent tie-break.
+			return compareCardNumber(a.card.number, b.card.number);
+		}
 		if (q.relevance && a.match && b.match) {
 			if (a.match.tier !== b.match.tier) return a.match.tier - b.match.tier;
 			if (a.match.tier === 3 && a.match.distance !== b.match.distance)

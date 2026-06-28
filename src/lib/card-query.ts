@@ -90,6 +90,8 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 			yearMin,
 			yearMax,
 			mode,
+			sort: s.sort,
+			dir: s.dir,
 			relevance: false,
 		};
 	}
@@ -101,6 +103,8 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 			yearMin,
 			yearMax,
 			mode,
+			sort: s.sort,
+			dir: s.dir,
 			relevance: false,
 		};
 	}
@@ -116,6 +120,8 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 			yearMin,
 			yearMax,
 			mode,
+			sort: s.sort,
+			dir: s.dir,
 			relevance: !!query,
 		};
 	}
@@ -127,6 +133,8 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 		yearMin,
 		yearMax,
 		mode,
+		sort: s.sort,
+		dir: s.dir,
 		relevance: !!query,
 	};
 }
