@@ -247,3 +247,23 @@ test("yearMax value reflects prop", () => {
 		"2006",
 	);
 });
+
+test("Energy Type filter is hidden when no energy types are in the facet (Trainer pages)", () => {
+	render(
+		<SearchControls
+			value={defaultValue}
+			options={{ ...options, types: [] }}
+			onChange={() => {}}
+			lockSupertype
+		/>,
+	);
+	// FilterSelect triggers expose their label as visible text, not an aria-label.
+	expect(screen.queryByText(/Energy Type/)).toBeNull();
+	// other filters still render
+	expect(screen.getByText(/Rarity/)).toBeDefined();
+});
+
+test("Energy Type filter is shown when energy types are present", () => {
+	renderControls();
+	expect(screen.getByText(/Energy Type/)).toBeDefined();
+});
