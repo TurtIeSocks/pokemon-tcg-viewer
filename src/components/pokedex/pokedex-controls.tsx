@@ -1,4 +1,5 @@
 import { ChevronDown, SlidersHorizontal } from "lucide-react";
+import { SearchModeMenu } from "@/components/islands/search-mode-menu";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
 	Collapsible,
@@ -15,17 +16,7 @@ import {
 } from "@/components/ui/select";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUiPrefs } from "@/store/ui-prefs";
-import {
-	GENERATIONS,
-	type PokedexFilter,
-	type PokedexSort,
-} from "../../lib/pokedex";
-
-const SORTS: { value: PokedexSort; label: string }[] = [
-	{ value: "dex", label: "Dex number" },
-	{ value: "name", label: "Name" },
-	{ value: "count", label: "Most cards" },
-];
+import { GENERATIONS, type PokedexFilter } from "../../lib/pokedex";
 
 interface PokedexControlsProps {
 	value: PokedexFilter;
@@ -37,7 +28,7 @@ interface PokedexControlsProps {
 /**
  * The Pokédex directory's search bar + expandable filters, matching the card
  * pages' SearchControls chrome (glass Collapsible, sliders toggle, active-filter
- * badge). Filters are species-scoped: Type, Generation, and Sort.
+ * badge). Filters are species-scoped: Type and Generation (sort is in the ResultsBar).
  */
 export function PokedexControls({
 	value,
@@ -70,6 +61,10 @@ export function PokedexControls({
 					onChange={(e) => onChange({ query: e.target.value })}
 					className="min-w-0 border-[var(--border)] bg-[var(--glass)]"
 				/>
+				<SearchModeMenu
+					value={value.searchMode}
+					onChange={(searchMode) => onChange({ searchMode })}
+				/>
 				<CollapsibleTrigger
 					aria-label="Toggle filters"
 					className="group flex cursor-pointer items-center gap-1.5 rounded-r-[var(--r-control)] border border-[var(--border)] bg-[var(--glass)] px-3 text-sm text-[var(--ink-muted)] outline-none transition-colors hover:text-[var(--ink)] focus-visible:relative focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-[var(--primary)] [&_svg]:pointer-events-none"
@@ -84,7 +79,7 @@ export function PokedexControls({
 				</CollapsibleTrigger>
 			</ButtonGroup>
 			<CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down motion-reduce:animate-none">
-				<div className="grid grid-cols-2 gap-2 pt-3 sm:grid-cols-3">
+				<div className="grid grid-cols-2 gap-2 pt-3">
 					<NullableSelect
 						label="Type"
 						allLabel="All types"
@@ -99,21 +94,6 @@ export function PokedexControls({
 						options={GENERATIONS.map((g) => g.label)}
 						onChange={(generation) => onChange({ generation })}
 					/>
-					<Select
-						value={value.sort}
-						onValueChange={(v) => onChange({ sort: v as PokedexSort })}
-					>
-						<SelectTrigger className="w-full text-sm" aria-label="Sort">
-							<SelectValue placeholder="Sort" />
-						</SelectTrigger>
-						<SelectContent>
-							{SORTS.map((s) => (
-								<SelectItem key={s.value} value={s.value}>
-									{s.label}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
 				</div>
 			</CollapsibleContent>
 		</Collapsible>

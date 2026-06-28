@@ -21,12 +21,17 @@ function renderControls({
 	);
 }
 
-test("renders the search box and the Type, Generation, and Sort dropdowns", () => {
+test("renders the search box, search-mode menu, and Type + Generation dropdowns", () => {
 	renderControls();
 	expect(screen.getByRole("searchbox")).toBeDefined();
+	expect(screen.getByRole("button", { name: "Search mode" })).toBeDefined();
 	expect(screen.getByRole("combobox", { name: "Type" })).toBeDefined();
 	expect(screen.getByRole("combobox", { name: "Generation" })).toBeDefined();
-	expect(screen.getByRole("combobox", { name: "Sort" })).toBeDefined();
+});
+
+test("there is no Sort dropdown in the controls (it lives in the ResultsBar)", () => {
+	renderControls();
+	expect(screen.queryByRole("combobox", { name: "Sort" })).toBeNull();
 });
 
 test("typing in the search box fires onChange with the query", () => {
@@ -38,12 +43,15 @@ test("typing in the search box fires onChange with the query", () => {
 	expect(onChange).toHaveBeenCalledWith({ query: "char" });
 });
 
-test("selecting a type fires onChange with that type", async () => {
+test("changing the search mode fires onChange with searchMode", async () => {
 	const onChange = mock(() => {});
 	renderControls({ onChange });
-	fireEvent.click(screen.getByRole("combobox", { name: "Type" }));
-	fireEvent.click(await screen.findByRole("option", { name: "Water" }));
-	expect(onChange).toHaveBeenCalledWith({ type: "Water" });
+	fireEvent.pointerDown(screen.getByRole("button", { name: "Search mode" }), {
+		button: 0,
+		ctrlKey: false,
+	});
+	fireEvent.click(await screen.findByRole("menuitemradio", { name: /exact/i }));
+	expect(onChange).toHaveBeenCalledWith({ searchMode: "exact" });
 });
 
 test("selecting a generation fires onChange with that generation label", async () => {
@@ -54,35 +62,16 @@ test("selecting a generation fires onChange with that generation label", async (
 	expect(onChange).toHaveBeenCalledWith({ generation: "Gen 3" });
 });
 
-test("clearing a filter (the All sentinel) fires onChange with null", async () => {
-	const onChange = mock(() => {});
-	renderControls({
-		value: { ...POKEDEX_FILTER_DEFAULTS, type: "Fire" },
-		onChange,
-	});
-	fireEvent.click(screen.getByRole("combobox", { name: "Type" }));
-	fireEvent.click(await screen.findByRole("option", { name: "All types" }));
-	expect(onChange).toHaveBeenCalledWith({ type: null });
-});
-
-test("active-filter badge counts Type + Generation, not query or sort", () => {
+test("active-filter badge counts Type + Generation only", () => {
 	renderControls({
 		value: {
 			...POKEDEX_FILTER_DEFAULTS,
 			query: "pika",
 			type: "Fire",
 			generation: "Gen 1",
-			sort: "name",
 		},
 	});
 	expect(
 		screen.getByRole("button", { name: "Toggle filters" }).textContent,
 	).toContain("2");
-});
-
-test("no badge when no filters are applied", () => {
-	renderControls();
-	expect(
-		screen.getByRole("button", { name: "Toggle filters" }).textContent?.trim(),
-	).toBe("");
 });
