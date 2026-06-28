@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import type { CorpusCard } from "../store/corpus/corpus-types";
-import { cardManageLinkPropsFor, cardRouteProps } from "./card-route";
+import {
+	cardManageLinkPropsFor,
+	cardModalLinkPropsFor,
+	cardPricesLinkPropsFor,
+	cardRouteProps,
+} from "./card-route";
 import { buildSlugIndex, resolveCard, type SluggableSet } from "./slug";
 
 const sets: SluggableSet[] = [
@@ -34,47 +39,6 @@ const idx = buildSlugIndex(sets, cards);
 
 const p = { series: "sword-shield", set: "brilliant-stars", card: "charizard" };
 
-describe("cardManageLinkPropsFor", () => {
-	test("sets cardManage: true in state", () => {
-		const props = cardManageLinkPropsFor(p);
-		const state = (
-			props.state as (prev: Record<string, unknown>) => Record<string, unknown>
-		)({});
-		expect(state.cardManage).toBe(true);
-	});
-
-	test("also sets cardOverlay to series/set/card", () => {
-		const props = cardManageLinkPropsFor(p);
-		const state = (
-			props.state as (prev: Record<string, unknown>) => Record<string, unknown>
-		)({});
-		expect(state.cardOverlay).toBe("sword-shield/brilliant-stars/charizard");
-	});
-
-	test("mask.to is /$series/$set/$card/manage", () => {
-		const props = cardManageLinkPropsFor(p);
-		expect((props.mask as { to: string }).to).toBe(
-			"/$series/$set/$card/manage",
-		);
-	});
-
-	test("mask.params matches the input params", () => {
-		const props = cardManageLinkPropsFor(p);
-		expect((props.mask as { to: string; params: typeof p }).params).toEqual(p);
-	});
-
-	test("state updater preserves existing state keys", () => {
-		const props = cardManageLinkPropsFor(p);
-		const state = (
-			props.state as (prev: Record<string, unknown>) => Record<string, unknown>
-		)({
-			someOtherKey: "preserved",
-		});
-		expect(state.someOtherKey).toBe("preserved");
-		expect(state.cardManage).toBe(true);
-	});
-});
-
 describe("cardRouteProps", () => {
 	test("builds /$series/$set/$card props that resolve back to the same card id", () => {
 		const props = cardRouteProps(idx, { id: "swsh9-18", setId: "swsh9" });
@@ -92,5 +56,44 @@ describe("cardRouteProps", () => {
 
 	test("returns null when the card id is unknown in a known set", () => {
 		expect(cardRouteProps(idx, { id: "base1-999", setId: "base1" })).toBeNull();
+	});
+});
+
+const readState = (props: ReturnType<typeof cardModalLinkPropsFor>) =>
+	(props.state as (prev: Record<string, unknown>) => Record<string, unknown>)(
+		{},
+	);
+
+describe("cardTab on the three tab helpers", () => {
+	test("detail helper sets cardTab=details", () => {
+		const s = readState(cardModalLinkPropsFor(p));
+		expect(s.cardTab).toBe("details");
+		expect(s.cardOverlay).toBe("sword-shield/brilliant-stars/charizard");
+	});
+
+	test("manage helper sets cardTab=collection", () => {
+		const s = readState(cardManageLinkPropsFor(p));
+		expect(s.cardTab).toBe("collection");
+	});
+
+	test("prices helper sets cardTab=pricing and masks to /prices", () => {
+		const props = cardPricesLinkPropsFor(p);
+		const s = readState(props);
+		expect(s.cardTab).toBe("pricing");
+		expect(s.cardOverlay).toBe("sword-shield/brilliant-stars/charizard");
+		expect((props.mask as { to: string }).to).toBe(
+			"/$series/$set/$card/prices",
+		);
+		expect((props.mask as { params: typeof p }).params).toEqual(p);
+	});
+
+	test("prices helper preserves existing state keys", () => {
+		const s = (
+			cardPricesLinkPropsFor(p).state as (
+				prev: Record<string, unknown>,
+			) => Record<string, unknown>
+		)({ keep: "me" });
+		expect(s.keep).toBe("me");
+		expect(s.cardTab).toBe("pricing");
 	});
 });

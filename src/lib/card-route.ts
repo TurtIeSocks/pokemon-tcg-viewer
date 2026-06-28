@@ -1,6 +1,8 @@
 import type { LinkProps } from "@tanstack/react-router";
 import type { SlugIndex } from "./slug";
 
+export type CardTab = "details" | "collection" | "pricing";
+
 declare module "@tanstack/react-router" {
 	interface HistoryState {
 		/**
@@ -9,13 +11,8 @@ declare module "@tanstack/react-router" {
 		 * cold load of the canonical URL (which renders the full page instead).
 		 */
 		cardOverlay?: string;
-		/**
-		 * Set to `true` when the overlay should show the manage (collection) face
-		 * instead of card detail. URL is masked to `/$series/$set/$card/manage`.
-		 * A cold load of that URL has no state and falls through to the real
-		 * `$card_/manage` route.
-		 */
-		cardManage?: boolean;
+		/** Active card-overlay tab. Masked to the tab's canonical route. */
+		cardTab?: CardTab;
 	}
 }
 
@@ -23,6 +20,33 @@ export interface CardRouteParams {
 	series: string;
 	set: string;
 	card: string;
+}
+
+export const TAB_MASK = {
+	details: "/$series/$set/$card",
+	collection: "/$series/$set/$card/manage",
+	pricing: "/$series/$set/$card/prices",
+} as const satisfies Record<CardTab, LinkProps["to"]>;
+
+/**
+ * Shared masked-overlay nav for a given tab: stay on the current route, set
+ * `cardOverlay` + `cardTab` in history state, and mask the URL to the tab's
+ * canonical route. The three named helpers below delegate here.
+ */
+export function cardTabLinkPropsFor(
+	p: CardRouteParams,
+	tab: CardTab,
+): LinkProps {
+	return {
+		to: ".",
+		search: (prev: Record<string, unknown>) => prev,
+		state: (prev: Record<string, unknown>) => ({
+			...prev,
+			cardOverlay: `${p.series}/${p.set}/${p.card}`,
+			cardTab: tab,
+		}),
+		mask: { to: TAB_MASK[tab], params: p },
+	} as LinkProps;
 }
 
 /**
@@ -57,21 +81,7 @@ export function cardRouteProps(
  * state and falls back to the full-page route.
  */
 export function cardModalLinkPropsFor(p: CardRouteParams): LinkProps {
-	return {
-		to: ".",
-		// Keep the current grid's query/filters — `to: "."` would otherwise reset
-		// search to defaults, emptying the results that should stay behind the modal.
-		search: (prev: Record<string, unknown>) => prev,
-		state: (prev: Record<string, unknown>) => ({
-			...prev,
-			cardOverlay: `${p.series}/${p.set}/${p.card}`,
-			// Explicitly clear the manage flag: navigating manage → detail must drop
-			// it, otherwise the spread keeps `cardManage: true` and the overlay never
-			// leaves the manage face ("Back to Pokémon" appears to do nothing).
-			cardManage: false,
-		}),
-		mask: { to: "/$series/$set/$card", params: p },
-	} as LinkProps;
+	return cardTabLinkPropsFor(p, "details");
 }
 
 /** {@link cardModalLinkPropsFor} resolved from a slug index, or null. */
@@ -84,23 +94,14 @@ export function cardModalLinkProps(
 }
 
 /**
- * In-app overlay navigation that opens the manage (collection) face over the
- * current page. Identical to {@link cardModalLinkPropsFor} but also sets
- * `state.cardManage = true` and masks the URL to `/$series/$set/$card/manage`.
- * The root overlay reads both state keys; a cold load of the masked URL falls
- * through to the real `$card_/manage` route.
+ * In-app overlay navigation that opens the collection (manage) face over the
+ * current page. Delegates to {@link cardTabLinkPropsFor} with `"collection"`,
+ * which sets `cardTab: "collection"` in history state and masks the URL to
+ * `/$series/$set/$card/manage`. A cold load of the masked URL falls through
+ * to the real `$card_/manage` route.
  */
 export function cardManageLinkPropsFor(p: CardRouteParams): LinkProps {
-	return {
-		to: ".",
-		search: (prev: Record<string, unknown>) => prev,
-		state: (prev: Record<string, unknown>) => ({
-			...prev,
-			cardOverlay: `${p.series}/${p.set}/${p.card}`,
-			cardManage: true,
-		}),
-		mask: { to: "/$series/$set/$card/manage", params: p },
-	} as LinkProps;
+	return cardTabLinkPropsFor(p, "collection");
 }
 
 /** {@link cardManageLinkPropsFor} resolved from a slug index, or null. */
@@ -110,4 +111,9 @@ export function cardManageLinkProps(
 ): LinkProps | null {
 	const p = cardRouteParams(idx, card);
 	return p ? cardManageLinkPropsFor(p) : null;
+}
+
+/** In-app overlay nav that opens the Pricing tab. Mirrors the other two. */
+export function cardPricesLinkPropsFor(p: CardRouteParams): LinkProps {
+	return cardTabLinkPropsFor(p, "pricing");
 }

@@ -5,7 +5,7 @@ import type { FocusCardData } from "../../server/card-mappers";
 import { EnergyIcon } from "./energy-icon";
 
 /** Human descriptor line, e.g. "Stage 1 Pokémon · Lightning · Evolves from Pikachu". */
-function describe(card: FocusCardData): string {
+export function describeCard(card: FocusCardData): string {
 	const isPokemon = card.supertype === "Pokémon";
 	const parts: string[] = [];
 	if (isPokemon) {
@@ -172,10 +172,12 @@ export function CardInfo({
 	card,
 	footer,
 	pending,
+	showHeader = true,
 }: {
 	card: FocusCardData;
 	footer?: ReactNode;
 	pending?: boolean;
+	showHeader?: boolean;
 }) {
 	const hasAbilities = !!card.abilities?.length;
 	const hasAttacks = !!card.attacks?.length;
@@ -183,35 +185,39 @@ export function CardInfo({
 	const emptyBody = !hasAbilities && !hasAttacks && !hasRules;
 	return (
 		<div className="flex min-w-0 flex-1 flex-col text-[var(--ink)]">
-			<div className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-				{card.setName} · #{card.cardNumber}
-			</div>
+			{showHeader ? (
+				<>
+					<div className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--ink-muted)]">
+						{card.setName} · #{card.cardNumber}
+					</div>
 
-			<div className="mt-1.5 flex items-baseline justify-between gap-3">
-				<h2 className="min-w-0 break-words font-display text-[clamp(1.75rem,6vw,2.5rem)] font-light leading-[1.05] tracking-[-0.01em]">
-					{card.name}
-				</h2>
-				{card.hp ? (
-					<span className="shrink-0 whitespace-nowrap font-mono text-sm text-[var(--ink-muted)]">
-						<b className="text-[1.4rem] font-bold text-[color:var(--primary)]">
-							{card.hp}
-						</b>{" "}
-						HP
-					</span>
-				) : pending ? (
-					<Skeleton className="h-7 w-14 shrink-0" aria-hidden="true" />
-				) : null}
-			</div>
-			<div className="mt-1.5 flex items-start justify-between gap-3">
-				<div className="min-w-0 font-display text-sm text-[var(--ink-muted)]">
-					{describe(card)}
-				</div>
-				{card.rarity ? (
-					<Badge variant="default" className="mt-0.5 shrink-0">
-						✦ {card.rarity}
-					</Badge>
-				) : null}
-			</div>
+					<div className="mt-1.5 flex items-baseline justify-between gap-3">
+						<h2 className="min-w-0 break-words font-display text-[clamp(1.75rem,6vw,2.5rem)] font-light leading-[1.05] tracking-[-0.01em]">
+							{card.name}
+						</h2>
+						{card.hp ? (
+							<span className="shrink-0 whitespace-nowrap font-mono text-sm text-[var(--ink-muted)]">
+								<b className="text-[1.4rem] font-bold text-[color:var(--primary)]">
+									{card.hp}
+								</b>{" "}
+								HP
+							</span>
+						) : pending ? (
+							<Skeleton className="h-7 w-14 shrink-0" aria-hidden="true" />
+						) : null}
+					</div>
+					<div className="mt-1.5 flex items-start justify-between gap-3">
+						<div className="min-w-0 font-display text-sm text-[var(--ink-muted)]">
+							{describeCard(card)}
+						</div>
+						{card.rarity ? (
+							<Badge variant="default" className="mt-0.5 shrink-0">
+								✦ {card.rarity}
+							</Badge>
+						) : null}
+					</div>
+				</>
+			) : null}
 
 			<div className="flex-1">
 				{hasAbilities ? (
