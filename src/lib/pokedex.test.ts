@@ -3,6 +3,7 @@ import {
 	applyPokedexFilter,
 	GENERATIONS,
 	generationOf,
+	naturalPokedexDir,
 	POKEDEX_FILTER_DEFAULTS,
 	type PokedexRow,
 	pokedexTypeOptions,
@@ -58,36 +59,68 @@ describe("applyPokedexFilter", () => {
 		...over,
 	});
 
-	test("defaults return every row in dex order", () => {
+	test("defaults return every row in ascending dex order", () => {
 		expect(applyPokedexFilter(rows, f()).map((r) => r.dex)).toEqual([
 			6, 25, 152,
 		]);
 	});
-	test("query matches name substring (case-insensitive) or dex number", () => {
-		expect(applyPokedexFilter(rows, f({ query: "Char" }))).toEqual([rows[0]]);
+	test("fuzzy query matches a near name; numeric query matches by dex", () => {
+		expect(applyPokedexFilter(rows, f({ query: "charizar" }))).toEqual([
+			rows[0],
+		]);
 		expect(applyPokedexFilter(rows, f({ query: "25" }))).toEqual([rows[1]]);
 	});
-	test("type filter keeps only that type", () => {
-		expect(applyPokedexFilter(rows, f({ type: "Grass" }))).toEqual([rows[2]]);
+	test("exact search mode requires the whole name", () => {
+		expect(
+			applyPokedexFilter(rows, f({ query: "char", searchMode: "exact" })),
+		).toEqual([]);
+		expect(
+			applyPokedexFilter(rows, f({ query: "charizard", searchMode: "exact" })),
+		).toEqual([rows[0]]);
 	});
-	test("generation filter keeps only that generation's dex range", () => {
+	test("type and generation filters still apply", () => {
+		expect(applyPokedexFilter(rows, f({ type: "Grass" }))).toEqual([rows[2]]);
 		expect(
 			applyPokedexFilter(rows, f({ generation: "Gen 2" })).map((r) => r.dex),
 		).toEqual([152]);
 	});
-	test("sort=name orders alphabetically", () => {
+	test("sort by name respects direction", () => {
 		expect(
-			applyPokedexFilter(rows, f({ sort: "name" })).map((r) => r.name),
+			applyPokedexFilter(rows, f({ sortMode: "name", sortDir: "asc" })).map(
+				(r) => r.name,
+			),
 		).toEqual(["charizard", "chikorita", "pikachu"]);
-	});
-	test("sort=count orders by card count descending", () => {
 		expect(
-			applyPokedexFilter(rows, f({ sort: "count" })).map((r) => r.dex),
+			applyPokedexFilter(rows, f({ sortMode: "name", sortDir: "desc" })).map(
+				(r) => r.name,
+			),
+		).toEqual(["pikachu", "chikorita", "charizard"]);
+	});
+	test("sort by count desc lists most cards first; asc least first", () => {
+		expect(
+			applyPokedexFilter(rows, f({ sortMode: "count", sortDir: "desc" })).map(
+				(r) => r.dex,
+			),
 		).toEqual([25, 6, 152]);
-	});
-	test("filters compose (type + generation)", () => {
 		expect(
-			applyPokedexFilter(rows, f({ type: "Fire", generation: "Gen 2" })),
-		).toEqual([]);
+			applyPokedexFilter(rows, f({ sortMode: "count", sortDir: "asc" })).map(
+				(r) => r.dex,
+			),
+		).toEqual([152, 6, 25]);
+	});
+	test("sort by dex desc reverses the order", () => {
+		expect(
+			applyPokedexFilter(rows, f({ sortMode: "dex", sortDir: "desc" })).map(
+				(r) => r.dex,
+			),
+		).toEqual([152, 25, 6]);
+	});
+});
+
+describe("naturalPokedexDir", () => {
+	test("count defaults to desc, others to asc", () => {
+		expect(naturalPokedexDir("count")).toBe("desc");
+		expect(naturalPokedexDir("dex")).toBe("asc");
+		expect(naturalPokedexDir("name")).toBe("asc");
 	});
 });

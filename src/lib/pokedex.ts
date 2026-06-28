@@ -1,3 +1,6 @@
+import { matchName, normalize, type SearchMode } from "../store/corpus/fuzzy";
+import type { SortDir, SortOption } from "./sort";
+
 /** One directory row per species that has at least one card in the corpus. */
 export interface PokedexRow {
 	dex: number;
@@ -40,22 +43,58 @@ export function generationOf(dex: number): string | null {
 	return g ? g.label : null;
 }
 
-export type PokedexSort = "dex" | "name" | "count";
+export type PokedexSortMode = "dex" | "name" | "count";
 
 /** Active directory filter + sort. `null` on a dimension = no filter on it. */
 export interface PokedexFilter {
 	query: string;
+	searchMode: SearchMode;
 	type: string | null;
 	generation: string | null;
-	sort: PokedexSort;
+	sortMode: PokedexSortMode;
+	sortDir: SortDir;
 }
 
 export const POKEDEX_FILTER_DEFAULTS: PokedexFilter = {
 	query: "",
+	searchMode: "fuzzy",
 	type: null,
 	generation: null,
-	sort: "dex",
+	sortMode: "dex",
+	sortDir: "asc",
 };
+
+/** Sort modes offered by the /pokemon SortControl. */
+export const POKEDEX_SORT_OPTIONS: SortOption<PokedexSortMode>[] = [
+	{ value: "dex", label: "Dex #" },
+	{ value: "name", label: "Name" },
+	{ value: "count", label: "Card Count" },
+];
+
+/** Natural default direction when the user switches sort mode. */
+export function naturalPokedexDir(mode: PokedexSortMode): SortDir {
+	return mode === "count" ? "desc" : "asc";
+}
+
+const tokensOf = (name: string): string[] =>
+	name.split(/[\s-]+/).flatMap((t) => {
+		const n = normalize(t);
+		return n ? [n] : [];
+	});
+
+// A row matches when its name matches under the search mode, or the (numeric)
+// query is a substring of its dex number. Empty query matches everything.
+function matchesQuery(
+	row: PokedexRow,
+	query: string,
+	mode: SearchMode,
+): boolean {
+	const q = normalize(query);
+	if (!q) return true;
+	if (matchName(q, normalize(row.name), tokensOf(row.name), mode) != null)
+		return true;
+	return String(row.dex).includes(query.trim());
+}
 
 /** Distinct species types present in the rows, sorted, for the Type dropdown. */
 export function pokedexTypeOptions(rows: PokedexRow[]): string[] {
@@ -65,25 +104,25 @@ export function pokedexTypeOptions(rows: PokedexRow[]): string[] {
 	return [...present].sort();
 }
 
-/** Apply the search + type + generation filters, then sort. Pure. */
+/** Apply the search + type + generation filters, then sort by mode + direction. */
 export function applyPokedexFilter(
 	rows: PokedexRow[],
 	f: PokedexFilter,
 ): PokedexRow[] {
-	const q = f.query.trim().toLowerCase();
 	const gen = f.generation
 		? (GENERATIONS.find((g) => g.label === f.generation) ?? null)
 		: null;
 	const out = rows.filter((r) => {
-		if (q && !(r.name.toLowerCase().includes(q) || String(r.dex).includes(q)))
-			return false;
+		if (!matchesQuery(r, f.query, f.searchMode)) return false;
 		if (f.type && r.type !== f.type) return false;
 		if (gen && !(r.dex >= gen.start && r.dex <= gen.end)) return false;
 		return true;
 	});
-	// "dex" is the corpus order buildPokedex already produced; filter preserves it.
-	if (f.sort === "name") out.sort((a, b) => a.name.localeCompare(b.name));
-	else if (f.sort === "count")
-		out.sort((a, b) => b.count - a.count || a.dex - b.dex);
+	const sign = f.sortDir === "asc" ? 1 : -1;
+	if (f.sortMode === "name")
+		out.sort((a, b) => sign * a.name.localeCompare(b.name));
+	else if (f.sortMode === "count")
+		out.sort((a, b) => sign * (a.count - b.count) || a.dex - b.dex);
+	else out.sort((a, b) => sign * (a.dex - b.dex));
 	return out;
 }
