@@ -137,6 +137,30 @@ test("collectGaps returns empty when all cards have images", () => {
 	expect(gaps.images).toEqual([]);
 });
 
+test("detailCard coerces numeric hp and attack damage to strings", () => {
+	// The TCGdex API returns hp and damage as numbers; our types say string.
+	// detailCard must coerce them at the boundary so the corpus never stores numbers.
+	const d = detailCard({
+		id: "swsh3-136",
+		localId: "136",
+		name: "Furret",
+		category: "Pokemon",
+		set: { id: "swsh3" },
+		hp: 110 as unknown as string, // API returns number
+		attacks: [
+			{
+				name: "Slam",
+				cost: ["Colorless"],
+				damage: 40 as unknown as string, // API returns number
+			},
+		],
+	});
+	expect(d.hp).toBe("110");
+	expect(typeof d.hp).toBe("string");
+	expect(d.attacks?.[0].damage).toBe("40");
+	expect(typeof d.attacks?.[0].damage).toBe("string");
+});
+
 test("detailVersion is deterministic and content-addressed", () => {
 	const base = {
 		id: "base1-4",

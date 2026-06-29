@@ -28,6 +28,17 @@ export interface TcgdexCard {
 	variants?: Partial<
 		Record<"firstEdition" | "holo" | "normal" | "reverse" | "wPromo", boolean>
 	>;
+	// Full-card fields (populated by per-card fetch in buildCorpus; absent on brief set-list cards).
+	hp?: number | string;
+	evolveFrom?: string;
+	abilities?: { name: string; effect: string; type: string }[];
+	attacks?: { name: string; cost?: string[]; damage?: number | string; effect?: string }[];
+	effect?: string;
+	weaknesses?: { type: string; value: string }[];
+	resistances?: { type: string; value: string }[];
+	retreat?: number;
+	description?: string;
+	illustrator?: string;
 }
 
 const CATEGORY_TO_SUPERTYPE: Record<TcgdexCard["category"], string> = {
@@ -94,27 +105,11 @@ export function trimCard(card: TcgdexCard): CorpusCard {
 export type DetailRecord = { id: string } & DetailCard;
 
 /** Extract the offline detail record from a TCGdex card (battle/flavor fields, no prices). */
-export function detailCard(
-	card: TcgdexCard & {
-		hp?: string;
-		evolveFrom?: string;
-		abilities?: { name: string; effect: string; type: string }[];
-		attacks?: {
-			name: string;
-			cost?: string[];
-			damage?: string;
-			effect?: string;
-		}[];
-		effect?: string;
-		weaknesses?: { type: string; value: string }[];
-		resistances?: { type: string; value: string }[];
-		retreat?: number;
-		description?: string;
-		illustrator?: string;
-	},
-): DetailRecord {
+export function detailCard(card: TcgdexCard): DetailRecord {
 	const out: DetailRecord = { id: card.id };
-	if (card.hp) out.hp = card.hp;
+	// Coerce hp/damage to string — the TCGdex API returns numbers for these fields
+	// even though our DetailCard types model them as strings.
+	if (card.hp != null) out.hp = String(card.hp);
 	if (card.evolveFrom) out.evolvesFrom = card.evolveFrom;
 	if (card.abilities)
 		out.abilities = card.abilities.map((a) => ({
@@ -126,7 +121,8 @@ export function detailCard(
 		out.attacks = card.attacks.map((a) => ({
 			name: a.name,
 			cost: a.cost,
-			damage: a.damage,
+			// Coerce damage to string for the same reason as hp above.
+			damage: a.damage != null ? String(a.damage) : undefined,
 			text: a.effect,
 		}));
 	if (card.weaknesses) out.weaknesses = card.weaknesses;
@@ -202,6 +198,41 @@ export async function fetchJson(
 	throw new Error(`${url} failed after ${retries + 1} attempts: ${lastErr}`);
 }
 
+/**
+ * Run `tasks` with at most `concurrency` in flight at any time.
+ * Returns all results in the original order.
+ */
+async function pLimit<T>(
+	tasks: (() => Promise<T>)[],
+	concurrency: number,
+): Promise<T[]> {
+	const results: T[] = new Array(tasks.length);
+	let next = 0;
+	async function worker() {
+		while (next < tasks.length) {
+			const i = next++;
+			results[i] = await tasks[i]();
+		}
+	}
+	await Promise.all(Array.from({ length: concurrency }, worker));
+	return results;
+}
+
+/**
+ * Fetch the full corpus of TCGdex cards.
+ *
+ * Strategy:
+ *  1. List all sets to determine the expected card count.
+ *  2. Fetch each set's brief card list to get the card ids.
+ *  3. Fetch each FULL card record via `GET /cards/{id}` so that
+ *     `category`, `rarity`, `types`, `variants`, `stage`, `dexId`, `hp`,
+ *     `attacks`, etc. are all populated. Brief set-list cards only carry
+ *     `{id, image, localId, name}` — the per-card endpoint has the complete shape.
+ *     Up to CARD_FETCH_CONCURRENCY requests are in flight simultaneously against
+ *     the local TCGdex Docker mirror (TCGDEX_BASE), which handles the load fine.
+ */
+const CARD_FETCH_CONCURRENCY = 15;
+
 export async function buildCorpus(): Promise<TcgdexCard[]> {
 	const onRetry = (
 		url: string,
@@ -229,24 +260,47 @@ export async function buildCorpus(): Promise<TcgdexCard[]> {
 		}
 	}
 
-	const cards: TcgdexCard[] = [];
+	// Phase 1: collect brief card stubs (id + set membership) from each set endpoint.
+	const briefCards: { id: string; setId: string }[] = [];
 	for (let i = 0; i < sets.length; i++) {
 		const s = sets[i];
-		const full = (await fetchJson(`${TCGDEX_BASE}/sets/${s.id}`, {
+		const setData = (await fetchJson(`${TCGDEX_BASE}/sets/${s.id}`, {
 			onRetry,
-		})) as {
-			cards: TcgdexCard[];
-		};
-		for (const c of full.cards) cards.push({ ...c, set: { id: s.id } });
+		})) as { cards: { id: string }[] };
+		for (const c of setData.cards) briefCards.push({ id: c.id, setId: s.id });
 		console.log(
-			`  set ${i + 1}/${sets.length} ${s.id} ✓ — ${cards.length} cards so far`,
+			`  set ${i + 1}/${sets.length} ${s.id} ✓ — ${briefCards.length} stubs so far`,
 		);
 		await new Promise((r) => setTimeout(r, 100));
 	}
 
+	// Phase 2: fetch each full card record (the only source of rarity/types/variants/hp/attacks/…).
+	// Uses CARD_FETCH_CONCURRENCY concurrent requests against the local TCGdex Docker mirror.
+	console.log(
+		`Fetching ${briefCards.length} full card records (concurrency=${CARD_FETCH_CONCURRENCY})…`,
+	);
+	let fetched = 0;
+	const cards = await pLimit(
+		briefCards.map(({ id, setId }) => async () => {
+			const full = (await fetchJson(`${TCGDEX_BASE}/cards/${id}`, {
+				onRetry,
+			})) as TcgdexCard;
+			// Ensure set.id is always populated (the per-card endpoint may omit set or
+			// return a nested object — we override with the authoritative setId from
+			// the set-list phase).
+			const card: TcgdexCard = { ...full, set: { id: setId } };
+			fetched++;
+			if (fetched % 500 === 0 || fetched === briefCards.length) {
+				console.log(`  …${fetched}/${briefCards.length} full records fetched`);
+			}
+			return card;
+		}),
+		CARD_FETCH_CONCURRENCY,
+	);
+
 	if (cards.length < expected * 0.95)
 		throw new Error(`crawl incomplete: ${cards.length} of ~${expected}`);
-	console.log(`Crawl complete: ${cards.length} cards.`);
+	console.log(`Crawl complete: ${cards.length} full card records.`);
 	return cards;
 }
 
