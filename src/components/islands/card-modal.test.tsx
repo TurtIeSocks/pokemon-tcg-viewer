@@ -41,11 +41,13 @@ test("tab='details' shows the Details body", async () => {
 	expect(screen.getByText("Fire Spin")).toBeDefined();
 });
 
-test("tab='pricing' renders null (pricing disabled)", async () => {
+test("tab='pricing' coerces to details when pricing disabled", async () => {
 	await renderInRouter(
 		<CardModal card={CARD} crossLinks={[]} onClose={() => {}} tab="pricing" />,
 	);
-	// PRICING_ENABLED = false — pricing pane returns null, no market-prices heading.
+	// PRICING_ENABLED = false — card-cockpit coerces "pricing" → "details", so:
+	//   - no market-prices heading (pricing pane never renders)
+	//   - details body IS visible (Fire Spin attack shows)
 	expect(screen.queryByText(/market prices/i)).toBeNull();
-	expect(screen.queryByText("Fire Spin")).toBeNull();
+	expect(screen.getByText("Fire Spin")).toBeDefined();
 });

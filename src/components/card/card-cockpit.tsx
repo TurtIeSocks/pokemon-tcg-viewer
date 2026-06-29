@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { GlassPanel } from "@/components/ui/glass";
 import { cn } from "@/lib/utils";
 import type { CardTab } from "../../lib/card-route";
+import { PRICING_ENABLED } from "../../lib/pricing-flag";
 import type { FocusCardData } from "../../server/card-mappers";
 import { useIsOwned } from "../../store/userland/selectors";
 import { addStack } from "../../store/userland/userland-store";
@@ -22,7 +23,7 @@ const ID_BASE = "card";
 export function CardCockpit({
 	card,
 	crossLinks,
-	tab,
+	tab: rawTab,
 	onTabChange,
 	pending,
 }: {
@@ -32,6 +33,10 @@ export function CardCockpit({
 	onTabChange: (t: CardTab) => void;
 	pending?: boolean;
 }) {
+	// When pricing is disabled the pricing tab is not rendered (CardTabs hides it).
+	// Coerce any incoming "pricing" tab to "details" so the /prices route shows
+	// the details pane instead of a blank tab-less panel.
+	const tab: CardTab = !PRICING_ENABLED && rawTab === "pricing" ? "details" : rawTab;
 	const holo = toHoloCardData(card);
 	const accent = getReadableAccent(getCardAccent(card.types));
 	const variants = holo.variants;
