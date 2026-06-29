@@ -5,7 +5,6 @@ import {
 	tcgdexCardToPtcg,
 	tcgdexSetToPtcg,
 } from "../src/lib/corpus/id-crosswalk";
-export type { CorpusCard } from "../src/store/corpus/corpus-types";
 import type { CorpusCard, DetailCard } from "../src/store/corpus/corpus-types";
 
 const ASSET_PREFIX = "https://assets.tcgdex.net/en/";
@@ -70,13 +69,6 @@ function variantsOf(card: TcgdexCard): string[] | undefined {
 	return keys.length ? keys : undefined;
 }
 
-/** Build pokemontcg.io large + small URLs for a TCGdex card id. */
-export function ptcgFallbackUrls(cardId: string): { large: string; small: string } {
-	const ptcgId = tcgdexCardToPtcg(cardId);
-	const dash = ptcgId.indexOf("-");
-	return ptcgImageUrl(ptcgId.slice(0, dash), ptcgId.slice(dash + 1));
-}
-
 export function trimCard(card: TcgdexCard): CorpusCard {
 	const out: CorpusCard = {
 		id: card.id,
@@ -94,9 +86,17 @@ export function trimCard(card: TcgdexCard): CorpusCard {
 			: card.image;
 		out.imageUrl = `${card.image}/high.webp`;
 		out.imageUrlSmall = `${card.image}/low.webp`;
+	} else {
+		// No TCGdex image: bake a pokemontcg.io fallback from the translated id.
+		const ptcgId = tcgdexCardToPtcg(card.id);
+		const dash = ptcgId.indexOf("-");
+		const { large, small } = ptcgImageUrl(
+			ptcgId.slice(0, dash),
+			ptcgId.slice(dash + 1),
+		);
+		out.imageUrl = large;
+		out.imageUrlSmall = small;
 	}
-	// No TCGdex image: leave imageUrl/imageUrlSmall empty; resolveFallbackImages
-	// will probe pokemontcg.io and fill them only if the URL actually resolves.
 	if (card.rarity) out.rarity = card.rarity;
 	const subtypes = subtypesOf(card);
 	if (subtypes) out.subtypes = subtypes;
@@ -148,41 +148,14 @@ export function detailVersion(records: DetailRecord[]): string {
 
 export interface GapLog {
 	images: Array<{ id: string; reason: "tcgdex-missing" | "no-fallback" }>;
-	// "tcgdex-missing" = TCGdex lacked the image but a pokemontcg.io fallback resolved (URL filled in).
-	// "no-fallback"    = no image anywhere; imageUrl stays "" (UI shows placeholder).
+	// "no-fallback" is reserved for a future build-time HEAD-probe of the pokemontcg.io fallback URL and is not emitted yet.
 }
 
-async function headOk(url: string): Promise<boolean> {
-	try {
-		const r = await fetch(url, { method: "HEAD" });
-		return r.ok;
-	} catch {
-		return false;
-	}
-}
-
-/** For each image-less corpus card, probe a pokemontcg.io fallback; keep it only
- *  if it resolves. Mutates cards in place; returns the gap log. `probe` is
- *  injectable for tests (defaults to a real HEAD request). */
-export async function resolveFallbackImages(
-	cards: CorpusCard[],
-	probe: (url: string) => Promise<boolean> = headOk,
-): Promise<GapLog> {
+/** Collect cards whose TCGdex image field is absent. */
+export function collectGaps(cards: TcgdexCard[]): GapLog {
 	const images: GapLog["images"] = [];
-	const gaps = cards.filter((c) => !c.imageUrl);
-	await pLimit(
-		gaps.map((c) => async () => {
-			const { large, small } = ptcgFallbackUrls(c.id);
-			if (await probe(small)) {
-				c.imageUrl = large;
-				c.imageUrlSmall = small;
-				images.push({ id: c.id, reason: "tcgdex-missing" }); // has a working fallback image
-			} else {
-				images.push({ id: c.id, reason: "no-fallback" }); // no image anywhere; imageUrl stays ""
-			}
-		}),
-		CARD_FETCH_CONCURRENCY,
-	);
+	for (const c of cards)
+		if (!c.image) images.push({ id: c.id, reason: "tcgdex-missing" });
 	return { images };
 }
 
@@ -386,7 +359,7 @@ if (import.meta.main) {
 	const trimmed = raw.map(trimCard);
 	const detail = raw.map(detailCard).sort((a, b) => a.id.localeCompare(b.id));
 	const version = detailVersion(detail);
-	const gaps = await resolveFallbackImages(trimmed);
+	const gaps = collectGaps(raw);
 
 	const gz = gzipSync(Buffer.from(JSON.stringify(trimmed)));
 	const detailGz = gzipSync(Buffer.from(JSON.stringify(detail)));
@@ -407,9 +380,5 @@ if (import.meta.main) {
 	console.log(
 		`Wrote ${trimmed.length} cards → ${outfile} (${mb} MB) + detail (${dmb} MB, v${version.slice(0, 8)}) in ${secs}s`,
 	);
-	const fallbackCount = gaps.images.filter((g) => g.reason === "tcgdex-missing").length;
-	const noImageCount = gaps.images.filter((g) => g.reason === "no-fallback").length;
-	console.log(
-		`Gap log: ${fallbackCount} cards via pokemontcg.io fallback, ${noImageCount} with no image (placeholder)`,
-	);
+	console.log(`Gap log: ${gaps.images.length} cards without a TCGdex image`);
 }

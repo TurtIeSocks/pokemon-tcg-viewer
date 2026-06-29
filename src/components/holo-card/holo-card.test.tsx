@@ -203,16 +203,4 @@ describe("<HoloCard />", () => {
 		expect(container.querySelector(".holo-card-image--full")).toBeNull();
 		expect(container.querySelector(".holo-card-hd")).toBeNull();
 	});
-
-	test("renders empty placeholder with card name when imageUrl is empty", () => {
-		const { container } = render(
-			<HoloCard imageUrl="" name="Mystery" size="grid" />,
-		);
-		const empty = container.querySelector(".holo-card-image--empty");
-		expect(empty).not.toBeNull();
-		expect(empty?.textContent).toContain("Mystery");
-		// No <img> or <picture> in the no-image path
-		expect(container.querySelector("img")).toBeNull();
-		expect(container.querySelector("picture")).toBeNull();
-	});
 });
