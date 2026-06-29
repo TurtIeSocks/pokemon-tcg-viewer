@@ -4,6 +4,7 @@ import { getCardForRouteFn } from "../server/corpus-server";
 import {
 	type CorpusIndex,
 	hydrateCard,
+	type I18nOverlay,
 	setsById,
 } from "../store/corpus/corpus-engine";
 import type { DetailCard } from "../store/corpus/corpus-types";
@@ -100,12 +101,13 @@ export function optimisticCardFromCorpus(
 	index: CorpusIndex | null,
 	sets: PokemonSet[] | null,
 	detailById?: Map<string, DetailCard> | null,
+	i18n?: I18nOverlay | null,
 ): FocusCardData | null {
 	if (!slugIndex || !index || !sets) return null;
 	const id = resolveCard(slugIndex, params.series, params.set, params.card);
 	const corpusCard = id ? index.byId.get(id) : undefined;
 	if (!corpusCard) return null;
-	const holo = hydrateCard(corpusCard, setsById(sets));
+	const holo = hydrateCard(corpusCard, setsById(sets), i18n);
 	const detail = detailById?.get(corpusCard.id);
 	return {
 		...detail, // battle/flavor fields when offline detail is present; else nothing

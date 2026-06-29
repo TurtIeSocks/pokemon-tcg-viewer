@@ -112,10 +112,16 @@ export function hydrateCard(
 	const name = i18n?.namesById?.get(card.id) ?? card.name;
 	// Image url is derived per language; en (or no imageBase) returns the baked urls.
 	const { imageUrl, imageUrlSmall } = cardImage(card, i18n?.lang ?? "en");
+	// When the localized url differs from the baked EN url, hand the renderer the
+	// EN url so it can reconcile a localized 404 back to English (a language may
+	// lack an image EN has). Only set it when there is actually a fallback target.
+	const imageUrlFallback =
+		imageUrl !== card.imageUrl ? card.imageUrl : undefined;
 	return {
 		id: card.id,
 		imageUrl,
 		imageUrlSmall,
+		imageUrlFallback,
 		name,
 		rarity: card.rarity,
 		subtypes: card.subtypes,

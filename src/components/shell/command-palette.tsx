@@ -14,12 +14,20 @@ import { cardRouteProps } from "../../lib/card-route";
 import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import type { NavTree } from "../../lib/nav-tree";
 import { useCommandPalette } from "../../store/command-palette";
-import { queryCorpus, setsById } from "../../store/corpus/corpus-engine";
+import {
+	type I18nOverlay,
+	queryCorpus,
+	setsById,
+} from "../../store/corpus/corpus-engine";
 import {
 	loadCorpus,
 	useCorpusRuntime,
 	useSlugIndex,
 } from "../../store/corpus/corpus-runtime";
+import {
+	useActiveI18n,
+	useEnsureI18n,
+} from "../../store/corpus/i18n-active-hooks";
 import { useStore } from "../../store/index";
 import { useRecentsStore } from "../../store/recents";
 import type { HoloCardData } from "../holo-card";
@@ -75,10 +83,12 @@ export function CommandPalette({ tree }: { tree: NavTree }) {
 		if (open) void loadCorpus();
 	}, [open]);
 
+	useEnsureI18n();
+	const i18n = useActiveI18n();
 	const cardResults = useMemo(() => {
 		if (!trimmed || !index || !sets) return [];
-		return queryTopCards(trimmed, index, sets);
-	}, [trimmed, index, sets]);
+		return queryTopCards(trimmed, index, sets, i18n);
+	}, [trimmed, index, sets, i18n]);
 
 	const navMatches = useMemo(() => {
 		if (!trimmed) return NAV_DESTINATIONS;
@@ -310,10 +320,12 @@ function queryTopCards(
 	q: string,
 	index: NonNullable<ReturnType<typeof useCorpusRuntime.getState>["index"]>,
 	sets: NonNullable<ReturnType<typeof useStore.getState>["sets"]>,
+	i18n?: I18nOverlay | null,
 ): HoloCardData[] {
 	return queryCorpus(
 		index,
 		{ query: q, mode: "fuzzy", relevance: true },
 		setsById(sets),
+		i18n,
 	).slice(0, 6);
 }

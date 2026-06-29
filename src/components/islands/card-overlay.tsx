@@ -12,6 +12,10 @@ import {
 	useSlugIndex,
 } from "../../store/corpus/corpus-runtime";
 import { useDetailRuntime } from "../../store/corpus/detail-runtime";
+import {
+	useActiveI18n,
+	useEnsureI18n,
+} from "../../store/corpus/i18n-active-hooks";
 import { CardModal } from "./card-modal";
 
 function detailHasCard(
@@ -49,6 +53,8 @@ export function CardOverlay() {
 	const index = useCorpusRuntime((s) => s.index);
 	const sets = useStore((s) => s.sets);
 	const detailById = useDetailRuntime((s) => s.detailById);
+	useEnsureI18n();
+	const i18n = useActiveI18n();
 
 	const params = useMemo(() => parseCardOverlayParam(cardParam), [cardParam]);
 
@@ -57,9 +63,16 @@ export function CardOverlay() {
 	const optimistic = useMemo(
 		() =>
 			params
-				? optimisticCardFromCorpus(params, slugIndex, index, sets, detailById)
+				? optimisticCardFromCorpus(
+						params,
+						slugIndex,
+						index,
+						sets,
+						detailById,
+						i18n,
+					)
 				: null,
-		[params, slugIndex, index, sets, detailById],
+		[params, slugIndex, index, sets, detailById, i18n],
 	);
 
 	// Kick the RPC for any card whose detail isn't already settled, and re-render

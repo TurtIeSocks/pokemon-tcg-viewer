@@ -1,21 +1,18 @@
 import { z } from "zod";
+import { SUPPORTED_LANGUAGES } from "@/lib/languages";
 
 /** Allowed raw-card condition grades in order of severity. */
 export const CONDITIONS = ["NM", "LP", "MP", "HP", "DMG"] as const;
 /** Recognised third-party grading companies. */
 export const GRADERS = ["PSA", "BGS", "CGC", "TAG", "SGC", "Other"] as const;
-/** Supported card languages (ISO 639-1); extend as needed. */
-export const LANGUAGES = [
-	"en",
-	"ja",
-	"zh",
-	"fr",
-	"de",
-	"it",
-	"es",
-	"pt",
-	"ko",
-] as const;
+/**
+ * Card-language select options. Gated to the catalog-supported set (ISO 639-1)
+ * so a recorded language can no longer silently render English — picking one of
+ * these is a language the catalog actually renders. `language` itself stays a
+ * free `z.string()`, so legacy stacks in other languages still load (they render
+ * EN). Japanese/Korean/Chinese rejoin in Phase 2.
+ */
+export const LANGUAGES = SUPPORTED_LANGUAGES;
 
 /** Returns true for strings matching YYYY-MM-DD that parse to a valid calendar date. */
 export function isValidDateStr(s: string): boolean {

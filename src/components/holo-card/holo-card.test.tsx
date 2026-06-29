@@ -326,4 +326,108 @@ describe("<HoloCard />", () => {
 		expect(empty?.textContent).toContain("#58");
 		expect(container.querySelector(".holo-card")).not.toBeNull();
 	});
+
+	// --- localized-image reconciliation (Phase 1b C3) ---
+
+	test("a localized image 404 swaps to the baked EN fallback (grid)", () => {
+		const { container } = render(
+			<HoloCard
+				imageUrl="https://assets.tcgdex.net/fr/swsh/swsh4/43/low.webp"
+				imageUrlSmall="https://assets.tcgdex.net/fr/swsh/swsh4/43/low.webp"
+				imageUrlFallback="https://images.pokemontcg.io/swsh4/43.png"
+				name="Pikachu"
+				cardNumber="43"
+				size="grid"
+			/>,
+		);
+		let img = container.querySelector(
+			"img.holo-card-image",
+		) as HTMLImageElement;
+		expect(img.getAttribute("src")).toBe(
+			"https://assets.tcgdex.net/fr/swsh/swsh4/43/low.webp",
+		);
+
+		// Localized webp 404s → retry the EN fallback, not the empty state.
+		fireEvent.error(img);
+
+		img = container.querySelector("img.holo-card-image") as HTMLImageElement;
+		expect(img).not.toBeNull();
+		expect(img.getAttribute("src")).toBe(
+			"https://images.pokemontcg.io/swsh4/43.png",
+		);
+		// The <source> also switched to the EN url (no stale localized webp).
+		const source = container.querySelector("source") as HTMLSourceElement;
+		expect(source.getAttribute("srcset")).toContain(
+			encodeURIComponent("https://images.pokemontcg.io/swsh4/43.png"),
+		);
+		expect(container.querySelector(".holo-card-empty")).toBeNull();
+	});
+
+	test("when the EN fallback ALSO 404s, drops to the identity empty state (loop-safe)", () => {
+		const { container } = render(
+			<HoloCard
+				imageUrl="https://assets.tcgdex.net/fr/swsh/swsh4/43/low.webp"
+				imageUrlFallback="https://images.pokemontcg.io/swsh4/43.png"
+				name="Pikachu"
+				cardNumber="43"
+				series="Vivid Voltage"
+				size="grid"
+			/>,
+		);
+		// 1st error: localized → EN fallback.
+		fireEvent.error(
+			container.querySelector("img.holo-card-image") as HTMLImageElement,
+		);
+		const fallbackImg = container.querySelector(
+			"img.holo-card-image",
+		) as HTMLImageElement;
+		expect(fallbackImg.getAttribute("src")).toBe(
+			"https://images.pokemontcg.io/swsh4/43.png",
+		);
+		// 2nd error: EN also fails → empty state, and we DON'T loop back to localized.
+		fireEvent.error(fallbackImg);
+		expect(container.querySelector("img.holo-card-image")).toBeNull();
+		const empty = container.querySelector(".holo-card-empty");
+		expect(empty?.textContent).toContain("Pikachu");
+		expect(empty?.textContent).toContain("#43");
+	});
+
+	test("focus localized 404 swaps the full-res image to the EN fallback", () => {
+		const { container } = render(
+			<HoloCard
+				imageUrl="https://assets.tcgdex.net/fr/swsh/swsh4/43/high.webp"
+				imageUrlFallback="https://images.pokemontcg.io/swsh4/43_hires.png"
+				name="Pikachu"
+				cardNumber="43"
+				size="focus"
+			/>,
+		);
+		const full = container.querySelector(
+			"img.holo-card-image--full",
+		) as HTMLImageElement;
+		fireEvent.error(full);
+		const swapped = container.querySelector(
+			"img.holo-card-image--full",
+		) as HTMLImageElement;
+		expect(swapped.getAttribute("src")).toBe(
+			"https://images.pokemontcg.io/swsh4/43_hires.png",
+		);
+		expect(container.querySelector(".holo-card-empty")).toBeNull();
+	});
+
+	test("with no fallback, a single image error still drops straight to empty (EN path unchanged)", () => {
+		const { container } = render(
+			<HoloCard
+				imageUrl="https://img/large.png"
+				name="Pikachu"
+				cardNumber="58"
+				size="grid"
+			/>,
+		);
+		fireEvent.error(
+			container.querySelector("img.holo-card-image") as HTMLImageElement,
+		);
+		expect(container.querySelector("img.holo-card-image")).toBeNull();
+		expect(container.querySelector(".holo-card-empty")).not.toBeNull();
+	});
 });

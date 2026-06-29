@@ -11,6 +11,10 @@ import { useStore } from "../../store";
 import { hydrateCard, setsById } from "../../store/corpus/corpus-engine";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
 import {
+	useActiveI18n,
+	useEnsureI18n,
+} from "../../store/corpus/i18n-active-hooks";
+import {
 	useBinderMembers,
 	useBinderProgress,
 	useOwnedCardIdSet,
@@ -69,6 +73,8 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 
 	const index = useCorpusRuntime((s) => s.index);
 	const sets = useStore((s) => s.sets);
+	useEnsureI18n();
+	const i18n = useActiveI18n();
 
 	// Build dexName resolver from the corpus index.
 	const dexNameResolver = useMemo(
@@ -96,10 +102,10 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 		return Array.from(memberIds)
 			.map((id) => {
 				const card = index.byId.get(id);
-				return card ? hydrateCard(card, sb) : null;
+				return card ? hydrateCard(card, sb, i18n) : null;
 			})
 			.filter((c): c is NonNullable<typeof c> => c !== null);
-	}, [memberIds, index, sets]);
+	}, [memberIds, index, sets, i18n]);
 
 	async function handleDelete() {
 		if (

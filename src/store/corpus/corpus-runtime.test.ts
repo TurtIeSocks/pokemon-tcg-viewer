@@ -6,6 +6,7 @@ import {
 } from "./corpus-runtime";
 import { clearCorpus } from "./corpus-store";
 import type { CorpusCard } from "./corpus-types";
+import { useI18nRuntime } from "./i18n-runtime";
 
 const realFetch = globalThis.fetch;
 
@@ -30,9 +31,22 @@ const sample: CorpusCard[] = [
 beforeEach(async () => {
 	await clearCorpus();
 	useCorpusRuntime.setState({ index: null, loading: false });
+	// Default to English (no overlay) for every test.
+	useI18nRuntime.setState({
+		lang: "en",
+		namesById: null,
+		version: null,
+		status: "idle",
+	});
 });
 afterEach(() => {
 	globalThis.fetch = realFetch;
+	useI18nRuntime.setState({
+		lang: "en",
+		namesById: null,
+		version: null,
+		status: "idle",
+	});
 });
 
 test("loadCorpus fetches, stores, and exposes a ready index", async () => {
@@ -166,4 +180,26 @@ test("makeCorpusFetcher owned filter keeps only owned / only missing", async () 
 	expect((await f2("k-missing", 1, 20)).cards.map((c) => c.id)).toEqual([
 		"base1-2",
 	]);
+});
+
+test("makeCorpusFetcher localizes names from the active i18n overlay and re-derives on switch", async () => {
+	globalThis.fetch = mock(
+		async () =>
+			new Response(gzipOf(sample), { status: 200, headers: { ETag: '"v1"' } }),
+	) as unknown as typeof fetch;
+	await loadCorpus();
+
+	const fetcher = makeCorpusFetcher({ setId: "base1", relevance: false });
+	// English (no overlay): the baked EN name.
+	expect((await fetcher("k", 1, 20)).cards[0].name).toBe("Charizard");
+
+	// Switch to a French overlay; the cache key folds in the language so the same
+	// query string re-derives instead of serving the cached EN row.
+	useI18nRuntime.setState({
+		lang: "fr",
+		namesById: new Map([["base1-4", "Dracaufeu"]]),
+		version: "frv1",
+		status: "ready",
+	});
+	expect((await fetcher("k", 1, 20)).cards[0].name).toBe("Dracaufeu");
 });

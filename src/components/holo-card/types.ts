@@ -8,6 +8,13 @@ export interface HoloCardData {
 	imageUrl: string;
 	/** Smaller (~245px) image for grids; falls back to imageUrl when absent. */
 	imageUrlSmall?: string;
+	/**
+	 * Baked English image url to fall back to when a localized image 404s (a
+	 * language may lack an image EN has). Set by hydrateCard only when rendering
+	 * a non-English language with a derived image; undefined for English (no
+	 * reconciliation needed — imageUrl is already the baked url).
+	 */
+	imageUrlFallback?: string;
 	name: string;
 	rarity?: string;
 	subtypes?: string[];

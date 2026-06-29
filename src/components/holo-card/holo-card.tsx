@@ -23,6 +23,12 @@ export interface HoloCardProps {
 	imageUrl: string;
 	/** Smaller image used for grid display; falls back to imageUrl. */
 	imageUrlSmall?: string;
+	/**
+	 * Baked English image url to retry once when the (localized) imageUrl 404s.
+	 * Set only when rendering a non-English language whose derived image differs;
+	 * undefined for English. See the onError reconciliation below.
+	 */
+	imageUrlFallback?: string;
 	name: string;
 	rarity?: string;
 	// Drive holo style + per-card CDN foil/mask resolution (see useFoilAssets).
@@ -52,6 +58,7 @@ export interface HoloCardProps {
 export function HoloCard({
 	imageUrl,
 	imageUrlSmall,
+	imageUrlFallback,
 	name,
 	rarity,
 	subtypes,
@@ -116,27 +123,47 @@ export function HoloCard({
 	const [hdLoaded, setHdLoaded] = useState(false);
 	const fullRef = useRef<HTMLImageElement>(null);
 
-	// If the (baked) image url 404s — true blanks point at a dead url that is the
-	// only one we have — drop to the bare frame instead of a broken-image icon.
-	// The flag makes onError fire once: once errored, the <img> is unmounted so
-	// it can't loop. Never swap to another src (the dead url IS the only url).
+	// If the image url 404s — true blanks point at a dead url that is the only
+	// one we have — drop to the bare frame instead of a broken-image icon. The
+	// flag makes onError fire once: once errored, the <img> is unmounted so it
+	// can't loop.
 	const [errored, setErrored] = useState(false);
-	// Reset load/error state when the displayed card changes. imageUrl is the
-	// intended trigger even though the body only reads it via the ref's cached
+	// Localized-image reconciliation: a non-English derived image may 404 where
+	// English exists (imageUrlFallback). On the first error, retry the EN url
+	// once by re-rendering both <source> and <img> at the fallback url; only if
+	// EN also fails do we fall through to the empty state. Loop-safe: each url is
+	// tried at most once (localized → EN → empty).
+	const [usingFallback, setUsingFallback] = useState(false);
+	// Reset load/error/fallback state when the displayed card changes. imageUrl is
+	// the intended trigger even though the body only reads it via the ref's cached
 	// image; biome flags it as "unnecessary" — keep it (a single-line ignore is
 	// required because the directive must sit directly above the hook).
 	// biome-ignore lint/correctness/useExhaustiveDependencies: imageUrl is the intended re-run trigger; see comment above.
 	useEffect(() => {
 		setHdLoaded(false);
 		setErrored(false);
+		setUsingFallback(false);
 		const img = fullRef.current;
 		if (img?.complete && img.naturalWidth > 0) setHdLoaded(true);
 	}, [imageUrl]);
 
-	// Resolve the renderable url per size; `||` (not `??`) so an empty-string
-	// imageUrlSmall falls through to imageUrl rather than rendering src="".
-	const gridUrl = nonEmptyUrl(imageUrlSmall || imageUrl);
-	const focusUrl = nonEmptyUrl(imageUrl);
+	// One shared error handler for every <img>. Retry the EN fallback once, then
+	// give up to the empty state.
+	function handleImgError() {
+		if (!usingFallback && imageUrlFallback && imageUrlFallback !== imageUrl) {
+			setUsingFallback(true);
+			return;
+		}
+		setErrored(true);
+	}
+
+	// The url to actually render: the EN fallback once a localized image failed,
+	// otherwise the (possibly localized) imageUrl/Small. `||` (not `??`) so an
+	// empty-string imageUrlSmall falls through to imageUrl rather than src="".
+	const resolvedLarge = usingFallback ? imageUrlFallback : imageUrl;
+	const resolvedSmall = usingFallback ? imageUrlFallback : imageUrlSmall;
+	const gridUrl = nonEmptyUrl(resolvedSmall || resolvedLarge);
+	const focusUrl = nonEmptyUrl(resolvedLarge);
 	const hasImage = !errored && (size === "focus" ? focusUrl : gridUrl);
 
 	return (
@@ -206,7 +233,7 @@ export function HoloCard({
 							decoding="async"
 							fetchPriority="high"
 							onLoad={() => setHdLoaded(true)}
-							onError={() => setErrored(true)}
+							onError={handleImgError}
 						/>
 					</picture>
 					{!hdLoaded && (
@@ -228,7 +255,7 @@ export function HoloCard({
 						loading="lazy"
 						decoding="async"
 						fetchPriority="auto"
-						onError={() => setErrored(true)}
+						onError={handleImgError}
 					/>
 				</picture>
 			)}
