@@ -216,6 +216,9 @@ interface SetItemProps {
 function SetItem({ set, seriesSlug }: SetItemProps) {
 	const isActive = useIsActive(`/${seriesSlug}/${set.slug}`, { exact: true });
 	const { setOpenMobile } = useSidebar();
+	// Coerce a blank/nullish symbol url to `undefined` and skip the <img> — an
+	// empty `src=""` re-fetches the whole page (HTML spec → flash).
+	const symbol = set.symbol ? set.symbol : undefined;
 
 	return (
 		<SidebarMenuSubItem>
@@ -230,11 +233,13 @@ function SetItem({ set, seriesSlug }: SetItemProps) {
 					search={LIST_SEARCH_DEFAULTS}
 					onClick={() => setOpenMobile(false)}
 				>
-					<img
-						src={set.symbol}
-						alt=""
-						className="max-h-4 max-w-4 object-contain"
-					/>
+					{symbol ? (
+						<img
+							src={symbol}
+							alt=""
+							className="max-h-4 max-w-4 object-contain"
+						/>
+					) : null}
 					<span className="flex-1 truncate">{set.name}</span>
 					<span className="font-mono text-(--faint) text-xs tabular-nums opacity-70">
 						{set.total}

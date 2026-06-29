@@ -4,6 +4,15 @@ import type { NavSet } from "../../lib/nav-tree";
 import { ProgressRing } from "../ui/progress-ring";
 
 /**
+ * Coerce a blank/nullish asset url to `undefined` so React omits the `src`
+ * attribute. An empty `src=""` re-fetches the whole page (HTML spec → flash);
+ * older TCGdex data carries `""` for missing logos/symbols.
+ */
+function nonEmptyUrl(url: string | null | undefined): string | undefined {
+	return url ? url : undefined;
+}
+
+/**
  * Liquid-glass set tile. Four elements:
  *  - backdrop: the set logo, upscaled + blurred, glowing the tile in the set's
  *    own colors behind a frosted glass pane;
@@ -28,6 +37,8 @@ export function SetTile({
 	vaultLink?: boolean;
 }) {
 	const showCount = ownedCount != null;
+	const logo = nonEmptyUrl(set.logo);
+	const symbol = nonEmptyUrl(set.symbol);
 	const pct =
 		showCount && set.total > 0
 			? Math.min(100, Math.round((ownedCount / set.total) * 100))
@@ -51,12 +62,14 @@ export function SetTile({
 			className="group relative block aspect-[4/5] w-full max-w-full overflow-hidden rounded-2xl transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-8px_rgba(0,0,0,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none motion-reduce:hover:translate-y-0"
 		>
 			{/* ── Backdrop: the set logo, blurred + saturated → per-set color field ── */}
-			<img
-				src={set.logo}
-				alt=""
-				aria-hidden="true"
-				className="absolute inset-0 h-full w-full scale-[1.7] object-contain opacity-50 blur-2xl saturate-150 transition-opacity duration-300 group-hover:opacity-75"
-			/>
+			{logo && (
+				<img
+					src={logo}
+					alt=""
+					aria-hidden="true"
+					className="absolute inset-0 h-full w-full scale-[1.7] object-contain opacity-50 blur-2xl saturate-150 transition-opacity duration-300 group-hover:opacity-75"
+				/>
+			)}
 			{/* Base tint + bottom darkening so the logo + stat stay legible */}
 			<span
 				aria-hidden="true"
@@ -79,9 +92,9 @@ export function SetTile({
 			<span className="relative z-10 flex h-full flex-col items-center justify-between gap-2 p-4">
 				{/* Logo hero (some TCGdex sets have no logo — show the name instead) */}
 				<span className="flex w-full flex-1 items-center justify-center px-1">
-					{set.logo ? (
+					{logo ? (
 						<img
-							src={set.logo}
+							src={logo}
 							alt={set.name}
 							className="max-h-[60%] max-w-[88%] object-contain drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)]"
 						/>
@@ -96,12 +109,14 @@ export function SetTile({
 				{showCount ? (
 					<span className="flex w-full items-center gap-3">
 						<ProgressRing pct={pct}>
-							<img
-								src={set.symbol}
-								alt=""
-								aria-hidden="true"
-								className="h-5 w-5 object-contain"
-							/>
+							{symbol ? (
+								<img
+									src={symbol}
+									alt=""
+									aria-hidden="true"
+									className="h-5 w-5 object-contain"
+								/>
+							) : null}
 						</ProgressRing>
 						<span className="flex min-w-0 flex-col leading-none">
 							<span className="text-xl font-bold tabular-nums text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.7)]">
@@ -112,14 +127,14 @@ export function SetTile({
 							</span>
 						</span>
 					</span>
-				) : (
+				) : symbol ? (
 					<img
-						src={set.symbol}
+						src={symbol}
 						alt=""
 						aria-hidden="true"
 						className="h-7 w-7 self-end object-contain opacity-80"
 					/>
-				)}
+				) : null}
 			</span>
 		</Link>
 	);

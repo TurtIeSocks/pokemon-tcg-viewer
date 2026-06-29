@@ -20,6 +20,9 @@
 	position: relative;
 	display: block;
 	width: 100%;
+	/* Establish a size container so the empty-state text can scale to the card's
+	   own width via cqw units (grid thumbnails vs focus differ ~2x). */
+	container-type: inline-size;
 	aspect-ratio: 245 / 342; /* standard Pokémon card aspect */
 	border-radius: 4.55% / 3.5%;
 	background: #111;
@@ -109,6 +112,63 @@
 	.holo-card-hd {
 		animation: none;
 	}
+}
+
+/* Identity empty state: no image available → show name + number + set so the
+   card is recognizable without clicking. STATIC (no animation), text only. */
+.holo-card-empty {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.4rem;
+	padding: 8%;
+	text-align: center;
+	pointer-events: none;
+	background: linear-gradient(
+		to bottom,
+		rgba(0, 0, 0, 0.25),
+		rgba(0, 0, 0, 0.55)
+	);
+}
+
+.holo-card-empty-name {
+	font-family: var(--font-display, var(--font-sans, sans-serif));
+	font-weight: 600;
+	line-height: 1.1;
+	color: var(--ink, #fff);
+	font-size: clamp(0.95rem, 7cqw, 1.6rem);
+	text-wrap: balance;
+	overflow-wrap: anywhere;
+	text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.holo-card-empty-meta {
+	display: inline-flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: center;
+	gap: 0 0.1rem;
+	font-family: var(--font-sans, sans-serif);
+	font-size: clamp(0.65rem, 4cqw, 0.85rem);
+	line-height: 1.2;
+	color: var(--ink-muted, rgba(255, 255, 255, 0.7));
+}
+
+.holo-card-empty-number {
+	font-family: var(--font-mono, monospace);
+}
+
+.holo-card-empty-cue {
+	margin-top: 0.15rem;
+	font-family: var(--font-mono, monospace);
+	font-size: clamp(0.55rem, 3cqw, 0.7rem);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--faint, rgba(255, 255, 255, 0.45));
 }
 
 .holo-card-overlay {

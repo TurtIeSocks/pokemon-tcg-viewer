@@ -5,9 +5,21 @@ import {
 	tcgdexCardToPtcg,
 	tcgdexSetToPtcg,
 } from "../src/lib/corpus/id-crosswalk";
+import overrideTable from "../src/lib/corpus/ptcg-image-overrides.json";
 import type { CorpusCard, DetailCard } from "../src/store/corpus/corpus-types";
 
 const ASSET_PREFIX = "https://assets.tcgdex.net/en/";
+
+const PTCG_HOST = "https://images.pokemontcg.io/";
+
+// CDN-verified pokemontcg.io large-image overrides keyed by TCGdex card id, for
+// imageless cards whose constructed fallback URL would otherwise be wrong.
+// The "_comment"/"_count" metadata keys are filtered out.
+const IMAGE_OVERRIDES: Record<string, string> = Object.fromEntries(
+	Object.entries(overrideTable as Record<string, unknown>).filter(
+		([k, v]) => !k.startsWith("_") && typeof v === "string",
+	) as [string, string][],
+);
 
 const TCGDEX_BASE = process.env.TCGDEX_BASE ?? "https://api.tcgdex.net/v2/en";
 
@@ -87,15 +99,23 @@ export function trimCard(card: TcgdexCard): CorpusCard {
 		out.imageUrl = `${card.image}/high.webp`;
 		out.imageUrlSmall = `${card.image}/low.webp`;
 	} else {
-		// No TCGdex image: bake a pokemontcg.io fallback from the translated id.
-		const ptcgId = tcgdexCardToPtcg(card.id);
-		const dash = ptcgId.indexOf("-");
-		const { large, small } = ptcgImageUrl(
-			ptcgId.slice(0, dash),
-			ptcgId.slice(dash + 1),
-		);
-		out.imageUrl = large;
-		out.imageUrlSmall = small;
+		// No TCGdex image. Prefer a CDN-verified override; otherwise bake a
+		// pokemontcg.io fallback from the translated id (split at the LAST dash
+		// so dashed TCGdex set ids survive the crosswalk).
+		const override = IMAGE_OVERRIDES[card.id];
+		if (override) {
+			out.imageUrl = override;
+			out.imageUrlSmall = override.replace("_hires.png", ".png");
+		} else {
+			const ptcgId = tcgdexCardToPtcg(card.id);
+			const dash = ptcgId.lastIndexOf("-");
+			const { large, small } = ptcgImageUrl(
+				ptcgId.slice(0, dash),
+				ptcgId.slice(dash + 1),
+			);
+			out.imageUrl = large;
+			out.imageUrlSmall = small;
+		}
 	}
 	if (card.rarity) out.rarity = card.rarity;
 	const subtypes = subtypesOf(card);
@@ -148,7 +168,8 @@ export function detailVersion(records: DetailRecord[]): string {
 
 export interface GapLog {
 	images: Array<{ id: string; reason: "tcgdex-missing" | "no-fallback" }>;
-	// "no-fallback" is reserved for a future build-time HEAD-probe of the pokemontcg.io fallback URL and is not emitted yet.
+	// "tcgdex-missing": no TCGdex image (collectGaps).
+	// "no-fallback": the baked pokemontcg.io fallback URL HEAD-probed dead (resolveFallbackImages).
 }
 
 /** Collect cards whose TCGdex image field is absent. */
@@ -157,6 +178,47 @@ export function collectGaps(cards: TcgdexCard[]): GapLog {
 	for (const c of cards)
 		if (!c.image) images.push({ id: c.id, reason: "tcgdex-missing" });
 	return { images };
+}
+
+export type HeadFetch = (url: string) => Promise<Response>;
+
+const FALLBACK_PROBE_CONCURRENCY = 20;
+
+/**
+ * HEAD-probe every card whose imageUrl points at the pokemontcg.io CDN to learn
+ * whether the baked fallback actually resolves. A dead URL returns HTTP 404 with
+ * a placeholder body, so `res.ok` — not body presence — is the reliable signal.
+ *
+ * When a probe is not ok, the URL is blanked (imageUrl/imageUrlSmall = "") and a
+ * `{ reason: "no-fallback" }` gap is recorded. Live URLs are kept. TCGdex-hosted
+ * images are never probed. `headFetch` is injectable so tests run without network.
+ */
+export async function resolveFallbackImages(
+	cards: CorpusCard[],
+	headFetch: HeadFetch = (url) => fetch(url, { method: "HEAD" }),
+): Promise<GapLog["images"]> {
+	const targets = cards.filter((c) => c.imageUrl.startsWith(PTCG_HOST));
+	const dead = new Array<boolean>(targets.length);
+	await pLimit(
+		targets.map((card, i) => async () => {
+			try {
+				const res = await headFetch(card.imageUrl);
+				dead[i] = !res.ok;
+			} catch {
+				dead[i] = true;
+			}
+		}),
+		FALLBACK_PROBE_CONCURRENCY,
+	);
+	const gaps: GapLog["images"] = [];
+	for (let i = 0; i < targets.length; i++) {
+		if (!dead[i]) continue;
+		const card = targets[i];
+		card.imageUrl = "";
+		card.imageUrlSmall = "";
+		gaps.push({ id: card.id, reason: "no-fallback" });
+	}
+	return gaps;
 }
 
 // Only 401/403 are non-retryable; everything else (network hiccups, 5xx, transient 404) is retried.
@@ -359,7 +421,13 @@ if (import.meta.main) {
 	const trimmed = raw.map(trimCard);
 	const detail = raw.map(detailCard).sort((a, b) => a.id.localeCompare(b.id));
 	const version = detailVersion(detail);
+
+	// HEAD-probe the pokemontcg.io fallbacks; blank the dead ones and fold the
+	// resulting "no-fallback" gaps into the gap log alongside the TCGdex misses.
+	console.log("Probing pokemontcg.io fallback URLs…");
+	const noFallback = await resolveFallbackImages(trimmed);
 	const gaps = collectGaps(raw);
+	gaps.images.push(...noFallback);
 
 	const gz = gzipSync(Buffer.from(JSON.stringify(trimmed)));
 	const detailGz = gzipSync(Buffer.from(JSON.stringify(detail)));
@@ -380,5 +448,13 @@ if (import.meta.main) {
 	console.log(
 		`Wrote ${trimmed.length} cards → ${outfile} (${mb} MB) + detail (${dmb} MB, v${version.slice(0, 8)}) in ${secs}s`,
 	);
-	console.log(`Gap log: ${gaps.images.length} cards without a TCGdex image`);
+	const tcgdexMisses = gaps.images.filter(
+		(g) => g.reason === "tcgdex-missing",
+	).length;
+	const noFallbackCount = gaps.images.filter(
+		(g) => g.reason === "no-fallback",
+	).length;
+	console.log(
+		`Gap log: ${tcgdexMisses} without a TCGdex image, ${noFallbackCount} with no working fallback`,
+	);
 }

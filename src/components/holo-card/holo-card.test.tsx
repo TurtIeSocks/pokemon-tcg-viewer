@@ -203,4 +203,127 @@ describe("<HoloCard />", () => {
 		expect(container.querySelector(".holo-card-image--full")).toBeNull();
 		expect(container.querySelector(".holo-card-hd")).toBeNull();
 	});
+
+	test("blank image urls render the identity empty state, no <img>/<source> (grid)", () => {
+		const { container } = render(
+			<HoloCard
+				imageUrl=""
+				imageUrlSmall=""
+				name="Charizard"
+				cardNumber="1"
+				series="McDonald's Collection"
+				size="grid"
+			/>,
+		);
+		// No <img>/<source> at all: an empty src re-fetches the whole page (HTML
+		// spec → flash) and even a non-empty CDN-wrapped blank url is a wasted 404.
+		expect(container.querySelector("img")).toBeNull();
+		expect(container.querySelector("source")).toBeNull();
+		expect(container.querySelector("picture")).toBeNull();
+		// Belt-and-suspenders: nothing carries an empty src/srcSet.
+		for (const img of container.querySelectorAll("img")) {
+			expect(img.getAttribute("src")).not.toBe("");
+		}
+		for (const source of container.querySelectorAll("source")) {
+			expect(source.getAttribute("srcset")).not.toBe("");
+		}
+		// The card frame still renders, now with the card's IDENTITY (name +
+		// number + set) instead of a bare frame.
+		const empty = container.querySelector(".holo-card-empty");
+		expect(empty).not.toBeNull();
+		expect(empty?.textContent).toContain("Charizard");
+		expect(empty?.textContent).toContain("#1");
+		expect(empty?.textContent).toContain("McDonald's Collection");
+		expect(empty?.textContent).toContain("no image");
+	});
+
+	test("blank image urls render the identity empty state (focus)", () => {
+		const { container } = render(
+			<HoloCard
+				imageUrl=""
+				imageUrlSmall=""
+				name="Charizard"
+				cardNumber="1"
+				series="McDonald's Collection"
+				size="focus"
+			/>,
+		);
+		expect(container.querySelector("img")).toBeNull();
+		expect(container.querySelector("source")).toBeNull();
+		expect(container.querySelector("picture")).toBeNull();
+		const empty = container.querySelector(".holo-card-empty");
+		expect(empty?.textContent).toContain("Charizard");
+		expect(empty?.textContent).toContain("#1");
+		expect(empty?.textContent).toContain("McDonald's Collection");
+	});
+
+	test("identity empty state omits the meta row when number + series are both absent", () => {
+		const { container } = render(
+			<HoloCard imageUrl="" imageUrlSmall="" name="Blank" size="grid" />,
+		);
+		const empty = container.querySelector(".holo-card-empty");
+		expect(empty?.textContent).toContain("Blank");
+		expect(empty?.textContent).toContain("no image");
+		// No number/series → no meta row, but never a stray "#".
+		expect(container.querySelector(".holo-card-empty-meta")).toBeNull();
+		expect(empty?.textContent).not.toContain("#");
+	});
+
+	test("onError on the grid image drops to the identity empty state (no broken img, no empty src) and fires once", () => {
+		const { container } = render(
+			<HoloCard
+				{...baseProps}
+				name="Charizard"
+				cardNumber="4"
+				series="Base"
+				size="grid"
+			/>,
+		);
+		const img = container.querySelector(
+			"img.holo-card-image",
+		) as HTMLImageElement;
+		expect(img).not.toBeNull();
+
+		fireEvent.error(img);
+
+		// After the load failure the image (and its <picture>) is gone — replaced by
+		// the IDENTITY empty state, not a broken-image icon.
+		expect(container.querySelector("img.holo-card-image")).toBeNull();
+		expect(container.querySelector("picture")).toBeNull();
+		// Nothing left with an empty src/srcSet.
+		for (const el of container.querySelectorAll("img")) {
+			expect(el.getAttribute("src")).not.toBe("");
+		}
+		// Reaches the same identity state: name + number visible.
+		const empty = container.querySelector(".holo-card-empty");
+		expect(empty?.textContent).toContain("Charizard");
+		expect(empty?.textContent).toContain("#4");
+		// Frame is intact.
+		expect(container.querySelector(".holo-card")).not.toBeNull();
+	});
+
+	test("onError on the focus image drops to the identity empty state", () => {
+		const { container } = render(
+			<HoloCard
+				imageUrl="https://img/large.png"
+				name="Pikachu"
+				cardNumber="58"
+				series="Base"
+				size="focus"
+			/>,
+		);
+		const img = container.querySelector(
+			"img.holo-card-image--full",
+		) as HTMLImageElement;
+		expect(img).not.toBeNull();
+
+		fireEvent.error(img);
+
+		expect(container.querySelector("img.holo-card-image--full")).toBeNull();
+		expect(container.querySelector("picture")).toBeNull();
+		const empty = container.querySelector(".holo-card-empty");
+		expect(empty?.textContent).toContain("Pikachu");
+		expect(empty?.textContent).toContain("#58");
+		expect(container.querySelector(".holo-card")).not.toBeNull();
+	});
 });

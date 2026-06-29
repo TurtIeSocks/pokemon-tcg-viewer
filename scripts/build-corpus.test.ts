@@ -3,6 +3,7 @@ import {
 	collectGaps,
 	detailCard,
 	detailVersion,
+	resolveFallbackImages,
 	type TcgdexCard,
 	trimCard,
 } from "./build-corpus";
@@ -60,6 +61,97 @@ test("trimCard falls back to pokemontcg.io image when TCGdex has none", () => {
 	// sm3.5 -> ptcg sm35 (reverse table), localId 1
 	expect(c.imageUrl).toBe("https://images.pokemontcg.io/sm35/1_hires.png");
 	expect(c.imageUrlSmall).toBe("https://images.pokemontcg.io/sm35/1.png");
+});
+
+test("trimCard applies a pokemontcg.io override when one exists for the card", () => {
+	// cel25-4A (Celebrations Classic Collection Charizard) is imageless in TCGdex;
+	// the crosswalk can't construct its URL (subset set cel25 -> cel25c, number "4A"
+	// -> "4_A"), so an override pins the real CDN URL. The small URL is derived from it.
+	const c = trimCard({
+		id: "cel25-4A",
+		localId: "4A",
+		name: "Charizard",
+		category: "Pokemon",
+		set: { id: "cel25" },
+	} as TcgdexCard);
+	expect(c.imageBase).toBeNull();
+	expect(c.imageUrl).toBe("https://images.pokemontcg.io/cel25c/4_A_hires.png");
+	expect(c.imageUrlSmall).toBe("https://images.pokemontcg.io/cel25c/4_A.png");
+});
+
+test("trimCard constructs the correct fallback URL for a dashed TCGdex set id", () => {
+	// tk-ex-latia is a dashed TCGdex set id with no override entry; the crosswalk
+	// fix (split at last dash) resolves it to ptcg set tk1a, localId 1.
+	const c = trimCard({
+		id: "tk-ex-latia-1",
+		localId: "1",
+		name: "Latias ex",
+		category: "Pokemon",
+		set: { id: "tk-ex-latia" },
+	} as TcgdexCard);
+	expect(c.imageBase).toBeNull();
+	expect(c.imageUrl).toBe("https://images.pokemontcg.io/tk1a/1_hires.png");
+	expect(c.imageUrlSmall).toBe("https://images.pokemontcg.io/tk1a/1.png");
+});
+
+test("resolveFallbackImages blanks a dead fallback URL and records a gap", async () => {
+	const cards = [
+		// pokemontcg.io fallback — HEAD probe returns 404, so it must be blanked.
+		trimCard({
+			id: "sm3.5-1",
+			localId: "1",
+			name: "Articuno",
+			category: "Pokemon",
+			set: { id: "sm3.5" },
+		} as TcgdexCard),
+		// TCGdex-hosted image — never probed, always kept.
+		trimCard({
+			id: "swsh3-136",
+			localId: "136",
+			name: "Furret",
+			category: "Pokemon",
+			image: "https://assets.tcgdex.net/en/swsh/swsh3/136",
+			set: { id: "swsh3" },
+		} as TcgdexCard),
+	];
+	const probed: string[] = [];
+	const gaps = await resolveFallbackImages(cards, async (url) => {
+		probed.push(url);
+		return new Response(null, { status: 404 });
+	});
+	// Only the pokemontcg.io card was probed.
+	expect(probed).toEqual(["https://images.pokemontcg.io/sm35/1_hires.png"]);
+	const dead = cards.find((c) => c.id === "sm3.5-1");
+	expect(dead?.imageUrl).toBe("");
+	expect(dead?.imageUrlSmall).toBe("");
+	expect(gaps).toEqual([{ id: "sm3.5-1", reason: "no-fallback" }]);
+	// The TCGdex-hosted card is untouched.
+	const kept = cards.find((c) => c.id === "swsh3-136");
+	expect(kept?.imageUrl).toBe(
+		"https://assets.tcgdex.net/en/swsh/swsh3/136/high.webp",
+	);
+});
+
+test("resolveFallbackImages keeps a live fallback URL (HEAD 200, no gap)", async () => {
+	const cards = [
+		trimCard({
+			id: "sm3.5-1",
+			localId: "1",
+			name: "Articuno",
+			category: "Pokemon",
+			set: { id: "sm3.5" },
+		} as TcgdexCard),
+	];
+	const gaps = await resolveFallbackImages(cards, async () => {
+		return new Response(null, { status: 200 });
+	});
+	expect(cards[0].imageUrl).toBe(
+		"https://images.pokemontcg.io/sm35/1_hires.png",
+	);
+	expect(cards[0].imageUrlSmall).toBe(
+		"https://images.pokemontcg.io/sm35/1.png",
+	);
+	expect(gaps).toEqual([]);
 });
 
 test("detailCard keeps battle/flavor, drops image/prices", () => {

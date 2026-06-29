@@ -43,3 +43,12 @@ test("reverse crosswalk collision: cel25 maps to cel25 (not cel25c)", () => {
 	// The reverse map must resolve cel25 → cel25 (not cel25c).
 	expect(tcgdexCardToPtcg("cel25-1")).toBe("cel25-1");
 });
+
+test("tcgdexCardToPtcg: splits at the LAST dash so dashed set ids survive", () => {
+	// TCGdex set ids contain dashes (tk-ex-latia); localIds never do.
+	// Splitting at the first dash wrongly yields setId="tk". Split at the last.
+	expect(tcgdexCardToPtcg("tk-ex-latia-1")).toBe("tk1a-1");
+	expect(tcgdexCardToPtcg("tk-ex-latio-1")).toBe("tk1b-1");
+	expect(tcgdexCardToPtcg("tk-ex-p-2")).toBe("tk2a-2");
+	expect(tcgdexCardToPtcg("tk-ex-m-1")).toBe("tk2b-1");
+});
