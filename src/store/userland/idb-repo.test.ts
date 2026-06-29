@@ -366,7 +366,7 @@ test("profile clear() removes the stored record", async () => {
 
 // --- v3→v4 data migration (dollars→cents) ---
 import { get as idbGet, set as idbSet } from "idb-keyval";
-import { CURRENT_DATA_VERSION, migrateUserlandData } from "./idb-repo";
+import { migrateUserlandData } from "./idb-repo";
 
 /** Four isolated stores so each migration test runs on its own data. */
 function migrationStores() {
@@ -401,18 +401,17 @@ test("migrateUserlandData rescales legacy dollar prices to cents, exactly once",
 		stores.collection,
 	);
 
-	await migrateUserlandData(stores);
+	await migrateUserlandData(stores); // no corpus → v4→v5 remap is deferred
 
 	const m = await idbGet<Stack>("s1", stores.collection);
 	expect(m?.pricePaid).toBe(350); // $3.50 → 350 cents
 	expect(m?.currency).toBe("USD");
 	expect(m?.deletedAt).toBeNull();
 	expect(m?.updatedAt).toBe(0); // backfilled from createdAt
-	expect(await idbGet<number>("userlandDataVersion", stores.meta)).toBe(
-		CURRENT_DATA_VERSION,
-	);
+	// Marker stops at 4 (not 5) because corpus was absent; v4→v5 remap is deferred.
+	expect(await idbGet<number>("userlandDataVersion", stores.meta)).toBe(4);
 
-	// Idempotent: the marker gates re-entry, so prices are never doubled.
+	// Idempotent: re-running without corpus leaves prices unchanged.
 	await migrateUserlandData(stores);
 	expect((await idbGet<Stack>("s1", stores.collection))?.pricePaid).toBe(350);
 });
@@ -618,4 +617,51 @@ test("migrateUserlandData v4->v5 remaps live corpus ids once", async () => {
 	expect((await idbGet<Stack>("s1", stores.collection))?.cardId).toBe(
 		"sv01-001",
 	);
+});
+
+test("migrateUserlandData v4->v5 defers remap when corpus absent; retries on second call with corpus", async () => {
+	const stores = migrationStores();
+	// Start at v4 (structural migrations already done).
+	await idbSet("userlandDataVersion", 4, stores.meta);
+
+	// Seed a stack with a pre-remap ptcg id.
+	const seedStack = {
+		id: "s1",
+		cardId: "sv1-1",
+		quantity: 1,
+		acquiredAt: 0,
+		createdAt: 0,
+		updatedAt: 0,
+		pricePaid: null,
+		currency: "USD",
+		language: "en",
+		label: null,
+		variant: null,
+		notes: null,
+		condition: "NM",
+		grading: null,
+		source: null,
+		storageLocation: null,
+		deletedAt: null,
+		isPrimary: false,
+	};
+	await idbSet("s1", seedStack, stores.collection);
+
+	// First call: NO corpus — remap must be deferred.
+	await migrateUserlandData(stores, null);
+
+	// Marker must still be 4 (not 5), cardId unchanged.
+	expect(await idbGet<number>("userlandDataVersion", stores.meta)).toBe(4);
+	expect((await idbGet<Stack>("s1", stores.collection))?.cardId).toBe("sv1-1");
+
+	// Second call: corpus now available — remap must run and marker advances to 5.
+	const corpus = buildIndex([corpusCard("sv01-001"), corpusCard("swsh3-136")]);
+	await migrateUserlandData(stores, corpus);
+
+	expect(await idbGet<number>("userlandDataVersion", stores.meta)).toBe(5);
+	expect((await idbGet<Stack>("s1", stores.collection))?.cardId).toBe("sv01-001");
+
+	// Idempotent: third call with corpus must not re-run.
+	await migrateUserlandData(stores, corpus);
+	expect((await idbGet<Stack>("s1", stores.collection))?.cardId).toBe("sv01-001");
 });

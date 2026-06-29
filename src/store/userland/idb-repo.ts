@@ -315,9 +315,13 @@ export async function migrateUserlandData(
 ): Promise<void> {
 	const from = (await get<number>(DATA_VERSION_KEY, stores.meta)) ?? 0;
 	if (from >= CURRENT_DATA_VERSION) return;
-	await set(DATA_VERSION_KEY, CURRENT_DATA_VERSION, stores.meta);
 
 	if (from < 4) {
+		// Claim the marker BEFORE writes (crash-safety for the money rescale: a
+		// re-entered pass would multiply already-cents prices by 100 again).
+		// Claim up to 4 now; the corpus remap (v4→v5) manages its own marker below.
+		await set(DATA_VERSION_KEY, 4, stores.meta);
+
 		// pricePaid: dollars (whole units) → cents (minor units). Round to guard
 		// against float drift (e.g. 3.5 → 350, not 349.99999). Also normalise the
 		// new v4 fields so legacy rows match the current Stack shape.
@@ -354,25 +358,34 @@ export async function migrateUserlandData(
 		}
 	}
 
-	if (from < 5) {
+	// Re-read the marker after structural migrations — if the process skipped
+	// straight here (from === 4), `from` is already correct; if it ran the <4
+	// block above it advanced to 4 and we re-check below.
+	const afterStructural =
+		(await get<number>(DATA_VERSION_KEY, stores.meta)) ?? 0;
+
+	if (afterStructural < 5) {
 		// Remap pokemontcg.io corpus ids to TCGdex corpus ids across all userland
-		// entities. Uses the in-memory corpus index (already loaded by loadUserland
-		// before migrateUserlandData is called). If the index is absent (e.g. fresh
-		// install with no network), the remap is best-effort via the set crosswalk
-		// table only — numeric card ids fall back to the original id unchanged.
+		// entities. Uses the in-memory corpus index passed from loadUserland.
 		//
-		// Marker is claimed BEFORE writes (see v3→v4 rationale above).
+		// CRITICAL: Unlike the structural v3→v4 migration (claim-first for crash
+		// safety), the v4→v5 corpus remap is DEFERRED when the corpus is absent.
+		// If corpusIndex is null/undefined/empty, we skip the remap AND do NOT
+		// advance the marker past 4 — so a subsequent loadUserland (after the
+		// corpus has loaded) will retry this step. Once the remap runs with a real
+		// corpus the marker advances to 5 and it never re-runs. This prevents
+		// silently sealing bad (un-remapped) data when corpus is unavailable.
+		const hasCorpus = !!corpusIndex && corpusIndex.cards.length > 0;
+		if (!hasCorpus) return; // defer: marker stays at 4, retry next load
 
 		// Build a (setId, numericLocalId) → tcgdexCardId lookup from the corpus.
 		// Key format: "{setId}:{num}" where num = Number(card.number).
 		// Built once before the remap loop (O(n) corpus scan, O(1) per card lookup).
 		const numericBySetAndNum = new Map<string, string>();
-		if (corpusIndex) {
-			for (const card of corpusIndex.cards) {
-				const num = Number(card.number);
-				if (!Number.isNaN(num)) {
-					numericBySetAndNum.set(`${card.setId}:${num}`, card.id);
-				}
+		for (const card of corpusIndex.cards) {
+			const num = Number(card.number);
+			if (!Number.isNaN(num)) {
+				numericBySetAndNum.set(`${card.setId}:${num}`, card.id);
 			}
 		}
 		const lookup = (setId: string, num: number): string | null =>
@@ -427,5 +440,8 @@ export async function migrateUserlandData(
 				stores.profile,
 			);
 		}
+
+		// Corpus remap complete — advance marker to 5.
+		await set(DATA_VERSION_KEY, CURRENT_DATA_VERSION, stores.meta);
 	}
 }

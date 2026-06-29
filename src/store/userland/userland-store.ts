@@ -325,12 +325,23 @@ export function loadUserland(): Promise<void> {
 	useUserland.setState({ loading: true });
 	inFlight = (async () => {
 		// Real IDB only: run the marker-gated one-time data migration before the
-		// first read (dollars→cents, tombstone backfill). Skipped under an injected
-		// fake repo — the migration targets the real idb-keyval stores directly, not
-		// the repo abstraction. A migration failure must not block hydration.
+		// first read (dollars→cents, tombstone backfill, corpus-id remap). Skipped
+		// under an injected fake repo — the migration targets the real idb-keyval
+		// stores directly, not the repo abstraction. A migration failure must not
+		// block hydration.
+		//
+		// The corpus index is passed so the v4→v5 id-remap step has data to work
+		// with. Dynamic import avoids a static userland↔corpus cycle. If the corpus
+		// is not yet loaded (null), migrateUserlandData defers the remap step and
+		// leaves the marker at 4, so a subsequent loadUserland retries once the
+		// corpus is available.
 		if (!usingInjectedRepos) {
 			try {
-				await migrateUserlandData();
+				const { useCorpusRuntime } = await import(
+					"../corpus/corpus-runtime"
+				);
+				const corpusIndex = useCorpusRuntime.getState().index;
+				await migrateUserlandData(undefined, corpusIndex);
 			} catch (e) {
 				console.error("Userland data migration failed; continuing", e);
 			}
