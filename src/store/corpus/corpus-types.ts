@@ -10,8 +10,11 @@ export interface CorpusCard {
 	imageUrl: string;
 	imageUrlSmall: string;
 	/** Language-invariant TCGdex image tail "{serie}/{set}/{localId}"; null => no
-	 * localized image, use imageUrl (which is then a pokemontcg.io fallback). */
-	imageBase: string | null;
+	 * localized image, use imageUrl (which is then a pokemontcg.io fallback).
+	 * Optional so pre-existing CorpusCard fixtures need no churn; real build
+	 * data always sets it (null or a value), and consumers guard with
+	 * !card.imageBase, which treats null and undefined identically. */
+	imageBase?: string | null;
 	rarity?: string;
 	subtypes?: string[];
 	supertype: string;
