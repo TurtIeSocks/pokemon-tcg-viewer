@@ -30,3 +30,16 @@ test("ptcgImageUrl builds hires + small CDN urls", () => {
 		small: "https://images.pokemontcg.io/base1/4.png",
 	});
 });
+
+test("reverse crosswalk collision: swsh4.5 maps to swsh45 (not swsh45sv)", () => {
+	// swsh45 and swsh45sv both map to swsh4.5 in the PTCG→TCGdex table.
+	// The reverse map must resolve swsh4.5 → swsh45 (the primary print run),
+	// not swsh45sv (a special variant), so image fallback URLs are correct.
+	expect(tcgdexCardToPtcg("swsh4.5-1")).toBe("swsh45-1");
+});
+
+test("reverse crosswalk collision: cel25 maps to cel25 (not cel25c)", () => {
+	// cel25 and cel25c both map to the TCGdex id "cel25".
+	// The reverse map must resolve cel25 → cel25 (not cel25c).
+	expect(tcgdexCardToPtcg("cel25-1")).toBe("cel25-1");
+});

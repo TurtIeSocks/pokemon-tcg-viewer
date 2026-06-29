@@ -1,5 +1,3 @@
-import type { HoloCardData } from "../components/holo-card";
-
 /** A card ability (focus view). */
 export interface CardAbility {
 	name: string;
@@ -40,43 +38,6 @@ export interface CardStats {
 	retreatCost?: string[];
 	flavorText?: string;
 	artist?: string;
-}
-
-export interface PokemonApiCard {
-	id: string;
-	name: string;
-	supertype: string;
-	subtypes?: string[];
-	types?: string[];
-	rarity?: string;
-	number: string;
-	nationalPokedexNumbers?: number[];
-	set: { id: string; name: string; series: string; releaseDate?: string };
-	images: ApiCardImages;
-	tcgplayer?: { prices?: Record<string, unknown> };
-}
-
-export function apiCardToProps(card: PokemonApiCard): HoloCardData {
-	return {
-		id: card.id,
-		imageUrl: card.images.large,
-		imageUrlSmall: card.images.small,
-		name: card.name,
-		rarity: card.rarity,
-		subtypes: card.subtypes,
-		types: card.types,
-		supertype: card.supertype,
-		setId: card.set.id,
-		setName: card.set.name,
-		setSeries: card.set.series,
-		setReleaseDate: card.set.releaseDate,
-		cardNumber: card.number,
-		nationalPokedexNumbers: card.nationalPokedexNumbers,
-		// TCGplayer price-variant keys = the holo/non-holo printing signal.
-		variants: card.tcgplayer?.prices
-			? Object.keys(card.tcgplayer.prices)
-			: undefined,
-	};
 }
 
 export interface PokemonSet {
@@ -176,7 +137,7 @@ export interface TcgdexFocusCard {
 	};
 	illustrator?: string;
 	rarity?: string;
-	hp?: string;
+	hp?: string | number;
 	types?: string[];
 	evolveFrom?: string;
 	description?: string;
@@ -184,7 +145,7 @@ export interface TcgdexFocusCard {
 	attacks?: Array<{
 		name: string;
 		cost?: string[];
-		damage?: string;
+		damage?: string | number;
 		effect?: string;
 	}>;
 	weaknesses?: Array<{ type: string; value: string }>;
@@ -212,7 +173,9 @@ export function mapTcgdexFocusCard(card: TcgdexFocusCard): FocusCardData {
 		nationalPokedexNumbers: card.nationalPokedexNumbers,
 		setLogo: card.set.logo ? `${card.set.logo}.png` : undefined,
 		setReleaseDate: card.set.releaseDate,
-		hp: card.hp,
+		// Coerce hp/damage to string — the TCGdex API returns numbers for these
+		// fields; our CardStats type models them as strings.
+		hp: card.hp != null ? String(card.hp) : undefined,
 		types: card.types,
 		evolvesFrom: card.evolveFrom,
 		flavorText: card.description,
@@ -225,7 +188,7 @@ export function mapTcgdexFocusCard(card: TcgdexFocusCard): FocusCardData {
 		attacks: card.attacks?.map((a) => ({
 			name: a.name,
 			cost: a.cost,
-			damage: a.damage,
+			damage: a.damage != null ? String(a.damage) : undefined,
 			text: a.effect,
 		})),
 		weaknesses: card.weaknesses,

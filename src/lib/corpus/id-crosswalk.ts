@@ -3,10 +3,16 @@ import table from "./set-crosswalk.json";
 const PTCG_TO_TCGDEX: Record<string, string> = table;
 const TCGDEX_TO_PTCG: Record<string, string> = Object.fromEntries(
 	// Later entries win on collisions (e.g. swsh4.5 has two ptcg sources);
-	// acceptable — reverse map only feeds image fallback URL construction,
-	// where any valid pokemontcg.io set id for the artwork works.
+	// the explicit overrides below correct the cases where the wrong winner
+	// would land (cel25c → "cel25" clobbers the cel25 → "cel25" entry).
 	Object.entries(PTCG_TO_TCGDEX).map(([ptcg, tcgdex]) => [tcgdex, ptcg]),
 );
+// Explicit collision fixes: the naive inversion produces wrong winners for
+// these TCGdex keys because multiple PTCG set ids map to the same TCGdex id.
+//   swsh4.5 ← swsh45 and swsh45sv  →  keep swsh45 (the primary print run)
+//   cel25   ← cel25 and cel25c     →  keep cel25  (cel25c is an alt-art subset)
+TCGDEX_TO_PTCG["swsh4.5"] = "swsh45";
+TCGDEX_TO_PTCG["cel25"] = "cel25";
 
 export function ptcgSetToTcgdex(setId: string): string {
 	return PTCG_TO_TCGDEX[setId] ?? setId;
