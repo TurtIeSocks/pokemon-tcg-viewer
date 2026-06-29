@@ -81,7 +81,7 @@ test("Details pane leads with the descriptor + HP header; rail keeps rarity", as
 	expect(screen.getByText(/Rare Holo/)).toBeDefined();
 });
 
-test("Pricing tab shows the pricing pane", async () => {
+test("Pricing tab renders null (pricing disabled)", async () => {
 	await renderInRouter(
 		<CardCockpit
 			card={CARD}
@@ -90,10 +90,10 @@ test("Pricing tab shows the pricing pane", async () => {
 			onTabChange={() => {}}
 		/>,
 	);
-	expect(screen.getByText(/market prices/i)).toBeDefined();
-	// Rail persists rarity; HP/descriptor are Details-only (absent here).
+	// PRICING_ENABLED = false — the pricing pane returns null.
+	expect(screen.queryByText(/market prices/i)).toBeNull();
+	// Rail persists rarity even when the pane body is empty.
 	expect(screen.getByText(/Rare Holo/)).toBeDefined();
-	expect(screen.queryByText(/120/)).toBeNull();
 });
 
 test("clicking the Collection tab calls onTabChange('collection')", async () => {

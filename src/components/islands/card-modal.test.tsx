@@ -41,10 +41,11 @@ test("tab='details' shows the Details body", async () => {
 	expect(screen.getByText("Fire Spin")).toBeDefined();
 });
 
-test("tab='pricing' shows the pricing pane", async () => {
+test("tab='pricing' renders null (pricing disabled)", async () => {
 	await renderInRouter(
 		<CardModal card={CARD} crossLinks={[]} onClose={() => {}} tab="pricing" />,
 	);
-	expect(screen.getByText(/market prices/i)).toBeDefined();
+	// PRICING_ENABLED = false — pricing pane returns null, no market-prices heading.
+	expect(screen.queryByText(/market prices/i)).toBeNull();
 	expect(screen.queryByText("Fire Spin")).toBeNull();
 });
