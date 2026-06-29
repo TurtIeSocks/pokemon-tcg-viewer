@@ -66,6 +66,7 @@ export interface ProfileRow {
 	bio: string | null;
 	avatar_preset: string;
 	favorite_set_id: string | null;
+	display_language: string; // ISO 639-1 catalog render language (default "en")
 	created_at: string;
 	updated_at: string;
 	deleted_at: string | null;
@@ -193,6 +194,7 @@ export function profileToRow(profile: Profile): ProfileRow {
 		bio: profile.bio,
 		avatar_preset: profile.avatarPreset,
 		favorite_set_id: profile.favoriteSetId,
+		display_language: profile.displayLanguage,
 		created_at: msToIso(profile.createdAt),
 		updated_at: msToIso(profile.updatedAt),
 		deleted_at: msOrNullToIso(profile.deletedAt),
@@ -207,6 +209,9 @@ export function rowToProfile(row: ProfileRow): Profile {
 		bio: row.bio,
 		avatarPreset: row.avatar_preset,
 		favoriteSetId: row.favorite_set_id,
+		// Additive column; rows written before it existed read back as "en".
+		displayLanguage:
+			typeof row.display_language === "string" ? row.display_language : "en",
 		createdAt: isoToMs(row.created_at),
 		updatedAt: isoToMs(row.updated_at),
 		deletedAt: isoOrNullToMs(row.deleted_at),

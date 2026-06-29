@@ -57,6 +57,10 @@ function upgradeProfile(raw: unknown): UserDataSnapshot["profile"] {
 				: DEFAULT_AVATAR_PRESET_ID,
 		favoriteSetId:
 			typeof raw.favoriteSetId === "string" ? raw.favoriteSetId : null,
+		// Additive field (no schema bump): snapshots saved before displayLanguage
+		// existed lack the key; backfill "en" so it's never undefined.
+		displayLanguage:
+			typeof raw.displayLanguage === "string" ? raw.displayLanguage : "en",
 		createdAt: typeof raw.createdAt === "number" ? raw.createdAt : 0,
 		updatedAt: typeof raw.updatedAt === "number" ? raw.updatedAt : 0,
 		deletedAt: typeof raw.deletedAt === "number" ? raw.deletedAt : null,

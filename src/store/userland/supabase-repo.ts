@@ -336,6 +336,8 @@ function createProfileRepo(client: SupabaseClient): ProfileRepo {
 								"favoriteSetId" in patch
 									? (patch.favoriteSetId ?? null)
 									: existingProfile.favoriteSetId,
+							displayLanguage:
+								patch.displayLanguage ?? existingProfile.displayLanguage,
 						},
 						updatedAt: now,
 					}
@@ -345,6 +347,7 @@ function createProfileRepo(client: SupabaseClient): ProfileRepo {
 						bio: patch.bio ?? null,
 						avatarPreset: patch.avatarPreset ?? "dusk",
 						favoriteSetId: patch.favoriteSetId ?? null,
+						displayLanguage: patch.displayLanguage ?? "en",
 						createdAt: now,
 						updatedAt: now,
 						deletedAt: null,

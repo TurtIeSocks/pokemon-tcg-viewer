@@ -153,6 +153,7 @@ export function makeProfile(overrides: Partial<Profile> = {}): Profile {
 		bio: null,
 		avatarPreset: "dusk",
 		favoriteSetId: null,
+		displayLanguage: "en",
 		createdAt: now,
 		updatedAt: now,
 		deletedAt: null,

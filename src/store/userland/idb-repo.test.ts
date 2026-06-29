@@ -247,6 +247,7 @@ test("backup round-trips the profile via replace import", async () => {
 			bio: "hi",
 			avatarPreset: "violet",
 			favoriteSetId: "base1",
+			displayLanguage: "en",
 			createdAt: 1,
 			updatedAt: 2,
 			deletedAt: null,
@@ -346,15 +347,26 @@ test("profile save() creates on first call then merges on the next", async () =>
 	expect(created.bio).toBeNull();
 	expect(created.avatarPreset).toBe("dusk");
 	expect(created.favoriteSetId).toBeNull();
+	expect(created.displayLanguage).toBe("en"); // default render language
 	expect(typeof created.createdAt).toBe("number");
 
 	const updated = await repo.save({ bio: "Gotta catch em all" });
 	expect(updated.displayName).toBe("Ash"); // preserved
 	expect(updated.bio).toBe("Gotta catch em all");
+	expect(updated.displayLanguage).toBe("en"); // preserved
 	expect(updated.createdAt).toBe(created.createdAt); // stable
 	expect(updated.updatedAt).toBeGreaterThanOrEqual(created.updatedAt); // bumped
 
 	expect((await repo.get())?.bio).toBe("Gotta catch em all");
+});
+
+test("profile save() patches displayLanguage", async () => {
+	const repo = freshProfileRepo();
+	await repo.save({ displayName: "Ash" });
+	const updated = await repo.save({ displayLanguage: "de" });
+	expect(updated.displayLanguage).toBe("de");
+	expect(updated.displayName).toBe("Ash"); // other fields preserved
+	expect((await repo.get())?.displayLanguage).toBe("de");
 });
 
 test("profile clear() removes the stored record", async () => {
