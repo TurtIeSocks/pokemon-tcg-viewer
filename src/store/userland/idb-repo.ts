@@ -154,7 +154,7 @@ function createIdbBackupRepo(
 				profile.get(),
 			]);
 			return {
-				schemaVersion: 5 as const,
+				schemaVersion: 6 as const,
 				exportedAt: Date.now(),
 				collection: c,
 				binders: b,
@@ -181,11 +181,17 @@ function createIdbBackupRepo(
 			if (snapshot.profile) {
 				await set(LOCAL_PROFILE_ID, snapshot.profile, profileStore);
 			}
-			// parseSnapshot already upgraded these rows to the current version, so
-			// stamp the marker. Without this, importing into a fresh install (marker
-			// absent ⇒ 0) would let a later migrateUserlandData re-scale the
-			// already-cents prices a second time.
-			await set(DATA_VERSION_KEY, CURRENT_DATA_VERSION, metaStore);
+			// Stamp the data-version marker so migrateUserlandData knows what to do
+			// on the next loadUserland:
+			//   - snapshot.schemaVersion === 6: rows are already TCGdex-id-remapped.
+			//     Stamp CURRENT_DATA_VERSION (5) so the remap pass is skipped.
+			//   - snapshot.schemaVersion <= 5: parseSnapshot ran upgrade() WITHOUT a
+			//     corpus lookup (import-dialog calls parseSnapshot with no lookup arg),
+			//     so cardIds may still be pokemontcg.io ids. Leave the marker at 4 so
+			//     migrateUserlandData's v4→v5 corpus-remap pass runs on next load.
+			const markerVersion =
+				snapshot.schemaVersion >= 6 ? CURRENT_DATA_VERSION : 4;
+			await set(DATA_VERSION_KEY, markerVersion, metaStore);
 		},
 	};
 }

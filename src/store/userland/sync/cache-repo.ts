@@ -388,7 +388,7 @@ export function createCacheRepos(uid: string): UserlandRepos {
 				profile.get(),
 			]);
 			return {
-				schemaVersion: 5 as const,
+				schemaVersion: 6 as const,
 				exportedAt: Date.now(),
 				collection: c,
 				binders: b,
