@@ -16,9 +16,9 @@ export function remapPtcgCardId(ptcgId: string, lookup: CardLookup): string {
 	const tcgdexSet = ptcgSetToTcgdex(ptcgId.slice(0, dash));
 	const localId = ptcgId.slice(dash + 1);
 	if (!/^\d+$/.test(localId)) {
-		// promo/gallery localId: TCGdex keeps the same string under the folded set
-		const direct = lookup(tcgdexSet, NaN);
-		return direct ?? `${tcgdexSet}-${localId}`;
+		// promo/gallery localId (e.g. "TG01", "SV-P"): TCGdex keeps the same
+		// string under the folded set — no corpus lookup needed.
+		return `${tcgdexSet}-${localId}`;
 	}
 	return lookup(tcgdexSet, Number(localId)) ?? ptcgId;
 }

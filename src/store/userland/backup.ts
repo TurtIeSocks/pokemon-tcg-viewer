@@ -22,7 +22,7 @@ export const SUPPORTED_VERSIONS = new Set([1, 2, 3, 4, 5, 6]);
 
 /**
  * Type guard: validates that v has the minimum shape of a supported snapshot
- * (schemaVersion in {1,2,3,4}; collection/binders arrays with required id fields).
+ * (schemaVersion in {1,2,3,4,5,6}; collection/binders arrays with required id fields).
  */
 export function isValidSnapshot(v: unknown): v is RawSnapshot {
 	if (!isRecord(v)) return false;
@@ -126,9 +126,11 @@ export function upgrade(
 		binders,
 		profile: upgradeProfile(snap.profile),
 	};
-	// v5 → v6: remap ptcg corpus ids to tcgdex ids (only when a lookup is provided;
-	// callers without a corpus pass undefined and ids are left as-is).
-	if (snap.schemaVersion === 5 && lookup) {
+	// v1–v5 → v6: remap ptcg corpus ids to tcgdex ids (only when a lookup is
+	// provided; callers without a corpus pass undefined and ids are left as-is).
+	// Runs after the structural upgrades above so even v1–v4 inputs are fully
+	// shaped (language, grading cert, cents) before the remap touches them.
+	if (snap.schemaVersion <= 5 && lookup) {
 		for (const s of result.collection)
 			s.cardId = remapPtcgCardId(s.cardId, lookup);
 		for (const b of result.binders) {

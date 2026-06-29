@@ -375,3 +375,43 @@ test("version support: v6 valid, v7 rejected", () => {
 	expect(SUPPORTED_VERSIONS.has(6)).toBe(true);
 	expect(SUPPORTED_VERSIONS.has(7)).toBe(false);
 });
+
+test("v4 -> v6: structurally upgraded (cents rescale) AND cardId remapped via lookup", () => {
+	// Proves pre-v5 backups now run the id-remap after structural upgrade.
+	const lookup = (s: string, n: number) =>
+		s === "sv01" && n === 1 ? "sv01-001" : null;
+	const v4: Record<string, unknown> = {
+		schemaVersion: 4,
+		exportedAt: 0,
+		collection: [
+			{
+				id: "s1",
+				cardId: "sv1-1", // ptcg id — should be remapped to sv01-001
+				quantity: 1,
+				acquiredAt: 1,
+				createdAt: 1,
+				updatedAt: 1,
+				deletedAt: null,
+				label: null,
+				pricePaid: 350, // already cents (v4+); must NOT be double-scaled
+				currency: "USD",
+				language: "en",
+				variant: null,
+				notes: null,
+				condition: null,
+				grading: null,
+				source: null,
+				storageLocation: null,
+				isPrimary: false,
+			},
+		],
+		binders: [],
+		profile: null,
+	};
+	const result = upgrade(v4 as never, lookup);
+	expect(result.schemaVersion).toBe(6);
+	// Id must be remapped
+	expect(result.collection[0].cardId).toBe("sv01-001");
+	// Price must NOT be double-scaled (was already cents in v4)
+	expect(result.collection[0].pricePaid).toBe(350);
+});
