@@ -66,7 +66,6 @@ test("optimisticCardFromCorpus widens a corpus card to a partial FocusCardData",
 	// Detail-only fields stay absent until the server RPC resolves.
 	expect(card?.attacks).toBeUndefined();
 	expect(card?.hp).toBeUndefined();
-	expect(card?.tcgplayer).toBeUndefined();
 });
 
 test("optimisticCardFromCorpus returns null when corpus/sets/slug index unready", () => {
@@ -105,8 +104,23 @@ test("peekCardDetail is undefined until resolved, then the value (no flash)", as
 });
 
 test("optimisticCardFromCorpus merges local detail when provided", () => {
-	const detailById = new Map([["base1-4", { hp: "120", attacks: [{ name: "Fire Spin", damage: "100" }], artist: "Arita" }]]);
-	const card = optimisticCardFromCorpus(params, slugIndex, index, sets, detailById);
+	const detailById = new Map([
+		[
+			"base1-4",
+			{
+				hp: "120",
+				attacks: [{ name: "Fire Spin", damage: "100" }],
+				artist: "Arita",
+			},
+		],
+	]);
+	const card = optimisticCardFromCorpus(
+		params,
+		slugIndex,
+		index,
+		sets,
+		detailById,
+	);
 	expect(card?.hp).toBe("120");
 	expect(card?.attacks?.[0]?.name).toBe("Fire Spin");
 	expect(card?.artist).toBe("Arita");

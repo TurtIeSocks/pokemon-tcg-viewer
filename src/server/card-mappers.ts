@@ -84,6 +84,7 @@ export interface PokemonSet {
 	name: string;
 	series: string;
 	releaseDate: string;
+	printedTotal?: number;
 	total: number;
 	images: { symbol: string; logo: string };
 }
@@ -110,23 +111,6 @@ export interface FocusCardData extends CardStats {
 	// Additional for focus view
 	setLogo?: string;
 	setReleaseDate?: string;
-	tcgplayer?: {
-		url: string;
-		updatedAt: string;
-		prices?: Record<
-			string,
-			{ market?: number; low?: number; mid?: number; high?: number }
-		>;
-	};
-	cardmarket?: {
-		url: string;
-		updatedAt: string;
-		prices?: {
-			averageSellPrice?: number;
-			avg30?: number;
-			trendPrice?: number;
-		};
-	};
 }
 
 export interface PokemonApiFocusCard extends CardStats {
@@ -145,8 +129,6 @@ export interface PokemonApiFocusCard extends CardStats {
 		images?: { logo?: string; symbol?: string };
 	};
 	images: ApiCardImages;
-	tcgplayer?: FocusCardData["tcgplayer"];
-	cardmarket?: FocusCardData["cardmarket"];
 }
 
 export function apiCardToFocusProps(card: PokemonApiFocusCard): FocusCardData {
@@ -175,7 +157,83 @@ export function apiCardToFocusProps(card: PokemonApiFocusCard): FocusCardData {
 		retreatCost: card.retreatCost,
 		flavorText: card.flavorText,
 		artist: card.artist,
-		tcgplayer: card.tcgplayer,
-		cardmarket: card.cardmarket,
+	};
+}
+
+/** TCGdex card-detail shape (GET /v2/en/cards/{id}). */
+export interface TcgdexFocusCard {
+	id: string;
+	localId: string;
+	name: string;
+	category: string;
+	image?: string;
+	set: {
+		id: string;
+		name: string;
+		serie?: { id: string; name: string };
+		releaseDate?: string;
+		logo?: string;
+	};
+	illustrator?: string;
+	rarity?: string;
+	hp?: string;
+	types?: string[];
+	evolveFrom?: string;
+	description?: string;
+	abilities?: Array<{ name: string; type: string; effect?: string }>;
+	attacks?: Array<{
+		name: string;
+		cost?: string[];
+		damage?: string;
+		effect?: string;
+	}>;
+	weaknesses?: Array<{ type: string; value: string }>;
+	resistances?: Array<{ type: string; value: string }>;
+	retreat?: number;
+	rules?: string[];
+	subtypes?: string[];
+	supertype?: string;
+	nationalPokedexNumbers?: number[];
+}
+
+/** Map a TCGdex card detail response to {@link FocusCardData}. Drops pricing fields. */
+export function mapTcgdexFocusCard(card: TcgdexFocusCard): FocusCardData {
+	return {
+		id: card.id,
+		imageUrl: card.image ? `${card.image}/high.webp` : "",
+		name: card.name,
+		rarity: card.rarity,
+		subtypes: card.subtypes,
+		supertype: card.supertype ?? card.category,
+		setId: card.set.id,
+		setName: card.set.name,
+		setSeries: card.set.serie?.name ?? "",
+		cardNumber: card.localId,
+		nationalPokedexNumbers: card.nationalPokedexNumbers,
+		setLogo: card.set.logo ? `${card.set.logo}.png` : undefined,
+		setReleaseDate: card.set.releaseDate,
+		hp: card.hp,
+		types: card.types,
+		evolvesFrom: card.evolveFrom,
+		flavorText: card.description,
+		artist: card.illustrator,
+		abilities: card.abilities?.map((a) => ({
+			name: a.name,
+			type: a.type,
+			text: a.effect ?? "",
+		})),
+		attacks: card.attacks?.map((a) => ({
+			name: a.name,
+			cost: a.cost,
+			damage: a.damage,
+			text: a.effect,
+		})),
+		weaknesses: card.weaknesses,
+		resistances: card.resistances,
+		retreatCost:
+			card.retreat !== undefined
+				? Array.from({ length: card.retreat }, () => "Colorless")
+				: undefined,
+		rules: card.rules,
 	};
 }

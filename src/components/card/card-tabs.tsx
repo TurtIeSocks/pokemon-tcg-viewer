@@ -1,12 +1,15 @@
 import { useEffect, useRef } from "react";
+import { PRICING_ENABLED } from "@/lib/pricing-flag";
 import { cn } from "@/lib/utils";
 import type { CardTab } from "../../lib/card-route";
 
-const TABS: { value: CardTab; label: string }[] = [
+const ALL_TABS: { value: CardTab; label: string }[] = [
 	{ value: "details", label: "Details" },
 	{ value: "collection", label: "Collection" },
 	{ value: "pricing", label: "Pricing" },
 ];
+
+const TABS = ALL_TABS.filter((t) => t.value !== "pricing" || PRICING_ENABLED);
 
 /**
  * Card cockpit tab switcher. A proper `role="tablist"` with roving tabIndex and

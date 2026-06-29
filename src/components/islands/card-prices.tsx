@@ -1,9 +1,11 @@
 import { ClientOnly } from "@tanstack/react-router";
 import { GlassPanel } from "@/components/ui/glass";
+import { PRICING_ENABLED } from "@/lib/pricing-flag";
 import { buildPriceLines } from "../../lib/price-lines";
 import type { FocusCardData } from "../../server/card-mappers";
 
 export function CardPrices({ card }: { card: FocusCardData }) {
+	if (!PRICING_ENABLED) return null;
 	return (
 		<ClientOnly fallback={null}>
 			<PriceLines card={card} />

@@ -10,11 +10,11 @@
 // stripped server-fn handlers. Defense in depth behind scripts/check-client-bundle.ts.
 
 import {
-	apiCardToFocusProps,
 	type FocusCardData,
-	type PokemonApiFocusCard,
+	mapTcgdexFocusCard,
 	type PokemonListEntry,
 	type PokemonSet,
+	type TcgdexFocusCard,
 } from "./card-mappers";
 
 // v2: the CF Worker proxies TCGdex. Default changed from pokemontcg.io to the
@@ -90,14 +90,14 @@ export async function fetchAllSets(): Promise<PokemonSet[]> {
 
 /** Raw card-by-id fetch. Safe to call from loaders/handlers (no RPC-stub hop). */
 export async function fetchCardById(id: string): Promise<FocusCardData> {
-	const resp = await fetch(`${apiBase()}/v2/cards/${id}`);
+	const resp = await fetch(`${apiBase()}/v2/en/cards/${id}`);
 	if (!resp.ok) {
 		if (resp.status === 404)
 			throw new Response("Card not found", { status: 404 });
 		throw new Error(`Failed to fetch card ${id}: ${resp.status}`);
 	}
-	const json = (await resp.json()) as { data: PokemonApiFocusCard };
-	return apiCardToFocusProps(json.data);
+	const json = (await resp.json()) as TcgdexFocusCard;
+	return mapTcgdexFocusCard(json);
 }
 
 const POKEMON_LIST_LIMIT = 1025;

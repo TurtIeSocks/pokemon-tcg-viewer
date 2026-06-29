@@ -4,7 +4,7 @@ import {
 	mapTcgdexSet,
 	type TcgdexSetDetail,
 } from "./card-data-fetch";
-import type { PokemonApiFocusCard } from "./card-mappers";
+import type { TcgdexFocusCard } from "./card-mappers";
 
 test("mapTcgdexSet maps to PokemonSet with TCGdex id + serie name", () => {
 	const s: TcgdexSetDetail = {
@@ -35,21 +35,19 @@ afterEach(() => {
 	globalThis.fetch = realFetch;
 });
 
-function apiCard(id: string): PokemonApiFocusCard {
+function apiCard(id: string): TcgdexFocusCard {
 	return {
 		id,
+		localId: "4",
 		name: "Charizard",
-		number: "4",
-		supertype: "Pokémon",
-		images: { large: "large.png", small: "small.png" },
-		set: { id: "base1", name: "Base", series: "Base" },
-	} as PokemonApiFocusCard;
+		category: "Pokemon",
+		set: { id: "base1", name: "Base" },
+	} as TcgdexFocusCard;
 }
 
 function okOnce(id: string) {
 	return mock(
-		async () =>
-			new Response(JSON.stringify({ data: apiCard(id) }), { status: 200 }),
+		async () => new Response(JSON.stringify(apiCard(id)), { status: 200 }),
 	);
 }
 
@@ -71,7 +69,7 @@ test("getCardByIdCached evicts a failed fetch so the next call retries", async (
 		calls++;
 		return calls === 1
 			? new Response("boom", { status: 500 })
-			: new Response(JSON.stringify({ data: apiCard("xy1-7") }), {
+			: new Response(JSON.stringify(apiCard("xy1-7")), {
 					status: 200,
 				});
 	});

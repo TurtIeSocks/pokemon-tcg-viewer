@@ -1,5 +1,6 @@
 import { GlassPanel } from "@/components/ui/glass";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PRICING_ENABLED } from "@/lib/pricing-flag";
 import type { FocusCardData } from "../../server/card-mappers";
 import { CardPrices } from "../islands/card-prices";
 
@@ -33,6 +34,7 @@ export function CardPricingTab({
 	card: FocusCardData;
 	pending?: boolean;
 }) {
+	if (!PRICING_ENABLED) return null;
 	return (
 		<div className="flex flex-col gap-5">
 			<section aria-label="Market prices">
