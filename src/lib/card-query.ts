@@ -1,6 +1,7 @@
 import type { CorpusQuery } from "../store/corpus/corpus-engine";
 import type { SearchMode } from "../store/corpus/fuzzy";
 import type { FilterClauses } from "../utils/build-filter-clauses";
+import type { SupportedLanguage } from "./languages";
 import type { SortDir, SortOption } from "./sort";
 
 export type ViewMode = "grid" | "timeline";
@@ -45,6 +46,12 @@ export interface ListSearch {
 	sort: CardSortMode;
 	/** Sort direction for an explicit `sort` ("default" ignores it). */
 	dir: SortDir;
+	/**
+	 * Per-page catalog display language. `null` → use the viewer's default
+	 * (`Profile.displayLanguage`, else "en"). A concrete value overrides it for
+	 * this page only; URL-tracked + shareable like the other list params.
+	 */
+	lang: SupportedLanguage | null;
 }
 
 /** Page context: which entity the list is anchored to. */

@@ -151,3 +151,19 @@ test("sort: full round-trip serialize → parse", () => {
 		"released",
 	);
 });
+test("lang: defaults to null (use viewer default)", () => {
+	expect(validateListSearch({}).lang).toBeNull();
+});
+test("lang: validates a supported language, else null", () => {
+	expect(validateListSearch({ lang: "fr" }).lang).toBe("fr");
+	expect(validateListSearch({ lang: "pt" }).lang).toBe("pt");
+	expect(validateListSearch({ lang: "ja" }).lang).toBeNull(); // unsupported → default
+	expect(validateListSearch({ lang: "junk" }).lang).toBeNull();
+});
+test("lang: null stripped from URL; a concrete override serialized", () => {
+	expect(listSearchToUrl({ lang: null }).lang).toBeUndefined();
+	expect(listSearchToUrl({ lang: "de" }).lang).toBe("de");
+});
+test("lang: full round-trip serialize → parse", () => {
+	expect(validateListSearch(listSearchToUrl({ lang: "es" })).lang).toBe("es");
+});

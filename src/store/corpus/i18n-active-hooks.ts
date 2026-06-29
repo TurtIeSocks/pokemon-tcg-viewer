@@ -1,5 +1,6 @@
+import { useSearch } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { toSupportedLanguage } from "../../lib/languages";
+import { isSupportedLanguage, toSupportedLanguage } from "../../lib/languages";
 import { useUserland } from "../userland/userland-store";
 import type { I18nOverlay } from "./corpus-engine";
 import { loadI18n, useI18nRuntime } from "./i18n-runtime";
@@ -35,13 +36,23 @@ export function useActiveI18nKey(): string {
 }
 
 /**
- * Keep the active overlay in sync with the profile's displayLanguage: lazily
- * load (and download once) the overlay when the language changes. en-only users
- * trigger zero network — loadI18n("en") just clears the overlay synchronously.
- * Mount this once high in the tree (the app shell).
+ * Keep the active overlay in sync with the effective display language: the
+ * current page's `lang` URL param if set, else the viewer's profile default
+ * (else "en"). Lazily loads (and downloads once) the overlay when it changes.
+ * en-only users trigger zero network — loadI18n("en") clears the overlay
+ * synchronously. Called from every card-rendering context (grid, overlay,
+ * binders, vault, palette); they share the single runtime, and reading the URL
+ * here keeps them all consistent with the active page without prop-threading.
  */
 export function useEnsureI18n(): void {
-	const lang = useDisplayLanguage();
+	// strict:false so this works on any route; a route without a `lang` param
+	// (binders/vault) yields undefined → the profile default takes over.
+	const urlLang = useSearch({
+		strict: false,
+		select: (s) => (s as { lang?: unknown }).lang,
+	});
+	const profileLang = useDisplayLanguage();
+	const lang = isSupportedLanguage(urlLang) ? urlLang : profileLang;
 	useEffect(() => {
 		void loadI18n(lang);
 	}, [lang]);
