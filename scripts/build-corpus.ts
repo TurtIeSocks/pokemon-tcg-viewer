@@ -3,8 +3,8 @@ import { gzipSync } from "node:zlib";
 import type { CorpusCard, DetailCard } from "../src/store/corpus/corpus-types";
 import {
 	ptcgImageUrl,
-	ptcgSetToTcgdex,
 	tcgdexCardToPtcg,
+	tcgdexSetToPtcg,
 } from "./id-crosswalk";
 
 const ASSET_PREFIX = "https://assets.tcgdex.net/en/";
@@ -147,6 +147,7 @@ export function detailVersion(records: DetailRecord[]): string {
 
 export interface GapLog {
 	images: Array<{ id: string; reason: "tcgdex-missing" | "no-fallback" }>;
+	// "no-fallback" is reserved for a future build-time HEAD-probe of the pokemontcg.io fallback URL and is not emitted yet.
 }
 
 /** Collect cards whose TCGdex image field is absent. */
@@ -218,9 +219,9 @@ export async function buildCorpus(): Promise<TcgdexCard[]> {
 
 	// Validate crosswalk: warn on divergent mappings we don't know about.
 	for (const s of sets) {
-		const mapped = ptcgSetToTcgdex(s.id);
+		const mapped = tcgdexSetToPtcg(s.id);
 		if (mapped !== s.id) {
-			// ptcgSetToTcgdex translates ptcg→tcgdex; if the key equals the value it's identity.
+			// tcgdexSetToPtcg translates tcgdex→ptcg; if the key equals the value it's identity.
 			// Here we're iterating tcgdex set ids; warn if the reverse lookup diverges unexpectedly.
 			console.warn(
 				`crosswalk: tcgdex set "${s.id}" maps to ptcg "${mapped}" (divergent)`,
