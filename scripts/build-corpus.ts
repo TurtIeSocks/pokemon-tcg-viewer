@@ -1,11 +1,11 @@
 import { createHash } from "node:crypto";
 import { gzipSync } from "node:zlib";
-import type { CorpusCard, DetailCard } from "../src/store/corpus/corpus-types";
 import {
 	ptcgImageUrl,
 	tcgdexCardToPtcg,
 	tcgdexSetToPtcg,
-} from "./id-crosswalk";
+} from "../src/lib/corpus/id-crosswalk";
+import type { CorpusCard, DetailCard } from "../src/store/corpus/corpus-types";
 
 const ASSET_PREFIX = "https://assets.tcgdex.net/en/";
 

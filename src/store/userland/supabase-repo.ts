@@ -390,7 +390,7 @@ function createBackupRepo(
 				profile.get(),
 			]);
 			return {
-				schemaVersion: 5 as const,
+				schemaVersion: 6 as const,
 				exportedAt: Date.now(),
 				collection: stacks,
 				binders: bindersList,

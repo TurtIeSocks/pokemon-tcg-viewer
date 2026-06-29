@@ -580,7 +580,7 @@ describe("BackupRepo — exportAll/importAll round-trip", () => {
 		await repos.profile.save({ displayName: "Rin" });
 
 		const snap = await repos.backup.exportAll();
-		expect(snap.schemaVersion).toBe(5);
+		expect(snap.schemaVersion).toBe(6);
 		expect(snap.collection.length).toBe(1);
 		expect(snap.binders.length).toBe(1);
 		expect(snap.profile).not.toBeNull();

@@ -137,7 +137,7 @@ export type ProfilePatch = Partial<
  * backup.ts `upgrade`).
  */
 export interface UserDataSnapshot {
-	schemaVersion: 5;
+	schemaVersion: 5 | 6;
 	exportedAt: number;
 	collection: Stack[];
 	binders: Binder[];
