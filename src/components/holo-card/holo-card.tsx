@@ -104,12 +104,16 @@ export function HoloCard({
 	// image in once it loads. Reset on card change; a cached HD may already be
 	// `complete` before onLoad can fire, so detect that too.
 	const [hdLoaded, setHdLoaded] = useState(false);
+	const [imgError, setImgError] = useState(false);
 	const fullRef = useRef<HTMLImageElement>(null);
 	useEffect(() => {
 		setHdLoaded(false);
+		setImgError(false);
 		const img = fullRef.current;
 		if (img?.complete && img.naturalWidth > 0) setHdLoaded(true);
 	}, [imageUrl]);
+
+	const showPlaceholder = !imageUrl || imgError;
 
 	return (
 		// biome-ignore lint/a11y/useSemanticElements: <div> is intentional — a <button> cannot contain block-level children like <img>+overlay
@@ -126,7 +130,11 @@ export function HoloCard({
 			aria-label={name}
 			{...dataAttrs}
 		>
-			{size === "focus" ? (
+			{showPlaceholder ? (
+				<div className="holo-card-image holo-card-image--empty" aria-hidden="true">
+					<span>{name}</span>
+				</div>
+			) : size === "focus" ? (
 				<>
 					{/* Thumbnail placeholder: same URL the grid used, so it is a cache
 					    hit and paints instantly. Blurred until the full-res lands. */}
@@ -157,6 +165,7 @@ export function HoloCard({
 							decoding="async"
 							fetchPriority="high"
 							onLoad={() => setHdLoaded(true)}
+							onError={() => setImgError(true)}
 						/>
 					</picture>
 					{!hdLoaded && (
@@ -178,6 +187,7 @@ export function HoloCard({
 						loading="lazy"
 						decoding="async"
 						fetchPriority="auto"
+						onError={() => setImgError(true)}
 					/>
 				</picture>
 			)}

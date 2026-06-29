@@ -52,6 +52,19 @@
 	z-index: 1;
 }
 
+.holo-card-image--empty {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.5rem;
+	text-align: center;
+	font-size: 0.72rem;
+	font-weight: 500;
+	line-height: 1.2;
+	color: rgba(255, 255, 255, 0.6);
+	background: var(--canvas, #0b0a0f);
+}
+
 /* Focus: the full-res image fades in over a cached thumbnail (blur-up). */
 .holo-card-image--placeholder {
 	z-index: 1;
