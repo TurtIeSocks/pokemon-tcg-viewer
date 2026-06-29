@@ -13,6 +13,8 @@ test("mapTcgdexSet maps to PokemonSet with TCGdex id + serie name", () => {
 		releaseDate: "2020-08-14",
 		cardCount: { total: 201, official: 189 },
 		serie: { id: "swsh", name: "Sword & Shield" },
+		logo: "https://assets.tcgdex.net/en/swsh/swsh3/logo",
+		symbol: "https://assets.tcgdex.net/univ/swsh/swsh3/symbol",
 	};
 	expect(mapTcgdexSet(s)).toEqual({
 		id: "swsh3",
@@ -22,8 +24,8 @@ test("mapTcgdexSet maps to PokemonSet with TCGdex id + serie name", () => {
 		printedTotal: 189,
 		total: 201,
 		images: {
-			logo: "https://assets.tcgdex.net/en/swsh3/logo.png",
-			symbol: "https://assets.tcgdex.net/en/swsh3/symbol.png",
+			logo: "https://assets.tcgdex.net/en/swsh/swsh3/logo.png",
+			symbol: "https://assets.tcgdex.net/univ/swsh/swsh3/symbol.png",
 		},
 	});
 });

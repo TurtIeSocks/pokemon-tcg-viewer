@@ -26,8 +26,6 @@ export function apiBase(): string {
 	).replace(/\/$/, "");
 }
 
-const TCGDEX_ASSETS = "https://assets.tcgdex.net/en";
-
 /** TCGdex set detail shape (GET /v2/en/sets/{id}). */
 export interface TcgdexSetDetail {
 	id: string;
@@ -35,6 +33,8 @@ export interface TcgdexSetDetail {
 	releaseDate?: string;
 	cardCount: { total: number; official: number };
 	serie: { id: string; name: string };
+	logo?: string;
+	symbol?: string;
 }
 
 /** Map a TCGdex set detail to the app's PokemonSet shape. */
@@ -47,8 +47,8 @@ export function mapTcgdexSet(s: TcgdexSetDetail): PokemonSet {
 		printedTotal: s.cardCount.official,
 		total: s.cardCount.total,
 		images: {
-			logo: `${TCGDEX_ASSETS}/${s.id}/logo.png`,
-			symbol: `${TCGDEX_ASSETS}/${s.id}/symbol.png`,
+			logo: s.logo ? `${s.logo}.png` : "",
+			symbol: s.symbol ? `${s.symbol}.png` : "",
 		},
 	};
 }
