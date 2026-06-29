@@ -53,10 +53,9 @@ const CORPUS = {
 };
 
 const env = {
-	POKEMONTCG_API_KEY: "secret",
 	ALLOW_ORIGIN: "https://x.github.io",
 	CORPUS,
-} as unknown as { POKEMONTCG_API_KEY: string; ALLOW_ORIGIN: string };
+} as unknown as { ALLOW_ORIGIN: string };
 
 function envWithCorpus(obj: { body: string; etag: string } | null) {
 	return {
@@ -88,7 +87,7 @@ afterEach(() => {
 });
 
 describe("worker", () => {
-	test("injects the API key into the origin request and adds CORS", async () => {
+	test("proxies /v2 request to TCGdex and adds CORS", async () => {
 		const fetchMock = mock(
 			async () => new Response(JSON.stringify({ data: [] }), { status: 200 }),
 		);
@@ -103,9 +102,8 @@ describe("worker", () => {
 		expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
 			"https://x.github.io",
 		);
-		const callInit = fetchMock.mock.calls[0]?.[1] as RequestInit;
-		const headers = new Headers(callInit.headers);
-		expect(headers.get("X-Api-Key")).toBe("secret");
+		const callUrl = fetchMock.mock.calls[0]?.[0] as string;
+		expect(callUrl).toContain("https://api.tcgdex.net");
 	});
 
 	test("OPTIONS preflight returns 204 with CORS", async () => {

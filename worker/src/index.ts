@@ -1,11 +1,10 @@
 export interface Env {
-	POKEMONTCG_API_KEY: string;
 	/** Allowed browser origin for CORS; defaults to "*". */
 	ALLOW_ORIGIN?: string;
 	CORPUS: R2Bucket;
 }
 
-const ORIGIN = "https://api.pokemontcg.io";
+const ORIGIN = "https://api.tcgdex.net";
 
 function corsHeaders(env: Env): Record<string, string> {
 	return {
@@ -37,9 +36,7 @@ function withCors(res: Response, env: Env): Response {
 }
 
 function fetchOrigin(url: URL, env: Env): Promise<Response> {
-	return fetch(ORIGIN + url.pathname + url.search, {
-		headers: { "X-Api-Key": env.POKEMONTCG_API_KEY },
-	});
+	return fetch(ORIGIN + url.pathname + url.search);
 }
 
 // Add shared-cache SWR directives to the stored copy. The edge serves the
