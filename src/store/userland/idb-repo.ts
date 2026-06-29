@@ -11,6 +11,8 @@ import {
 	type UseStore,
 } from "idb-keyval";
 import { DEFAULT_AVATAR_PRESET_ID } from "../../components/profile/avatar-presets";
+import type { CorpusIndex } from "../corpus/corpus-engine";
+import { remapPtcgCardId, remapPtcgSetId } from "./id-remap";
 import type {
 	BackupRepo,
 	BindersRepo,
@@ -32,7 +34,7 @@ export const LOCAL_PROFILE_ID = "me";
 /** idb-keyval key (in the meta store) holding the migrated-to data version. */
 const DATA_VERSION_KEY = "userlandDataVersion";
 /** Bump when a NON-idempotent local-data migration is required (see `migrateUserlandData`). */
-export const CURRENT_DATA_VERSION = 4;
+export const CURRENT_DATA_VERSION = 5;
 
 /** Assign a v7 id + timestamps, default acquiredAt, and null-fill optional fields. */
 function fillStack(input: NewStack): Stack {
@@ -309,6 +311,7 @@ export async function migrateUserlandData(
 		profile: profileStore,
 		meta: metaStore,
 	},
+	corpusIndex?: CorpusIndex | null,
 ): Promise<void> {
 	const from = (await get<number>(DATA_VERSION_KEY, stores.meta)) ?? 0;
 	if (from >= CURRENT_DATA_VERSION) return;
@@ -346,6 +349,81 @@ export async function migrateUserlandData(
 			await set(
 				LOCAL_PROFILE_ID,
 				{ ...profile, deletedAt: profile.deletedAt ?? null },
+				stores.profile,
+			);
+		}
+	}
+
+	if (from < 5) {
+		// Remap pokemontcg.io corpus ids to TCGdex corpus ids across all userland
+		// entities. Uses the in-memory corpus index (already loaded by loadUserland
+		// before migrateUserlandData is called). If the index is absent (e.g. fresh
+		// install with no network), the remap is best-effort via the set crosswalk
+		// table only — numeric card ids fall back to the original id unchanged.
+		//
+		// Marker is claimed BEFORE writes (see v3→v4 rationale above).
+
+		// Build a (setId, numericLocalId) → tcgdexCardId lookup from the corpus.
+		// Key format: "{setId}:{num}" where num = Number(card.number).
+		// Built once before the remap loop (O(n) corpus scan, O(1) per card lookup).
+		const numericBySetAndNum = new Map<string, string>();
+		if (corpusIndex) {
+			for (const card of corpusIndex.cards) {
+				const num = Number(card.number);
+				if (!Number.isNaN(num)) {
+					numericBySetAndNum.set(`${card.setId}:${num}`, card.id);
+				}
+			}
+		}
+		const lookup = (setId: string, num: number): string | null =>
+			numericBySetAndNum.get(`${setId}:${num}`) ?? null;
+
+		// Remap Stack.cardId.
+		const stackItems = await entries<string, Stack>(stores.collection);
+		const remappedStacks = stackItems.map(
+			([id, raw]) =>
+				[id, { ...raw, cardId: remapPtcgCardId(raw.cardId, lookup) }] as [
+					string,
+					Stack,
+				],
+		);
+		if (remappedStacks.length) await setMany(remappedStacks, stores.collection);
+
+		// Remap Binder.includeCardIds, .excludeCardIds, and .rules[].query.setId.
+		const binderItems = await entries<string, Binder>(stores.binders);
+		const remappedBinders = binderItems.map(([id, b]) => {
+			const remapped: Binder = {
+				...b,
+				includeCardIds: b.includeCardIds.map((cid) =>
+					remapPtcgCardId(cid, lookup),
+				),
+				excludeCardIds: b.excludeCardIds.map((cid) =>
+					remapPtcgCardId(cid, lookup),
+				),
+				rules: b.rules.map((rule) => ({
+					...rule,
+					query: {
+						...rule.query,
+						setId:
+							rule.query.setId != null
+								? remapPtcgSetId(rule.query.setId)
+								: null,
+					},
+				})),
+			};
+			return [id, remapped] as [string, Binder];
+		});
+		if (remappedBinders.length) await setMany(remappedBinders, stores.binders);
+
+		// Remap Profile.favoriteSetId.
+		const profile = await get<Profile>(LOCAL_PROFILE_ID, stores.profile);
+		if (profile?.favoriteSetId != null) {
+			await set(
+				LOCAL_PROFILE_ID,
+				{
+					...profile,
+					favoriteSetId: remapPtcgSetId(profile.favoriteSetId),
+				},
 				stores.profile,
 			);
 		}

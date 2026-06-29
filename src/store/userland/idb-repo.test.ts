@@ -554,3 +554,68 @@ test("normalizeStack backfills cert on legacy grading records missing it", () =>
 	} as unknown as Stack);
 	expect(withCert.grading?.cert).toBe("999");
 });
+
+// --- v4→v5 data migration (corpus-id remap) ---
+import { buildIndex } from "../corpus/corpus-engine";
+import type { CorpusCard } from "../corpus/corpus-types";
+
+/** Build a minimal CorpusCard for migration-test corpus fixtures. */
+function corpusCard(id: string): CorpusCard {
+	const dash = id.lastIndexOf("-");
+	return {
+		id,
+		name: id,
+		imageUrl: "",
+		imageUrlSmall: "",
+		supertype: "Pokémon",
+		setId: id.slice(0, dash),
+		number: id.slice(dash + 1),
+	};
+}
+
+test("migrateUserlandData v4->v5 remaps live corpus ids once", async () => {
+	const stores = migrationStores();
+	// Set meta marker to v4 (pre-v5) so the migration runs.
+	await idbSet("userlandDataVersion", 4, stores.meta);
+
+	// Seed: one stack with a pokemontcg.io-style id "sv1-1".
+	await idbSet(
+		"s1",
+		{
+			id: "s1",
+			cardId: "sv1-1",
+			quantity: 1,
+			acquiredAt: 0,
+			createdAt: 0,
+			updatedAt: 0,
+			pricePaid: null,
+			currency: "USD",
+			language: "en",
+			label: null,
+			variant: null,
+			notes: null,
+			condition: "NM",
+			grading: null,
+			source: null,
+			storageLocation: null,
+			deletedAt: null,
+			isPrimary: false,
+		},
+		stores.collection,
+	);
+
+	// Corpus has the TCGdex card "sv01-001" (number "001", which is 1 numerically).
+	const corpus = buildIndex([corpusCard("sv01-001"), corpusCard("swsh3-136")]);
+
+	await migrateUserlandData(stores, corpus);
+
+	const remapped = await idbGet<Stack>("s1", stores.collection);
+	expect(remapped?.cardId).toBe("sv01-001");
+	expect(await idbGet<number>("userlandDataVersion", stores.meta)).toBe(5);
+
+	// Idempotent: second run must not change anything.
+	await migrateUserlandData(stores, corpus);
+	expect((await idbGet<Stack>("s1", stores.collection))?.cardId).toBe(
+		"sv01-001",
+	);
+});

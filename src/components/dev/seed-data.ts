@@ -73,9 +73,12 @@ const QUANTITIES: readonly (readonly [number, number])[] = [
 	[4, 8],
 ];
 const LANGUAGES: readonly (readonly [string, number])[] = [
-	["en", 85],
-	["ja", 10],
-	["zh", 5],
+	["en", 70],
+	["fr", 8],
+	["de", 7],
+	["es", 6],
+	["it", 5],
+	["pt", 4],
 ];
 const GRADERS = ["PSA", "CGC", "BGS"] as const;
 const GRADES = [8, 9, 9.5, 10] as const;
