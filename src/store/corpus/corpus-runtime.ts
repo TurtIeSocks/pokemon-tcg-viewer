@@ -34,8 +34,6 @@ export const useCorpusRuntime = create<CorpusRuntimeState>(() => ({
 	loading: false,
 }));
 
-const ONE_DAY = 24 * 60 * 60 * 1000;
-
 async function gunzip(buf: ArrayBuffer): Promise<string> {
 	const ds = new DecompressionStream("gzip");
 	const stream = new Blob([buf]).stream().pipeThrough(ds);
@@ -62,11 +60,13 @@ export function loadCorpus(): Promise<void> {
 	inFlight = (async () => {
 		// Independent IDB reads — run them together, not in a waterfall.
 		const [meta, stored] = await Promise.all([readMeta(), readGz()]);
-		const fresh = meta && Date.now() - meta.fetchedAt < ONE_DAY;
-		if (stored && fresh) {
-			await setIndexFromGz(stored);
-			return;
-		}
+		// Always revalidate against the server (cheap conditional GET): the ETag is
+		// the build hash, so it's the only sound cache-invalidation signal. A pure
+		// time window (e.g. "fresh < 1 day") let two browsers on the same URL serve
+		// different corpus builds for up to a day. 304 → reuse stored bytes (no
+		// re-download); 200 → adopt the new build; offline/error → fall back to
+		// stored. loadCorpus is idempotent per session (early return above), so this
+		// is one 304 per page load, not per navigation.
 		try {
 			const res = await fetch(`${apiBase()}/corpus`, {
 				// Only send If-None-Match when the cached body is actually present:
