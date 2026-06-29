@@ -1,15 +1,15 @@
 import { createHash } from "node:crypto";
 import { gzipSync } from "node:zlib";
 import type { CorpusCard, DetailCard } from "../src/store/corpus/corpus-types";
-import { ptcgImageUrl, tcgdexCardToPtcg } from "./id-crosswalk";
-
-const ORIGIN = "https://api.pokemontcg.io";
-const PAGE_SIZE = 250;
-const SELECT =
-	"id,name,number,images,rarity,subtypes,supertype,types,set,nationalPokedexNumbers,tcgplayer," +
-	"hp,evolvesFrom,abilities,attacks,rules,weaknesses,resistances,retreatCost,flavorText,artist";
+import {
+	ptcgImageUrl,
+	ptcgSetToTcgdex,
+	tcgdexCardToPtcg,
+} from "./id-crosswalk";
 
 const ASSET_PREFIX = "https://assets.tcgdex.net/en/";
+
+const TCGDEX_BASE = process.env.TCGDEX_BASE ?? "https://api.tcgdex.net/v2/en";
 
 export interface TcgdexCard {
 	id: string;
@@ -93,15 +93,33 @@ export function trimCard(card: TcgdexCard): CorpusCard {
 
 export type DetailRecord = { id: string } & DetailCard;
 
-/** Extract the offline detail record for a card (battle/flavor fields, no prices). */
-export function detailCard(card: ApiCard): DetailRecord {
+/** Extract the offline detail record from a TCGdex card (battle/flavor fields, no prices). */
+export function detailCard(
+	card: TcgdexCard & {
+		hp?: string;
+		evolveFrom?: string;
+		abilities?: { name: string; effect: string; type: string }[];
+		attacks?: {
+			name: string;
+			cost?: string[];
+			damage?: string;
+			effect?: string;
+		}[];
+		effect?: string;
+		weaknesses?: { type: string; value: string }[];
+		resistances?: { type: string; value: string }[];
+		retreat?: number;
+		description?: string;
+		illustrator?: string;
+	},
+): DetailRecord {
 	const out: DetailRecord = { id: card.id };
 	if (card.hp) out.hp = card.hp;
-	if (card.evolvesFrom) out.evolvesFrom = card.evolvesFrom;
+	if (card.evolveFrom) out.evolvesFrom = card.evolveFrom;
 	if (card.abilities)
 		out.abilities = card.abilities.map((a) => ({
 			name: a.name,
-			text: a.text,
+			text: a.effect,
 			type: a.type,
 		}));
 	if (card.attacks)
@@ -109,14 +127,14 @@ export function detailCard(card: ApiCard): DetailRecord {
 			name: a.name,
 			cost: a.cost,
 			damage: a.damage,
-			text: a.text,
+			text: a.effect,
 		}));
-	if (card.rules) out.rules = card.rules;
 	if (card.weaknesses) out.weaknesses = card.weaknesses;
 	if (card.resistances) out.resistances = card.resistances;
-	if (card.retreatCost) out.retreatCost = card.retreatCost;
-	if (card.flavorText) out.flavorText = card.flavorText;
-	if (card.artist) out.artist = card.artist;
+	if (typeof card.retreat === "number")
+		out.retreatCost = Array(card.retreat).fill("Colorless");
+	if (card.description) out.flavorText = card.description;
+	if (card.illustrator) out.artist = card.illustrator;
 	// JSON.parse(JSON.stringify) drops any keys that ended up undefined.
 	return JSON.parse(JSON.stringify(out));
 }
@@ -127,48 +145,52 @@ export function detailVersion(records: DetailRecord[]): string {
 	return createHash("sha256").update(JSON.stringify(sorted)).digest("hex");
 }
 
-// The pokemontcg.io origin is slow and intermittently returns transient errors
-// (observed: a 404 on page 13 mid-crawl, while that page reliably returns 200 on
-// retry — a genuinely out-of-range page returns 200 with empty data, never 404).
-// So retry every non-OK status with exponential backoff; only auth failures
-// (401/403) are treated as permanent.
+export interface GapLog {
+	images: Array<{ id: string; reason: "tcgdex-missing" | "no-fallback" }>;
+}
+
+/** Collect cards whose TCGdex image field is absent. */
+export function collectGaps(cards: TcgdexCard[]): GapLog {
+	const images: GapLog["images"] = [];
+	for (const c of cards)
+		if (!c.image) images.push({ id: c.id, reason: "tcgdex-missing" });
+	return { images };
+}
+
+// Only 401/403 are non-retryable; everything else (network hiccups, 5xx, transient 404) is retried.
 class NonRetryableError extends Error {}
 
 function isRetryable(status: number): boolean {
 	return status !== 401 && status !== 403;
 }
 
-export async function fetchPage(
-	apiKey: string,
-	page: number,
+export async function fetchJson(
+	url: string,
 	opts: {
 		retries?: number;
 		baseMs?: number;
 		onRetry?: (
-			page: number,
+			url: string,
 			attempt: number,
 			reason: string,
 			waitMs: number,
 		) => void;
 	} = {},
-): Promise<{ data: ApiCard[]; totalCount: number }> {
+): Promise<unknown> {
 	const retries = opts.retries ?? 4;
 	const baseMs = opts.baseMs ?? 1000;
-	const url = `${ORIGIN}/v2/cards?select=${SELECT}&orderBy=set.releaseDate,number&page=${page}&pageSize=${PAGE_SIZE}`;
 	let lastErr = "";
 	for (let attempt = 0; attempt <= retries; attempt++) {
 		if (attempt > 0) {
 			const waitMs = baseMs * 2 ** (attempt - 1);
-			opts.onRetry?.(page, attempt, lastErr, waitMs);
+			opts.onRetry?.(url, attempt, lastErr, waitMs);
 			await new Promise((r) => setTimeout(r, waitMs));
 		}
 		try {
-			const res = await fetch(url, { headers: { "X-Api-Key": apiKey } });
-			if (res.ok) {
-				return (await res.json()) as { data: ApiCard[]; totalCount: number };
-			}
+			const res = await fetch(url);
+			if (res.ok) return await res.json();
 			if (!isRetryable(res.status)) {
-				throw new NonRetryableError(`page ${page}: HTTP ${res.status}`);
+				throw new NonRetryableError(`${url}: HTTP ${res.status}`);
 			}
 			lastErr = `HTTP ${res.status}`;
 		} catch (e) {
@@ -176,55 +198,67 @@ export async function fetchPage(
 			lastErr = e instanceof Error ? e.message : String(e);
 		}
 	}
-	throw new Error(
-		`page ${page} failed after ${retries + 1} attempts: ${lastErr}`,
-	);
+	throw new Error(`${url} failed after ${retries + 1} attempts: ${lastErr}`);
 }
 
-export async function buildCorpus(apiKey: string): Promise<ApiCard[]> {
+export async function buildCorpus(): Promise<TcgdexCard[]> {
 	const onRetry = (
-		page: number,
+		url: string,
 		attempt: number,
 		reason: string,
 		waitMs: number,
-	) =>
-		console.warn(
-			`  ↳ page ${page}: ${reason} — retry ${attempt} in ${waitMs}ms`,
-		);
+	) => console.warn(`  ↳ ${url}: ${reason} — retry ${attempt} in ${waitMs}ms`);
 
-	const first = await fetchPage(apiKey, 1, { onRetry });
-	const total = first.totalCount;
-	const pages = Math.ceil(total / PAGE_SIZE);
-	console.log(
-		`Crawling ${total} cards across ${pages} pages (pageSize ${PAGE_SIZE})…`,
-	);
-	const cards: ApiCard[] = [...first.data];
-	console.log(`  page 1/${pages} ✓ — ${cards.length} cards so far`);
-	for (let p = 2; p <= pages; p++) {
-		// Be gentle with the rate-limited origin between pages.
-		await new Promise((r) => setTimeout(r, 250));
-		const { data } = await fetchPage(apiKey, p, { onRetry });
-		for (const c of data) cards.push(c);
-		console.log(`  page ${p}/${pages} ✓ — ${cards.length} cards so far`);
+	const sets = (await fetchJson(`${TCGDEX_BASE}/sets`, { onRetry })) as {
+		id: string;
+		cardCount: { total: number };
+	}[];
+	const expected = sets.reduce((n, s) => n + s.cardCount.total, 0);
+	console.log(`Crawling ~${expected} cards across ${sets.length} sets…`);
+
+	// Validate crosswalk: warn on divergent mappings we don't know about.
+	for (const s of sets) {
+		const mapped = ptcgSetToTcgdex(s.id);
+		if (mapped !== s.id) {
+			// ptcgSetToTcgdex translates ptcg→tcgdex; if the key equals the value it's identity.
+			// Here we're iterating tcgdex set ids; warn if the reverse lookup diverges unexpectedly.
+			console.warn(
+				`crosswalk: tcgdex set "${s.id}" maps to ptcg "${mapped}" (divergent)`,
+			);
+		}
 	}
-	if (cards.length < total * 0.95) {
-		throw new Error(`crawl incomplete: got ${cards.length} of ${total}`);
+
+	const cards: TcgdexCard[] = [];
+	for (let i = 0; i < sets.length; i++) {
+		const s = sets[i];
+		const full = (await fetchJson(`${TCGDEX_BASE}/sets/${s.id}`, {
+			onRetry,
+		})) as {
+			cards: TcgdexCard[];
+		};
+		for (const c of full.cards) cards.push({ ...c, set: { id: s.id } });
+		console.log(
+			`  set ${i + 1}/${sets.length} ${s.id} ✓ — ${cards.length} cards so far`,
+		);
+		await new Promise((r) => setTimeout(r, 100));
 	}
+
+	if (cards.length < expected * 0.95)
+		throw new Error(`crawl incomplete: ${cards.length} of ~${expected}`);
 	console.log(`Crawl complete: ${cards.length} cards.`);
 	return cards;
 }
 
 // Entrypoint: `bun run scripts/build-corpus.ts <outfile>`
 if (import.meta.main) {
-	const apiKey = process.env.POKEMONTCG_API_KEY;
-	if (!apiKey) throw new Error("POKEMONTCG_API_KEY not set");
 	const outfile = process.argv[2] ?? "corpus.json.gz";
 	const startedAt = Date.now();
-	const raw = await buildCorpus(apiKey);
+	const raw = await buildCorpus();
 
 	const trimmed = raw.map(trimCard);
 	const detail = raw.map(detailCard).sort((a, b) => a.id.localeCompare(b.id));
 	const version = detailVersion(detail);
+	const gaps = collectGaps(raw);
 
 	const gz = gzipSync(Buffer.from(JSON.stringify(trimmed)));
 	const detailGz = gzipSync(Buffer.from(JSON.stringify(detail)));
@@ -237,6 +271,7 @@ if (import.meta.main) {
 	await Bun.write(outfile, gz);
 	await Bun.write("corpus-detail.json.gz", detailGz);
 	await Bun.write("corpus-detail.meta.json", JSON.stringify(meta));
+	await Bun.write("corpus-gap.json", JSON.stringify(gaps));
 
 	const mb = (gz.length / 1024 / 1024).toFixed(2);
 	const dmb = (detailGz.length / 1024 / 1024).toFixed(2);
@@ -244,4 +279,5 @@ if (import.meta.main) {
 	console.log(
 		`Wrote ${trimmed.length} cards → ${outfile} (${mb} MB) + detail (${dmb} MB, v${version.slice(0, 8)}) in ${secs}s`,
 	);
+	console.log(`Gap log: ${gaps.images.length} cards without a TCGdex image`);
 }

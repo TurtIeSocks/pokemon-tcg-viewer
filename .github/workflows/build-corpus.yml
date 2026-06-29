@@ -11,12 +11,17 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      tcgdex:
+        image: tcgdex/server:latest
+        ports:
+          - 3000:3000
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - name: Build corpus blob
         env:
-          POKEMONTCG_API_KEY: ${{ secrets.POKEMONTCG_API_KEY }}
+          TCGDEX_BASE: http://localhost:3000/v2/en
         run: bun run scripts/build-corpus.ts corpus.json.gz
       - name: Upload to R2
         env:
@@ -32,3 +37,8 @@ jobs:
           bunx wrangler r2 object put \
             pokemon-tcg-corpus/corpus/detail-meta.json \
             --file=corpus-detail.meta.json --remote
+      - name: Upload gap log (inspect only)
+        uses: actions/upload-artifact@v4
+        with:
+          name: corpus-gap
+          path: corpus-gap.json
