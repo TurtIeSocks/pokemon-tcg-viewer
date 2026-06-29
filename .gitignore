@@ -45,3 +45,6 @@ worker/.wrangler/
 /corpus-detail.json.gz
 /corpus-detail.meta.json
 /corpus-gap.json
+# Per-language name overlays built by scripts/build-i18n.ts (CI builds + uploads
+# to R2; never committed, like the corpus blobs above).
+/corpus/

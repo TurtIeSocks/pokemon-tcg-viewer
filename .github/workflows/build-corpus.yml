@@ -29,6 +29,10 @@ jobs:
         env:
           TCGDEX_BASE: http://localhost:3000/v2/en
         run: bun run scripts/build-corpus.ts corpus.json.gz
+      - name: Build i18n overlays (fr/de/es/it/pt)
+        env:
+          TCGDEX_BASE: http://localhost:3000/v2/en
+        run: bun run scripts/build-i18n.ts
       - name: Upload to R2
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -43,6 +47,14 @@ jobs:
           bunx wrangler r2 object put \
             pokemon-tcg-corpus/corpus/detail-meta.json \
             --file=corpus-detail.meta.json --remote
+          for lang in fr de es it pt; do
+            bunx wrangler r2 object put \
+              "pokemon-tcg-corpus/corpus/i18n/$lang/names.json.gz" \
+              --file="corpus/i18n/$lang/names.json.gz" --remote
+            bunx wrangler r2 object put \
+              "pokemon-tcg-corpus/corpus/i18n/$lang/meta.json" \
+              --file="corpus/i18n/$lang/meta.json" --remote
+          done
       - name: Upload gap log (inspect only)
         uses: actions/upload-artifact@v4
         with:
