@@ -47,7 +47,7 @@ export interface PokemonSet {
 	releaseDate: string;
 	printedTotal?: number;
 	total: number;
-	images: { symbol: string; logo: string };
+	images: { symbol?: string; logo?: string };
 }
 
 export interface PokemonListEntry {

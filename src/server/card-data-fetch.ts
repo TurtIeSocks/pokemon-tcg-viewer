@@ -47,8 +47,12 @@ export function mapTcgdexSet(s: TcgdexSetDetail): PokemonSet {
 		printedTotal: s.cardCount.official,
 		total: s.cardCount.total,
 		images: {
-			logo: s.logo ? `${s.logo}.png` : "",
-			symbol: s.symbol ? `${s.symbol}.png` : "",
+			// undefined (not "") when absent: an empty-string `src` makes the browser
+			// re-fetch the whole page (a flash loop in the set-tile + sidebar). undefined
+			// makes React omit the attribute. 53/41 TCGdex sets lack a logo/symbol
+			// (McDonald's, trainer kits, jumbo, promos).
+			logo: s.logo ? `${s.logo}.png` : undefined,
+			symbol: s.symbol ? `${s.symbol}.png` : undefined,
 		},
 	};
 }

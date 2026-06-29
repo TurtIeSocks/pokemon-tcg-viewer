@@ -77,13 +77,19 @@ export function SetTile({
 
 			{/* ── Content ── */}
 			<span className="relative z-10 flex h-full flex-col items-center justify-between gap-2 p-4">
-				{/* Logo hero */}
+				{/* Logo hero (some TCGdex sets have no logo — show the name instead) */}
 				<span className="flex w-full flex-1 items-center justify-center px-1">
-					<img
-						src={set.logo}
-						alt={set.name}
-						className="max-h-[60%] max-w-[88%] object-contain drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)]"
-					/>
+					{set.logo ? (
+						<img
+							src={set.logo}
+							alt={set.name}
+							className="max-h-[60%] max-w-[88%] object-contain drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)]"
+						/>
+					) : (
+						<span className="text-balance text-center font-semibold text-sm text-white/85 drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)]">
+							{set.name}
+						</span>
+					)}
 				</span>
 
 				{/* Symbol-in-ring + completion stat (vault), or lone symbol (browse) */}

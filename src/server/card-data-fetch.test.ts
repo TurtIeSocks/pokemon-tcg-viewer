@@ -30,6 +30,20 @@ test("mapTcgdexSet maps to PokemonSet with TCGdex id + serie name", () => {
 	});
 });
 
+test("mapTcgdexSet leaves logo/symbol undefined when absent (no empty-string src)", () => {
+	const s: TcgdexSetDetail = {
+		id: "2024sv",
+		name: "McDonald's Collection 2024",
+		releaseDate: "2024-01-01",
+		cardCount: { total: 15, official: 15 },
+		serie: { id: "mc", name: "McDonald's Collection" },
+		// no logo / symbol — 53/41 real TCGdex sets are like this
+	};
+	const out = mapTcgdexSet(s);
+	expect(out.images.logo).toBeUndefined();
+	expect(out.images.symbol).toBeUndefined();
+});
+
 const realFetch = globalThis.fetch;
 afterEach(() => {
 	globalThis.fetch = realFetch;

@@ -5,8 +5,8 @@ export interface NavSet {
 	id: string;
 	name: string;
 	slug: string;
-	logo: string;
-	symbol: string;
+	logo?: string;
+	symbol?: string;
 	total: number;
 }
 export interface NavSeries {
