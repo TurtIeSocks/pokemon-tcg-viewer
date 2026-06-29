@@ -1,4 +1,5 @@
 import type { HoloCardData } from "../../components/holo-card";
+import { cardImage } from "../../lib/card-image";
 import { slugify } from "../../lib/slug";
 import type { SortDir } from "../../lib/sort";
 import type { PokemonSet } from "../../server/card-mappers";
@@ -6,6 +7,16 @@ import type { FilterClauses } from "../../utils/build-filter-clauses";
 import type { CorpusCard } from "./corpus-types";
 import { matchName, type NameMatch, normalize, type SearchMode } from "./fuzzy";
 import { compareCardNumber } from "./natural-compare";
+
+/**
+ * Active display-language overlay passed into hydration. `lang` drives the
+ * localized image url; `namesById` (when present) overrides the EN name per id.
+ * Pass `null`/undefined for English — every existing call site is unchanged.
+ */
+export interface I18nOverlay {
+	lang: string;
+	namesById: Map<string, string> | null;
+}
 
 export interface CorpusQuery {
 	/** Free-text name search. Empty/undefined → no name filter. */
@@ -94,13 +105,18 @@ function passesFilters(card: CorpusCard, f: FilterClauses): boolean {
 export function hydrateCard(
 	card: CorpusCard,
 	setsById: Map<string, PokemonSet>,
+	i18n?: I18nOverlay | null,
 ): HoloCardData {
 	const set = setsById.get(card.setId);
+	// EN fallback: an overlay miss (or no overlay) keeps the baked English name.
+	const name = i18n?.namesById?.get(card.id) ?? card.name;
+	// Image url is derived per language; en (or no imageBase) returns the baked urls.
+	const { imageUrl, imageUrlSmall } = cardImage(card, i18n?.lang ?? "en");
 	return {
 		id: card.id,
-		imageUrl: card.imageUrl,
-		imageUrlSmall: card.imageUrlSmall,
-		name: card.name,
+		imageUrl,
+		imageUrlSmall,
+		name,
 		rarity: card.rarity,
 		subtypes: card.subtypes,
 		types: card.types,
@@ -125,6 +141,7 @@ export function queryCorpus(
 	index: CorpusIndex,
 	q: CorpusQuery,
 	setsById: Map<string, PokemonSet>,
+	i18n?: I18nOverlay | null,
 ): HoloCardData[] {
 	const queryNorm = q.query ? normalize(q.query) : "";
 	const hasName = queryNorm.length > 0;
@@ -202,5 +219,5 @@ export function queryCorpus(
 		return compareCardNumber(a.card.number, b.card.number);
 	});
 
-	return hits.map((h) => hydrateCard(h.card, setsById));
+	return hits.map((h) => hydrateCard(h.card, setsById, i18n));
 }
