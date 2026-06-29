@@ -40,3 +40,8 @@ src/routeTree.gen.ts
 # Claude scheduled-task lock (local runtime junk)
 .claude/scheduled_tasks.lock
 docs/reports
+worker/.wrangler/
+/corpus.json.gz
+/corpus-detail.json.gz
+/corpus-detail.meta.json
+/corpus-gap.json
