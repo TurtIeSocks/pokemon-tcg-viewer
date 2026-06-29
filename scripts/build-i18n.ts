@@ -120,9 +120,18 @@ export async function buildI18n(
 		);
 	}
 
-	if (entries.length < expected * 0.95)
+	// `expected` is the language-invariant set total (every set's full card count);
+	// a Western overlay legitimately covers only the SUBSET of cards translated to that
+	// language (untranslated cards fall back to the EN name in hydrateCard), so partial
+	// coverage is normal, not an error. Guard only against a catastrophically broken crawl
+	// (network/endpoint failure that yields near-nothing), and log the real coverage.
+	const coverage = expected > 0 ? entries.length / expected : 0;
+	log(
+		`[${lang}] coverage ${entries.length}/${expected} (${(coverage * 100).toFixed(0)}%)`,
+	);
+	if (coverage < 0.4)
 		throw new Error(
-			`[${lang}] crawl incomplete: ${entries.length} of ~${expected}`,
+			`[${lang}] crawl looks broken: only ${entries.length} of ~${expected} (<40%)`,
 		);
 
 	entries.sort((a, b) => a.id.localeCompare(b.id));

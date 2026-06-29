@@ -114,12 +114,29 @@ test("buildI18n entry count and version reflect the crawled names (meta-ready)",
 	expect(version).toBe(i18nVersion(entries));
 });
 
-test("buildI18n throws when the crawl falls below the 95% completeness guard", async () => {
-	// Set declares 100 cards but only serves 1 (1% < 95%).
+test("buildI18n throws only when the crawl is catastrophically broken (<40%)", async () => {
+	// Set declares 100 cards but only serves 1 (1% << 40%) => a broken crawl.
 	const thin: MockSet[] = [
 		{ id: "swsh3", total: 100, cards: [{ id: "swsh3-1", name: "Cizayox" }] },
 	];
-	await expect(buildI18n("fr", opts(thin))).rejects.toThrow(/crawl incomplete/);
+	await expect(buildI18n("fr", opts(thin))).rejects.toThrow(/looks broken/);
+});
+
+test("buildI18n tolerates partial language coverage (untranslated cards skipped)", async () => {
+	// A Western overlay legitimately covers a subset; 60% coverage must NOT throw —
+	// untranslated cards fall back to the EN name in hydrateCard.
+	const partial: MockSet[] = [
+		{
+			id: "swsh3",
+			total: 10,
+			cards: Array.from({ length: 6 }, (_, i) => ({
+				id: `swsh3-${i + 1}`,
+				name: `Carte ${i + 1}`,
+			})),
+		},
+	];
+	const { entries } = await buildI18n("fr", opts(partial));
+	expect(entries).toHaveLength(6);
 });
 
 test("buildI18n tolerates a missing name (defaults to empty string)", async () => {
