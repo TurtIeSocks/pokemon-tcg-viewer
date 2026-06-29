@@ -1,6 +1,32 @@
 import { afterEach, expect, mock, test } from "bun:test";
-import { getCardByIdCached } from "./card-data-fetch";
+import {
+	getCardByIdCached,
+	mapTcgdexSet,
+	type TcgdexSetDetail,
+} from "./card-data-fetch";
 import type { PokemonApiFocusCard } from "./card-mappers";
+
+test("mapTcgdexSet maps to PokemonSet with TCGdex id + serie name", () => {
+	const s: TcgdexSetDetail = {
+		id: "swsh3",
+		name: "Darkness Ablaze",
+		releaseDate: "2020-08-14",
+		cardCount: { total: 201, official: 189 },
+		serie: { id: "swsh", name: "Sword & Shield" },
+	};
+	expect(mapTcgdexSet(s)).toEqual({
+		id: "swsh3",
+		name: "Darkness Ablaze",
+		series: "Sword & Shield",
+		releaseDate: "2020-08-14",
+		printedTotal: 189,
+		total: 201,
+		images: {
+			logo: "https://assets.tcgdex.net/en/swsh3/logo.png",
+			symbol: "https://assets.tcgdex.net/en/swsh3/symbol.png",
+		},
+	});
+});
 
 const realFetch = globalThis.fetch;
 afterEach(() => {

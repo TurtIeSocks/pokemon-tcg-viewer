@@ -17,26 +17,75 @@ import {
 	type PokemonSet,
 } from "./card-mappers";
 
-// v1: the CF Worker (injects the pokemontcg.io key). Absorb later by pointing
-// at the origin and adding the key here. Server-only — never in the client bundle.
+// v2: the CF Worker proxies TCGdex. Default changed from pokemontcg.io to the
+// worker so cold starts without API_BASE still resolve to TCGdex data.
+// Server-only — never in the client bundle.
 export function apiBase(): string {
-	return (process.env.API_BASE ?? "https://api.pokemontcg.io").replace(
-		/\/$/,
-		"",
-	);
+	return (
+		process.env.API_BASE ?? "https://pokemon-tcg-proxy.ptcg-viewer.workers.dev"
+	).replace(/\/$/, "");
 }
 
+const TCGDEX_ASSETS = "https://assets.tcgdex.net/en";
+
+/** TCGdex set detail shape (GET /v2/en/sets/{id}). */
+export interface TcgdexSetDetail {
+	id: string;
+	name: string;
+	releaseDate?: string;
+	cardCount: { total: number; official: number };
+	serie: { id: string; name: string };
+}
+
+/** Map a TCGdex set detail to the app's PokemonSet shape. */
+export function mapTcgdexSet(s: TcgdexSetDetail): PokemonSet {
+	return {
+		id: s.id,
+		name: s.name,
+		series: s.serie.name,
+		releaseDate: s.releaseDate ?? "",
+		printedTotal: s.cardCount.official,
+		total: s.cardCount.total,
+		images: {
+			logo: `${TCGDEX_ASSETS}/${s.id}/logo.png`,
+			symbol: `${TCGDEX_ASSETS}/${s.id}/symbol.png`,
+		},
+	};
+}
+
+/** Minimal list entry from GET /v2/en/sets (no releaseDate or serie). */
+interface TcgdexSetListEntry {
+	id: string;
+}
+
+const SETS_CONCURRENCY = 10;
+
 /**
- * Raw async fetch of all sets. Safe to call from within a server function
+ * Raw async fetch of all sets from TCGdex. Fetches the list first, then
+ * resolves each set's detail (which carries releaseDate + serie) with a
+ * small concurrency limit. Safe to call from within a server function
  * handler (avoids the cross-fn RPC hop).
  */
 export async function fetchAllSets(): Promise<PokemonSet[]> {
-	const resp = await fetch(
-		`${apiBase()}/v2/sets?orderBy=releaseDate&select=id,name,series,releaseDate,total,images&pageSize=250`,
-	);
-	if (!resp.ok) throw new Error("Unable to fetch sets");
-	const json = (await resp.json()) as { data: PokemonSet[] };
-	return json.data;
+	const base = apiBase();
+	const listResp = await fetch(`${base}/v2/en/sets`);
+	if (!listResp.ok) throw new Error("Unable to fetch sets list");
+	const list = (await listResp.json()) as TcgdexSetListEntry[];
+
+	const results: PokemonSet[] = [];
+	for (let i = 0; i < list.length; i += SETS_CONCURRENCY) {
+		const batch = list.slice(i, i + SETS_CONCURRENCY);
+		const details = await Promise.all(
+			batch.map(async (entry) => {
+				const r = await fetch(`${base}/v2/en/sets/${entry.id}`);
+				if (!r.ok)
+					throw new Error(`Unable to fetch set detail for ${entry.id}`);
+				return (await r.json()) as TcgdexSetDetail;
+			}),
+		);
+		for (const d of details) results.push(mapTcgdexSet(d));
+	}
+	return results;
 }
 
 /** Raw card-by-id fetch. Safe to call from loaders/handlers (no RPC-stub hop). */
