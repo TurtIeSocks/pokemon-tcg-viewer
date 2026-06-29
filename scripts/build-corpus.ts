@@ -32,7 +32,12 @@ export interface TcgdexCard {
 	hp?: number | string;
 	evolveFrom?: string;
 	abilities?: { name: string; effect: string; type: string }[];
-	attacks?: { name: string; cost?: string[]; damage?: number | string; effect?: string }[];
+	attacks?: {
+		name: string;
+		cost?: string[];
+		damage?: number | string;
+		effect?: string;
+	}[];
 	effect?: string;
 	weaknesses?: { type: string; value: string }[];
 	resistances?: { type: string; value: string }[];
@@ -260,14 +265,31 @@ export async function buildCorpus(): Promise<TcgdexCard[]> {
 		}
 	}
 
-	// Phase 1: collect brief card stubs (id + set membership) from each set endpoint.
-	const briefCards: { id: string; setId: string }[] = [];
+	// Phase 1: collect brief card stubs from each set endpoint. We keep the brief
+	// fields (localId/name/image) so Phase 2 can fall back to them when the per-card
+	// endpoint 404s (TCGdex lists some cards in a set that it can't serve per-card).
+	const briefCards: {
+		id: string;
+		setId: string;
+		localId?: string;
+		name?: string;
+		image?: string;
+	}[] = [];
 	for (let i = 0; i < sets.length; i++) {
 		const s = sets[i];
 		const setData = (await fetchJson(`${TCGDEX_BASE}/sets/${s.id}`, {
 			onRetry,
-		})) as { cards: { id: string }[] };
-		for (const c of setData.cards) briefCards.push({ id: c.id, setId: s.id });
+		})) as {
+			cards: { id: string; localId?: string; name?: string; image?: string }[];
+		};
+		for (const c of setData.cards)
+			briefCards.push({
+				id: c.id,
+				setId: s.id,
+				localId: c.localId,
+				name: c.name,
+				image: c.image,
+			});
 		console.log(
 			`  set ${i + 1}/${sets.length} ${s.id} ✓ — ${briefCards.length} stubs so far`,
 		);
@@ -280,15 +302,35 @@ export async function buildCorpus(): Promise<TcgdexCard[]> {
 		`Fetching ${briefCards.length} full card records (concurrency=${CARD_FETCH_CONCURRENCY})…`,
 	);
 	let fetched = 0;
+	let fallbacks = 0;
 	const cards = await pLimit(
-		briefCards.map(({ id, setId }) => async () => {
-			const full = (await fetchJson(`${TCGDEX_BASE}/cards/${id}`, {
-				onRetry,
-			})) as TcgdexCard;
+		briefCards.map((stub) => async () => {
+			let full: TcgdexCard;
+			try {
+				full = (await fetchJson(`${TCGDEX_BASE}/cards/${stub.id}`, {
+					onRetry,
+					retries: 2,
+				})) as TcgdexCard;
+			} catch {
+				// TCGdex lists some cards in a set whose per-card endpoint 404s (a real
+				// data inconsistency — e.g. the Unown "?"/"!" cards in `exu`). One such
+				// card must not abort a 23k-card crawl: fall back to the brief stub.
+				// category defaults to "Pokemon" (these are Pokémon promos) so the
+				// required supertype stays valid; rarity/types/variants are simply absent.
+				fallbacks++;
+				console.warn(`  ↳ ${stub.id}: per-card fetch failed, using brief stub`);
+				full = {
+					id: stub.id,
+					localId: stub.localId ?? "",
+					name: stub.name ?? stub.id,
+					category: "Pokemon",
+					image: stub.image,
+				} as TcgdexCard;
+			}
 			// Ensure set.id is always populated (the per-card endpoint may omit set or
 			// return a nested object — we override with the authoritative setId from
 			// the set-list phase).
-			const card: TcgdexCard = { ...full, set: { id: setId } };
+			const card: TcgdexCard = { ...full, set: { id: stub.setId } };
 			fetched++;
 			if (fetched % 500 === 0 || fetched === briefCards.length) {
 				console.log(`  …${fetched}/${briefCards.length} full records fetched`);
@@ -298,6 +340,10 @@ export async function buildCorpus(): Promise<TcgdexCard[]> {
 		CARD_FETCH_CONCURRENCY,
 	);
 
+	if (fallbacks)
+		console.warn(
+			`${fallbacks} card(s) used the brief-stub fallback (per-card endpoint 404).`,
+		);
 	if (cards.length < expected * 0.95)
 		throw new Error(`crawl incomplete: ${cards.length} of ~${expected}`);
 	console.log(`Crawl complete: ${cards.length} full card records.`);
