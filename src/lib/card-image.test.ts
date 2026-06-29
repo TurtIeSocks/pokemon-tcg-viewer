@@ -46,6 +46,19 @@ describe("cardImage", () => {
 		});
 	});
 
+	// FocusCardData (the detail view) carries no imageUrlSmall — the structural
+	// source must still work, falling back to imageUrl for the small variant on en.
+	it("accepts a source without imageUrlSmall (detail FocusCardData shape)", () => {
+		const focus = { imageBase: "swsh/swsh3/136", imageUrl: "EN_LARGE" };
+		expect(cardImage(focus, "en")).toEqual({
+			imageUrl: "EN_LARGE",
+			imageUrlSmall: "EN_LARGE",
+		});
+		expect(cardImage(focus, "fr").imageUrl).toBe(
+			"https://assets.tcgdex.net/fr/swsh/swsh3/136/high.webp",
+		);
+	});
+
 	it("derives localized de webp urls from imageBase", () => {
 		expect(cardImage(card(), "de")).toEqual({
 			imageUrl: "https://assets.tcgdex.net/de/swsh/swsh3/136/high.webp",

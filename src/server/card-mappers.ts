@@ -59,6 +59,12 @@ export interface FocusCardData extends CardStats {
 	// Common with HoloCardData
 	id: string;
 	imageUrl: string;
+	/**
+	 * Language-invariant TCGdex image tail ("{serie}/{set}/{localId}"), so the
+	 * detail view can derive a localized image via cardImage(). null when TCGdex
+	 * has no image (pokemontcg.io-fallback or imageless cards).
+	 */
+	imageBase?: string | null;
 	name: string;
 	rarity?: string;
 	subtypes?: string[];
@@ -96,6 +102,8 @@ export function apiCardToFocusProps(card: PokemonApiFocusCard): FocusCardData {
 	return {
 		id: card.id,
 		imageUrl: card.images.large,
+		// pokemontcg.io is not the TCGdex CDN, so there is no localizable base.
+		imageBase: null,
 		name: card.name,
 		rarity: card.rarity,
 		subtypes: card.subtypes,
@@ -162,6 +170,11 @@ export function mapTcgdexFocusCard(card: TcgdexFocusCard): FocusCardData {
 	return {
 		id: card.id,
 		imageUrl: card.image ? `${card.image}/high.webp` : "",
+		// Strip "https://assets.tcgdex.net/{lang}/" → the language-invariant tail
+		// ("base/base4/4") so the detail view can derive a localized image.
+		imageBase: card.image
+			? card.image.replace(/^https?:\/\/[^/]+\/[^/]+\//, "")
+			: null,
 		name: card.name,
 		rarity: card.rarity,
 		subtypes: card.subtypes,

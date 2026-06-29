@@ -1,10 +1,18 @@
-import type { CorpusCard } from "@/store/corpus/corpus-types";
-
 const CDN = "https://assets.tcgdex.net";
 
 export interface CardImageUrls {
 	imageUrl: string;
 	imageUrlSmall: string;
+}
+
+/**
+ * The image-bearing fields cardImage needs. Structural so it accepts both a grid
+ * `CorpusCard` and the detail `FocusCardData` (which carries no `imageUrlSmall`).
+ */
+export interface CardImageSource {
+	imageBase?: string | null;
+	imageUrl: string;
+	imageUrlSmall?: string;
 }
 
 /**
@@ -19,9 +27,12 @@ export interface CardImageUrls {
  *  - `lang` is "en", or
  *  - the card has no `imageBase` (null/undefined) — no localized image exists.
  */
-export function cardImage(card: CorpusCard, lang: string): CardImageUrls {
+export function cardImage(card: CardImageSource, lang: string): CardImageUrls {
 	if (lang === "en" || !card.imageBase) {
-		return { imageUrl: card.imageUrl, imageUrlSmall: card.imageUrlSmall };
+		return {
+			imageUrl: card.imageUrl,
+			imageUrlSmall: card.imageUrlSmall ?? card.imageUrl,
+		};
 	}
 	const base = `${CDN}/${lang}/${card.imageBase}`;
 	return { imageUrl: `${base}/high.webp`, imageUrlSmall: `${base}/low.webp` };

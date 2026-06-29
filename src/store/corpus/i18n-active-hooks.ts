@@ -1,6 +1,10 @@
 import { useSearch } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { isSupportedLanguage, toSupportedLanguage } from "../../lib/languages";
+import {
+	isSupportedLanguage,
+	type SupportedLanguage,
+	toSupportedLanguage,
+} from "../../lib/languages";
 import { useUserland } from "../userland/userland-store";
 import type { I18nOverlay } from "./corpus-engine";
 import { loadI18n, useI18nRuntime } from "./i18n-runtime";
@@ -18,7 +22,7 @@ export function useActiveI18n(): I18nOverlay | null {
 }
 
 /** The user's chosen catalog render language (normalized to the supported set). */
-export function useDisplayLanguage(): string {
+export function useDisplayLanguage(): SupportedLanguage {
 	const raw = useUserland((s) => s.profile?.displayLanguage);
 	return toSupportedLanguage(raw);
 }
@@ -52,7 +56,10 @@ export function useEnsureI18n(): void {
 		select: (s) => (s as { lang?: unknown }).lang,
 	});
 	const profileLang = useDisplayLanguage();
-	const lang = isSupportedLanguage(urlLang) ? urlLang : profileLang;
+	const lang =
+		typeof urlLang === "string" && isSupportedLanguage(urlLang)
+			? urlLang
+			: profileLang;
 	useEffect(() => {
 		void loadI18n(lang);
 	}, [lang]);

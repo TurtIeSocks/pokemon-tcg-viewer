@@ -98,9 +98,10 @@ export function validateListSearch(
 		})(),
 		dir: (search.dir === "desc" ? "desc" : "asc") as SortDir,
 		// null → use the viewer default; a concrete value must be a supported lang.
-		lang: isSupportedLanguage(search.lang)
-			? (search.lang as SupportedLanguage)
-			: null,
+		lang:
+			typeof search.lang === "string" && isSupportedLanguage(search.lang)
+				? (search.lang as SupportedLanguage)
+				: null,
 	};
 }
 

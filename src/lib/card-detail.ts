@@ -113,6 +113,9 @@ export function optimisticCardFromCorpus(
 		...detail, // battle/flavor fields when offline detail is present; else nothing
 		id: holo.id,
 		imageUrl: holo.imageUrl,
+		// Carry the language-invariant tail so the detail view can re-derive a
+		// localized image (the corpus card has it; FocusCardData now keeps it).
+		imageBase: corpusCard.imageBase,
 		name: holo.name,
 		rarity: holo.rarity,
 		subtypes: holo.subtypes,

@@ -29,6 +29,30 @@ export const LANGUAGE_LABELS: Record<SupportedLanguage, string> = {
 	pt: "Português",
 };
 
+/**
+ * Approximate fraction of the catalog each overlay covers (overlay card count /
+ * total corpus), for a partial-coverage hint in the language picker. TCGdex's
+ * Western data is uneven — es/pt lack most vintage cards, so those fall back to
+ * English. en is the full baseline (1). Regenerate from the build-i18n coverage
+ * logs (scripts/build-i18n.ts) when the corpus is rebuilt.
+ */
+export const LANGUAGE_COVERAGE: Record<SupportedLanguage, number> = {
+	en: 1,
+	fr: 0.92,
+	de: 0.84,
+	es: 0.65,
+	it: 0.65,
+	pt: 0.59,
+};
+
+/**
+ * Languages that translate Pokémon *names* (Charizard → Glurak/Dracaufeu).
+ * Spanish/Italian/Portuguese print the English name on the real cards, so for
+ * those only the card *art* and (future) detail text differ, not the name.
+ */
+export const NAME_TRANSLATING_LANGUAGES: ReadonlySet<SupportedLanguage> =
+	new Set(["fr", "de"]);
+
 export function isSupportedLanguage(lang: string): lang is SupportedLanguage {
 	return (SUPPORTED_LANGUAGES as readonly string[]).includes(lang);
 }

@@ -17,6 +17,7 @@ const defaultValue: ListSearch = {
 	mode: "fuzzy" as const,
 	sort: "default",
 	dir: "asc",
+	lang: null,
 };
 
 const options = {

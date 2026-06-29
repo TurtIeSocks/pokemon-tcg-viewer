@@ -4,7 +4,34 @@ import {
 	mapTcgdexSet,
 	type TcgdexSetDetail,
 } from "./card-data-fetch";
-import type { TcgdexFocusCard } from "./card-mappers";
+import { mapTcgdexFocusCard, type TcgdexFocusCard } from "./card-mappers";
+
+test("mapTcgdexFocusCard keeps the language-invariant imageBase tail", () => {
+	const out = mapTcgdexFocusCard({
+		id: "base1-4",
+		localId: "4",
+		name: "Charizard",
+		category: "Pokemon",
+		image: "https://assets.tcgdex.net/en/base/base1/4",
+		set: { id: "base1", name: "Base" },
+	} as TcgdexFocusCard);
+	// host + lang prefix stripped so the detail view can derive a localized image.
+	expect(out.imageBase).toBe("base/base1/4");
+	expect(out.imageUrl).toBe(
+		"https://assets.tcgdex.net/en/base/base1/4/high.webp",
+	);
+});
+
+test("mapTcgdexFocusCard imageBase is null when TCGdex has no image", () => {
+	const out = mapTcgdexFocusCard({
+		id: "tk-bw-e-1",
+		localId: "1",
+		name: "Excadrill",
+		category: "Pokemon",
+		set: { id: "tk-bw-e", name: "BW Trainer Kit" },
+	} as TcgdexFocusCard);
+	expect(out.imageBase).toBeNull();
+});
 
 test("mapTcgdexSet maps to PokemonSet with TCGdex id + serie name", () => {
 	const s: TcgdexSetDetail = {

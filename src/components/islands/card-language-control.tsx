@@ -9,7 +9,11 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { ListSearch } from "@/lib/card-query";
-import { LANGUAGE_LABELS, SUPPORTED_LANGUAGES } from "@/lib/languages";
+import {
+	LANGUAGE_COVERAGE,
+	LANGUAGE_LABELS,
+	SUPPORTED_LANGUAGES,
+} from "@/lib/languages";
 import { useDisplayLanguage } from "@/store/corpus/i18n-active-hooks";
 
 const TRIGGER_CLASS =
@@ -57,11 +61,27 @@ export function CardLanguageControl({
 							})
 						}
 					>
-						{SUPPORTED_LANGUAGES.map((lang) => (
-							<DropdownMenuRadioItem key={lang} value={lang}>
-								{LANGUAGE_LABELS[lang]}
-							</DropdownMenuRadioItem>
-						))}
+						{SUPPORTED_LANGUAGES.map((lang) => {
+							const coverage = LANGUAGE_COVERAGE[lang];
+							return (
+								<DropdownMenuRadioItem
+									key={lang}
+									value={lang}
+									className="gap-3"
+								>
+									{/* Dim partial-coverage languages so it's clear they fall back
+									    to English on many cards (TCGdex's es/pt vintage is sparse). */}
+									<span className={coverage < 0.7 ? "opacity-55" : undefined}>
+										{LANGUAGE_LABELS[lang]}
+									</span>
+									{lang !== "en" ? (
+										<span className="ml-auto font-mono text-[10px] tabular-nums text-[var(--faint)]">
+											{Math.round(coverage * 100)}%
+										</span>
+									) : null}
+								</DropdownMenuRadioItem>
+							);
+						})}
 					</DropdownMenuRadioGroup>
 				</DropdownMenuContent>
 			</DropdownMenu>

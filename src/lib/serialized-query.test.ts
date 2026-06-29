@@ -16,6 +16,7 @@ const baseSearch = (): ListSearch => ({
 	mode: "fuzzy",
 	sort: "default",
 	dir: "asc",
+	lang: null,
 });
 
 const baseCtx = (): ListContext => ({});

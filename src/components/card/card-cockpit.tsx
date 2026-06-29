@@ -3,15 +3,20 @@ import { Layers } from "lucide-react";
 import type { CSSProperties } from "react";
 import { Badge } from "@/components/ui/badge";
 import { GlassPanel } from "@/components/ui/glass";
+import { cardImage } from "@/lib/card-image";
 import { cn } from "@/lib/utils";
 import type { CardTab } from "../../lib/card-route";
 import { PRICING_ENABLED } from "../../lib/pricing-flag";
 import type { FocusCardData } from "../../server/card-mappers";
+import {
+	useActiveI18n,
+	useEnsureI18n,
+} from "../../store/corpus/i18n-active-hooks";
 import { useIsOwned } from "../../store/userland/selectors";
 import { addStack } from "../../store/userland/userland-store";
 import { getCardAccent, getReadableAccent } from "../../utils/card-colors";
 import { StackManager } from "../collection/stack-manager";
-import { HoloCard, holoCardProps } from "../holo-card";
+import { HoloCard, type HoloCardData, holoCardProps } from "../holo-card";
 import { CardCrossLinks, type CrossLink } from "../islands/cross-links";
 import { CardInfo, describeCard } from "./card-info";
 import { CardPricingTab } from "./card-pricing-tab";
@@ -36,8 +41,24 @@ export function CardCockpit({
 	// When pricing is disabled the pricing tab is not rendered (CardTabs hides it).
 	// Coerce any incoming "pricing" tab to "details" so the /prices route shows
 	// the details pane instead of a blank tab-less panel.
-	const tab: CardTab = !PRICING_ENABLED && rawTab === "pricing" ? "details" : rawTab;
-	const holo = toHoloCardData(card);
+	const tab: CardTab =
+		!PRICING_ENABLED && rawTab === "pricing" ? "details" : rawTab;
+	// Localize the detail card's NAME (overlay) + IMAGE (cardImage) for the active
+	// display language carried from the grid the user opened this from (else the
+	// profile default). The structured ability/attack/flavor text stays English
+	// (the detail blob is EN-only — that needs per-language detail data).
+	useEnsureI18n();
+	const i18n = useActiveI18n();
+	const { imageUrl, imageUrlSmall } = cardImage(card, i18n?.lang ?? "en");
+	const holo: HoloCardData = {
+		...toHoloCardData(card),
+		name: i18n?.namesById?.get(card.id) ?? card.name,
+		imageUrl,
+		imageUrlSmall,
+		// Reconcile a localized 404 back to the baked EN image (a language may lack
+		// an image EN has), matching the grid's hydrateCard behaviour.
+		imageUrlFallback: imageUrl !== card.imageUrl ? card.imageUrl : undefined,
+	};
 	const accent = getReadableAccent(getCardAccent(card.types));
 	const variants = holo.variants;
 	return (
@@ -57,21 +78,21 @@ export function CardCockpit({
 						<ClientOnly
 							fallback={
 								<img
-									src={card.imageUrl}
-									alt={card.name}
+									src={holo.imageUrl}
+									alt={holo.name}
 									className="w-full rounded-xl"
 								/>
 							}
 						>
 							<HoloCard
-								{...holoCardProps(card)}
+								{...holoCardProps(holo)}
 								size="focus"
 								className="w-full"
 							/>
 						</ClientOnly>
 						<div className="flex flex-col gap-1.5">
 							<h2 className="font-display text-[22px] font-semibold leading-tight text-[var(--ink)]">
-								{card.name}
+								{holo.name}
 							</h2>
 							<div className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--ink-muted)]">
 								{card.setName} · #{card.cardNumber}
