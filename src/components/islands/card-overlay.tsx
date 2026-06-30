@@ -55,6 +55,7 @@ export function CardOverlay() {
 	const detailById = useDetailRuntime((s) => s.detailById);
 	useEnsureI18n();
 	const i18n = useActiveI18n();
+	const lang = i18n?.lang ?? "en";
 
 	const params = useMemo(() => parseCardOverlayParam(cardParam), [cardParam]);
 
@@ -80,18 +81,18 @@ export function CardOverlay() {
 	// truth, so a warm/prefetched card resolves synchronously with no loading flash.
 	const [, forceTick] = useReducer((x: number) => x + 1, 0);
 	useEffect(() => {
-		if (!params || peekCardDetail(params) !== undefined) return;
+		if (!params || peekCardDetail(params, lang) !== undefined) return;
 		let cancelled = false;
-		getCardDetail(params).finally(() => {
+		getCardDetail(params, lang).finally(() => {
 			if (!cancelled) forceTick();
 		});
 		return () => {
 			cancelled = true;
 		};
-	}, [params]);
+	}, [params, lang]);
 
 	if (!cardParam || !params) return null;
-	const settled = peekCardDetail(params); // value | null = settled; undefined = in flight
+	const settled = peekCardDetail(params, lang); // value | null = settled; undefined = in flight
 	const detail = settled ?? null;
 	// Prefer the full detail once it lands; fall back to the optimistic corpus
 	// card meanwhile. Null only when neither the corpus nor the server has it.

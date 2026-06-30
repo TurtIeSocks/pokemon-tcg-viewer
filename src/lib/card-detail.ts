@@ -9,6 +9,7 @@ import {
 } from "../store/corpus/corpus-engine";
 import type { DetailCard } from "../store/corpus/corpus-types";
 import type { CardRouteParams } from "./card-route";
+import type { SupportedLanguage } from "./languages";
 import { resolveCard, type SlugIndex } from "./slug";
 
 /** Resolved card-detail payload for the overlay (mirrors getCardForRouteFn). */
@@ -27,7 +28,10 @@ export function parseCardOverlayParam(
 	return { series, set, card };
 }
 
-type DetailFetcher = (params: CardRouteParams) => Promise<CardRouteData | null>;
+type DetailFetcher = (
+	params: CardRouteParams,
+	lang: SupportedLanguage,
+) => Promise<CardRouteData | null>;
 
 // STATIC import of the server fn (matches how routes + the old card-overlay
 // already pull it). Do NOT switch this to a dynamic `import("../server/...")`:
@@ -37,8 +41,10 @@ type DetailFetcher = (params: CardRouteParams) => Promise<CardRouteData | null>;
 // createServerFn in the TDZ ("undefined is not a function") and crashed
 // hydration in prod. createServerFn's client stub RPCs to the server; the
 // handler body (node:zlib, external fetches) is stripped from the client bundle.
-const defaultFetcher: DetailFetcher = async (params) =>
-	(await getCardForRouteFn({ data: params })) as CardRouteData | null;
+const defaultFetcher: DetailFetcher = async (params, lang) =>
+	(await getCardForRouteFn({
+		data: { ...params, lang },
+	})) as CardRouteData | null;
 
 // Client-side cache of the per-card RPC result, keyed by the slug triple. Caching
 // the PROMISE dedupes concurrent opens/prefetches; a same-session re-open is then
@@ -48,17 +54,21 @@ const cache = new Map<string, Promise<CardRouteData | null>>();
 // re-opened or hover-prefetched card paint full detail on the FIRST frame (no
 // loading flash). `undefined` = not resolved yet; a value (incl. null) = settled.
 const valueCache = new Map<string, CardRouteData | null>();
-const keyOf = (p: CardRouteParams) => `${p.series}/${p.set}/${p.card}`;
+// Lang is part of the key: switching language re-fetches the translated detail
+// instead of reusing the previous locale's payload.
+const keyOf = (p: CardRouteParams, lang: SupportedLanguage) =>
+	`${lang}/${p.series}/${p.set}/${p.card}`;
 
-/** Fetch (and cache) the card-detail payload for the overlay. */
+/** Fetch (and cache) the card-detail payload for the overlay, in `lang`. */
 export function getCardDetail(
 	params: CardRouteParams,
+	lang: SupportedLanguage = "en",
 	fetcher: DetailFetcher = defaultFetcher,
 ): Promise<CardRouteData | null> {
-	const key = keyOf(params);
+	const key = keyOf(params, lang);
 	let p = cache.get(key);
 	if (!p) {
-		p = fetcher(params)
+		p = fetcher(params, lang)
 			.then((v) => {
 				valueCache.set(key, v);
 				return v;
@@ -73,19 +83,23 @@ export function getCardDetail(
 }
 
 /**
- * Synchronous peek at the resolved detail for a card: the value (possibly null)
- * once the RPC has settled, else `undefined`. Used during render so a warm card
- * skips the optimistic/loading state entirely.
+ * Synchronous peek at the resolved detail for a card in `lang`: the value
+ * (possibly null) once the RPC has settled, else `undefined`. Used during
+ * render so a warm card skips the optimistic/loading state entirely.
  */
 export function peekCardDetail(
 	params: CardRouteParams,
+	lang: SupportedLanguage = "en",
 ): CardRouteData | null | undefined {
-	return valueCache.get(keyOf(params));
+	return valueCache.get(keyOf(params, lang));
 }
 
 /** Warm the card-detail RPC on hover/focus. Fire-and-forget; errors swallowed. */
-export function prefetchCardDetail(params: CardRouteParams): void {
-	void getCardDetail(params).catch(() => {});
+export function prefetchCardDetail(
+	params: CardRouteParams,
+	lang: SupportedLanguage = "en",
+): void {
+	void getCardDetail(params, lang).catch(() => {});
 }
 
 /**

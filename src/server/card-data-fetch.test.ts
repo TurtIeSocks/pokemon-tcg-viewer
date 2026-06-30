@@ -1,5 +1,6 @@
 import { afterEach, expect, mock, test } from "bun:test";
 import {
+	fetchCardById,
 	getCardByIdCached,
 	mapTcgdexSet,
 	type TcgdexSetDetail,
@@ -30,6 +31,21 @@ test("mapTcgdexFocusCard imageBase is null when TCGdex has no image", () => {
 		category: "Pokemon",
 		set: { id: "tk-bw-e", name: "BW Trainer Kit" },
 	} as TcgdexFocusCard);
+	expect(out.imageBase).toBeNull();
+});
+
+test("mapTcgdexFocusCard falls back to the pokemontcg.io image when TCGdex has none", () => {
+	// Imageless card: detail must show the same pokemontcg.io fallback the corpus
+	// build bakes for the grid, not the empty-string identity card.
+	const out = mapTcgdexFocusCard({
+		id: "tk-bw-e-1",
+		localId: "1",
+		name: "Excadrill",
+		category: "Pokemon",
+		set: { id: "tk-bw-e", name: "BW Trainer Kit" },
+	} as TcgdexFocusCard);
+	expect(out.imageUrl).toBe("https://images.pokemontcg.io/tk-bw-e/1_hires.png");
+	// imageBase null → cardImage() returns this URL verbatim for every language.
 	expect(out.imageBase).toBeNull();
 });
 
@@ -102,6 +118,50 @@ test("getCardByIdCached fetches an id only once across repeated calls", async ()
 	expect(a.id).toBe("base1-4");
 	expect(b).toBe(a); // same memoized object
 	expect(f).toHaveBeenCalledTimes(1);
+});
+
+test("fetchCardById requests the localized locale and maps it", async () => {
+	const calls: string[] = [];
+	globalThis.fetch = mock(async (url: string | URL) => {
+		calls.push(String(url));
+		return new Response(JSON.stringify(apiCard("sv1-1")), { status: 200 });
+	}) as unknown as typeof fetch;
+
+	await fetchCardById("sv1-1", "de");
+
+	expect(calls).toHaveLength(1);
+	expect(calls[0]).toContain("/v2/de/cards/sv1-1");
+});
+
+test("fetchCardById falls back to English when the locale lacks the card", async () => {
+	const calls: string[] = [];
+	globalThis.fetch = mock(async (url: string | URL) => {
+		calls.push(String(url));
+		return String(url).includes("/v2/de/")
+			? new Response("missing", { status: 404 })
+			: new Response(JSON.stringify(apiCard("base1-4")), { status: 200 });
+	}) as unknown as typeof fetch;
+
+	const card = await fetchCardById("base1-4", "de");
+
+	expect(card.id).toBe("base1-4");
+	expect(calls[0]).toContain("/v2/de/cards/base1-4");
+	expect(calls[1]).toContain("/v2/en/cards/base1-4"); // EN fallback
+});
+
+test("getCardByIdCached caches per (lang, id), not id alone", async () => {
+	// Unique id so the module-level cache is cold for both locales here.
+	const f = mock(
+		async () =>
+			new Response(JSON.stringify(apiCard("sv5-99")), { status: 200 }),
+	);
+	globalThis.fetch = f as unknown as typeof fetch;
+
+	await getCardByIdCached("sv5-99", "en");
+	await getCardByIdCached("sv5-99", "de");
+
+	// Different languages are distinct cache entries → two fetches, not one.
+	expect(f).toHaveBeenCalledTimes(2);
 });
 
 test("getCardByIdCached evicts a failed fetch so the next call retries", async () => {

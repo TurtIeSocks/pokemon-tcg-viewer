@@ -20,6 +20,7 @@ import {
 import { loadDetail } from "../../store/corpus/detail-runtime";
 import {
 	useActiveI18nKey,
+	useDisplayLanguage,
 	useEnsureI18n,
 } from "../../store/corpus/i18n-active-hooks";
 import { useOwnedCardIdSet } from "../../store/userland/selectors";
@@ -77,6 +78,7 @@ export function CardGridIsland({
 	// downloading after a switch.
 	useEnsureI18n();
 	const i18nKey = useActiveI18nKey();
+	const displayLang = useDisplayLanguage();
 
 	// Stable key for the active query; changing it resets pagination.
 	// Include owned mode + count so toggling the filter / adding a card refetches,
@@ -170,7 +172,9 @@ export function CardGridIsland({
 		// a cached thumbnail. Skip in select mode (a click toggles selection).
 		const params = slugIndex ? cardRouteParams(slugIndex, card) : null;
 		const onPrefetch =
-			selectActive || !params ? undefined : () => prefetchCardDetail(params);
+			selectActive || !params
+				? undefined
+				: () => prefetchCardDetail(params, displayLang);
 
 		const cardContent = (
 			<FlipCard imageUrl={card.imageUrlSmall ?? card.imageUrl}>

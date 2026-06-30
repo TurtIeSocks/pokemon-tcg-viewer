@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { setResponseHeader } from "@tanstack/react-start/server";
 import type { ListSearch } from "../lib/card-query";
+import { isSupportedLanguage } from "../lib/languages";
 import { LIST_SEARCH_DEFAULTS } from "../lib/list-search";
 import { findSet } from "../lib/nav-tree";
 import { slugify } from "../lib/slug";
@@ -126,11 +127,17 @@ export const getCardForRouteFn = createServerFn({ method: "GET" })
 			series?: unknown;
 			set?: unknown;
 			card?: unknown;
+			lang?: unknown;
 		};
 		return {
 			series: nonEmptyString(o.series, "series"),
 			set: nonEmptyString(o.set, "set"),
 			card: nonEmptyString(o.card, "card"),
+			// Optional display language; non-supported/absent → English detail.
+			lang:
+				typeof o.lang === "string" && isSupportedLanguage(o.lang)
+					? o.lang
+					: "en",
 		};
 	})
 	.handler(async ({ data }) => {
@@ -151,9 +158,10 @@ export const getCardForRouteFn = createServerFn({ method: "GET" })
 		const cardId = await resolveCardInSet(set.id, data.card);
 		if (!cardId) return null;
 
-		// Card fetch + species list are independent once we have the id.
+		// Card fetch (in the requested language) + species list are independent
+		// once we have the id.
 		const [card, list] = await Promise.all([
-			getCardByIdCached(cardId),
+			getCardByIdCached(cardId, data.lang),
 			getPokemonListCached(),
 		]);
 

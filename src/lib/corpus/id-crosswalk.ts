@@ -1,4 +1,14 @@
+import overrideTable from "./ptcg-image-overrides.json";
 import table from "./set-crosswalk.json";
+
+// CDN-verified pokemontcg.io large-image overrides keyed by TCGdex card id, for
+// imageless cards whose constructed fallback URL would otherwise be wrong. The
+// "_comment"/"_count" metadata keys are filtered out.
+const IMAGE_OVERRIDES: Record<string, string> = Object.fromEntries(
+	Object.entries(overrideTable as Record<string, unknown>).filter(
+		([k, v]) => !k.startsWith("_") && typeof v === "string",
+	) as [string, string][],
+);
 
 const PTCG_TO_TCGDEX: Record<string, string> = table;
 const TCGDEX_TO_PTCG: Record<string, string> = Object.fromEntries(
@@ -42,4 +52,25 @@ export function ptcgImageUrl(
 ): { large: string; small: string } {
 	const root = `https://images.pokemontcg.io/${setId}/${number}`;
 	return { large: `${root}_hires.png`, small: `${root}.png` };
+}
+
+/**
+ * pokemontcg.io fallback image for a TCGdex card that has NO TCGdex image.
+ * Prefers a CDN-verified override; otherwise constructs the URL from the
+ * crosswalked id (split at the LAST dash so dashed TCGdex set ids survive).
+ * Single source of truth shared by the corpus build and the live detail mapper.
+ * NOTE: the build HEAD-probes these and blanks dead ones; the live path can't,
+ * so a dead fallback degrades to the holo-card onError blank (same as before).
+ */
+export function fallbackImageUrl(cardId: string): {
+	large: string;
+	small: string;
+} {
+	const override = IMAGE_OVERRIDES[cardId];
+	if (override) {
+		return { large: override, small: override.replace("_hires.png", ".png") };
+	}
+	const ptcgId = tcgdexCardToPtcg(cardId);
+	const dash = ptcgId.lastIndexOf("-");
+	return ptcgImageUrl(ptcgId.slice(0, dash), ptcgId.slice(dash + 1));
 }

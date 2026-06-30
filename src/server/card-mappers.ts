@@ -1,3 +1,5 @@
+import { fallbackImageUrl } from "../lib/corpus/id-crosswalk";
+
 /** A card ability (focus view). */
 export interface CardAbility {
 	name: string;
@@ -167,9 +169,14 @@ export interface TcgdexFocusCard {
 
 /** Map a TCGdex card detail response to {@link FocusCardData}. Drops pricing fields. */
 export function mapTcgdexFocusCard(card: TcgdexFocusCard): FocusCardData {
+	// No TCGdex image → bake the same pokemontcg.io fallback the corpus build uses
+	// (override or constructed), so the detail view matches the grid instead of
+	// showing the empty-state identity card. imageBase stays null (the fallback is
+	// not the TCGdex CDN, so there is nothing to localize).
+	const fallback = card.image ? null : fallbackImageUrl(card.id);
 	return {
 		id: card.id,
-		imageUrl: card.image ? `${card.image}/high.webp` : "",
+		imageUrl: card.image ? `${card.image}/high.webp` : (fallback?.large ?? ""),
 		// Strip "https://assets.tcgdex.net/{lang}/" → the language-invariant tail
 		// ("base/base4/4") so the detail view can derive a localized image.
 		imageBase: card.image

@@ -7,17 +7,37 @@ import {
 import { useEffect } from "react";
 import { CardCockpit } from "../../../components/card/card-cockpit";
 import { TAB_MASK } from "../../../lib/card-route";
+import {
+	isSupportedLanguage,
+	type SupportedLanguage,
+} from "../../../lib/languages";
 import { LIST_SEARCH_DEFAULTS } from "../../../lib/list-search";
 import { getCardForRouteFn } from "../../../server/corpus-server";
 import { useRecentsStore } from "../../../store/recents";
 
 export const Route = createFileRoute("/$series/$set/$card")({
-	loader: async ({ params }) => {
+	// `?lang=de` rides in from the grid (the masked overlay preserves search), so
+	// a cold load / reload / shared link of this canonical URL still localizes.
+	validateSearch: (
+		search: Record<string, unknown>,
+	): { lang: SupportedLanguage | null } => ({
+		lang:
+			typeof search.lang === "string" && isSupportedLanguage(search.lang)
+				? search.lang
+				: null,
+	}),
+	loaderDeps: ({ search }) => ({ lang: search.lang }),
+	loader: async ({ params, deps }) => {
 		// One server fn resolves tree → set → card id → card + cross-links, all
 		// server-side and memoized. On client navigation this is a single RPC
 		// instead of three serial ones (see getCardForRouteFn).
 		const result = await getCardForRouteFn({
-			data: { series: params.series, set: params.set, card: params.card },
+			data: {
+				series: params.series,
+				set: params.set,
+				card: params.card,
+				lang: deps.lang ?? "en",
+			},
 		});
 		if (!result) throw notFound();
 		return result;

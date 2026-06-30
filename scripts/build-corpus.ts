@@ -1,25 +1,14 @@
 import { createHash } from "node:crypto";
 import { gzipSync } from "node:zlib";
 import {
-	ptcgImageUrl,
-	tcgdexCardToPtcg,
+	fallbackImageUrl,
 	tcgdexSetToPtcg,
 } from "../src/lib/corpus/id-crosswalk";
-import overrideTable from "../src/lib/corpus/ptcg-image-overrides.json";
 import type { CorpusCard, DetailCard } from "../src/store/corpus/corpus-types";
 
 const ASSET_PREFIX = "https://assets.tcgdex.net/en/";
 
 const PTCG_HOST = "https://images.pokemontcg.io/";
-
-// CDN-verified pokemontcg.io large-image overrides keyed by TCGdex card id, for
-// imageless cards whose constructed fallback URL would otherwise be wrong.
-// The "_comment"/"_count" metadata keys are filtered out.
-const IMAGE_OVERRIDES: Record<string, string> = Object.fromEntries(
-	Object.entries(overrideTable as Record<string, unknown>).filter(
-		([k, v]) => !k.startsWith("_") && typeof v === "string",
-	) as [string, string][],
-);
 
 const TCGDEX_BASE = process.env.TCGDEX_BASE ?? "https://api.tcgdex.net/v2/en";
 
@@ -99,23 +88,12 @@ export function trimCard(card: TcgdexCard): CorpusCard {
 		out.imageUrl = `${card.image}/high.webp`;
 		out.imageUrlSmall = `${card.image}/low.webp`;
 	} else {
-		// No TCGdex image. Prefer a CDN-verified override; otherwise bake a
-		// pokemontcg.io fallback from the translated id (split at the LAST dash
-		// so dashed TCGdex set ids survive the crosswalk).
-		const override = IMAGE_OVERRIDES[card.id];
-		if (override) {
-			out.imageUrl = override;
-			out.imageUrlSmall = override.replace("_hires.png", ".png");
-		} else {
-			const ptcgId = tcgdexCardToPtcg(card.id);
-			const dash = ptcgId.lastIndexOf("-");
-			const { large, small } = ptcgImageUrl(
-				ptcgId.slice(0, dash),
-				ptcgId.slice(dash + 1),
-			);
-			out.imageUrl = large;
-			out.imageUrlSmall = small;
-		}
+		// No TCGdex image. Bake the shared pokemontcg.io fallback (override or
+		// constructed). The same helper feeds the live detail mapper, so the grid
+		// and the detail view resolve identical fallback URLs.
+		const { large, small } = fallbackImageUrl(card.id);
+		out.imageUrl = large;
+		out.imageUrlSmall = small;
 	}
 	if (card.rarity) out.rarity = card.rarity;
 	const subtypes = subtypesOf(card);

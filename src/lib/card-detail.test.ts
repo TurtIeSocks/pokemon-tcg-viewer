@@ -86,17 +86,31 @@ test("getCardDetail dedupes concurrent calls for the same card", async () => {
 		return { card: { id: "base1-4" } as FocusCardData, crossLinks: [] };
 	};
 	const [a, b] = await Promise.all([
-		getCardDetail(params, fetcher),
-		getCardDetail(params, fetcher),
+		getCardDetail(params, "en", fetcher),
+		getCardDetail(params, "en", fetcher),
 	]);
 	expect(calls).toBe(1);
 	expect(a).toBe(b);
 });
 
+test("getCardDetail caches per language (switching lang refetches)", async () => {
+	let calls = 0;
+	const fetcher = async (_p: typeof params, lang: string) => {
+		calls++;
+		return { card: { id: `base1-4-${lang}` } as FocusCardData, crossLinks: [] };
+	};
+	await getCardDetail(params, "en", fetcher);
+	await getCardDetail(params, "de", fetcher); // distinct key → second fetch
+	expect(calls).toBe(2);
+	// peek is language-scoped: the German payload is reachable under "de".
+	expect(peekCardDetail(params, "de")?.card.id).toBe("base1-4-de");
+	expect(peekCardDetail(params, "en")?.card.id).toBe("base1-4-en");
+});
+
 test("peekCardDetail is undefined until resolved, then the value (no flash)", async () => {
 	const data = { card: { id: "base1-4" } as FocusCardData, crossLinks: [] };
 	expect(peekCardDetail(params)).toBeUndefined();
-	const p = getCardDetail(params, async () => data);
+	const p = getCardDetail(params, "en", async () => data);
 	// Still in flight on the same tick — render must treat this as pending.
 	expect(peekCardDetail(params)).toBeUndefined();
 	await p;
@@ -135,7 +149,7 @@ test("getCardDetail evicts on error so the next open retries", async () => {
 		calls++;
 		throw new Error("boom");
 	};
-	await expect(getCardDetail(params, failing)).rejects.toThrow("boom");
-	await expect(getCardDetail(params, failing)).rejects.toThrow("boom");
+	await expect(getCardDetail(params, "en", failing)).rejects.toThrow("boom");
+	await expect(getCardDetail(params, "en", failing)).rejects.toThrow("boom");
 	expect(calls).toBe(2);
 });

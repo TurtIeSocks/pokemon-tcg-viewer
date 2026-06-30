@@ -9,6 +9,7 @@
 // code, so the client/server split no longer rests solely on tree-shaking the
 // stripped server-fn handlers. Defense in depth behind scripts/check-client-bundle.ts.
 
+import type { SupportedLanguage } from "../lib/languages";
 import {
 	type FocusCardData,
 	mapTcgdexFocusCard,
@@ -92,9 +93,21 @@ export async function fetchAllSets(): Promise<PokemonSet[]> {
 	return results;
 }
 
-/** Raw card-by-id fetch. Safe to call from loaders/handlers (no RPC-stub hop). */
-export async function fetchCardById(id: string): Promise<FocusCardData> {
-	const resp = await fetch(`${apiBase()}/v2/en/cards/${id}`);
+/**
+ * Raw card-by-id fetch in the requested language. TCGdex serves the whole card
+ * translated at /v2/{lang}/cards/{id} (name, abilities, attacks, flavor). A
+ * non-English locale that lacks the card (e.g. es/it/pt vintage) 404s, so we
+ * fall back to the always-complete English record. Safe to call from
+ * loaders/handlers (no RPC-stub hop).
+ */
+export async function fetchCardById(
+	id: string,
+	lang: SupportedLanguage = "en",
+): Promise<FocusCardData> {
+	let resp = await fetch(`${apiBase()}/v2/${lang}/cards/${id}`);
+	if (!resp.ok && lang !== "en") {
+		resp = await fetch(`${apiBase()}/v2/en/cards/${id}`);
+	}
 	if (!resp.ok) {
 		if (resp.status === 404)
 			throw new Response("Card not found", { status: 404 });
@@ -127,14 +140,18 @@ export async function getPokemonListCached(): Promise<PokemonListEntry[]> {
 // a deploy restart refreshes it). Caching the promise also dedupes concurrent
 // opens of the same card. Evict on failure so a transient error doesn't poison.
 const cardByIdCache = new Map<string, Promise<FocusCardData>>();
-export function getCardByIdCached(id: string): Promise<FocusCardData> {
-	let p = cardByIdCache.get(id);
+export function getCardByIdCached(
+	id: string,
+	lang: SupportedLanguage = "en",
+): Promise<FocusCardData> {
+	const key = `${lang}:${id}`;
+	let p = cardByIdCache.get(key);
 	if (!p) {
-		p = fetchCardById(id).catch((e) => {
-			cardByIdCache.delete(id);
+		p = fetchCardById(id, lang).catch((e) => {
+			cardByIdCache.delete(key);
 			throw e;
 		});
-		cardByIdCache.set(id, p);
+		cardByIdCache.set(key, p);
 	}
 	return p;
 }
