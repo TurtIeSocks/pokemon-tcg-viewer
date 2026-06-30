@@ -15,7 +15,6 @@ import type { FocusCardData } from "../../server/card-mappers";
 import { useSlugIndex } from "../../store/corpus/corpus-runtime";
 import { CardCockpit } from "../card/card-cockpit";
 import { CardHeading } from "../card/card-info";
-import { CardLangSwitch } from "./card-lang-switch";
 import { CardCrossLinks, type CrossLink } from "./cross-links";
 
 interface CardModalProps {
@@ -55,7 +54,6 @@ export function CardModal({
 				</DialogTitle>
 				<DialogHeader>
 					<CardHeading card={card} />
-					<CardLangSwitch cardId={card.id} />
 				</DialogHeader>
 				<div className="max-h-[90vh] overflow-y-auto">
 					<CardCockpit

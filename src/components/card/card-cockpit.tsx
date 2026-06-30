@@ -12,7 +12,6 @@ import {
 import { getCardAccent, getReadableAccent } from "../../utils/card-colors";
 import { StackManager } from "../collection/stack-manager";
 import { HoloCard, type HoloCardData, holoCardProps } from "../holo-card";
-import { CardLangSwitch } from "../islands/card-lang-switch";
 import { CardCrossLinks, type CrossLink } from "../islands/cross-links";
 import { CardHeading, CardInfo } from "./card-info";
 import { CardPricingTab } from "./card-pricing-tab";
@@ -145,9 +144,6 @@ export function CardPageView({
 			</div>
 			<div className="rounded-[var(--r-panel)] border border-white/10 bg-[var(--glass-tint)] p-5 shadow-[var(--shadow)] backdrop-blur-2xl">
 				<CardHeading card={card} />
-				<ClientOnly fallback={null}>
-					<CardLangSwitch cardId={card.id} />
-				</ClientOnly>
 				<div className="mt-4">
 					<CardCockpit card={card} tab={tab} onTabChange={onTabChange} />
 				</div>
