@@ -32,3 +32,10 @@ test("omits empty groups", () => {
 	const groups = groupSubtypes(["Item"]);
 	expect(groups).toEqual([{ label: "Trainer", items: ["Item"] }]);
 });
+
+test("groups TCGdex unspaced Stage1/Stage2 under Stage", () => {
+	const groups = groupSubtypes(["Stage1", "Stage2", "Basic"]);
+	expect(groups).toEqual([
+		{ label: "Stage", items: ["Basic", "Stage1", "Stage2"] },
+	]);
+});
