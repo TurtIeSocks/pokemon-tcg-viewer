@@ -132,6 +132,34 @@ test("resolveFallbackImages blanks a dead fallback URL and records a gap", async
 	);
 });
 
+test("resolveFallbackImages restores the TCGdex image when a HIT card's pokemontcg.io url is dead", async () => {
+	// Simulate a crosswalk HIT: TCGdex had an image (imageBase set), but the merge
+	// preferred the pokemontcg.io url for the EN base. That ptcg url HEAD-probes dead.
+	const card = trimCard({
+		id: "swsh3-136",
+		localId: "136",
+		name: "Furret",
+		category: "Pokemon",
+		image: "https://assets.tcgdex.net/en/swsh/swsh3/136",
+		set: { id: "swsh3" },
+	} as TcgdexCard);
+	// merge overwrite: prefer pokemontcg.io for EN, keep imageBase for non-EN.
+	card.imageUrl = "https://images.pokemontcg.io/swsh3/136_hires.png";
+	card.imageUrlSmall = "https://images.pokemontcg.io/swsh3/136.png";
+	const gaps = await resolveFallbackImages(
+		[card],
+		async () => new Response(null, { status: 404 }),
+	);
+	// Dead ptcg url → TCGdex image restored from imageBase, NOT blanked, and no gap.
+	expect(card.imageUrl).toBe(
+		"https://assets.tcgdex.net/en/swsh/swsh3/136/high.webp",
+	);
+	expect(card.imageUrlSmall).toBe(
+		"https://assets.tcgdex.net/en/swsh/swsh3/136/low.webp",
+	);
+	expect(gaps).toEqual([]);
+});
+
 test("resolveFallbackImages keeps a live fallback URL (HEAD 200, no gap)", async () => {
 	const cards = [
 		trimCard({

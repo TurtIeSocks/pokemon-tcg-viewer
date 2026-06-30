@@ -194,6 +194,15 @@ export async function resolveFallbackImages(
 	for (let i = 0; i < targets.length; i++) {
 		if (!dead[i]) continue;
 		const card = targets[i];
+		if (card.imageBase) {
+			// The preferred pokemontcg.io image is dead, but TCGdex has one (a
+			// crosswalk HIT whose EN image we overrode to ptcg.io). Restore the
+			// TCGdex url from imageBase instead of blanking, so a HIT never loses a
+			// good TCGdex image. Not a gap — TCGdex covers it.
+			card.imageUrl = `${ASSET_PREFIX}${card.imageBase}/high.webp`;
+			card.imageUrlSmall = `${ASSET_PREFIX}${card.imageBase}/low.webp`;
+			continue;
+		}
 		card.imageUrl = "";
 		card.imageUrlSmall = "";
 		gaps.push({ id: card.id, reason: "no-fallback" });
