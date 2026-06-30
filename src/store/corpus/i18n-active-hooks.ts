@@ -10,6 +10,18 @@ import type { I18nOverlay } from "./corpus-engine";
 import { loadI18n, useI18nRuntime } from "./i18n-runtime";
 
 /**
+ * True when a non-English overlay is active but this card has no localized name,
+ * so it renders the English fallback. Pure (no React) -- shared by the grid badge
+ * and the modal notice. A null overlay is the English steady state -- never a fallback.
+ */
+export function isI18nFallback(
+	overlay: I18nOverlay | null,
+	cardId: string,
+): boolean {
+	return !!overlay && !overlay.namesById?.has(cardId);
+}
+
+/**
  * Reactive active overlay for React render paths. Subscribes to the narrowest
  * values (the lang primitive + the map reference) in the consuming hook, per
  * the S3 subscription pattern. Returns null for English.
