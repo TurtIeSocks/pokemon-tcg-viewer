@@ -54,9 +54,13 @@ export const COSMOS_SETS: ReadonlySet<string> = new Set([
  */
 export function variantsToHolo(variants?: string[]): boolean | undefined {
 	if (!variants || variants.length === 0) return undefined;
-	if (variants.includes("holofoil")) return true;
+	// TCGdex marks the holo printing "holo" (pokemontcg.io used "holofoil"). A holo
+	// printing wins even when a "normal" printing also exists — TCGdex flags BOTH on
+	// dual-print cards, and the card we render is the holo one. Checking holo before
+	// normal is what stops dual-print holos from flattening to no-foil.
+	if (variants.includes("holofoil") || variants.includes("holo")) return true;
 	if (variants.includes("normal")) return false;
-	return undefined; // e.g. reverseHolofoil-only — ambiguous, defer to rarity
+	return undefined; // e.g. reverse-only — ambiguous, defer to rarity
 }
 
 /**

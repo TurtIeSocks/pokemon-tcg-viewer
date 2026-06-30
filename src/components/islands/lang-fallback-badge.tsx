@@ -9,7 +9,7 @@ export function LangFallbackBadge({ show }: { show: boolean }) {
 		<span
 			role="img"
 			aria-label="Shown in English"
-			className="pointer-events-none absolute right-1 top-1 rounded-[var(--r-pill)] border border-white/10 bg-black/45 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-[var(--ink-muted)] backdrop-blur-sm"
+			className="pointer-events-none absolute left-1 top-1 rounded-[var(--r-pill)] border border-white/10 bg-black/45 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-[var(--ink-muted)] backdrop-blur-sm"
 		>
 			EN
 		</span>
