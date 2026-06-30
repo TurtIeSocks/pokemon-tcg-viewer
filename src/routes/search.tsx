@@ -7,7 +7,6 @@ import {
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { HoloCardData } from "../components/holo-card";
 import { CardGridIsland } from "../components/islands/card-grid-island";
-import { CardLanguageControl } from "../components/islands/card-language-control";
 import { CardSelectionProvider } from "../components/islands/card-selection";
 import { CardSortControl } from "../components/islands/card-sort-control";
 import { SearchControls } from "../components/islands/search-controls";
@@ -200,7 +199,6 @@ function SearchPageInner({
 					disabled={!q}
 					onChange={(view) => onChange({ view })}
 				/>
-				<CardLanguageControl value={search} onChange={onChange} />
 				<CardSortControl value={search} onChange={onChange} />
 			</ResultsBar>
 			<div className="min-h-0 flex-1">

@@ -38,6 +38,7 @@ import {
 	type NavTree,
 	seriesMonogram,
 } from "../../lib/nav-tree";
+import { GlobalLanguageControl } from "../islands/global-language-control";
 import { SidebarUserMenu } from "./sidebar-user-menu";
 
 interface AppSidebarProps {
@@ -62,6 +63,7 @@ export function AppSidebar({ tree }: AppSidebarProps) {
 			</SidebarContent>
 
 			<SidebarFooter>
+				<GlobalLanguageControl />
 				<SidebarUserMenu />
 			</SidebarFooter>
 		</Sidebar>

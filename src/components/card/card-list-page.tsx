@@ -5,7 +5,6 @@ import type { listSearchToUrl } from "../../lib/list-search";
 import type { SerializedQuery } from "../../store/userland/types";
 import type { HoloCardData } from "../holo-card";
 import { CardGridIsland } from "../islands/card-grid-island";
-import { CardLanguageControl } from "../islands/card-language-control";
 import { CardSelectionProvider } from "../islands/card-selection";
 import { CardSortControl } from "../islands/card-sort-control";
 import { SearchControls } from "../islands/search-controls";
@@ -74,7 +73,6 @@ export function CardListPage({
 						disabled={false}
 						onChange={(view) => onChange({ view })}
 					/>
-					<CardLanguageControl value={search} onChange={onChange} />
 					<CardSortControl value={search} onChange={onChange} />
 				</ResultsBar>
 				<div className="min-h-0 flex-1">

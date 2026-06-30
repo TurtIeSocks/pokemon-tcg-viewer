@@ -10,7 +10,6 @@ import {
 import { useMemo, useState } from "react";
 import type { HoloCardData } from "../../../components/holo-card";
 import { CardGridIsland } from "../../../components/islands/card-grid-island";
-import { CardLanguageControl } from "../../../components/islands/card-language-control";
 import { CardSelectionProvider } from "../../../components/islands/card-selection";
 import { CardSortControl } from "../../../components/islands/card-sort-control";
 import { PackDialog } from "../../../components/islands/pack-dialog";
@@ -152,7 +151,6 @@ function SetPageInner({
 						<Package className="size-4 sm:mr-2" />
 						<span className="hidden sm:inline">Open Packs</span>
 					</Button> */}
-					<CardLanguageControl value={search} onChange={onChange} />
 					<CardSortControl value={search} onChange={onChange} />
 				</ClientOnly>
 			</ResultsBar>

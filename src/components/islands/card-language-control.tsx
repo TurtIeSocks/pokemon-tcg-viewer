@@ -13,11 +13,56 @@ import {
 	LANGUAGE_COVERAGE,
 	LANGUAGE_LABELS,
 	SUPPORTED_LANGUAGES,
+	type SupportedLanguage,
 } from "@/lib/languages";
 import { useDisplayLanguage } from "@/store/corpus/i18n-active-hooks";
 
 const TRIGGER_CLASS =
 	"border-[var(--border)] bg-[var(--glass)] text-[var(--ink-muted)] hover:bg-white/[0.07] hover:text-[var(--ink)]";
+
+/**
+ * Shared radio-menu body for a language picker dropdown: every supported
+ * language, dimmed below 70% coverage, with a coverage % badge on non-English
+ * entries. Used by both the per-page {@link CardLanguageControl} (ResultsBar /
+ * card override) and the global sidebar-footer language control -- only the
+ * trigger button and the value/onChange wiring differ between them.
+ */
+export function LanguageRadioMenu({
+	value,
+	onValueChange,
+	align = "end",
+}: {
+	value: SupportedLanguage;
+	onValueChange: (lang: SupportedLanguage) => void;
+	align?: "start" | "end";
+}) {
+	return (
+		<DropdownMenuContent align={align}>
+			<DropdownMenuRadioGroup
+				value={value}
+				onValueChange={(v) => onValueChange(v as SupportedLanguage)}
+			>
+				{SUPPORTED_LANGUAGES.map((lang) => {
+					const coverage = LANGUAGE_COVERAGE[lang];
+					return (
+						<DropdownMenuRadioItem key={lang} value={lang} className="gap-3">
+							{/* Dim partial-coverage languages so it's clear they fall back
+							    to English on many cards (TCGdex's es/pt vintage is sparse). */}
+							<span className={coverage < 0.7 ? "opacity-55" : undefined}>
+								{LANGUAGE_LABELS[lang]}
+							</span>
+							{lang !== "en" ? (
+								<span className="ml-auto font-mono text-[10px] tabular-nums text-[var(--faint)]">
+									{Math.round(coverage * 100)}%
+								</span>
+							) : null}
+						</DropdownMenuRadioItem>
+					);
+				})}
+			</DropdownMenuRadioGroup>
+		</DropdownMenuContent>
+	);
+}
 
 /**
  * Per-page catalog display-language picker for the ResultsBar, in the same
@@ -52,38 +97,12 @@ export function CardLanguageControl({
 						<ChevronDown className="size-4 opacity-70" />
 					</Button>
 				</DropdownMenuTrigger>
-				<DropdownMenuContent align="end">
-					<DropdownMenuRadioGroup
-						value={effective}
-						onValueChange={(v) =>
-							onChange({
-								lang: v === defaultLang ? null : (v as ListSearch["lang"]),
-							})
-						}
-					>
-						{SUPPORTED_LANGUAGES.map((lang) => {
-							const coverage = LANGUAGE_COVERAGE[lang];
-							return (
-								<DropdownMenuRadioItem
-									key={lang}
-									value={lang}
-									className="gap-3"
-								>
-									{/* Dim partial-coverage languages so it's clear they fall back
-									    to English on many cards (TCGdex's es/pt vintage is sparse). */}
-									<span className={coverage < 0.7 ? "opacity-55" : undefined}>
-										{LANGUAGE_LABELS[lang]}
-									</span>
-									{lang !== "en" ? (
-										<span className="ml-auto font-mono text-[10px] tabular-nums text-[var(--faint)]">
-											{Math.round(coverage * 100)}%
-										</span>
-									) : null}
-								</DropdownMenuRadioItem>
-							);
-						})}
-					</DropdownMenuRadioGroup>
-				</DropdownMenuContent>
+				<LanguageRadioMenu
+					value={effective}
+					onValueChange={(lang) =>
+						onChange({ lang: lang === defaultLang ? null : lang })
+					}
+				/>
 			</DropdownMenu>
 		</ButtonGroup>
 	);
