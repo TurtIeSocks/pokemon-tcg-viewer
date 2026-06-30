@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import type { NavSet } from "../../lib/nav-tree";
 import { ProgressRing } from "../ui/progress-ring";
@@ -40,6 +40,8 @@ export function SetTile({
 	const [logoFailed, setLogoFailed] = useState(false);
 	const showCount = ownedCount != null;
 	const logo = nonEmptyUrl(set.logo);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: reset on logo change
+	useEffect(() => setLogoFailed(false), [set.logo]);
 	const symbol = nonEmptyUrl(set.symbol);
 	const pct =
 		showCount && set.total > 0
