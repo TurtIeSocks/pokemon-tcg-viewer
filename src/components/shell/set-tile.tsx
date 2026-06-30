@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import type { NavSet } from "../../lib/nav-tree";
 import { ProgressRing } from "../ui/progress-ring";
@@ -36,6 +37,7 @@ export function SetTile({
 	/** When true, link target is /vault/sets/$set (set id) instead of /$series/$set. */
 	vaultLink?: boolean;
 }) {
+	const [logoFailed, setLogoFailed] = useState(false);
 	const showCount = ownedCount != null;
 	const logo = nonEmptyUrl(set.logo);
 	const symbol = nonEmptyUrl(set.symbol);
@@ -92,10 +94,11 @@ export function SetTile({
 			<span className="relative z-10 flex h-full flex-col items-center justify-between gap-2 p-4">
 				{/* Logo hero (some TCGdex sets have no logo — show the name instead) */}
 				<span className="flex w-full flex-1 items-center justify-center px-1">
-					{logo ? (
+					{logo && !logoFailed ? (
 						<img
 							src={logo}
 							alt={set.name}
+							onError={() => setLogoFailed(true)}
 							className="max-h-[60%] max-w-[88%] object-contain drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)]"
 						/>
 					) : (

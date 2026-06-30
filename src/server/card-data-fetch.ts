@@ -9,6 +9,7 @@
 // code, so the client/server split no longer rests solely on tree-shaking the
 // stripped server-fn handlers. Defense in depth behind scripts/check-client-bundle.ts.
 
+import { ptcgSetImageUrl } from "../lib/corpus/id-crosswalk";
 import type { SupportedLanguage } from "../lib/languages";
 import {
 	type FocusCardData,
@@ -48,12 +49,10 @@ export function mapTcgdexSet(s: TcgdexSetDetail): PokemonSet {
 		printedTotal: s.cardCount.official,
 		total: s.cardCount.total,
 		images: {
-			// undefined (not "") when absent: an empty-string `src` makes the browser
-			// re-fetch the whole page (a flash loop in the set-tile + sidebar). undefined
-			// makes React omit the attribute. 53/41 TCGdex sets lack a logo/symbol
-			// (McDonald's, trainer kits, jumbo, promos).
-			logo: s.logo ? `${s.logo}.png` : undefined,
-			symbol: s.symbol ? `${s.symbol}.png` : undefined,
+			// Fill TCGdex's 53/41 missing logos/symbols from pokemontcg.io (the
+			// set-tile onError degrades a dead ptcg url to the set-name text).
+			logo: s.logo ? `${s.logo}.png` : ptcgSetImageUrl(s.id, "logo"),
+			symbol: s.symbol ? `${s.symbol}.png` : ptcgSetImageUrl(s.id, "symbol"),
 		},
 	};
 }

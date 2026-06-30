@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import {
 	ptcgImageUrl,
+	ptcgSetImageUrl,
 	ptcgSetToTcgdex,
 	tcgdexCardToPtcg,
 	tcgdexSetToPtcg,
@@ -51,4 +52,13 @@ test("tcgdexCardToPtcg: splits at the LAST dash so dashed set ids survive", () =
 	expect(tcgdexCardToPtcg("tk-ex-latio-1")).toBe("tk1b-1");
 	expect(tcgdexCardToPtcg("tk-ex-p-2")).toBe("tk2a-2");
 	expect(tcgdexCardToPtcg("tk-ex-m-1")).toBe("tk2b-1");
+});
+
+test("ptcgSetImageUrl crosswalks the set id and builds a logo url", () => {
+	expect(ptcgSetImageUrl("base1", "logo")).toBe(
+		"https://images.pokemontcg.io/base1/logo.png",
+	);
+	expect(ptcgSetImageUrl("swsh4.5", "symbol")).toBe(
+		"https://images.pokemontcg.io/swsh45/symbol.png",
+	);
 });

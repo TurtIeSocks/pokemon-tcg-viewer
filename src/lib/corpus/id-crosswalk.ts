@@ -55,6 +55,18 @@ export function ptcgImageUrl(
 }
 
 /**
+ * pokemontcg.io set logo/symbol url for a TCGdex set that has none (53/41 sets:
+ * McDonald's, trainer kits, jumbo, promos). Crosswalks the set id. The set-tile
+ * onError degrades a dead url to the set-name text, so an occasional 404 is safe.
+ */
+export function ptcgSetImageUrl(
+	tcgdexSetId: string,
+	kind: "logo" | "symbol",
+): string {
+	return `https://images.pokemontcg.io/${tcgdexSetToPtcg(tcgdexSetId)}/${kind}.png`;
+}
+
+/**
  * pokemontcg.io fallback image for a TCGdex card that has NO TCGdex image.
  * Prefers a CDN-verified override; otherwise constructs the URL from the
  * crosswalked id (split at the LAST dash so dashed TCGdex set ids survive).
