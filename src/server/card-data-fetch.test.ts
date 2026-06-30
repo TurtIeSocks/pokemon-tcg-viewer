@@ -73,18 +73,24 @@ test("mapTcgdexSet maps to PokemonSet with TCGdex id + serie name", () => {
 	});
 });
 
-test("mapTcgdexSet leaves logo/symbol undefined when absent (no empty-string src)", () => {
+test("mapTcgdexSet falls back to a pokemontcg.io logo/symbol url when TCGdex has none", () => {
 	const s: TcgdexSetDetail = {
 		id: "2024sv",
 		name: "McDonald's Collection 2024",
 		releaseDate: "2024-01-01",
 		cardCount: { total: 15, official: 15 },
 		serie: { id: "mc", name: "McDonald's Collection" },
-		// no logo / symbol — 53/41 real TCGdex sets are like this
+		// no logo / symbol — 53/41 real TCGdex sets are like this. Rather than an
+		// empty-string src (which would flash-reload the page), fall back to a
+		// pokemontcg.io url; the set-tile onError degrades a dead one to set-name text.
 	};
 	const out = mapTcgdexSet(s);
-	expect(out.images.logo).toBeUndefined();
-	expect(out.images.symbol).toBeUndefined();
+	expect(out.images.logo).toMatch(
+		/^https:\/\/images\.pokemontcg\.io\/.+\/logo\.png$/,
+	);
+	expect(out.images.symbol).toMatch(
+		/^https:\/\/images\.pokemontcg\.io\/.+\/symbol\.png$/,
+	);
 });
 
 const realFetch = globalThis.fetch;
