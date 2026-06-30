@@ -22,7 +22,7 @@ const defaultValue: ListSearch = {
 
 const options = {
 	supertypes: ["Pokémon", "Trainer"],
-	subtypes: ["Basic", "Stage 1"],
+	subtypes: ["Basic", "Stage 1", "GX"],
 	rarities: ["Common", "Rare Holo"],
 	types: ["fire", "water"],
 	pokemon: [
@@ -259,12 +259,23 @@ test("Energy Type filter is hidden when no energy types are in the facet (Traine
 		/>,
 	);
 	// FilterSelect triggers expose their label as visible text, not an aria-label.
-	expect(screen.queryByText(/Energy Type/)).toBeNull();
+	expect(screen.queryByText(/Energy Types/)).toBeNull();
 	// other filters still render
-	expect(screen.getByText(/Rarity/)).toBeDefined();
+	expect(screen.getByText(/Rarities/)).toBeDefined();
 });
 
 test("Energy Type filter is shown when energy types are present", () => {
 	renderControls();
-	expect(screen.getByText(/Energy Type/)).toBeDefined();
+	expect(screen.getByText(/Energy Types/)).toBeDefined();
+});
+
+// ─── Grouped Subtypes facet ───────────────────────────────────────────────────
+
+test("subtype facet renders grouped section headings", async () => {
+	renderControls({});
+	fireEvent.click(screen.getByRole("combobox", { name: /Subtypes/i }));
+	// SelectLabel headings are non-interactive text in the open listbox
+	expect(await screen.findByText("Stage")).toBeDefined();
+	expect(screen.getByText("Pokémon Mechanic")).toBeDefined();
+	expect(screen.getByRole("option", { name: "All Subtypes" })).toBeDefined();
 });
