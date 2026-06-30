@@ -5,6 +5,8 @@ import {
 	tcgdexSetToPtcg,
 } from "../src/lib/corpus/id-crosswalk";
 import type { CorpusCard, DetailCard } from "../src/store/corpus/corpus-types";
+import { mergePtcgOverlay } from "./merge-overlay";
+import { fetchPtcgOverlay } from "./ptcg-overlay";
 
 const ASSET_PREFIX = "https://assets.tcgdex.net/en/";
 
@@ -400,14 +402,31 @@ if (import.meta.main) {
 	const detail = raw.map(detailCard).sort((a, b) => a.id.localeCompare(b.id));
 	const version = detailVersion(detail);
 
+	// Phase 3: overlay pokemontcg.io's richer English metadata. SKIP_PTCG_OVERLAY
+	// lets local/offline builds skip the second upstream. A failed crawl yields an
+	// empty overlay → mergePtcgOverlay keeps the TCGdex values (keep-last-good).
+	let overlay = new Map();
+	if (!process.env.SKIP_PTCG_OVERLAY) {
+		try {
+			console.log("Crawling pokemontcg.io overlay…");
+			overlay = await fetchPtcgOverlay();
+		} catch (err) {
+			console.warn(`ptcg overlay crawl failed, keeping TCGdex values: ${err}`);
+		}
+	}
+	const { merged, hits } = mergePtcgOverlay(trimmed, overlay);
+	console.log(
+		`ptcg overlay: ${hits}/${merged.length} cards enriched (${overlay.size} ptcg records)`,
+	);
+
 	// HEAD-probe the pokemontcg.io fallbacks; blank the dead ones and fold the
 	// resulting "no-fallback" gaps into the gap log alongside the TCGdex misses.
 	console.log("Probing pokemontcg.io fallback URLs…");
-	const noFallback = await resolveFallbackImages(trimmed);
+	const noFallback = await resolveFallbackImages(merged);
 	const gaps = collectGaps(raw);
 	gaps.images.push(...noFallback);
 
-	const gz = gzipSync(Buffer.from(JSON.stringify(trimmed)));
+	const gz = gzipSync(Buffer.from(JSON.stringify(merged)));
 	const detailGz = gzipSync(Buffer.from(JSON.stringify(detail)));
 	const meta = {
 		version,
@@ -424,7 +443,7 @@ if (import.meta.main) {
 	const dmb = (detailGz.length / 1024 / 1024).toFixed(2);
 	const secs = ((Date.now() - startedAt) / 1000).toFixed(1);
 	console.log(
-		`Wrote ${trimmed.length} cards → ${outfile} (${mb} MB) + detail (${dmb} MB, v${version.slice(0, 8)}) in ${secs}s`,
+		`Wrote ${merged.length} cards → ${outfile} (${mb} MB) + detail (${dmb} MB, v${version.slice(0, 8)}) in ${secs}s`,
 	);
 	const tcgdexMisses = gaps.images.filter(
 		(g) => g.reason === "tcgdex-missing",
