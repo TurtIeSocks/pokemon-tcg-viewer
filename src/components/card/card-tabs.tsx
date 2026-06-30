@@ -45,11 +45,16 @@ export function CardTabs({
 		onChange(next.value);
 	};
 	return (
+		// Folder organizers: each tab is a labelled folder cap. The active one is
+		// raised glass that merges seamlessly into the pane below (the pane's
+		// -mt-px + this tab's border-b-0 dissolve the seam); inactive tabs sit a
+		// hair lower and dimmer, reading as folders tucked behind. Render flush-left
+		// so the first cap aligns with the pane's edge.
 		<div
 			ref={listRef}
 			role="tablist"
 			aria-label="Card views"
-			className="inline-flex gap-1 rounded-[var(--r-pill)] border border-white/10 bg-white/[0.04] p-1"
+			className="relative z-10 flex items-end gap-1"
 		>
 			{TABS.map((t) => {
 				const active = t.value === tab;
@@ -73,11 +78,11 @@ export function CardTabs({
 							}
 						}}
 						className={cn(
-							"rounded-[var(--r-pill)] px-3.5 py-1.5 font-mono text-[12px] tracking-[0.04em] transition-colors",
-							"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]",
+							"relative rounded-t-[var(--r-control)] border px-4 py-2 font-mono text-[11px] uppercase tracking-[0.12em] transition-all duration-200 ease-[var(--ease)]",
+							"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--primary)]",
 							active
-								? "bg-[var(--primary)] font-semibold text-[var(--primary-ink)]"
-								: "text-[var(--ink-muted)] hover:text-[var(--ink)]",
+								? "z-10 border-b-0 border-white/12 bg-[var(--glass-2)] text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.22)]"
+								: "translate-y-px border-transparent bg-white/[0.02] text-[var(--faint)] hover:bg-white/[0.05] hover:text-[var(--ink-muted)] motion-reduce:translate-y-0",
 						)}
 					>
 						{t.label}

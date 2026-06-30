@@ -1,17 +1,11 @@
-import {
-	createFileRoute,
-	Link,
-	notFound,
-	useNavigate,
-} from "@tanstack/react-router";
+import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { CardCockpit } from "../../../components/card/card-cockpit";
+import { CardPageView } from "../../../components/card/card-cockpit";
 import { TAB_MASK } from "../../../lib/card-route";
 import {
 	isSupportedLanguage,
 	type SupportedLanguage,
 } from "../../../lib/languages";
-import { LIST_SEARCH_DEFAULTS } from "../../../lib/list-search";
 import { getCardForRouteFn } from "../../../server/corpus-server";
 import { useRecentsStore } from "../../../store/recents";
 
@@ -92,25 +86,13 @@ function CardPage() {
 		void navigate({ to: TAB_MASK[tab], params });
 
 	return (
-		<div className="mx-auto w-full max-w-4xl overflow-y-auto px-4 py-6">
-			<div className="mb-3">
-				<Link
-					to="/$series/$set"
-					params={{ series: params.series, set: params.set }}
-					search={LIST_SEARCH_DEFAULTS}
-					className="text-sm text-muted-foreground hover:text-foreground"
-				>
-					← {card.setName}
-				</Link>
-			</div>
-			<div className="rounded-2xl border border-white/10 bg-[var(--bg)]">
-				<CardCockpit
-					card={card}
-					crossLinks={crossLinks}
-					tab="details"
-					onTabChange={onTabChange}
-				/>
-			</div>
-		</div>
+		<CardPageView
+			card={card}
+			crossLinks={crossLinks}
+			tab="details"
+			onTabChange={onTabChange}
+			series={params.series}
+			set={params.set}
+		/>
 	);
 }
