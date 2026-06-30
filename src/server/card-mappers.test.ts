@@ -9,7 +9,9 @@ test("mapTcgdexFocusCard coerces numeric hp and attack damage to strings", () =>
 		category: "Pokemon",
 		set: { id: "swsh3", name: "Darkness Ablaze" },
 		hp: 70 as unknown as string, // API returns number
-		attacks: [{ name: "Vine Whip", cost: ["Grass"], damage: 30 as unknown as string }],
+		attacks: [
+			{ name: "Vine Whip", cost: ["Grass"], damage: 30 as unknown as string },
+		],
 	});
 	expect(f.hp).toBe("70");
 	expect(typeof f.hp).toBe("string");
@@ -37,6 +39,20 @@ test("mapTcgdexFocusCard maps core fields and drops pricing", () => {
 	);
 	expect("tcgplayer" in f).toBe(false);
 	expect("cardmarket" in f).toBe(false);
+});
+
+test("mapTcgdexFocusCard maps TCGdex dexId to nationalPokedexNumbers", () => {
+	// TCGdex sends `dexId`; reading the wrong field dropped the Pokemon
+	// "View all <species>" cross-link on the detail view.
+	const f = mapTcgdexFocusCard({
+		id: "base1-1",
+		localId: "1",
+		name: "Alakazam",
+		category: "Pokemon",
+		set: { id: "base1", name: "Base" },
+		dexId: [65],
+	} as never);
+	expect(f.nationalPokedexNumbers).toEqual([65]);
 });
 
 describe("apiCardToFocusProps", () => {

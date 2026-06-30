@@ -169,8 +169,14 @@ export const getCardForRouteFn = createServerFn({ method: "GET" })
 		for (const dex of card.nationalPokedexNumbers ?? []) {
 			const name = nameByDex(list, dex);
 			if (name) {
+				// Title-case the dex slug for display ("mr-mime" -> "Mr Mime") so the
+				// species link reads like the proper-cased Trainer/Energy links below;
+				// the route param keeps the raw slug.
+				const display = name
+					.replace(/-/g, " ")
+					.replace(/\b\w/g, (c) => c.toUpperCase());
 				crossLinks.push({
-					label: `View all ${name.replace(/-/g, " ")}`,
+					label: `View all ${display}`,
 					link: { to: "/pokemon/$name", params: { name } },
 				});
 			}

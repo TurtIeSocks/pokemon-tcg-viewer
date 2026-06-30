@@ -164,7 +164,10 @@ export interface TcgdexFocusCard {
 	rules?: string[];
 	subtypes?: string[];
 	supertype?: string;
-	nationalPokedexNumbers?: number[];
+	// TCGdex's detail response carries the national-dex ids under `dexId` (not
+	// `nationalPokedexNumbers`). Reading the wrong field left every Pokémon detail
+	// without its dex numbers, dropping the "View all <species>" cross-link.
+	dexId?: number[];
 }
 
 /** Map a TCGdex card detail response to {@link FocusCardData}. Drops pricing fields. */
@@ -190,7 +193,7 @@ export function mapTcgdexFocusCard(card: TcgdexFocusCard): FocusCardData {
 		setName: card.set.name,
 		setSeries: card.set.serie?.name ?? "",
 		cardNumber: card.localId,
-		nationalPokedexNumbers: card.nationalPokedexNumbers,
+		nationalPokedexNumbers: card.dexId,
 		setLogo: card.set.logo ? `${card.set.logo}.png` : undefined,
 		setReleaseDate: card.set.releaseDate,
 		// Coerce hp/damage to string — the TCGdex API returns numbers for these
