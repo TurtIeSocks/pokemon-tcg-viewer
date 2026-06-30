@@ -43,8 +43,12 @@ export async function fetchPtcgOverlay(
 	const out: PtcgOverlay = new Map();
 	for (let page = 1; ; page++) {
 		const data = await fetchPage(fetchImpl, page);
-		for (const c of data)
-			out.set(c.id, { rarity: c.rarity, subtypes: c.subtypes });
+		for (const c of data) {
+			const entry: PtcgOverlayEntry = {};
+			if (c.rarity != null) entry.rarity = c.rarity;
+			if (c.subtypes != null) entry.subtypes = c.subtypes;
+			out.set(c.id, entry);
+		}
 		if (data.length < PAGE_SIZE) break;
 	}
 	return out;

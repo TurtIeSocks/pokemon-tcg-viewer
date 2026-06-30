@@ -39,3 +39,14 @@ test("fetchPtcgOverlay retries a failing page then succeeds", async () => {
 	expect(calls).toBe(2);
 	expect(overlay.size).toBe(0);
 });
+
+test("fetchPtcgOverlay omits undefined optional fields", async () => {
+	const full = Array.from({ length: 250 }, (_, i) => ({ id: `swsh1-${i}` }));
+	const overlay = await fetchPtcgOverlay({
+		fetchImpl: fakeFetch({
+			1: full,
+			2: [],
+		}),
+	});
+	expect(overlay.get("swsh1-0")).toEqual({});
+});
