@@ -70,6 +70,12 @@ const STAGE_ORDER = [
 	"Restored",
 ];
 
+// STAGE_ORDER should list every Stage member; an unmapped one ranks last, never first.
+const stageRank = (s: string): number => {
+	const i = STAGE_ORDER.indexOf(s);
+	return i === -1 ? Number.POSITIVE_INFINITY : i;
+};
+
 export function groupSubtypes(
 	options: string[],
 ): { label: string; items: string[] }[] {
@@ -85,7 +91,7 @@ export function groupSubtypes(
 		if (!items?.length) return [];
 		items.sort(
 			key === "Stage"
-				? (a, b) => STAGE_ORDER.indexOf(a) - STAGE_ORDER.indexOf(b)
+				? (a, b) => stageRank(a) - stageRank(b)
 				: (a, b) => a.localeCompare(b),
 		);
 		return [{ label, items }];
