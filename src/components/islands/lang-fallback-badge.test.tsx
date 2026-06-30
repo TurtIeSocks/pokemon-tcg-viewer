@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
 import { expect, test } from "bun:test";
+import { render, screen } from "@testing-library/react";
 import { LangFallbackBadge } from "./lang-fallback-badge";
 
 test("renders an EN badge when show is true", () => {
