@@ -35,9 +35,6 @@ export function CardHeading({ card }: { card: FocusCardData }) {
 				<h1 className="font-display text-lg font-semibold leading-tight text-[var(--ink)]">
 					{card.name}
 				</h1>
-				<span className="min-w-0 font-display text-sm text-[var(--ink-muted)]">
-					{describeCard(card)}
-				</span>
 				{card.rarity ? (
 					<Badge variant="default" className="shrink-0 self-center">
 						✦ {card.rarity}
@@ -45,7 +42,7 @@ export function CardHeading({ card }: { card: FocusCardData }) {
 				) : null}
 			</div>
 			<div className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-				{card.setName} · #{card.cardNumber}
+				{describeCard(card)} · {card.setName} · #{card.cardNumber}
 			</div>
 		</div>
 	);
