@@ -44,3 +44,22 @@ test("empty overlay (crawl failed) returns cards unchanged (keep-last-good)", ()
 	const { merged } = mergePtcgOverlay(cards, new Map());
 	expect(merged[0]).toEqual(cards[0]);
 });
+
+test("normalizes rarity on a crosswalk miss when suffixById is provided", () => {
+	// Overlay has one entry for a *different* card, so base1-4 is a miss.
+	const overlay = new Map([
+		["other-1", { rarity: "Rare Holo", subtypes: ["Stage 2"] }],
+	]);
+	const suffixById = new Map([["base1-4", "GX"]]);
+	const card = baseCard({ rarity: "Ultra Rare" });
+	const { merged, hits } = mergePtcgOverlay([card], overlay, suffixById);
+	expect(hits).toBe(0); // miss — not an overlay hit
+	expect(merged[0].rarity).toBe("Rare Holo GX"); // normalized via suffix
+});
+
+test("crosswalk miss with no suffix leaves rarity unchanged", () => {
+	const overlay = new Map([["other-1", { rarity: "Rare Holo" }]]);
+	const card = baseCard({ rarity: "Ultra Rare" });
+	const { merged } = mergePtcgOverlay([card], overlay);
+	expect(merged[0].rarity).toBe("Ultra Rare");
+});

@@ -414,10 +414,27 @@ if (import.meta.main) {
 			console.warn(`ptcg overlay crawl failed, keeping TCGdex values: ${err}`);
 		}
 	}
-	const { merged, hits } = mergePtcgOverlay(trimmed, overlay);
+	const suffixById = new Map(
+		raw.filter((c) => c.suffix).map((c) => [c.id, c.suffix as string]),
+	);
+	const { merged, hits } = mergePtcgOverlay(trimmed, overlay, suffixById);
 	console.log(
 		`ptcg overlay: ${hits}/${merged.length} cards enriched (${overlay.size} ptcg records)`,
 	);
+
+	// Audit: list any post-merge rarities the foil table still falls back on
+	// holo-basic (the generic catch-all). Extend RARITY_FIX in normalize-rarity.ts
+	// to cover new entries.
+	const { getRarityClass } = await import("../src/components/holo-card/rarity");
+	const unknown = new Set(
+		merged
+			.map((c) => c.rarity)
+			.filter((r): r is string => !!r && getRarityClass(r) === "holo-basic"),
+	);
+	if (unknown.size)
+		console.warn(
+			`rarities still on holo-basic fallback: ${[...unknown].join(", ")}`,
+		);
 
 	// HEAD-probe the pokemontcg.io fallbacks; blank the dead ones and fold the
 	// resulting "no-fallback" gaps into the gap log alongside the TCGdex misses.
