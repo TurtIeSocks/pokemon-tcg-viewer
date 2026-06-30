@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { getRarityClass } from "../src/components/holo-card/rarity";
+import { KNOWN_RARITIES } from "../src/components/holo-card/rarity";
 import { normalizeTcgdexRarity } from "./normalize-rarity";
 
 test("flips TCGdex word order / casing to ptcg vocab", () => {
@@ -16,12 +16,32 @@ test("derives a foil rarity from suffix when TCGdex rarity is coarse", () => {
 });
 
 test("every normalized value is a known foil-table key", () => {
-	for (const out of [
-		normalizeTcgdexRarity("Holo Rare", undefined),
-		normalizeTcgdexRarity("Ultra Rare", "V"),
-	]) {
-		// known keys never hit the "Unknown rarity" generic fallback path
-		expect(getRarityClass(out)).not.toBe("no-foil");
+	// Covers: all RARITY_FIX direct mappings + all SUFFIX_FOIL-derived outputs
+	const cases: [string, string | undefined][] = [
+		// RARITY_FIX entries
+		["Holo Rare", undefined],
+		["Hyper rare", undefined],
+		["Shiny rare", undefined],
+		["Shiny rare V", undefined],
+		["Full Art Trainer", undefined],
+		["ACE SPEC Rare", undefined],
+		["Crown", undefined],
+		// SUFFIX_FOIL-derived (coarse rarity + mechanic suffix)
+		["Rare", "VMAX"],
+		["Rare", "VSTAR"],
+		["Rare", "GX"],
+		["Rare", "V"],
+		["Rare", "EX"],
+		["Ultra Rare", "VMAX"],
+		["Ultra Rare", "VSTAR"],
+		["Ultra Rare", "GX"],
+		["Ultra Rare", "V"],
+		["Ultra Rare", "EX"],
+	];
+	for (const [rarity, suffix] of cases) {
+		const out = normalizeTcgdexRarity(rarity, suffix);
+		expect(out).toBeDefined();
+		expect(KNOWN_RARITIES.has(out as string)).toBe(true);
 	}
 });
 

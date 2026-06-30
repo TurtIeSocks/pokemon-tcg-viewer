@@ -5,7 +5,7 @@ const RARITY_FIX: Record<string, string> = {
 	"Holo Rare": "Rare Holo",
 	"Hyper rare": "Hyper Rare",
 	"Shiny rare": "Rare Shiny",
-	"Shiny rare V": "Rare Shiny V",
+	"Shiny rare V": "Rare Shiny",
 	"Full Art Trainer": "Ultra Rare",
 	"ACE SPEC Rare": "Rare Ultra",
 	Crown: "Hyper Rare",

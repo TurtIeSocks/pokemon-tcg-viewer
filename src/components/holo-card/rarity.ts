@@ -49,6 +49,10 @@ const RARITY_CLASS = {
 	"Classic Collection": "holo-basic",
 } as const;
 
+export const KNOWN_RARITIES: ReadonlySet<string> = new Set(
+	Object.keys(RARITY_CLASS),
+);
+
 export function getRarityClass(rarity?: string): string {
 	if (!rarity) return "no-foil";
 	const cls = RARITY_CLASS[rarity as keyof typeof RARITY_CLASS];
