@@ -220,11 +220,21 @@ UI treatment:
   modal lowres + `_hires.png`). A Cloudflare `/cdn-cgi/image/` transform
   (`format=auto`, `quality~82`, width-capped) remains the future option but is not
   built here.
-- **Pricing.** TCGdex now serves `pricing.cardmarket` + `pricing.tcgplayer` live
-  on every card (contradicts the "pricing dropped" note in memory). Noted as a
-  free future win for Vault valuation; not pulled into this branch.
-- **TCGdex `variants_detailed`** (1st-edition/shadowless granularity) — richer than
-  ptcg.io, available, but not surfaced in UI here.
+
+### Immediate follow-up roadmap (owner-confirmed 2026-06-30)
+
+These are the **next two branches after this one ships**, in order — both
+discovered during this design's API recon, both sourced from the TCGdex base
+already in the corpus:
+
+1. **`variants_detailed`** — surface TCGdex's per-printing variant data
+   (1st-edition / shadowless / copyright-year, with `stamp` + `variantId`). Richer
+   than anything pokemontcg.io carries; available on every TCGdex card. Tackle
+   **directly after** the mega-corpus merge.
+2. **Pricing** — TCGdex now serves `pricing.cardmarket` + `pricing.tcgplayer` live
+   on every card (contradicts the "pricing dropped pending PriceCharting" note in
+   memory). Free Vault-valuation win, no extra upstream. Tackle **after**
+   `variants_detailed`.
 
 ## Testing
 
