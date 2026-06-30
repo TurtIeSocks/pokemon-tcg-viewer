@@ -33,8 +33,11 @@ export const LANGUAGE_LABELS: Record<SupportedLanguage, string> = {
  * Approximate fraction of the catalog each overlay covers (overlay card count /
  * total corpus), for a partial-coverage hint in the language picker. TCGdex's
  * Western data is uneven — es/pt lack most vintage cards, so those fall back to
- * English. en is the full baseline (1). Regenerate from the build-i18n coverage
- * logs (scripts/build-i18n.ts) when the corpus is rebuilt.
+ * English. en is the full baseline (1).
+ *
+ * GENERATED: these values are computed mechanically by `scripts/build-i18n.ts`.
+ * After each corpus rebuild, paste the `LANGUAGE_COVERAGE = {...}` line it logs
+ * at the end of the run to refresh the numbers here.
  */
 export const LANGUAGE_COVERAGE: Record<SupportedLanguage, number> = {
 	en: 1,

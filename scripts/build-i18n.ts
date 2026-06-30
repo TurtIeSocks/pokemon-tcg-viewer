@@ -31,12 +31,14 @@ export interface I18nMeta {
 	version: string;
 	count: number;
 	builtAt: string;
+	coverage: number; // entries / expected, 0..1
 }
 
 export interface I18nResult {
 	lang: string;
 	entries: I18nEntry[];
 	version: string;
+	coverage: number;
 }
 
 // Subset of fetchJson's signature that buildI18n depends on — injectable so tests
@@ -139,7 +141,7 @@ export async function buildI18n(
 	log(
 		`[${lang}] crawl complete: ${entries.length} names (v${version.slice(0, 8)}).`,
 	);
-	return { lang, entries, version };
+	return { lang, entries, version, coverage };
 }
 
 /** Write the gzipped names + meta sidecar for one language under `corpus/i18n/{lang}/`. */
@@ -151,6 +153,7 @@ export async function writeI18n(result: I18nResult): Promise<I18nMeta> {
 		version: result.version,
 		count: result.entries.length,
 		builtAt: new Date().toISOString(),
+		coverage: result.coverage,
 	};
 	await Bun.write(`${dir}/names.json.gz`, gz);
 	await Bun.write(`${dir}/meta.json`, JSON.stringify(meta));
@@ -164,10 +167,13 @@ export async function writeI18n(result: I18nResult): Promise<I18nMeta> {
 // Entrypoint: `bun run scripts/build-i18n.ts` — builds every Western overlay.
 if (import.meta.main) {
 	const startedAt = Date.now();
+	const coverageByLang: Record<string, number> = { en: 1 };
 	for (const lang of I18N_LANGS) {
 		const result = await buildI18n(lang);
 		await writeI18n(result);
+		coverageByLang[lang] = Number(result.coverage.toFixed(2));
 	}
 	const secs = ((Date.now() - startedAt) / 1000).toFixed(1);
 	console.log(`Built ${I18N_LANGS.length} overlays in ${secs}s`);
+	console.log("LANGUAGE_COVERAGE =", JSON.stringify(coverageByLang));
 }

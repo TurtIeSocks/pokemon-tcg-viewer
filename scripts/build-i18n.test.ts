@@ -5,6 +5,7 @@ import {
 	type I18nEntry,
 	i18nVersion,
 	langBase,
+	writeI18n,
 } from "./build-i18n";
 
 // A mock fetcher backed by an in-memory set tree. NO network: every url must be
@@ -145,4 +146,27 @@ test("buildI18n tolerates a missing name (defaults to empty string)", async () =
 	];
 	const { entries } = await buildI18n("de", opts(sets));
 	expect(entries).toEqual([{ id: "p-1", name: "" }]);
+});
+
+test("buildI18n result carries a numeric coverage field (0..1)", async () => {
+	const { coverage } = await buildI18n("fr", opts(FR_SETS));
+	// FR_SETS: 3 cards served, 3 declared total (2+1 = total matches served)
+	expect(typeof coverage).toBe("number");
+	expect(coverage).toBeGreaterThan(0);
+	expect(coverage).toBeLessThanOrEqual(1);
+	// FR_SETS: all cards are served, so coverage should be 1.
+	const totalDeclared = FR_SETS.reduce((n, s) => n + s.total, 0);
+	const totalServed = FR_SETS.reduce((n, s) => n + s.cards.length, 0);
+	expect(coverage).toBe(totalServed / totalDeclared);
+});
+
+test("writeI18n meta includes coverage from the result", async () => {
+	const result = await buildI18n("fr", opts(FR_SETS));
+	const meta = await writeI18n(result);
+	expect(typeof meta.coverage).toBe("number");
+	expect(meta.coverage).toBe(result.coverage);
+	// Sanity: other meta fields still present.
+	expect(typeof meta.version).toBe("string");
+	expect(typeof meta.count).toBe("number");
+	expect(typeof meta.builtAt).toBe("string");
 });
