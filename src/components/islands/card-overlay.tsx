@@ -6,6 +6,7 @@ import {
 	parseCardOverlayParam,
 	peekCardDetail,
 } from "../../lib/card-detail";
+import { toSupportedLanguage } from "../../lib/languages";
 import { useStore } from "../../store";
 import {
 	useCorpusRuntime,
@@ -55,7 +56,7 @@ export function CardOverlay() {
 	const detailById = useDetailRuntime((s) => s.detailById);
 	useEnsureI18n();
 	const i18n = useActiveI18n();
-	const lang = i18n?.lang ?? "en";
+	const lang = toSupportedLanguage(i18n?.lang);
 
 	const params = useMemo(() => parseCardOverlayParam(cardParam), [cardParam]);
 

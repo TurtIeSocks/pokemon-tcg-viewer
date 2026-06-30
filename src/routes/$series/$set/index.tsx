@@ -169,6 +169,7 @@ function SetPageInner({
 											set: params.set,
 											card: card.slug,
 										}}
+										search={{ lang: null }}
 									>
 										<img
 											src={card.imageUrlSmall}
