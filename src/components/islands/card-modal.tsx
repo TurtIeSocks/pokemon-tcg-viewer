@@ -1,4 +1,4 @@
-import { useNavigate, useRouter } from "@tanstack/react-router";
+import { useRouter } from "@tanstack/react-router";
 import {
 	Dialog,
 	DialogContent,
@@ -6,7 +6,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import type { ListSearch } from "../../lib/card-query";
 import {
 	type CardTab,
 	cardRouteParams,
@@ -14,46 +13,10 @@ import {
 } from "../../lib/card-route";
 import type { FocusCardData } from "../../server/card-mappers";
 import { useSlugIndex } from "../../store/corpus/corpus-runtime";
-import {
-	isI18nFallback,
-	useActiveI18n,
-} from "../../store/corpus/i18n-active-hooks";
 import { CardCockpit } from "../card/card-cockpit";
 import { CardHeading } from "../card/card-info";
-import { CardLanguageControl } from "./card-language-control";
+import { CardLangSwitch } from "./card-lang-switch";
 import { CardCrossLinks, type CrossLink } from "./cross-links";
-
-/**
- * Language picker + fallback notice wired to the active route's `lang` search
- * param. Works for both the history-state overlay (CardOverlay) and the cold
- * $card route: useNavigate patches `lang` on the current route in both cases,
- * and useEnsureI18n (called inside CardCockpit) re-localizes on the new param.
- */
-function ModalLangControl({ cardId }: { cardId: string }) {
-	const navigate = useNavigate();
-	const i18n = useActiveI18n();
-	const lang = i18n?.lang ?? "en";
-	const isFallback = isI18nFallback(i18n, cardId);
-	return (
-		<div className="flex items-center gap-2">
-			<CardLanguageControl
-				value={{ lang: lang === "en" ? null : lang } as ListSearch}
-				onChange={(patch) =>
-					void navigate({
-						to: ".",
-						search: (prev) => ({ ...prev, lang: patch.lang ?? null }),
-						replace: true,
-					})
-				}
-			/>
-			{isFallback ? (
-				<span className="font-mono text-[11px] text-[var(--ink-muted)]">
-					Shown in English.
-				</span>
-			) : null}
-		</div>
-	);
-}
 
 interface CardModalProps {
 	card: FocusCardData;
@@ -92,7 +55,7 @@ export function CardModal({
 				</DialogTitle>
 				<DialogHeader>
 					<CardHeading card={card} />
-					<ModalLangControl cardId={card.id} />
+					<CardLangSwitch cardId={card.id} />
 				</DialogHeader>
 				<div className="max-h-[90vh] overflow-y-auto">
 					<CardCockpit
