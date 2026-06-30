@@ -1,0 +1,41 @@
+import { expect, test } from "bun:test";
+import { fetchPtcgOverlay } from "./ptcg-overlay";
+
+// A fake fetch that pages: page 1 returns a full page (250) so the loop continues,
+// page 2 returns a short page so the loop stops.
+function fakeFetch(pages: Record<number, unknown[]>): typeof fetch {
+	return (async (url: string | URL) => {
+		const page = Number(new URL(url).searchParams.get("page"));
+		return {
+			ok: true,
+			json: async () => ({ data: pages[page] ?? [] }),
+		} as Response;
+	}) as unknown as typeof fetch;
+}
+
+test("fetchPtcgOverlay pages until a short page and keys by id", async () => {
+	const full = Array.from({ length: 250 }, (_, i) => ({ id: `swsh1-${i}` }));
+	const overlay = await fetchPtcgOverlay({
+		fetchImpl: fakeFetch({
+			1: full,
+			2: [{ id: "base1-4", rarity: "Rare Holo", subtypes: ["Stage 2"] }],
+		}),
+	});
+	expect(overlay.size).toBe(251);
+	expect(overlay.get("base1-4")).toEqual({
+		rarity: "Rare Holo",
+		subtypes: ["Stage 2"],
+	});
+});
+
+test("fetchPtcgOverlay retries a failing page then succeeds", async () => {
+	let calls = 0;
+	const fetchImpl = (async () => {
+		calls++;
+		if (calls === 1) return { ok: false, status: 503 } as Response;
+		return { ok: true, json: async () => ({ data: [] }) } as Response;
+	}) as unknown as typeof fetch;
+	const overlay = await fetchPtcgOverlay({ fetchImpl });
+	expect(calls).toBe(2);
+	expect(overlay.size).toBe(0);
+});
