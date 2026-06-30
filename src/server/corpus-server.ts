@@ -3,7 +3,7 @@ import { setResponseHeader } from "@tanstack/react-start/server";
 import type { ListSearch } from "../lib/card-query";
 import { isSupportedLanguage } from "../lib/languages";
 import { LIST_SEARCH_DEFAULTS } from "../lib/list-search";
-import { findSet } from "../lib/nav-tree";
+import { findSeries } from "../lib/nav-tree";
 import { slugify } from "../lib/slug";
 import type { SearchMode } from "../store/corpus/fuzzy";
 import { cacheControl } from "./cache-headers";
@@ -153,8 +153,9 @@ export const getCardForRouteFn = createServerFn({ method: "GET" })
 		);
 
 		const tree = await loadNavTree();
-		const set = findSet(tree, data.series, data.set);
-		if (!set) return null;
+		const series = findSeries(tree, data.series);
+		const set = series?.sets.find((s) => s.slug === data.set);
+		if (!series || !set) return null;
 		const cardId = await resolveCardInSet(set.id, data.card);
 		if (!cardId) return null;
 
@@ -200,7 +201,15 @@ export const getCardForRouteFn = createServerFn({ method: "GET" })
 			},
 		});
 
-		return { card, crossLinks };
+		// A card's TCGdex SetBrief carries no serie/releaseDate, so the live mapper
+		// leaves setSeries/setReleaseDate empty. Join them from the nav tree here
+		// (a fresh copy — never mutate the per-process cached card).
+		const enriched = {
+			...card,
+			setSeries: series.name,
+			setReleaseDate: set.releaseDate,
+		};
+		return { card: enriched, crossLinks };
 	});
 
 /**

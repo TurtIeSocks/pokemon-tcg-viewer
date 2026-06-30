@@ -1,4 +1,8 @@
 import { fallbackImageUrl } from "../lib/corpus/id-crosswalk";
+import {
+	subtypesFromTcgdex,
+	supertypeFromCategory,
+} from "../lib/corpus/tcgdex-card-fields";
 
 /** A card ability (focus view). */
 export interface CardAbility {
@@ -131,26 +135,32 @@ export function apiCardToFocusProps(card: PokemonApiFocusCard): FocusCardData {
 	};
 }
 
-/** TCGdex card-detail shape (GET /v2/en/cards/{id}). */
+/**
+ * TCGdex card-detail shape (GET /v2/en/cards/{id}), per the official typedef
+ * (https://tcgdex.dev/reference/card). Field names follow TCGdex, NOT the
+ * pokemontcg.io-style names the app renders — `mapTcgdexFocusCard` translates.
+ * Notably TCGdex has NO `subtypes`/`supertype`/`nationalPokedexNumbers`/`rules`
+ * fields, and a card's embedded `set` is a SetBrief (no serie/releaseDate).
+ */
 export interface TcgdexFocusCard {
 	id: string;
 	localId: string;
 	name: string;
-	category: string;
+	category: string; // "Pokemon" | "Trainer" | "Energy" (no app supertype field)
 	image?: string;
-	set: {
-		id: string;
-		name: string;
-		serie?: { id: string; name: string };
-		releaseDate?: string;
-		logo?: string;
-	};
+	// SetBrief: {id, name, logo, symbol, cardCount} — NO serie / releaseDate.
+	set: { id: string; name: string; logo?: string };
 	illustrator?: string;
 	rarity?: string;
 	hp?: string | number;
 	types?: string[];
 	evolveFrom?: string;
-	description?: string;
+	description?: string; // flavor text
+	// TCGdex splits the "subtype" concept across these typed fields (no `subtypes`).
+	stage?: string;
+	trainerType?: string;
+	energyType?: string;
+	suffix?: string;
 	abilities?: Array<{ name: string; type: string; effect?: string }>;
 	attacks?: Array<{
 		name: string;
@@ -161,12 +171,7 @@ export interface TcgdexFocusCard {
 	weaknesses?: Array<{ type: string; value: string }>;
 	resistances?: Array<{ type: string; value: string }>;
 	retreat?: number;
-	rules?: string[];
-	subtypes?: string[];
-	supertype?: string;
-	// TCGdex's detail response carries the national-dex ids under `dexId` (not
-	// `nationalPokedexNumbers`). Reading the wrong field left every Pokémon detail
-	// without its dex numbers, dropping the "View all <species>" cross-link.
+	// National-dex ids — TCGdex sends these under `dexId`, NOT nationalPokedexNumbers.
 	dexId?: number[];
 }
 
@@ -187,15 +192,19 @@ export function mapTcgdexFocusCard(card: TcgdexFocusCard): FocusCardData {
 			: null,
 		name: card.name,
 		rarity: card.rarity,
-		subtypes: card.subtypes,
-		supertype: card.supertype ?? card.category,
+		// TCGdex has no `subtypes` field — assemble it from the typed fields.
+		subtypes: subtypesFromTcgdex(card),
+		// TCGdex has no `supertype` — derive the accented app supertype from category.
+		supertype: supertypeFromCategory(card.category),
 		setId: card.set.id,
 		setName: card.set.name,
-		setSeries: card.set.serie?.name ?? "",
+		// A card's SetBrief carries no serie/releaseDate; the caller
+		// (getCardForRouteFn) joins setSeries + setReleaseDate from the nav tree.
+		setSeries: "",
 		cardNumber: card.localId,
 		nationalPokedexNumbers: card.dexId,
 		setLogo: card.set.logo ? `${card.set.logo}.png` : undefined,
-		setReleaseDate: card.set.releaseDate,
+		setReleaseDate: undefined,
 		// Coerce hp/damage to string — the TCGdex API returns numbers for these
 		// fields; our CardStats type models them as strings.
 		hp: card.hp != null ? String(card.hp) : undefined,
@@ -220,6 +229,6 @@ export function mapTcgdexFocusCard(card: TcgdexFocusCard): FocusCardData {
 			card.retreat !== undefined
 				? Array.from({ length: card.retreat }, () => "Colorless")
 				: undefined,
-		rules: card.rules,
+		// TCGdex's card detail carries no rule-box text (`rules`), so it stays undefined.
 	};
 }

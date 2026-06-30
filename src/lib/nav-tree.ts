@@ -8,6 +8,9 @@ export interface NavSet {
 	logo?: string;
 	symbol?: string;
 	total: number;
+	/** Set release date ("YYYY-MM-DD"); always set by deriveNavTree, optional so
+	 *  lightweight NavSet test fixtures need not supply it. */
+	releaseDate?: string;
 }
 export interface NavSeries {
 	name: string;
@@ -60,6 +63,7 @@ export function deriveNavTree(sets: PokemonSet[]): NavTree {
 			logo: set.images.logo,
 			symbol: set.images.symbol,
 			total: set.total,
+			releaseDate: set.releaseDate,
 		});
 		const yr = Number(set.releaseDate.slice(0, 4));
 		if (Number.isFinite(yr) && yr < series.year) series.year = yr;

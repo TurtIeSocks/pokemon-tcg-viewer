@@ -4,6 +4,10 @@ import {
 	fallbackImageUrl,
 	tcgdexSetToPtcg,
 } from "../src/lib/corpus/id-crosswalk";
+import {
+	subtypesFromTcgdex,
+	supertypeFromCategory,
+} from "../src/lib/corpus/tcgdex-card-fields";
 import type { CorpusCard, DetailCard } from "../src/store/corpus/corpus-types";
 import { mergePtcgOverlay } from "./merge-overlay";
 import { fetchPtcgOverlay } from "./ptcg-overlay";
@@ -49,21 +53,6 @@ export interface TcgdexCard {
 	illustrator?: string;
 }
 
-const CATEGORY_TO_SUPERTYPE: Record<TcgdexCard["category"], string> = {
-	Pokemon: "Pokémon",
-	Trainer: "Trainer",
-	Energy: "Energy",
-};
-
-function subtypesOf(card: TcgdexCard): string[] | undefined {
-	const out: string[] = [];
-	if (card.stage) out.push(card.stage);
-	if (card.trainerType) out.push(card.trainerType);
-	if (card.energyType) out.push(card.energyType);
-	if (card.suffix) out.push(card.suffix);
-	return out.length ? out : undefined;
-}
-
 function variantsOf(card: TcgdexCard): string[] | undefined {
 	if (!card.variants) return undefined;
 	const keys = (
@@ -76,7 +65,7 @@ export function trimCard(card: TcgdexCard): CorpusCard {
 	const out: CorpusCard = {
 		id: card.id,
 		name: card.name,
-		supertype: CATEGORY_TO_SUPERTYPE[card.category],
+		supertype: supertypeFromCategory(card.category),
 		setId: card.set.id,
 		number: card.localId,
 		imageBase: null,
@@ -98,7 +87,7 @@ export function trimCard(card: TcgdexCard): CorpusCard {
 		out.imageUrlSmall = small;
 	}
 	if (card.rarity) out.rarity = card.rarity;
-	const subtypes = subtypesOf(card);
+	const subtypes = subtypesFromTcgdex(card);
 	if (subtypes) out.subtypes = subtypes;
 	if (card.types) out.types = card.types;
 	if (card.dexId) out.nationalPokedexNumbers = card.dexId;

@@ -41,6 +41,22 @@ test("mapTcgdexFocusCard maps core fields and drops pricing", () => {
 	expect("cardmarket" in f).toBe(false);
 });
 
+test("mapTcgdexFocusCard assembles subtypes + accented supertype (TCGdex has neither field)", () => {
+	const f = mapTcgdexFocusCard({
+		id: "base1-4",
+		localId: "4",
+		name: "Charizard",
+		category: "Pokemon",
+		set: { id: "base1", name: "Base" },
+		stage: "Stage2",
+	} as never);
+	expect(f.subtypes).toEqual(["Stage2"]); // assembled, not read from a `subtypes` field
+	expect(f.supertype).toBe("Pokémon"); // accented, from category
+	// setSeries/setReleaseDate are joined from the nav tree by the caller, not here.
+	expect(f.setSeries).toBe("");
+	expect(f.setReleaseDate).toBeUndefined();
+});
+
 test("mapTcgdexFocusCard maps TCGdex dexId to nationalPokedexNumbers", () => {
 	// TCGdex sends `dexId`; reading the wrong field dropped the Pokemon
 	// "View all <species>" cross-link on the detail view.
