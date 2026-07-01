@@ -163,13 +163,64 @@ test("fetchCardById requests the localized locale and maps it", async () => {
 	const calls: string[] = [];
 	globalThis.fetch = mock(async (url: string | URL) => {
 		calls.push(String(url));
-		return new Response(JSON.stringify(apiCard("sv1-1")), { status: 200 });
+		// A localized card WITH its own scan → no EN-image borrow, one fetch.
+		return new Response(
+			JSON.stringify({
+				...apiCard("sv1-1"),
+				image: "https://assets.tcgdex.net/de/sv/sv1/1",
+			}),
+			{ status: 200 },
+		);
 	}) as unknown as typeof fetch;
 
 	await fetchCardById("sv1-1", "de");
 
 	expect(calls).toHaveLength(1);
 	expect(calls[0]).toContain("/v2/de/cards/sv1-1");
+});
+
+test("fetchCardById borrows the EN scan when a localized card has text but no image", async () => {
+	const calls: string[] = [];
+	globalThis.fetch = mock(async (url: string | URL) => {
+		const u = String(url);
+		calls.push(u);
+		if (u.includes("/v2/de/")) {
+			// German metadata exists (name + translated text) but carries no scan.
+			return new Response(
+				JSON.stringify({
+					id: "base1-1",
+					localId: "1",
+					name: "Simsala",
+					category: "Pokemon",
+					set: { id: "base1", name: "Basis" },
+				}),
+				{ status: 200 },
+			);
+		}
+		// EN carries the scan we borrow.
+		return new Response(
+			JSON.stringify({
+				id: "base1-1",
+				localId: "1",
+				name: "Alakazam",
+				category: "Pokemon",
+				image: "https://assets.tcgdex.net/en/base/base1/1",
+				set: { id: "base1", name: "Base" },
+			}),
+			{ status: 200 },
+		);
+	}) as unknown as typeof fetch;
+
+	const card = await fetchCardById("base1-1", "de");
+
+	// Localized name kept; EN scan borrowed so the image derives + falls back.
+	expect(card.name).toBe("Simsala");
+	expect(card.imageBase).toBe("base/base1/1");
+	expect(card.imageUrl).toBe(
+		"https://assets.tcgdex.net/en/base/base1/1/high.webp",
+	);
+	expect(calls[0]).toContain("/v2/de/cards/base1-1");
+	expect(calls[1]).toContain("/v2/en/cards/base1-1");
 });
 
 test("fetchCardById falls back to English when the locale lacks the card", async () => {
@@ -189,10 +240,18 @@ test("fetchCardById falls back to English when the locale lacks the card", async
 });
 
 test("getCardByIdCached caches per (lang, id), not id alone", async () => {
-	// Unique id so the module-level cache is cold for both locales here.
+	// Unique id so the module-level cache is cold for both locales here. Include
+	// an image so the localized fetch doesn't trigger an EN-scan borrow (which
+	// would add a fetch and obscure the per-lang-key count under test).
 	const f = mock(
 		async () =>
-			new Response(JSON.stringify(apiCard("sv5-99")), { status: 200 }),
+			new Response(
+				JSON.stringify({
+					...apiCard("sv5-99"),
+					image: "https://assets.tcgdex.net/en/sv/sv5/99",
+				}),
+				{ status: 200 },
+			),
 	);
 	globalThis.fetch = f as unknown as typeof fetch;
 

@@ -14,6 +14,7 @@ export function holoCardProps(
 	| "imageUrl"
 	| "imageUrlSmall"
 	| "imageUrlFallback"
+	| "imageUrlSmallFallback"
 	| "name"
 	| "rarity"
 	| "subtypes"
@@ -27,6 +28,7 @@ export function holoCardProps(
 		imageUrl: card.imageUrl,
 		imageUrlSmall: card.imageUrlSmall,
 		imageUrlFallback: card.imageUrlFallback,
+		imageUrlSmallFallback: card.imageUrlSmallFallback,
 		name: card.name,
 		rarity: card.rarity,
 		subtypes: card.subtypes,

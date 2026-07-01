@@ -15,6 +15,8 @@ export interface HoloCardData {
 	 * reconciliation needed — imageUrl is already the baked url).
 	 */
 	imageUrlFallback?: string;
+	/** Baked English LOW-res url (grid thumbnail counterpart to imageUrlFallback). */
+	imageUrlSmallFallback?: string;
 	name: string;
 	rarity?: string;
 	subtypes?: string[];

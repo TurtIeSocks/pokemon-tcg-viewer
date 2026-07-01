@@ -119,8 +119,10 @@ export async function fetchCardById(
 	lang: SupportedLanguage = "en",
 ): Promise<FocusCardData> {
 	let resp = await fetch(`${apiBase()}/v2/${lang}/cards/${id}`);
+	let usedEn = lang === "en";
 	if (!resp.ok && lang !== "en") {
 		resp = await fetch(`${apiBase()}/v2/en/cards/${id}`);
+		usedEn = true;
 	}
 	if (!resp.ok) {
 		if (resp.status === 404)
@@ -128,6 +130,21 @@ export async function fetchCardById(
 		throw new Error(`Failed to fetch card ${id}: ${resp.status}`);
 	}
 	const json = (await resp.json()) as TcgdexFocusCard;
+	// A localized card can EXIST (name + translated ability/attack text) yet carry
+	// no `image` — TCGdex has the German metadata for base1-1 "Simsala" but no
+	// German scan. Without an image, mapTcgdexFocusCard drops to the pokemontcg.io
+	// fallback and nulls imageBase, which kills the localize→EN-fallback→"EN" badge
+	// path. Borrow the EN scan so the detail view derives the (missing) localized
+	// image, reconciles it to English, and flags the English print — while keeping
+	// the localized text. Skipped when the response already IS English (no point
+	// re-fetching) or EN also has none (a truly imageless card → ptcg fallback).
+	if (!json.image && !usedEn) {
+		const en = await fetch(`${apiBase()}/v2/en/cards/${id}`);
+		if (en.ok) {
+			const enJson = (await en.json()) as TcgdexFocusCard;
+			if (enJson.image) json.image = enJson.image;
+		}
+	}
 	return mapTcgdexFocusCard(json);
 }
 

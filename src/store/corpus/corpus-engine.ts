@@ -115,13 +115,17 @@ export function hydrateCard(
 	// When the localized url differs from the baked EN url, hand the renderer the
 	// EN url so it can reconcile a localized 404 back to English (a language may
 	// lack an image EN has). Only set it when there is actually a fallback target.
-	const imageUrlFallback =
-		imageUrl !== card.imageUrl ? card.imageUrl : undefined;
+	// Two resolutions: the grid falls back to the EN thumbnail (low.webp), the
+	// focus view to the hi-res — so a fallback tile never loads a full-res image.
+	const isLocalized = imageUrl !== card.imageUrl;
+	const imageUrlFallback = isLocalized ? card.imageUrl : undefined;
+	const imageUrlSmallFallback = isLocalized ? card.imageUrlSmall : undefined;
 	return {
 		id: card.id,
 		imageUrl,
 		imageUrlSmall,
 		imageUrlFallback,
+		imageUrlSmallFallback,
 		name,
 		rarity: card.rarity,
 		subtypes: card.subtypes,

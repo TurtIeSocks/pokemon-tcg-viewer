@@ -201,6 +201,27 @@
 		0 0 20px rgba(80, 200, 120, 0.3);
 }
 
+/* "EN" chip: the tile shows the English print (no localized image for the
+   active language). Top-left, clear of the top-right owned ✓ / vault + controls. */
+.holo-card-lang-badge {
+	position: absolute;
+	top: 0.4rem;
+	left: 0.4rem;
+	z-index: 3;
+	pointer-events: none;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: var(--r-pill, 999px);
+	background: rgba(0, 0, 0, 0.45);
+	padding: 0.1rem 0.35rem;
+	font-family: var(--font-mono, ui-monospace, monospace);
+	font-size: 0.625rem;
+	line-height: 1.2;
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
+	color: var(--ink-muted, rgba(255, 255, 255, 0.7));
+	backdrop-filter: blur(4px);
+}
+
 .holo-card-owned-badge {
 	position: absolute;
 	top: 0.4rem;

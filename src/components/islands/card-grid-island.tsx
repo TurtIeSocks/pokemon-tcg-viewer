@@ -19,8 +19,6 @@ import {
 } from "../../store/corpus/corpus-runtime";
 import { loadDetail } from "../../store/corpus/detail-runtime";
 import {
-	isI18nFallback,
-	useActiveI18n,
 	useActiveI18nKey,
 	useDisplayLanguage,
 	useEnsureI18n,
@@ -31,7 +29,6 @@ import { type HoloCardData, holoCardProps } from "../holo-card";
 import { useCardSelection } from "./card-selection";
 import { FlipCard } from "./flip-card";
 import { HoloCardIsland } from "./holo-card-island";
-import { LangFallbackBadge } from "./lang-fallback-badge";
 import { PokemonTimeline } from "./pokemon-timeline";
 
 export interface GridCard extends HoloCardData {
@@ -82,9 +79,6 @@ export function CardGridIsland({
 	useEnsureI18n();
 	const i18nKey = useActiveI18nKey();
 	const displayLang = useDisplayLanguage();
-	// Overlay snapshot for the per-card EN fallback badge. Read once here (S3
-	// pattern) so renderCard is a plain closure -- no extra subscriptions.
-	const activeI18n = useActiveI18n();
 
 	// Stable key for the active query; changing it resets pagination.
 	// Include owned mode + count so toggling the filter / adding a card refetches,
@@ -191,7 +185,6 @@ export function CardGridIsland({
 						selectActive ? undefined : <CollectionToggle card={card} />
 					}
 				/>
-				<LangFallbackBadge show={isI18nFallback(activeI18n, card.id)} />
 				{selectActive && (
 					<div
 						aria-hidden="true"

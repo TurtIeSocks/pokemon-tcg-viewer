@@ -29,6 +29,12 @@ export interface HoloCardProps {
 	 * undefined for English. See the onError reconciliation below.
 	 */
 	imageUrlFallback?: string;
+	/**
+	 * Baked English LOW-res url, the grid counterpart to imageUrlFallback. When a
+	 * localized image 404s in a grid, we fall back to this thumbnail rather than
+	 * the hi-res imageUrlFallback — else the grid loads a full-res image per tile.
+	 */
+	imageUrlSmallFallback?: string;
 	name: string;
 	rarity?: string;
 	// Drive holo style + per-card CDN foil/mask resolution (see useFoilAssets).
@@ -59,6 +65,7 @@ export function HoloCard({
 	imageUrl,
 	imageUrlSmall,
 	imageUrlFallback,
+	imageUrlSmallFallback,
 	name,
 	rarity,
 	subtypes,
@@ -160,8 +167,12 @@ export function HoloCard({
 	// The url to actually render: the EN fallback once a localized image failed,
 	// otherwise the (possibly localized) imageUrl/Small. `||` (not `??`) so an
 	// empty-string imageUrlSmall falls through to imageUrl rather than src="".
+	// The grid keeps a thumbnail on fallback (imageUrlSmallFallback = EN low.webp);
+	// only when that is absent does it drop to the hi-res imageUrlFallback.
 	const resolvedLarge = usingFallback ? imageUrlFallback : imageUrl;
-	const resolvedSmall = usingFallback ? imageUrlFallback : imageUrlSmall;
+	const resolvedSmall = usingFallback
+		? (imageUrlSmallFallback ?? imageUrlFallback)
+		: imageUrlSmall;
 	const gridUrl = nonEmptyUrl(resolvedSmall || resolvedLarge);
 	const focusUrl = nonEmptyUrl(resolvedLarge);
 	const hasImage = !errored && (size === "focus" ? focusUrl : gridUrl);
@@ -258,6 +269,19 @@ export function HoloCard({
 						onError={handleImgError}
 					/>
 				</picture>
+			)}
+			{/* Image is the English print because TCGdex lacks a localized scan for
+			    the active language (usingFallback). Purely image-driven — independent
+			    of whether the NAME is localized (a card can have a German name but no
+			    German image), so it stays truthful in both grid and focus. */}
+			{usingFallback && hasImage && (
+				<span
+					className="holo-card-lang-badge"
+					role="img"
+					aria-label="Shown in English"
+				>
+					EN
+				</span>
 			)}
 			<div className="holo-card-overlay">{hoverOverlay}</div>
 			{owned && (

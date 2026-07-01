@@ -430,4 +430,119 @@ describe("<HoloCard />", () => {
 		expect(container.querySelector("img.holo-card-image")).toBeNull();
 		expect(container.querySelector(".holo-card-empty")).not.toBeNull();
 	});
+
+	// --- localized grid fallback keeps LOW-res, not hi-res (Bug A) ---
+
+	test("grid localized 404 falls back to the EN LOW-res url when a small fallback is given", () => {
+		const { container } = render(
+			<HoloCard
+				imageUrl="https://assets.tcgdex.net/de/base/base1/1/high.webp"
+				imageUrlSmall="https://assets.tcgdex.net/de/base/base1/1/low.webp"
+				imageUrlFallback="https://assets.tcgdex.net/en/base/base1/1/high.webp"
+				imageUrlSmallFallback="https://assets.tcgdex.net/en/base/base1/1/low.webp"
+				name="Alakazam"
+				cardNumber="1"
+				size="grid"
+			/>,
+		);
+		let img = container.querySelector(
+			"img.holo-card-image",
+		) as HTMLImageElement;
+		expect(img.getAttribute("src")).toBe(
+			"https://assets.tcgdex.net/de/base/base1/1/low.webp",
+		);
+
+		fireEvent.error(img);
+
+		img = container.querySelector("img.holo-card-image") as HTMLImageElement;
+		// Grid keeps a THUMBNAIL: fall back to EN low.webp, never the hi-res.
+		expect(img.getAttribute("src")).toBe(
+			"https://assets.tcgdex.net/en/base/base1/1/low.webp",
+		);
+	});
+
+	// --- EN fallback badge is IMAGE-driven, shown in grid AND focus (Bug B) ---
+
+	test("grid shows an EN badge only after the localized image falls back to English", () => {
+		const { container } = render(
+			<HoloCard
+				imageUrl="https://assets.tcgdex.net/de/base/base1/1/low.webp"
+				imageUrlSmall="https://assets.tcgdex.net/de/base/base1/1/low.webp"
+				imageUrlFallback="https://assets.tcgdex.net/en/base/base1/1/high.webp"
+				imageUrlSmallFallback="https://assets.tcgdex.net/en/base/base1/1/low.webp"
+				name="Alakazam"
+				cardNumber="1"
+				size="grid"
+			/>,
+		);
+		// Localized image assumed present → not yet a fallback → no badge.
+		expect(screen.queryByText("EN")).toBeNull();
+
+		fireEvent.error(
+			container.querySelector("img.holo-card-image") as HTMLImageElement,
+		);
+
+		expect(screen.getByText("EN")).toBeDefined();
+	});
+
+	test("an English card (no fallback url) never shows the EN badge", () => {
+		const { container } = render(
+			<HoloCard
+				imageUrl="https://img/large.png"
+				imageUrlSmall="https://img/small.png"
+				name="Pikachu"
+				cardNumber="1"
+				size="grid"
+			/>,
+		);
+		expect(screen.queryByText("EN")).toBeNull();
+		// Even when the sole url errors → empty state, still never an EN badge.
+		fireEvent.error(
+			container.querySelector("img.holo-card-image") as HTMLImageElement,
+		);
+		expect(screen.queryByText("EN")).toBeNull();
+	});
+
+	test("focus shows an EN badge after the localized full-res image falls back", () => {
+		const { container } = render(
+			<HoloCard
+				imageUrl="https://assets.tcgdex.net/de/base/base1/1/high.webp"
+				imageUrlFallback="https://assets.tcgdex.net/en/base/base1/1/high.webp"
+				name="Alakazam"
+				cardNumber="1"
+				size="focus"
+			/>,
+		);
+		expect(screen.queryByText("EN")).toBeNull();
+
+		fireEvent.error(
+			container.querySelector("img.holo-card-image--full") as HTMLImageElement,
+		);
+
+		expect(screen.getByText("EN")).toBeDefined();
+	});
+
+	test("EN badge disappears if the EN fallback ALSO fails (empty state)", () => {
+		const { container } = render(
+			<HoloCard
+				imageUrl="https://assets.tcgdex.net/de/base/base1/1/low.webp"
+				imageUrlSmall="https://assets.tcgdex.net/de/base/base1/1/low.webp"
+				imageUrlFallback="https://assets.tcgdex.net/en/base/base1/1/high.webp"
+				imageUrlSmallFallback="https://assets.tcgdex.net/en/base/base1/1/low.webp"
+				name="Alakazam"
+				cardNumber="1"
+				size="grid"
+			/>,
+		);
+		// 1st error: localized → EN low fallback + badge.
+		fireEvent.error(
+			container.querySelector("img.holo-card-image") as HTMLImageElement,
+		);
+		expect(screen.getByText("EN")).toBeDefined();
+		// 2nd error: EN low also fails → empty identity state, badge gone.
+		fireEvent.error(
+			container.querySelector("img.holo-card-image") as HTMLImageElement,
+		);
+		expect(screen.queryByText("EN")).toBeNull();
+	});
 });
