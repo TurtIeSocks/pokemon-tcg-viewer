@@ -27,8 +27,8 @@ test("variantLabel appends non-standard size, hides standard", () => {
 	);
 });
 
-test("variantLabel humanizes multi-token subtypes", () => {
+test("variantLabel humanizes multi-token subtypes, keeping inter-digit hyphens", () => {
 	expect(variantLabel(v({ subtype: "1999-2000-copyright" }))).toBe(
-		"1999 2000 Copyright · Holo",
+		"1999-2000 Copyright · Holo",
 	);
 });

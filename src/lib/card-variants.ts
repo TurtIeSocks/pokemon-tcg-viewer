@@ -14,10 +14,16 @@ export interface CardVariant {
 /** The structured printing identity stored on a stack (same shape as CardVariant). */
 export type CardPrinting = CardVariant;
 
-/** Humanize a kebab token: "1st-edition" -> "1st Edition", "shadowless" -> "Shadowless". */
+/**
+ * Humanize a kebab token: "1st-edition" -> "1st Edition", "shadowless" ->
+ * "Shadowless". A hyphen BETWEEN two digits is kept (year ranges like
+ * "1999-2000-copyright" -> "1999-2000 Copyright"); every other hyphen is a
+ * word boundary that becomes a space before title-casing.
+ */
 function humanize(token: string): string {
 	return token
-		.split("-")
+		.replace(/(?<=\D)-|-(?=\D)/g, " ")
+		.split(" ")
 		.map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
 		.join(" ");
 }

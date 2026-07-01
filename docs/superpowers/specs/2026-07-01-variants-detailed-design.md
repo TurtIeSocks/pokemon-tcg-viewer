@@ -130,10 +130,12 @@ cannot do idempotently, e.g. the dollars→cents rescale). Concretely:
 - `fillStack` (new-stack defaults, `idb-repo.ts`): `printing: input.printing ?? null`.
 - `normalizeStack` (backfill on every read, `idb-repo.ts`): `printing: raw.printing ?? null`.
   Stays idempotent (only fills absent, never transforms present).
-- Snapshot import: `backup.ts upgrade()` already runs imported stacks through the
-  normalize path, so v1–v6 snapshots backfill `printing: null` for free. Bump the
-  exported snapshot version / `SUPPORTED_VERSIONS` only if we want fresh exports
-  explicitly tagged — optional, not required for correctness.
+- Snapshot import: `backup.ts upgrade()` does NOT set `printing`, and `importAll`
+  writes rows verbatim — but the **read path** does: `idb-repo.ts list()` runs every
+  row through `normalizeStack`, so any imported (or legacy) stack is backfilled to
+  `printing: null` before a consumer sees it. Bump the exported snapshot version /
+  `SUPPORTED_VERSIONS` only if we want fresh exports explicitly tagged — optional,
+  not required for correctness.
 
 ## UI
 
