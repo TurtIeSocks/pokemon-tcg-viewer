@@ -707,7 +707,11 @@ test("importAll: v5 snapshot leaves marker at 4 so next migrateUserlandData rema
 	// migrateUserlandData's v4→v5 corpus-remap pass runs on next loadUserland.
 	const stores = migrationStores();
 	// Manually replicate what importAll does for a v5 snapshot (sets marker = 4):
-	await idbSet("stack-1", makeStack({ id: "stack-1", cardId: "sv1-1" }), stores.collection);
+	await idbSet(
+		"stack-1",
+		makeStack({ id: "stack-1", cardId: "sv1-1" }),
+		stores.collection,
+	);
 	// schemaVersion 5 < 6 → markerVersion = 4
 	await idbSet("userlandDataVersion", 4, stores.meta);
 
@@ -765,9 +769,58 @@ test("migrateUserlandData v4->v5 defers remap when corpus absent; retries on sec
 	await migrateUserlandData(stores, corpus);
 
 	expect(await idbGet<number>("userlandDataVersion", stores.meta)).toBe(5);
-	expect((await idbGet<Stack>("s1", stores.collection))?.cardId).toBe("sv01-001");
+	expect((await idbGet<Stack>("s1", stores.collection))?.cardId).toBe(
+		"sv01-001",
+	);
 
 	// Idempotent: third call with corpus must not re-run.
 	await migrateUserlandData(stores, corpus);
-	expect((await idbGet<Stack>("s1", stores.collection))?.cardId).toBe("sv01-001");
+	expect((await idbGet<Stack>("s1", stores.collection))?.cardId).toBe(
+		"sv01-001",
+	);
+});
+
+// --- v6: CardPrinting ---
+
+const bare = (extra: Partial<Stack> = {}): Stack =>
+	({
+		id: "s1",
+		cardId: "base1-4",
+		quantity: 1,
+		acquiredAt: 1,
+		createdAt: 1,
+		updatedAt: 1,
+		deletedAt: null,
+		label: null,
+		pricePaid: null,
+		currency: "USD",
+		language: "en",
+		variant: null,
+		notes: null,
+		condition: null,
+		grading: null,
+		source: null,
+		storageLocation: null,
+		isPrimary: false,
+		...extra,
+	}) as Stack;
+
+test("normalizeStack null-fills a legacy stack missing printing", () => {
+	const legacy = bare();
+	// @ts-expect-error simulate a pre-printing row
+	legacy.printing = undefined;
+	expect(normalizeStack(legacy).printing).toBeNull();
+});
+
+test("normalizeStack preserves a present printing and is idempotent", () => {
+	const printing = {
+		variantId: "b",
+		type: "holo",
+		subtype: "shadowless",
+		size: "standard",
+		stamp: ["1st-edition"],
+	};
+	const once = normalizeStack(bare({ printing }));
+	expect(once.printing).toEqual(printing);
+	expect(normalizeStack(once)).toEqual(once); // idempotent
 });
