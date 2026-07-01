@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import type { CardVariant } from "../../lib/card-variants";
 import type { Stack } from "../../store/userland/types";
 import {
 	formFieldToPatch,
@@ -221,4 +222,61 @@ test("formFieldToPatch: empty gradingCert → cert: null in grading", () => {
 			gradingCert: "",
 		}),
 	).toEqual({ grading: { company: "PSA", grade: 9, cert: null } });
+});
+
+// --- v6: printing resolution from variantId ---
+
+const VARIANTS: CardVariant[] = [
+	{
+		variantId: "a",
+		type: "holo",
+		subtype: "unlimited",
+		size: "standard",
+		stamp: null,
+	},
+	{
+		variantId: "b",
+		type: "holo",
+		subtype: "shadowless",
+		size: "standard",
+		stamp: ["1st-edition"],
+	},
+];
+
+const baseValues = {
+	label: "",
+	quantity: "1",
+	acquiredAt: "2026-01-01",
+	pricePaid: "",
+	language: "en",
+	variant: "",
+	variantId: "",
+	notes: "",
+	source: "",
+	storageLocation: "",
+	state: "raw" as const,
+	condition: "" as const,
+	gradingCompany: "" as const,
+	grade: "",
+	gradingCert: "",
+};
+
+test("formToPatch resolves variantId to printing + label", () => {
+	const p = formToPatch({ ...baseValues, variantId: "b" }, VARIANTS);
+	expect(p.printing).toEqual(VARIANTS[1]);
+	expect(p.variant).toBe("1st Edition · Shadowless · Holo");
+});
+
+test("formToPatch with empty variantId clears printing, keeps coarse variant", () => {
+	const p = formToPatch({ ...baseValues, variant: "holo" });
+	expect(p.printing).toBeNull();
+	expect(p.variant).toBe("holo");
+});
+
+test("itemToForm seeds variantId from the stack's printing", () => {
+	const item = {
+		variant: "1st Edition · Shadowless · Holo",
+		printing: VARIANTS[1],
+	} as Stack;
+	expect(itemToForm(item).variantId).toBe("b");
 });

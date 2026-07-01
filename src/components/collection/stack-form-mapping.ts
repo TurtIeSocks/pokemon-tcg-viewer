@@ -1,3 +1,4 @@
+import { type CardVariant, variantLabel } from "../../lib/card-variants";
 import {
 	inputToMinorUnits,
 	minorUnitsToInput,
@@ -23,6 +24,7 @@ export function itemToForm(i: Stack): StackFormValues {
 		pricePaid: minorUnitsToInput(i.pricePaid),
 		language: i.language ?? "en",
 		variant: i.variant ?? "",
+		variantId: i.printing?.variantId ?? "",
 		notes: i.notes ?? "",
 		source: i.source ?? "",
 		storageLocation: i.storageLocation ?? "",
@@ -43,17 +45,25 @@ export function itemToForm(i: Stack): StackFormValues {
  */
 export function formToPatch(
 	values: StackFormValues,
+	variantsDetailed?: CardVariant[],
 ): Omit<EditableStackFields, "currency"> {
+	// A picked detailed printing wins: it sets both the structured identity and
+	// the display label. Otherwise fall back to the coarse free-text variant.
+	const chosen = values.variantId
+		? variantsDetailed?.find((v) => v.variantId === values.variantId)
+		: undefined;
 	return {
 		label: values.label.trim() === "" ? null : values.label.trim(),
 		quantity: Math.max(1, Math.floor(Number(values.quantity)) || 1),
 		acquiredAt: inputDayToMs(values.acquiredAt),
 		pricePaid: inputToMinorUnits(values.pricePaid),
 		language: values.language || "en",
-		variant: values.variant === "" ? null : values.variant,
-		// PLACEHOLDER: a later task upgrades this to resolve the real printing
-		// from the selected variant; for now the form doesn't collect it.
-		printing: null,
+		variant: chosen
+			? variantLabel(chosen)
+			: values.variant === ""
+				? null
+				: values.variant,
+		printing: chosen ?? null,
 		notes: values.notes === "" ? null : values.notes,
 		source: values.source.trim() === "" ? null : values.source.trim(),
 		storageLocation:
