@@ -62,7 +62,13 @@ test("back-compat setState({ index }) shim writes through to indices.west", () =
 	expect(useCorpusRuntime.getState().index).toBe(west);
 });
 
-test("back-compat setState({ loading }) shim writes through to loading.west", () => {
-	useCorpusRuntime.setState({ loading: true });
+test("setLoading sets a single region's flag without touching others", () => {
+	useCorpusRuntime.getState().setLoading("asia", true);
+	expect(useCorpusRuntime.getState().loading.asia).toBe(true);
+	expect(useCorpusRuntime.getState().loading.west).toBeUndefined();
+
+	useCorpusRuntime.getState().setLoading("west", true);
+	useCorpusRuntime.getState().setLoading("asia", false);
 	expect(useCorpusRuntime.getState().loading.west).toBe(true);
+	expect(useCorpusRuntime.getState().loading.asia).toBe(false);
 });

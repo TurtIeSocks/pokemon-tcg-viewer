@@ -20,12 +20,13 @@ import type { CorpusIndex } from "./corpus-engine";
  * Asian-region base corpus alongside the Western one without evicting it. Existing
  * call sites (`useCorpusRuntime((s) => s.index)`, `useCorpusRuntime.getState().index`,
  * and tests doing `useCorpusRuntime.setState({ index })`) predate the region split
- * and outnumber the region-aware call sites, so `index`/`loading` stay as real,
- * always-in-sync fields — a back-compat READ path (`indices[activeRegion] ??
+ * and outnumber the region-aware call sites, so `index` stays a real,
+ * always-in-sync field — a back-compat READ path (`indices[activeRegion] ??
  * indices.west ?? null`) recomputed by `setIndex`/`setActiveRegion`, plus a
- * back-compat WRITE shim in `setState` that treats a bare `index`/`loading` as
- * shorthand for the `west` region. This is lower churn than touching the ~15 files
- * that select `.index` today.
+ * back-compat WRITE shim in `setState` that treats a bare `index` as shorthand
+ * for the `west` region. This is lower churn than touching the ~15 files that
+ * select `.index` today. `loading` is region-keyed from the start (no bare-value
+ * back-compat) — use the `setLoading` action.
  */
 export interface CorpusRuntimeState {
 	/** Per-region in-memory corpus index. */
@@ -43,18 +44,23 @@ export interface CorpusRuntimeState {
 	index: CorpusIndex | null;
 	setIndex(region: Region, index: CorpusIndex): void;
 	setActiveRegion(region: Region): void;
+	/** Set (or clear) the loading flag for a single region without touching others. */
+	setLoading(region: Region, loading: boolean): void;
 }
 
 /**
- * Back-compat shape accepted by `setState`: a bare `index`/`loading` (predating
- * the region split) in place of the region-keyed `indices`/`loading` map. See the
- * REGION MAP note above — this is the type-level counterpart of the runtime shim.
+ * Back-compat shape accepted by `setState`: a bare `index` (predating the region
+ * split) in place of the region-keyed `indices` map. See the REGION MAP note
+ * above — this is the type-level counterpart of the runtime shim.
+ *
+ * `loading` is intentionally NOT part of this shim (unlike `index`): `loading`
+ * is already `Partial<Record<Region, boolean>>` at the state level, so a raw
+ * `setState({ loading: {...} })` is a normal (non-compat) partial update and
+ * must NOT be reinterpreted as "west" shorthand — doing so would silently drop
+ * every other region's flag. Use the `setLoading` action instead.
  */
-type CorpusRuntimeCompatPatch = Partial<
-	Omit<CorpusRuntimeState, "loading" | "index">
-> & {
+type CorpusRuntimeCompatPatch = Partial<Omit<CorpusRuntimeState, "index">> & {
 	index?: CorpusIndex | null;
-	loading?: boolean;
 };
 
 /** `setState` widened to also accept {@link CorpusRuntimeCompatPatch}. */
@@ -93,13 +99,18 @@ const corpusRuntimeStore = create<CorpusRuntimeState>((set, get) => ({
 	setActiveRegion: (region) => {
 		set({ activeRegion: region, index: deriveIndex(get().indices, region) });
 	},
+	setLoading: (region, loading) => {
+		set({ loading: { ...get().loading, [region]: loading } });
+	},
 }));
 
-// Back-compat WRITE shim: a bare `setState({ index })` or `setState({ loading })`
-// (boolean) predates the region split — every existing test call site (and
-// `corpus-runtime.ts`'s `loadCorpus`) uses this shorthand for the `west` region.
-// Wrap the store's own `setState` so those calls keep working, both at runtime
-// and in the type system, without touching each call site.
+// Back-compat WRITE shim: a bare `setState({ index })` predates the region
+// split — every existing test call site (and `corpus-runtime.ts`'s
+// `loadCorpus`) uses this shorthand for the `west` region. Wrap the store's
+// own `setState` so those calls keep working, both at runtime and in the type
+// system, without touching each call site. `loading` is intentionally NOT
+// shimmed — see the CorpusRuntimeCompatPatch doc comment above; use the
+// `setLoading` action instead.
 const baseSetState = corpusRuntimeStore.setState;
 const setStateCompat: CompatSetState = (partial, replace) => {
 	const resolved =
@@ -110,22 +121,19 @@ const setStateCompat: CompatSetState = (partial, replace) => {
 		resolved &&
 		typeof resolved === "object" &&
 		!("indices" in resolved) &&
-		("index" in resolved || "loading" in resolved)
+		"index" in resolved
 	) {
 		const compat = resolved as CorpusRuntimeCompatPatch;
 		const current = corpusRuntimeStore.getState();
-		const next: Partial<CorpusRuntimeState> = {};
-		if ("index" in compat) {
-			const shimmedIndex = compat.index ?? null;
-			const indices = { ...current.indices };
-			if (shimmedIndex == null) delete indices.west;
-			else indices.west = shimmedIndex;
-			next.indices = indices;
-			next.index = deriveIndex(indices, current.activeRegion);
-		}
-		if ("loading" in compat) {
-			next.loading = { ...current.loading, west: compat.loading };
-		}
+		const shimmedIndex = compat.index ?? null;
+		const indices = { ...current.indices };
+		if (shimmedIndex == null) delete indices.west;
+		else indices.west = shimmedIndex;
+		const next: Partial<CorpusRuntimeState> = {
+			...compat,
+			indices,
+			index: deriveIndex(indices, current.activeRegion),
+		};
 		baseSetState(next as CorpusRuntimeState, replace);
 		return;
 	}

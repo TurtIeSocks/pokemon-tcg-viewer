@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, expect, mock, test } from "bun:test";
 import {
+	ensureRegionForLanguage,
+	ensureRegionsForOwned,
 	loadCorpus,
 	makeCorpusFetcher,
 	useCorpusRuntime,
@@ -30,7 +32,13 @@ const sample: CorpusCard[] = [
 
 beforeEach(async () => {
 	await clearCorpus();
-	useCorpusRuntime.setState({ index: null, loading: false });
+	await clearCorpus("asia");
+	useCorpusRuntime.setState({
+		indices: {},
+		activeRegion: "west",
+		loading: {},
+		index: null,
+	});
 	// Default to English (no overlay) for every test.
 	useI18nRuntime.setState({
 		lang: "en",
@@ -202,4 +210,159 @@ test("makeCorpusFetcher localizes names from the active i18n overlay and re-deri
 		status: "ready",
 	});
 	expect((await fetcher("k", 1, 20)).cards[0].name).toBe("Dracaufeu");
+});
+
+const asiaSample: CorpusCard[] = [
+	{
+		id: "asia1-1",
+		name: "Fushigidane",
+		imageUrl: "a",
+		imageUrlSmall: "b",
+		supertype: "Pokémon",
+		setId: "asia1",
+		number: "1",
+	},
+];
+
+test("loadCorpus('asia') fetches /corpus-region/asia and populates indices.asia, leaving west untouched", async () => {
+	const westGz = gzipOf(sample);
+	const asiaGz = gzipOf(asiaSample);
+	const f = mock(async (url: string) => {
+		if (url.includes("/corpus-region/asia")) {
+			return new Response(asiaGz, { status: 200, headers: { ETag: '"a1"' } });
+		}
+		return new Response(westGz, { status: 200, headers: { ETag: '"w1"' } });
+	});
+	globalThis.fetch = f as unknown as typeof fetch;
+
+	await loadCorpus("west");
+	await loadCorpus("asia");
+
+	const calledUrls = f.mock.calls.map((c) => String(c[0]));
+	expect(calledUrls.some((u) => u.endsWith("/corpus-region/asia"))).toBe(true);
+	expect(
+		calledUrls.some((u) => u.endsWith("/corpus") && !u.includes("region")),
+	).toBe(true);
+
+	expect(useCorpusRuntime.getState().indices.asia?.cards[0]?.id).toBe(
+		"asia1-1",
+	);
+	expect(useCorpusRuntime.getState().indices.west?.cards[0]?.id).toBe(
+		"base1-4",
+	);
+});
+
+test("loadCorpus('asia') twice in a row only fetches asia once (second call is a no-op)", async () => {
+	const asiaGz = gzipOf(asiaSample);
+	const f = mock(
+		async () =>
+			new Response(asiaGz, { status: 200, headers: { ETag: '"a1"' } }),
+	);
+	globalThis.fetch = f as unknown as typeof fetch;
+
+	await loadCorpus("asia");
+	expect(f).toHaveBeenCalledTimes(1);
+	await loadCorpus("asia");
+	// Already loaded (indices.asia populated) — no additional network call.
+	expect(f).toHaveBeenCalledTimes(1);
+});
+
+test("loadCorpus() with no args still hits /corpus (west)", async () => {
+	const f = mock(
+		async (_url: string) =>
+			new Response(gzipOf(sample), { status: 200, headers: { ETag: '"v1"' } }),
+	);
+	globalThis.fetch = f as unknown as typeof fetch;
+	await loadCorpus();
+	const url = String(f.mock.calls[0]?.[0]);
+	expect(url.endsWith("/corpus")).toBe(true);
+	expect(url.includes("region")).toBe(false);
+	expect(useCorpusRuntime.getState().indices.west?.cards.length).toBe(1);
+});
+
+test("loadCorpus can load west and asia concurrently without one blocking the other", async () => {
+	const westGz = gzipOf(sample);
+	const asiaGz = gzipOf(asiaSample);
+	const f = mock(async (url: string) => {
+		if (url.includes("/corpus-region/asia")) {
+			return new Response(asiaGz, { status: 200, headers: { ETag: '"a1"' } });
+		}
+		return new Response(westGz, { status: 200, headers: { ETag: '"w1"' } });
+	});
+	globalThis.fetch = f as unknown as typeof fetch;
+
+	await Promise.all([loadCorpus("west"), loadCorpus("asia")]);
+
+	expect(useCorpusRuntime.getState().indices.west?.cards[0]?.id).toBe(
+		"base1-4",
+	);
+	expect(useCorpusRuntime.getState().indices.asia?.cards[0]?.id).toBe(
+		"asia1-1",
+	);
+});
+
+test("ensureRegionForLanguage loads the asia corpus for an asian language", async () => {
+	const asiaGz = gzipOf(asiaSample);
+	const f = mock(
+		async () =>
+			new Response(asiaGz, { status: 200, headers: { ETag: '"a1"' } }),
+	);
+	globalThis.fetch = f as unknown as typeof fetch;
+
+	await ensureRegionForLanguage("ja");
+	expect(useCorpusRuntime.getState().indices.asia?.cards[0]?.id).toBe(
+		"asia1-1",
+	);
+});
+
+test("ensureRegionForLanguage loads the west corpus for a western language", async () => {
+	const f = mock(
+		async () =>
+			new Response(gzipOf(sample), { status: 200, headers: { ETag: '"v1"' } }),
+	);
+	globalThis.fetch = f as unknown as typeof fetch;
+
+	await ensureRegionForLanguage("fr");
+	expect(useCorpusRuntime.getState().indices.west?.cards[0]?.id).toBe(
+		"base1-4",
+	);
+});
+
+test("ensureRegionsForOwned triggers an asia load when an owned id is unresolved in west", async () => {
+	// west loaded, but does NOT contain the owned id below.
+	globalThis.fetch = mock(
+		async () =>
+			new Response(gzipOf(sample), { status: 200, headers: { ETag: '"v1"' } }),
+	) as unknown as typeof fetch;
+	await loadCorpus("west");
+
+	const asiaGz = gzipOf(asiaSample);
+	const f = mock(
+		async () =>
+			new Response(asiaGz, { status: 200, headers: { ETag: '"a1"' } }),
+	);
+	globalThis.fetch = f as unknown as typeof fetch;
+
+	await ensureRegionsForOwned(["asia1-1"]);
+	expect(f).toHaveBeenCalled();
+	expect(useCorpusRuntime.getState().indices.asia?.cards[0]?.id).toBe(
+		"asia1-1",
+	);
+});
+
+test("ensureRegionsForOwned is a no-op when every owned id resolves in west", async () => {
+	globalThis.fetch = mock(
+		async () =>
+			new Response(gzipOf(sample), { status: 200, headers: { ETag: '"v1"' } }),
+	) as unknown as typeof fetch;
+	await loadCorpus("west");
+
+	const f = mock(async () => {
+		throw new Error("should not be called");
+	});
+	globalThis.fetch = f as unknown as typeof fetch;
+
+	await ensureRegionsForOwned(["base1-4"]);
+	expect(f).not.toHaveBeenCalled();
+	expect(useCorpusRuntime.getState().indices.asia).toBeUndefined();
 });
