@@ -305,6 +305,7 @@ describe("backup.importAll", () => {
 			currency: "USD" as const,
 			language: "en" as const,
 			variant: null,
+			printing: null,
 			notes: null,
 			condition: null,
 			grading: null,

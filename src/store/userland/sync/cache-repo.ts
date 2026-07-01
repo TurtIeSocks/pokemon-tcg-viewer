@@ -112,6 +112,7 @@ function fillStack(input: NewStack): Stack {
 		currency: input.currency ?? "USD",
 		language: input.language ?? "en",
 		variant: input.variant ?? null,
+		printing: input.printing ?? null,
 		notes: input.notes ?? null,
 		condition: input.condition ?? null,
 		grading: input.grading

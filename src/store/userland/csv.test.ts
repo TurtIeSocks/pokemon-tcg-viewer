@@ -27,6 +27,7 @@ function stack(over: Partial<Stack>): Stack {
 		currency: "USD",
 		language: "en",
 		variant: null,
+		printing: null,
 		notes: null,
 		condition: null,
 		grading: null,

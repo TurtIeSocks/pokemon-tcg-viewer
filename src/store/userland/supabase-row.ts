@@ -10,12 +10,14 @@
 //   • grading { company, grade, cert } ↔ (grading_company, grading_grade, grading_cert)
 //     — both-or-neither for company/grade enforced by DB constraint; cert is independent
 //   • rules ↔ jsonb (supabase-js returns parsed objects, pass through)
+//   • printing ↔ printing (jsonb; supabase-js returns parsed value, pass through)
 //   • includeCardIds / excludeCardIds ↔ text[]
 //   • language + pricePaid: passthrough (same types, just rename)
 //
 // Null discipline: null in, null out; never undefined.
 // Profile id remap ("me" → uid) is the CLAIM's responsibility — mapper uses id as-is.
 
+import type { CardPrinting } from "../../lib/card-variants";
 import type { Binder, BinderRule, Profile, Stack } from "./types";
 
 // ── Row shapes ────────────────────────────────────────────────────────────────
@@ -37,6 +39,7 @@ export interface StackRow {
 	currency: string;
 	language: string;
 	variant: string | null;
+	printing: CardPrinting | null;
 	notes: string | null;
 	condition: string | null;
 	grading_company: string | null;
@@ -107,6 +110,7 @@ export function stackToRow(stack: Stack): StackRow {
 		currency: stack.currency,
 		language: stack.language,
 		variant: stack.variant,
+		printing: stack.printing,
 		notes: stack.notes,
 		condition: stack.condition,
 		grading_company: stack.grading?.company ?? null,
@@ -143,6 +147,7 @@ export function rowToStack(row: StackRow): Stack {
 		currency: row.currency,
 		language: row.language,
 		variant: row.variant,
+		printing: row.printing ?? null,
 		notes: row.notes,
 		condition: row.condition as Stack["condition"],
 		grading,

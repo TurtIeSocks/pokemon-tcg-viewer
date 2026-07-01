@@ -51,6 +51,9 @@ export function formToPatch(
 		pricePaid: inputToMinorUnits(values.pricePaid),
 		language: values.language || "en",
 		variant: values.variant === "" ? null : values.variant,
+		// PLACEHOLDER: a later task upgrades this to resolve the real printing
+		// from the selected variant; for now the form doesn't collect it.
+		printing: null,
 		notes: values.notes === "" ? null : values.notes,
 		source: values.source.trim() === "" ? null : values.source.trim(),
 		storageLocation:

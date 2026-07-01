@@ -77,6 +77,7 @@ function createCollectionRepo(client: SupabaseClient): CollectionRepo {
 				currency: input.currency ?? "USD",
 				language: input.language ?? "en",
 				variant: input.variant ?? null,
+				printing: input.printing ?? null,
 				notes: input.notes ?? null,
 				condition: input.condition ?? null,
 				grading: input.grading
@@ -116,6 +117,7 @@ function createCollectionRepo(client: SupabaseClient): CollectionRepo {
 				currency: input.currency ?? "USD",
 				language: input.language ?? "en",
 				variant: input.variant ?? null,
+				printing: input.printing ?? null,
 				notes: input.notes ?? null,
 				condition: input.condition ?? null,
 				grading: input.grading
@@ -152,6 +154,7 @@ function createCollectionRepo(client: SupabaseClient): CollectionRepo {
 			if ("language" in patch && patch.language !== undefined)
 				rowPatch.language = patch.language;
 			if ("variant" in patch) rowPatch.variant = patch.variant ?? null;
+			if ("printing" in patch) rowPatch.printing = patch.printing ?? null;
 			if ("notes" in patch) rowPatch.notes = patch.notes ?? null;
 			if ("condition" in patch) rowPatch.condition = patch.condition ?? null;
 			if ("source" in patch) rowPatch.source = patch.source ?? null;
