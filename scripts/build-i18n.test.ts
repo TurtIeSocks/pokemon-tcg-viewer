@@ -2,11 +2,25 @@ import { expect, test } from "bun:test";
 import {
 	buildI18n,
 	type FetchJson,
+	I18N_LANGS,
 	type I18nEntry,
 	i18nVersion,
 	langBase,
 	writeI18n,
 } from "./build-i18n";
+
+test("I18N_LANGS overlays Western + Asian langs, excluding both base langs", () => {
+	const langs = new Set<string>(I18N_LANGS);
+	// Western overlays (English base) still present.
+	for (const l of ["fr", "de", "es", "it", "pt"])
+		expect(langs.has(l)).toBe(true);
+	// Asian overlays (Japanese base) added in Phase 2.
+	for (const l of ["ko", "zh-tw", "zh-cn", "th", "id"])
+		expect(langs.has(l)).toBe(true);
+	// Base languages ship as the base corpus blob, never as an overlay.
+	expect(langs.has("en")).toBe(false);
+	expect(langs.has("ja")).toBe(false);
+});
 
 // A mock fetcher backed by an in-memory set tree. NO network: every url must be
 // served from `tree` or it throws, so a missing route fails loudly in the test.

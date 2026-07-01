@@ -3,9 +3,24 @@ import { mkdir } from "node:fs/promises";
 import { gzipSync } from "node:zlib";
 import { fetchJson as realFetchJson } from "./build-corpus";
 
-// Western languages overlaid on the English base corpus (Phase 1b supported set
-// minus "en"; en IS the base blob and needs no overlay).
-export const I18N_LANGS = ["fr", "de", "es", "it", "pt"] as const;
+// Name-overlay languages. Western (fr/de/es/it/pt) overlay the English base
+// corpus; Asian (ko/zh-tw/zh-cn/th/id) overlay the Phase 2 Asian (ja) base
+// corpus. Each region's base language ("en", "ja") IS the base blob and needs
+// no overlay, so neither appears here. langBase() crawls whatever ids /v2/{lang}
+// returns — JP-lineage ids for the Asian langs — so the same code path builds
+// both regions' overlays.
+export const I18N_LANGS = [
+	"fr",
+	"de",
+	"es",
+	"it",
+	"pt",
+	"ko",
+	"zh-tw",
+	"zh-cn",
+	"th",
+	"id",
+] as const;
 export type I18nLang = (typeof I18N_LANGS)[number];
 
 const TCGDEX_BASE = process.env.TCGDEX_BASE ?? "https://api.tcgdex.net/v2/en";
