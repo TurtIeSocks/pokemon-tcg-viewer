@@ -1,3 +1,4 @@
+import type { CardVariant } from "../lib/card-variants";
 import { fallbackImageUrl } from "../lib/corpus/id-crosswalk";
 import {
 	subtypesFromTcgdex,
@@ -80,6 +81,8 @@ export interface FocusCardData extends CardStats {
 	setSeries: string;
 	cardNumber: string;
 	nationalPokedexNumbers?: number[];
+	/** Exact physical printings from TCGdex variants_detailed; undefined when absent. */
+	variantsDetailed?: CardVariant[];
 
 	// Additional for focus view
 	setLogo?: string;
@@ -173,6 +176,14 @@ export interface TcgdexFocusCard {
 	retreat?: number;
 	// National-dex ids — TCGdex sends these under `dexId`, NOT nationalPokedexNumbers.
 	dexId?: number[];
+	// Rich per-printing list: { type, subtype?, size?, stamp?, variantId }.
+	variants_detailed?: Array<{
+		type: string;
+		subtype?: string;
+		size?: string;
+		stamp?: string[];
+		variantId: string;
+	}>;
 }
 
 /** Map a TCGdex card detail response to {@link FocusCardData}. Drops pricing fields. */
@@ -203,6 +214,13 @@ export function mapTcgdexFocusCard(card: TcgdexFocusCard): FocusCardData {
 		setSeries: "",
 		cardNumber: card.localId,
 		nationalPokedexNumbers: card.dexId,
+		variantsDetailed: card.variants_detailed?.map((v) => ({
+			variantId: v.variantId,
+			type: v.type,
+			subtype: v.subtype ?? null,
+			size: v.size ?? null,
+			stamp: v.stamp ?? null,
+		})),
 		setLogo: card.set.logo ? `${card.set.logo}.png` : undefined,
 		setReleaseDate: undefined,
 		// Coerce hp/damage to string — the TCGdex API returns numbers for these
