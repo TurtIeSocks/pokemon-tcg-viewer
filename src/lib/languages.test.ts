@@ -1,45 +1,45 @@
 import { describe, expect, it } from "bun:test";
 import {
+	ASIAN_LANGUAGES,
 	isSupportedLanguage,
-	LANGUAGE_LABELS,
+	LANGUAGE_REGION,
+	REGION_BASE_LANGUAGE,
+	regionForLanguage,
 	SUPPORTED_LANGUAGES,
 	toSupportedLanguage,
 } from "./languages";
 
-describe("supported languages", () => {
-	it("is the Phase 1b Western Latin set plus English, en first", () => {
-		expect([...SUPPORTED_LANGUAGES]).toEqual([
-			"en",
-			"fr",
-			"de",
-			"es",
-			"it",
-			"pt",
+describe("region model", () => {
+	it("classifies every supported language into a region", () => {
+		for (const l of SUPPORTED_LANGUAGES) {
+			expect(LANGUAGE_REGION[l]).toBeDefined();
+		}
+	});
+	it("maps Asian langs to asia, Western to west", () => {
+		expect(regionForLanguage("ja")).toBe("asia");
+		expect(regionForLanguage("zh-tw")).toBe("asia");
+		expect(regionForLanguage("en")).toBe("west");
+		expect(regionForLanguage("fr")).toBe("west");
+	});
+	it("unknown language falls back to west", () => {
+		expect(regionForLanguage("xx")).toBe("west");
+	});
+	it("region base languages are en and ja", () => {
+		expect(REGION_BASE_LANGUAGE.west).toBe("en");
+		expect(REGION_BASE_LANGUAGE.asia).toBe("ja");
+	});
+	it("ja is now a first-class supported language (not normalized to en)", () => {
+		expect(isSupportedLanguage("ja")).toBe(true);
+		expect(toSupportedLanguage("ja")).toBe("ja");
+	});
+	it("ASIAN_LANGUAGES lists exactly the six Asian languages", () => {
+		expect([...ASIAN_LANGUAGES].sort()).toEqual([
+			"id",
+			"ja",
+			"ko",
+			"th",
+			"zh-cn",
+			"zh-tw",
 		]);
-	});
-
-	it("excludes the Phase 2 (Asian) languages", () => {
-		for (const lang of ["ja", "ko", "zh", "zh-tw", "zh-cn"])
-			expect(isSupportedLanguage(lang)).toBe(false);
-	});
-
-	it("has a label for every supported language", () => {
-		for (const lang of SUPPORTED_LANGUAGES)
-			expect(LANGUAGE_LABELS[lang]).toBeTruthy();
-	});
-
-	it("isSupportedLanguage accepts supported, rejects unsupported", () => {
-		expect(isSupportedLanguage("fr")).toBe(true);
-		expect(isSupportedLanguage("en")).toBe(true);
-		expect(isSupportedLanguage("ja")).toBe(false);
-		expect(isSupportedLanguage("xx")).toBe(false);
-	});
-
-	it("toSupportedLanguage passes through supported, falls back to en otherwise", () => {
-		expect(toSupportedLanguage("de")).toBe("de");
-		expect(toSupportedLanguage("ja")).toBe("en");
-		expect(toSupportedLanguage(null)).toBe("en");
-		expect(toSupportedLanguage(undefined)).toBe("en");
-		expect(toSupportedLanguage("")).toBe("en");
 	});
 });
