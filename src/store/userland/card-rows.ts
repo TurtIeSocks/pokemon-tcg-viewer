@@ -1,9 +1,11 @@
 import type { HoloCardData } from "../../components/holo-card";
+import type { Region } from "../../lib/languages";
 import type { PokemonSet } from "../../server/card-mappers";
 import {
 	type CorpusIndex,
 	hydrateCard,
 	type I18nOverlay,
+	resolveCardAcrossRegions,
 } from "../corpus/corpus-engine";
 import { compareCardNumber } from "../corpus/natural-compare";
 import { groupByCardId, sumQuantity } from "./group";
@@ -29,19 +31,22 @@ export interface CardRow {
 }
 
 /**
- * Build one CardRow per distinct owned card.
- * Cards whose id is not found in the corpus index are silently dropped.
+ * Build one CardRow per distinct owned card. Each cardId is resolved against
+ * every currently-loaded region index (`resolveCardAcrossRegions`) — an owned
+ * card that exists only in the `asia` index still renders instead of being
+ * silently dropped. Only a card absent from every loaded index is skipped
+ * (its region simply hasn't loaded yet).
  */
 export function buildCardRows(
 	items: Stack[],
-	index: CorpusIndex,
+	indices: Partial<Record<Region, CorpusIndex>>,
 	setsById: Map<string, PokemonSet>,
 	i18n?: I18nOverlay | null,
 ): CardRow[] {
 	const byCard = groupByCardId(items);
 	const rows: CardRow[] = [];
 	for (const [cardId, stacks] of byCard) {
-		const cc = index.byId.get(cardId);
+		const cc = resolveCardAcrossRegions(cardId, indices);
 		if (!cc) continue;
 		const primary =
 			stacks.find((c) => c.isPrimary) ??

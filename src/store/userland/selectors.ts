@@ -1,14 +1,19 @@
 // src/store/userland/selectors.ts
 import { useEffect, useMemo } from "react";
 import type { HoloCardData } from "../../components/holo-card";
+import type { Region } from "../../lib/languages";
 import type { PokemonSet } from "../../server/card-mappers";
 import {
 	type CorpusIndex,
 	hydrateCard,
 	type I18nOverlay,
+	resolveCardAcrossRegions,
 	setsById,
 } from "../corpus/corpus-engine";
-import { useCorpusRuntime } from "../corpus/corpus-runtime";
+import {
+	ensureRegionsForOwned,
+	useCorpusRuntime,
+} from "../corpus/corpus-runtime";
 import { useActiveI18n } from "../corpus/i18n-active-hooks";
 import { useStore } from "../index";
 import {
@@ -48,11 +53,14 @@ export { groupByCardId, sumQuantity };
 
 /**
  * Join owned stacks with corpus card data; returns one HoloCardData per distinct cardId.
- * Cards not found in the corpus index are silently skipped.
+ * Each cardId is resolved against every currently-loaded region index
+ * (`resolveCardAcrossRegions`), so an owned card that only exists in the
+ * `asia` index still renders. Only a card absent from every loaded index is
+ * skipped (its region hasn't loaded yet).
  */
 export function joinOwnedViews(
 	items: Stack[],
-	index: CorpusIndex,
+	indices: Partial<Record<Region, CorpusIndex>>,
 	setsById: Map<string, PokemonSet>,
 	i18n?: I18nOverlay | null,
 ): HoloCardData[] {
@@ -61,7 +69,7 @@ export function joinOwnedViews(
 	for (const item of items) {
 		if (seen.has(item.cardId)) continue;
 		seen.add(item.cardId);
-		const card = index.byId.get(item.cardId);
+		const card = resolveCardAcrossRegions(item.cardId, indices);
 		if (card) out.push(hydrateCard(card, setsById, i18n));
 	}
 	return out;
@@ -76,15 +84,34 @@ function useEnsureUserland(): void {
 }
 
 /**
+ * Side-effect only: lazily loads the asia corpus when `items` references a
+ * cardId the west index can't resolve (e.g. a returning user's Asian
+ * printings, synced before they ever switched display language). Runs in an
+ * effect keyed on the `items` reference — not inline in a selector/useMemo
+ * body — so it fires once per actual collection change instead of once per
+ * render, and never itself triggers a re-render (ensureRegionsForOwned only
+ * calls loadCorpus, which updates the corpus-runtime store; this hook doesn't
+ * subscribe to that store, so its own component doesn't re-render from it).
+ */
+function useEnsureOwnedRegions(items: Record<string, Stack>): void {
+	useEffect(() => {
+		void ensureRegionsForOwned(ownedCardIdSet(items));
+	}, [items]);
+}
+
+/**
  * Shared store reads for the corpus-join hooks: triggers userland hydration and
- * returns the corpus index + sets. Consumers read `items`/`binder` themselves and
+ * returns both the active-region `index` (for single-region lookups like
+ * binder rule matching) and the full `indices` map (for cross-region owned
+ * resolution), plus `sets`. Consumers read `items`/`binder` themselves and
  * apply their own `useMemo` join on top.
  */
 function useCorpusJoinInputs() {
 	useEnsureUserland();
 	const index = useCorpusRuntime((s) => s.index);
+	const indices = useCorpusRuntime((s) => s.indices);
 	const sets = useStore((s) => s.sets);
-	return { index, sets };
+	return { index, indices, sets };
 }
 
 // Module-level single-entry memo for the grouped owned index. `groupByCardId` is
@@ -138,22 +165,27 @@ export function useOwnedCount(cardId: string): number {
 /** Distinct owned cards joined with the corpus. [] until corpus + sets load. */
 export function useOwnedCardViews(): HoloCardData[] {
 	const items = useUserland((s) => s.items);
-	const { index, sets } = useCorpusJoinInputs();
+	const { indices, sets } = useCorpusJoinInputs();
 	const i18n = useActiveI18n();
+	useEnsureOwnedRegions(items);
 	return useMemo(() => {
-		if (!index || !sets) return [];
-		return joinOwnedViews(Object.values(items), index, setsById(sets), i18n);
-	}, [items, index, sets, i18n]);
+		if (!indices.west || !sets) return [];
+		return joinOwnedViews(Object.values(items), indices, setsById(sets), i18n);
+	}, [items, indices, sets, i18n]);
 }
 
-/** Tally distinct owned cardIds into per-set counts via the corpus byId map. */
+/**
+ * Tally distinct owned cardIds into per-set counts, resolving each id against
+ * every currently-loaded region index so an asia-only owned card still counts
+ * toward its set.
+ */
 export function tallyOwnedBySet(
 	cardIds: Iterable<string>,
-	index: CorpusIndex,
+	indices: Partial<Record<Region, CorpusIndex>>,
 ): Map<string, number> {
 	const counts = new Map<string, number>();
 	for (const id of cardIds) {
-		const setId = index.byId.get(id)?.setId;
+		const setId = resolveCardAcrossRegions(id, indices)?.setId;
 		if (!setId) continue;
 		counts.set(setId, (counts.get(setId) ?? 0) + 1);
 	}
@@ -164,26 +196,28 @@ export function tallyOwnedBySet(
 export function useOwnedCountBySet(): Map<string, number> {
 	useEnsureUserland();
 	const items = useUserland((s) => s.items);
-	const index = useCorpusRuntime((s) => s.index);
+	const indices = useCorpusRuntime((s) => s.indices);
+	useEnsureOwnedRegions(items);
 	return useMemo(() => {
-		if (!index) return new Map<string, number>();
-		return tallyOwnedBySet(ownedCardIdSet(items), index);
-	}, [items, index]);
+		if (!indices.west) return new Map<string, number>();
+		return tallyOwnedBySet(ownedCardIdSet(items), indices);
+	}, [items, indices]);
 }
 
 /** All owned cards grouped by cardId, sorted by key+dir. [] until corpus + sets load. */
 export function useOwnedCardRows(key: SortKey, dir: SortDir): CardRow[] {
 	const items = useUserland((s) => s.items);
-	const { index, sets } = useCorpusJoinInputs();
+	const { indices, sets } = useCorpusJoinInputs();
 	const i18n = useActiveI18n();
+	useEnsureOwnedRegions(items);
 	return useMemo(() => {
-		if (!index || !sets) return [];
+		if (!indices.west || !sets) return [];
 		return sortCardRows(
-			buildCardRows(Object.values(items), index, setsById(sets), i18n),
+			buildCardRows(Object.values(items), indices, setsById(sets), i18n),
 			key,
 			dir,
 		);
-	}, [items, index, sets, key, dir, i18n]);
+	}, [items, indices, sets, key, dir, i18n]);
 }
 
 /** Hook: compute progress for a binder by id; null until corpus + sets + userland load. */
@@ -191,6 +225,7 @@ export function useBinderProgress(binderId: string): BinderProgress | null {
 	const binder = useUserland((s) => s.binders[binderId] ?? null);
 	const items = useUserland((s) => s.items);
 	const { index, sets } = useCorpusJoinInputs();
+	useEnsureOwnedRegions(items);
 	return useMemo(() => {
 		if (!binder || !index || !sets) return null;
 		return computeBinderProgress(
