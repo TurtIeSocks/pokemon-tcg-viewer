@@ -1,5 +1,6 @@
 import { afterEach, expect, mock, test } from "bun:test";
 import {
+	fetchAllSets,
 	fetchCardById,
 	getCardByIdCached,
 	mapTcgdexSet,
@@ -124,6 +125,38 @@ test("getCardByIdCached fetches an id only once across repeated calls", async ()
 	expect(a.id).toBe("base1-4");
 	expect(b).toBe(a); // same memoized object
 	expect(f).toHaveBeenCalledTimes(1);
+});
+
+test("fetchAllSets drops phantom sets that list zero cards", async () => {
+	const detail = (
+		id: string,
+		name: string,
+		cards: { id: string }[],
+		total: number,
+	) =>
+		JSON.stringify({
+			id,
+			name,
+			cardCount: { total, official: total },
+			serie: { id: "base", name: "Base" },
+			cards,
+		});
+	globalThis.fetch = mock(async (url: string | URL) => {
+		const u = String(url);
+		if (u.endsWith("/v2/en/sets"))
+			return new Response(JSON.stringify([{ id: "base1" }, { id: "wp" }]), {
+				status: 200,
+			});
+		if (u.endsWith("/sets/base1"))
+			return new Response(detail("base1", "Base", [{ id: "base1-1" }], 1), {
+				status: 200,
+			});
+		// wp reports cardCount 7 but lists zero cards (the real TCGdex phantom).
+		return new Response(detail("wp", "W Promotional", [], 7), { status: 200 });
+	}) as unknown as typeof fetch;
+
+	const sets = await fetchAllSets();
+	expect(sets.map((s) => s.id)).toEqual(["base1"]); // wp filtered out
 });
 
 test("fetchCardById requests the localized locale and maps it", async () => {

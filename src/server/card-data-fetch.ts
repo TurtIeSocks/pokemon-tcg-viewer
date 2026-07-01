@@ -37,6 +37,9 @@ export interface TcgdexSetDetail {
 	serie: { id: string; name: string };
 	logo?: string;
 	symbol?: string;
+	// The set's cards (CardBrief[]). We only need the length: a phantom TCGdex
+	// set can report a cardCount but list zero actual cards.
+	cards?: { id: string }[];
 }
 
 /** Map a TCGdex set detail to the app's PokemonSet shape. */
@@ -87,7 +90,19 @@ export async function fetchAllSets(): Promise<PokemonSet[]> {
 				return (await r.json()) as TcgdexSetDetail;
 			}),
 		);
-		for (const d of details) results.push(mapTcgdexSet(d));
+		for (const d of details) {
+			// Skip phantom sets: TCGdex sometimes reports a cardCount but lists zero
+			// actual cards (e.g. `wp` "W Promotional" — cardCount.total 7, cards []).
+			// The corpus crawl gets 0 cards for these, so a phantom in the nav shows a
+			// "7 in sidebar, 0 in grid" mismatch. Drop them so nav matches the corpus.
+			if (Array.isArray(d.cards) && d.cards.length === 0) {
+				console.warn(
+					`skipping phantom set "${d.id}" (${d.name}): cardCount ${d.cardCount.total} but 0 cards listed`,
+				);
+				continue;
+			}
+			results.push(mapTcgdexSet(d));
+		}
 	}
 	return results;
 }
