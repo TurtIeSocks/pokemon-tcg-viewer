@@ -18,6 +18,7 @@ import { ResultsBar } from "../../../components/results-bar";
 import { SelectAndBulkAdd } from "../../../components/vault/select-and-bulk-add";
 import { cardModalLinkPropsFor } from "../../../lib/card-route";
 import { buildSetCardSlugs } from "../../../lib/card-slugs";
+import { regionForLanguage } from "../../../lib/languages";
 import {
 	LIST_SEARCH_DEFAULTS,
 	listSearchToUrl,
@@ -33,15 +34,19 @@ import { deriveFacets } from "../../../server/set-facets";
 export const Route = createFileRoute("/$series/$set/")({
 	validateSearch: validateListSearch,
 	search: { middlewares: [stripSearchParams(LIST_SEARCH_DEFAULTS)] },
-	loader: async ({ params }) => {
-		const tree = await getNavTreeFn();
+	loaderDeps: ({ search }) => ({ lang: search.lang }),
+	loader: async ({ params, deps }) => {
+		// `?lang=ja` (or a per-page override) selects the Asian nav tree + corpus
+		// so the set page browses the correct region's catalog.
+		const region = regionForLanguage(deps.lang ?? "en");
+		const tree = await getNavTreeFn({ data: { region } });
 		const set = findSet(tree, params.series, params.set);
 		if (!set) throw notFound();
 
 		// Species list runs in parallel with the set cards; it labels the Pokémon
 		// filter options (dex number → species name).
 		const [all, list] = await Promise.all([
-			getSetCardsFn({ data: set.id }),
+			getSetCardsFn({ data: { setId: set.id, lang: deps.lang ?? "en" } }),
 			getPokemonListFn(),
 		]);
 		const slugs = buildSetCardSlugs(all);

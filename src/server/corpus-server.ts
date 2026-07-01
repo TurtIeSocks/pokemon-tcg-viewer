@@ -220,7 +220,7 @@ export const getCardForRouteFn = createServerFn({ method: "GET" })
 
 		const region = regionForLanguage(data.lang);
 
-		const tree = await loadNavTree();
+		const tree = await loadNavTree(region);
 		const series = findSeries(tree, data.series);
 		const set = series?.sets.find((s) => s.slug === data.set);
 		if (!series || !set) return null;

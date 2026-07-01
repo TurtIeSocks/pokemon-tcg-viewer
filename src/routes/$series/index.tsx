@@ -4,13 +4,30 @@ import { CardSelectionProvider } from "../../components/islands/card-selection";
 import { SetTile } from "../../components/shell/set-tile";
 import { cardIdsInSets } from "../../components/vault/bulk-add";
 import { SelectAndBulkAdd } from "../../components/vault/select-and-bulk-add";
+import {
+	isSupportedLanguage,
+	regionForLanguage,
+	type SupportedLanguage,
+} from "../../lib/languages";
 import { findSeries, getNavTreeFn } from "../../server/nav-tree";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
 import { useEnsureCorpus } from "../../store/corpus/use-ensure-corpus";
 
 export const Route = createFileRoute("/$series/")({
-	loader: async ({ params }) => {
-		const tree = await getNavTreeFn();
+	// `?lang=ja` (from the region-aware language switcher) selects the Asian
+	// nav tree instead of the default Western one; absent/unsupported → null.
+	validateSearch: (
+		search: Record<string, unknown>,
+	): { lang: SupportedLanguage | null } => ({
+		lang:
+			typeof search.lang === "string" && isSupportedLanguage(search.lang)
+				? search.lang
+				: null,
+	}),
+	loaderDeps: ({ search }) => ({ lang: search.lang }),
+	loader: async ({ params, deps }) => {
+		const region = regionForLanguage(deps.lang ?? "en");
+		const tree = await getNavTreeFn({ data: { region } });
 		const series = findSeries(tree, params.series);
 		if (!series) throw notFound();
 		// Cache-Control is set inside getNavTreeFn's handler (server-only module),
