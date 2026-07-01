@@ -27,6 +27,7 @@ test("schema accepts a valid raw stack and rejects bad price", () => {
 		pricePaid: "5",
 		language: "en",
 		variant: "",
+		variantId: "",
 		notes: "",
 		source: "",
 		storageLocation: "",
