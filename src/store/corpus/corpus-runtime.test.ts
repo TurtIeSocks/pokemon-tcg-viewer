@@ -131,9 +131,9 @@ test("loadCorpus toggles the loading flag (true during, false after)", async () 
 			new Response(gzipOf(sample), { status: 200, headers: { ETag: '"v1"' } }),
 	) as unknown as typeof fetch;
 	const p = loadCorpus();
-	expect(useCorpusRuntime.getState().loading).toBe(true);
+	expect(useCorpusRuntime.getState().loading.west).toBe(true);
 	await p;
-	expect(useCorpusRuntime.getState().loading).toBe(false);
+	expect(useCorpusRuntime.getState().loading.west).toBe(false);
 	expect(useCorpusRuntime.getState().index).not.toBeNull();
 });
 
