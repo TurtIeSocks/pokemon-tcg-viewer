@@ -1,5 +1,6 @@
 import type { HoloCardData } from "../../components/holo-card";
 import { cardImage } from "../../lib/card-image";
+import type { Region } from "../../lib/languages";
 import { slugify } from "../../lib/slug";
 import type { SortDir } from "../../lib/sort";
 import type { PokemonSet } from "../../server/card-mappers";
@@ -60,23 +61,51 @@ export function setsById(
 	return new Map((sets ?? []).map((s) => [s.id, s]));
 }
 
-/** Build the in-memory search index from a flat card list (normalised names + token arrays). */
-export function buildIndex(cards: CorpusCard[]): CorpusIndex {
+/**
+ * Build the in-memory search index from a flat card list (normalised names +
+ * token arrays), stamping every card with its catalog `region`. Defaults to
+ * `west` so existing callers/fixtures that don't pass a region behave exactly
+ * as before.
+ */
+export function buildIndex(
+	cards: CorpusCard[],
+	region: Region = "west",
+): CorpusIndex {
 	// Single pass over the (large) card list builds all three structures at once.
 	const nameNorm: string[] = [];
 	const nameTokens: string[][] = [];
 	const byId = new Map<string, CorpusCard>();
+	const stamped: CorpusCard[] = [];
 	for (const c of cards) {
-		nameNorm.push(normalize(c.name));
+		const card = { ...c, region };
+		stamped.push(card);
+		nameNorm.push(normalize(card.name));
 		nameTokens.push(
-			c.name.split(/[\s-]+/).flatMap((t) => {
+			card.name.split(/[\s-]+/).flatMap((t) => {
 				const n = normalize(t);
 				return n ? [n] : [];
 			}),
 		);
-		byId.set(c.id, c);
+		byId.set(card.id, card);
 	}
-	return { cards, byId, nameNorm, nameTokens };
+	return { cards: stamped, byId, nameNorm, nameTokens };
+}
+
+/**
+ * Resolve a card id across every currently-loaded region index. Card ids are
+ * globally unique across the west/asia id universes, so the first index that
+ * has it wins — check order doesn't matter. Returns `undefined` if the id is
+ * in none of the loaded indices (e.g. its region hasn't been loaded yet).
+ */
+export function resolveCardAcrossRegions(
+	cardId: string,
+	indices: Partial<Record<Region, CorpusIndex>>,
+): CorpusCard | undefined {
+	for (const index of Object.values(indices)) {
+		const hit = index?.byId.get(cardId);
+		if (hit) return hit;
+	}
+	return undefined;
 }
 
 function intersects(a: string[] | undefined, sel: string[]): boolean {
