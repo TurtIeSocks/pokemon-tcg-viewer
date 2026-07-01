@@ -97,3 +97,49 @@ describe("cardTab on the three tab helpers", () => {
 		expect(s.cardTab).toBe("pricing");
 	});
 });
+
+const readSearch = (props: ReturnType<typeof cardModalLinkPropsFor>) =>
+	(props.search as (prev: Record<string, unknown>) => Record<string, unknown>)(
+		{},
+	);
+
+describe("active-language search param on the tab helpers", () => {
+	test("cardModalLinkPropsFor includes search.lang when the active language is Asian", () => {
+		const props = cardModalLinkPropsFor(p, "ja");
+		expect(readSearch(props).lang).toBe("ja");
+	});
+
+	test("cardModalLinkPropsFor omits lang when the active language is en (unchanged)", () => {
+		const props = cardModalLinkPropsFor(p, "en");
+		expect(readSearch(props).lang).toBeUndefined();
+	});
+
+	test("cardModalLinkPropsFor omits lang when no language is passed (byte-identical to today)", () => {
+		const props = cardModalLinkPropsFor(p);
+		expect(readSearch(props).lang).toBeUndefined();
+	});
+
+	test("cardModalLinkPropsFor preserves existing search keys alongside lang", () => {
+		const props = cardModalLinkPropsFor(p, "ko");
+		const search = (
+			props.search as (prev: Record<string, unknown>) => Record<string, unknown>
+		)({ keep: "me" });
+		expect(search.keep).toBe("me");
+		expect(search.lang).toBe("ko");
+	});
+
+	test("cardManageLinkPropsFor includes search.lang for an active Asian language", () => {
+		const props = cardManageLinkPropsFor(p, "zh-tw");
+		expect(readSearch(props).lang).toBe("zh-tw");
+	});
+
+	test("cardManageLinkPropsFor omits lang for en", () => {
+		const props = cardManageLinkPropsFor(p, "en");
+		expect(readSearch(props).lang).toBeUndefined();
+	});
+
+	test("cardPricesLinkPropsFor includes search.lang for an active Asian language", () => {
+		const props = cardPricesLinkPropsFor(p, "th");
+		expect(readSearch(props).lang).toBe("th");
+	});
+});

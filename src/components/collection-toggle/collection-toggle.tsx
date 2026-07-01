@@ -1,6 +1,7 @@
 import { useRouter } from "@tanstack/react-router";
 import { cardManageLinkPropsFor, cardRouteParams } from "../../lib/card-route";
 import { useSlugIndex } from "../../store/corpus/corpus-runtime";
+import { useDisplayLanguage } from "../../store/corpus/i18n-active-hooks";
 import { useIsOwned, useOwnedCount } from "../../store/userland/selectors";
 import { addStack } from "../../store/userland/userland-store";
 import type { HoloCardData } from "../holo-card";
@@ -27,6 +28,7 @@ export function CollectionToggle({ card }: CollectionToggleProps) {
 	const count = useOwnedCount(card.id);
 	const router = useRouter();
 	const slugIndex = useSlugIndex();
+	const displayLanguage = useDisplayLanguage();
 
 	if (owned) {
 		const p = slugIndex ? cardRouteParams(slugIndex, card) : null;
@@ -41,7 +43,7 @@ export function CollectionToggle({ card }: CollectionToggleProps) {
 					e.preventDefault();
 					if (p) {
 						void router.navigate({
-							...cardManageLinkPropsFor(p),
+							...cardManageLinkPropsFor(p, displayLanguage),
 						});
 					}
 				}}

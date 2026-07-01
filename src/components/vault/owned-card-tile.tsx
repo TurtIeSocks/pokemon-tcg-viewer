@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { cardManageLinkPropsFor, cardRouteParams } from "../../lib/card-route";
 import { useSlugIndex } from "../../store/corpus/corpus-runtime";
+import { useDisplayLanguage } from "../../store/corpus/i18n-active-hooks";
 import type { CardRow } from "../../store/userland/card-rows";
 import { holoCardProps } from "../holo-card";
 import { HoloCardIsland } from "../islands/holo-card-island";
@@ -17,6 +18,7 @@ interface OwnedCardTileProps {
  */
 export function OwnedCardTile({ row }: OwnedCardTileProps) {
 	const slugIndex = useSlugIndex();
+	const displayLanguage = useDisplayLanguage();
 	const p = slugIndex ? cardRouteParams(slugIndex, row.card) : null;
 
 	const inner = (
@@ -33,7 +35,7 @@ export function OwnedCardTile({ row }: OwnedCardTileProps) {
 	if (p) {
 		return (
 			<Link
-				{...cardManageLinkPropsFor(p)}
+				{...cardManageLinkPropsFor(p, displayLanguage)}
 				className="relative block w-full text-left rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-wash)]"
 				aria-label={`Manage stacks of ${row.card.name}`}
 			>

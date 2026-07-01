@@ -1,4 +1,6 @@
 import type { LinkProps } from "@tanstack/react-router";
+import { getActiveI18nLang } from "../store/corpus/i18n-active";
+import { isSupportedLanguage, type SupportedLanguage } from "./languages";
 import type { SlugIndex } from "./slug";
 
 export type CardTab = "details" | "collection" | "pricing";
@@ -32,14 +34,25 @@ export const TAB_MASK = {
  * Shared masked-overlay nav for a given tab: stay on the current route, set
  * `cardOverlay` + `cardTab` in history state, and mask the URL to the tab's
  * canonical route. The three named helpers below delegate here.
+ *
+ * `lang` is the active display language. When it's a non-English language,
+ * the generated link carries `?lang` (merged onto the existing search) so a
+ * shared/cold-loaded link re-selects that language (and, for an Asian
+ * language, the Asian catalog region — see `regionForLanguage`). Omitting
+ * `lang` (or passing `"en"`) preserves today's plain passthrough behavior
+ * byte-for-byte: Western links are unaffected by this.
  */
 export function cardTabLinkPropsFor(
 	p: CardRouteParams,
 	tab: CardTab,
+	lang?: SupportedLanguage | null,
 ): LinkProps {
 	return {
 		to: ".",
-		search: (prev: Record<string, unknown>) => prev,
+		search:
+			lang && lang !== "en"
+				? (prev: Record<string, unknown>) => ({ ...prev, lang })
+				: (prev: Record<string, unknown>) => prev,
 		state: (prev: Record<string, unknown>) => ({
 			...prev,
 			cardOverlay: `${p.series}/${p.set}/${p.card}`,
@@ -64,13 +77,23 @@ export function cardRouteParams(
 	return { series: loc.seriesSlug, set: loc.setSlug, card: cardSlug };
 }
 
-/** Canonical card-detail LinkProps — the full, shareable page URL. */
+/**
+ * Canonical card-detail LinkProps — the full, shareable page URL. Pass the
+ * active display language to carry `?lang` for a non-English language, so a
+ * shared link re-selects it (and, for an Asian language, the Asian catalog
+ * region — see `regionForLanguage`). Omitting it (or `"en"`) omits `lang`,
+ * matching today's behavior byte-for-byte.
+ */
 export function cardRouteProps(
 	idx: SlugIndex,
 	card: { id: string; setId: string },
+	lang?: SupportedLanguage | null,
 ): LinkProps | null {
 	const p = cardRouteParams(idx, card);
-	return p ? { to: "/$series/$set/$card", params: p } : null;
+	if (!p) return null;
+	return lang && lang !== "en"
+		? { to: "/$series/$set/$card", params: p, search: { lang } }
+		: { to: "/$series/$set/$card", params: p };
 }
 
 /**
@@ -79,18 +102,28 @@ export function cardRouteProps(
  * and MASK the URL to the canonical `/$series/$set/$card`. The root overlay
  * reads that state (see card-overlay.tsx); a cold load of the masked URL has no
  * state and falls back to the full-page route.
+ *
+ * `lang` is the active display language (see {@link cardTabLinkPropsFor}); pass
+ * it explicitly when known, else it defaults to today's plain passthrough.
  */
-export function cardModalLinkPropsFor(p: CardRouteParams): LinkProps {
-	return cardTabLinkPropsFor(p, "details");
+export function cardModalLinkPropsFor(
+	p: CardRouteParams,
+	lang?: SupportedLanguage | null,
+): LinkProps {
+	return cardTabLinkPropsFor(p, "details", lang);
 }
 
-/** {@link cardModalLinkPropsFor} resolved from a slug index, or null. */
+/**
+ * {@link cardModalLinkPropsFor} resolved from a slug index, or null. Reads the
+ * active display language imperatively so a link built outside a lang-bearing
+ * route (e.g. a Vault tile) still carries `?lang` for an Asian card.
+ */
 export function cardModalLinkProps(
 	idx: SlugIndex,
 	card: { id: string; setId: string },
 ): LinkProps | null {
 	const p = cardRouteParams(idx, card);
-	return p ? cardModalLinkPropsFor(p) : null;
+	return p ? cardModalLinkPropsFor(p, activeLangOrNull()) : null;
 }
 
 /**
@@ -99,21 +132,41 @@ export function cardModalLinkProps(
  * which sets `cardTab: "collection"` in history state and masks the URL to
  * `/$series/$set/$card/manage`. A cold load of the masked URL falls through
  * to the real `$card_/manage` route.
+ *
+ * `lang` is the active display language (see {@link cardTabLinkPropsFor}).
  */
-export function cardManageLinkPropsFor(p: CardRouteParams): LinkProps {
-	return cardTabLinkPropsFor(p, "collection");
+export function cardManageLinkPropsFor(
+	p: CardRouteParams,
+	lang?: SupportedLanguage | null,
+): LinkProps {
+	return cardTabLinkPropsFor(p, "collection", lang);
 }
 
-/** {@link cardManageLinkPropsFor} resolved from a slug index, or null. */
+/**
+ * {@link cardManageLinkPropsFor} resolved from a slug index, or null. Reads the
+ * active display language imperatively, same as {@link cardModalLinkProps}.
+ */
 export function cardManageLinkProps(
 	idx: SlugIndex,
 	card: { id: string; setId: string },
 ): LinkProps | null {
 	const p = cardRouteParams(idx, card);
-	return p ? cardManageLinkPropsFor(p) : null;
+	return p ? cardManageLinkPropsFor(p, activeLangOrNull()) : null;
 }
 
-/** In-app overlay nav that opens the Pricing tab. Mirrors the other two. */
-export function cardPricesLinkPropsFor(p: CardRouteParams): LinkProps {
-	return cardTabLinkPropsFor(p, "pricing");
+/**
+ * In-app overlay nav that opens the Pricing tab. Mirrors the other two.
+ * `lang` is the active display language (see {@link cardTabLinkPropsFor}).
+ */
+export function cardPricesLinkPropsFor(
+	p: CardRouteParams,
+	lang?: SupportedLanguage | null,
+): LinkProps {
+	return cardTabLinkPropsFor(p, "pricing", lang);
+}
+
+/** The active display language, normalized to `SupportedLanguage | null`. */
+function activeLangOrNull(): SupportedLanguage | null {
+	const lang = getActiveI18nLang();
+	return isSupportedLanguage(lang) ? lang : null;
 }
