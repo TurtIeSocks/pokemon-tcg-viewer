@@ -3,24 +3,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { FocusCardData } from "../../server/card-mappers";
 import { EnergyIcon } from "./energy-icon";
 
-/** Human descriptor line, e.g. "Stage 1 Pokémon · Lightning · Evolves from Pikachu". */
-export function describeCard(card: FocusCardData): string {
-	const isPokemon = card.supertype === "Pokémon";
-	const parts: string[] = [];
-	if (isPokemon) {
-		const lead = [card.subtypes?.join(" "), card.supertype]
-			.filter(Boolean)
-			.join(" ");
-		parts.push(lead);
-		if (card.types?.length) parts.push(card.types.join(" / "));
-		if (card.evolvesFrom) parts.push(`Evolves from ${card.evolvesFrom}`);
-	} else {
-		parts.push(card.supertype);
-		if (card.subtypes?.length) parts.push(card.subtypes.join(", "));
-	}
-	return parts.join(" · ");
-}
-
 /**
  * Shared identity header for the card focus view: the name, the human
  * descriptor, a rarity badge, and the set · # line. Rendered by both the modal
@@ -42,7 +24,7 @@ export function CardHeading({ card }: { card: FocusCardData }) {
 				) : null}
 			</div>
 			<div className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-				{describeCard(card)} · {card.setName} · #{card.cardNumber}
+				{card.supertype} · {card.setName} · #{card.cardNumber}
 			</div>
 		</div>
 	);
@@ -186,9 +168,35 @@ function StatStripGhost() {
 }
 
 /**
- * The info column of the card focus view: a growing body (abilities / attacks /
- * rules / flavor) and a stat strip (weak / resist / retreat / illustrator).
- * The identity header lives in {@link CardHeading}, rendered by the consumer.
+ * Top meta block for the Details tab: the structured descriptors (subtype, type,
+ * evolves-from) pulled OUT of the dense identity heading into a clean labeled
+ * strip above the Ability/Attacks body. Renders nothing when a card has none.
+ */
+function CardMetaStrip({ card }: { card: FocusCardData }) {
+	const items: { label: string; value: string }[] = [];
+	if (card.subtypes?.length)
+		items.push({ label: "Subtype", value: card.subtypes.join(" ") });
+	if (card.types?.length)
+		items.push({ label: "Type", value: card.types.join(" / ") });
+	if (card.evolvesFrom)
+		items.push({ label: "Evolves from", value: card.evolvesFrom });
+	if (!items.length) return null;
+	return (
+		<div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-white/[0.07] pb-3.5 font-mono text-[11px] uppercase tracking-[0.05em] text-[var(--ink-muted)]">
+			{items.map((it) => (
+				<span key={it.label}>
+					{it.label} <b className="font-medium text-[var(--ink)]">{it.value}</b>
+				</span>
+			))}
+		</div>
+	);
+}
+
+/**
+ * The info column of the card focus view: a top meta strip (subtype / type /
+ * evolves-from), a growing body (abilities / attacks / rules / flavor) and a
+ * stat strip (weak / resist / retreat / illustrator). The identity header lives
+ * in {@link CardHeading}, rendered by the consumer.
  *
  * `pending` (only the optimistic corpus card is shown, detail still loading)
  * swaps the detail-only regions — body + stat strip — for shimmer ghosts.
@@ -207,6 +215,7 @@ export function CardInfo({
 	return (
 		<div className="flex min-w-0 flex-1 flex-col text-[var(--ink)]">
 			<div className="flex-1">
+				<CardMetaStrip card={card} />
 				{hasAbilities ? (
 					<>
 						<div className={SECTION}>
