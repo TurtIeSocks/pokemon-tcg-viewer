@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { variantLabel } from "../lib/card-variants";
+import type { TcgdexFocusCard } from "./card-mappers";
 import { apiCardToFocusProps, mapTcgdexFocusCard } from "./card-mappers";
 
 test("mapTcgdexFocusCard coerces numeric hp and attack damage to strings", () => {
@@ -69,6 +71,58 @@ test("mapTcgdexFocusCard maps TCGdex dexId to nationalPokedexNumbers", () => {
 		dexId: [65],
 	} as never);
 	expect(f.nationalPokedexNumbers).toEqual([65]);
+});
+
+test("mapTcgdexFocusCard maps variants_detailed, null-filling absent optionals", () => {
+	const out = mapTcgdexFocusCard({
+		id: "base1-4",
+		localId: "4",
+		name: "Charizard",
+		category: "Pokemon",
+		image: "https://assets.tcgdex.net/en/base/base1/4",
+		set: { id: "base1", name: "Base" },
+		variants_detailed: [
+			{ type: "holo", subtype: "unlimited", size: "standard", variantId: "a" },
+			{
+				type: "holo",
+				subtype: "shadowless",
+				size: "standard",
+				stamp: ["1st-edition"],
+				variantId: "b",
+			},
+		],
+	} as TcgdexFocusCard);
+
+	expect(out.variantsDetailed).toEqual([
+		{
+			variantId: "a",
+			type: "holo",
+			subtype: "unlimited",
+			size: "standard",
+			stamp: null,
+		},
+		{
+			variantId: "b",
+			type: "holo",
+			subtype: "shadowless",
+			size: "standard",
+			stamp: ["1st-edition"],
+		},
+	]);
+	const second = out.variantsDetailed?.[1];
+	if (!second) throw new Error("expected a second mapped variant");
+	expect(variantLabel(second)).toBe("1st Edition · Shadowless · Holo");
+});
+
+test("mapTcgdexFocusCard leaves variantsDetailed undefined when absent", () => {
+	const out = mapTcgdexFocusCard({
+		id: "sm1-1",
+		localId: "1",
+		name: "Rowlet",
+		category: "Pokemon",
+		set: { id: "sm1", name: "Sun & Moon" },
+	} as TcgdexFocusCard);
+	expect(out.variantsDetailed).toBeUndefined();
 });
 
 describe("apiCardToFocusProps", () => {

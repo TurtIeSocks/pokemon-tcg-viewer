@@ -2,6 +2,7 @@ import { Combine, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { CardVariant } from "../../lib/card-variants";
 import { useOwnedIndex } from "../../store/userland/selectors";
 import {
 	mergeDuplicateStacks,
@@ -17,10 +18,16 @@ interface StackManagerProps {
 	cardId: string;
 	/** Optional known variant strings for the card; forwarded to each StackRow. */
 	variants?: string[];
+	/** Exact printings from the live card detail; forwarded to the create-mode form. */
+	variantsDetailed?: CardVariant[];
 }
 
 /** Lists all owned stacks of a card with add/remove-all controls and per-stack tile editing. */
-export function StackManager({ cardId, variants }: StackManagerProps) {
+export function StackManager({
+	cardId,
+	variants,
+	variantsDetailed,
+}: StackManagerProps) {
 	const stacks = useOwnedIndex().get(cardId) ?? [];
 	const [addOpen, setAddOpen] = useState(false);
 	const hasDuplicates =
@@ -88,6 +95,7 @@ export function StackManager({ cardId, variants }: StackManagerProps) {
 						mode="create"
 						cardId={cardId}
 						variants={variants}
+						variantsDetailed={variantsDetailed}
 						onSaved={() => setAddOpen(false)}
 						onCancel={() => setAddOpen(false)}
 					/>

@@ -40,6 +40,7 @@ function makeItem(overrides: Partial<Stack> & { cardId: string }): Stack {
 		currency: "USD",
 		language: "en",
 		variant: null,
+		printing: null,
 		notes: null,
 		condition: null,
 		grading: null,

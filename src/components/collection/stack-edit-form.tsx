@@ -13,6 +13,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { fieldErrorText } from "@/lib/field-error";
 import { cn } from "@/lib/utils";
+import { type CardVariant, variantLabel } from "../../lib/card-variants";
 import type { Stack } from "../../store/userland/types";
 import { addStack, updateStack } from "../../store/userland/userland-store";
 import { formToPatch, itemToForm } from "./stack-form-mapping";
@@ -274,6 +275,8 @@ interface StackEditFormProps {
 	cardId: string;
 	/** Optional list of known variant strings for this card (from the corpus). */
 	variants?: string[];
+	/** Exact printings from the live card detail; when present, drives the printing picker. */
+	variantsDetailed?: CardVariant[];
 	/** Called after a successful Save. */
 	onSaved: () => void;
 	/** Called when Cancel is clicked. */
@@ -288,6 +291,7 @@ const BLANK_DEFAULTS = {
 	pricePaid: "",
 	language: "en",
 	variant: "",
+	variantId: "",
 	notes: "",
 	source: "",
 	storageLocation: "",
@@ -309,6 +313,7 @@ export function StackEditForm({
 	item,
 	cardId,
 	variants,
+	variantsDetailed,
 	onSaved,
 	onCancel,
 }: StackEditFormProps) {
@@ -319,7 +324,7 @@ export function StackEditForm({
 		defaultValues,
 		validators: { onSubmit: stackFormSchema },
 		onSubmit: async ({ value }) => {
-			const patch = formToPatch(value);
+			const patch = formToPatch(value, variantsDetailed);
 			if (mode === "edit" && item) {
 				await updateStack(item.id, patch);
 			} else {
@@ -371,27 +376,53 @@ export function StackEditForm({
 					)}
 				/>
 
-				{/* Variant — segmented pill */}
-				{variants && variants.length > 0 && (
+				{/* Printing (detailed) — precise variantId picker when the card carries
+				    exact TCGdex printings; falls back to the coarse variant pill. */}
+				{variantsDetailed && variantsDetailed.length > 0 ? (
 					<form.Field
-						name="variant"
-						validators={{ onBlur: stackFormSchema.shape.variant }}
+						name="variantId"
 						// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 						children={(field) => (
 							<Field className="sm:col-span-2">
-								<FieldLabel>Variant</FieldLabel>
+								<FieldLabel>Printing</FieldLabel>
 								<SegmentedControl
-									aria-label="Variant"
+									aria-label="Printing"
 									value={field.state.value}
 									onChange={(v) => field.handleChange(v)}
 									options={[
 										{ value: "", label: "Unspecified" },
-										...variants.map((v) => ({ value: v, label: v })),
+										...variantsDetailed.map((v) => ({
+											value: v.variantId,
+											label: variantLabel(v),
+										})),
 									]}
 								/>
 							</Field>
 						)}
 					/>
+				) : (
+					variants &&
+					variants.length > 0 && (
+						<form.Field
+							name="variant"
+							validators={{ onBlur: stackFormSchema.shape.variant }}
+							// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
+							children={(field) => (
+								<Field className="sm:col-span-2">
+									<FieldLabel>Variant</FieldLabel>
+									<SegmentedControl
+										aria-label="Variant"
+										value={field.state.value}
+										onChange={(v) => field.handleChange(v)}
+										options={[
+											{ value: "", label: "Unspecified" },
+											...variants.map((v) => ({ value: v, label: v })),
+										]}
+									/>
+								</Field>
+							)}
+						/>
+					)
 				)}
 
 				{/* State — segmented pill: Raw | Graded */}

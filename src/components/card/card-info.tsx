@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { variantLabel } from "../../lib/card-variants";
 import type { FocusCardData } from "../../server/card-mappers";
 import { EnergyIcon } from "./energy-icon";
 
@@ -180,6 +181,11 @@ function CardMetaStrip({ card }: { card: FocusCardData }) {
 		items.push({ label: "Type", value: card.types.join(" / ") });
 	if (card.evolvesFrom)
 		items.push({ label: "Evolves from", value: card.evolvesFrom });
+	if (card.variantsDetailed?.length)
+		items.push({
+			label: "Printings",
+			value: card.variantsDetailed.map(variantLabel).join(" · "),
+		});
 	if (!items.length) return null;
 	return (
 		<div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-white/[0.07] pb-3.5 font-mono text-[11px] uppercase tracking-[0.05em] text-[var(--ink-muted)]">

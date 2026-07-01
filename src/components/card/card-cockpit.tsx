@@ -97,7 +97,11 @@ export function CardCockpit({
 							{tab === "details" ? (
 								<CardInfo card={card} pending={pending} />
 							) : tab === "collection" ? (
-								<StackManager cardId={card.id} variants={variants} />
+								<StackManager
+									cardId={card.id}
+									variants={variants}
+									variantsDetailed={card.variantsDetailed}
+								/>
 							) : (
 								<CardPricingTab card={card} pending={pending} />
 							)}

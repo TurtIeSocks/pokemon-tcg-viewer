@@ -1,4 +1,5 @@
 // src/store/userland/types.ts
+import type { CardPrinting } from "../../lib/card-variants";
 import type { SearchMode } from "../corpus/fuzzy";
 
 /** Raw (ungraded) condition, TCGplayer scale. */
@@ -25,6 +26,7 @@ export interface Stack {
 	currency: string; // ISO 4217 code for pricePaid (defaults "USD")
 	language: string; // ISO 639-1, default 'en'; distinguishes physical copies of a cardId
 	variant: string | null; // printing key, seeded from corpus card.variants
+	printing: CardPrinting | null; // exact TCGdex printing; null = coarse/legacy/unknown
 	notes: string | null;
 	condition: CardCondition | null; // raw state
 	grading: CardGrading | null; // null, or a COMPLETE { company, grade }
@@ -43,6 +45,7 @@ export type EditableStackFields = Pick<
 	| "currency"
 	| "language"
 	| "variant"
+	| "printing"
 	| "notes"
 	| "condition"
 	| "grading"

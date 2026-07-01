@@ -52,6 +52,7 @@ function fillStack(input: NewStack): Stack {
 		currency: input.currency ?? "USD",
 		language: input.language ?? "en",
 		variant: input.variant ?? null,
+		printing: input.printing ?? null,
 		notes: input.notes ?? null,
 		condition: input.condition ?? null,
 		grading: input.grading
@@ -82,6 +83,7 @@ export function normalizeStack(raw: Stack): Stack {
 		currency: raw.currency ?? "USD",
 		language: (raw as Stack & { language?: string }).language ?? "en",
 		variant: raw.variant ?? null,
+		printing: raw.printing ?? null,
 		source: raw.source ?? null,
 		storageLocation: raw.storageLocation ?? null,
 		grading: raw.grading
