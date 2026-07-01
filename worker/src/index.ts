@@ -6,12 +6,35 @@ export interface Env {
 
 const ORIGIN = "https://api.tcgdex.net";
 
-// Western-language overlays shipped in Phase 1b (plus the English base).
-const SUPPORTED_LANGS = ["en", "fr", "de", "es", "it", "pt"] as const;
-type SupportedLang = (typeof SUPPORTED_LANGS)[number];
+// Overlay-name blobs shipped for these languages (Phase 1b Western + Phase 2
+// Asian). `ja` is deliberately excluded: it's the Asian base corpus language
+// (see SUPPORTED_REGIONS/REGION_BASE_LANGUAGE below), so it ships no overlay.
+// keep in sync with src/lib/languages.ts (worker cannot import app code)
+const OVERLAY_LANGS = [
+	"fr",
+	"de",
+	"es",
+	"it",
+	"pt",
+	"ko",
+	"zh-tw",
+	"zh-cn",
+	"th",
+	"id",
+] as const;
+type OverlayLang = (typeof OVERLAY_LANGS)[number];
 
-function isSupportedLang(lang: string): lang is SupportedLang {
-	return (SUPPORTED_LANGS as readonly string[]).includes(lang);
+function isOverlayLang(lang: string): lang is OverlayLang {
+	return (OVERLAY_LANGS as readonly string[]).includes(lang);
+}
+
+// Region-scoped base corpora (Phase 2). keep in sync with src/lib/languages.ts
+// (worker cannot import app code)
+const SUPPORTED_REGIONS = ["asia"] as const;
+type SupportedRegion = (typeof SUPPORTED_REGIONS)[number];
+
+function isSupportedRegion(region: string): region is SupportedRegion {
+	return (SUPPORTED_REGIONS as readonly string[]).includes(region);
 }
 
 function corsHeaders(env: Env): Record<string, string> {
@@ -146,7 +169,7 @@ export default {
 		);
 		if (i18nVersionMatch) {
 			const lang = i18nVersionMatch[1];
-			if (!isSupportedLang(lang)) {
+			if (!isOverlayLang(lang)) {
 				return new Response("Not Found", {
 					status: 404,
 					headers: corsHeaders(env),
@@ -173,7 +196,7 @@ export default {
 		const i18nMatch = url.pathname.match(/^\/corpus-i18n\/([^/]+)$/);
 		if (i18nMatch) {
 			const lang = i18nMatch[1];
-			if (!isSupportedLang(lang)) {
+			if (!isOverlayLang(lang)) {
 				return new Response("Not Found", {
 					status: 404,
 					headers: corsHeaders(env),
@@ -182,6 +205,88 @@ export default {
 			const obj = await env.CORPUS.get(`corpus/i18n/${lang}/names.json.gz`);
 			if (!obj) {
 				return new Response("Overlay not built yet", {
+					status: 503,
+					headers: corsHeaders(env),
+				});
+			}
+			const res = new Response(obj.body, {
+				headers: {
+					"Content-Type": "application/octet-stream",
+					ETag: `"${obj.etag}"`,
+					"Cache-Control":
+						"public, s-maxage=3600, stale-while-revalidate=86400",
+				},
+			});
+			return serveCorpus(res, request, env);
+		}
+
+		// GET /corpus-region/:region(/version|/detail)? -> Phase 2 Asian-region
+		// base corpus, mirroring /corpus + /corpus-detail exactly.
+		const regionMatch = url.pathname.match(
+			/^\/corpus-region\/([a-z-]+)(\/version|\/detail)?$/,
+		);
+		if (regionMatch) {
+			const [, region, suffix] = regionMatch;
+			if (!isSupportedRegion(region)) {
+				return new Response("Not Found", {
+					status: 404,
+					headers: corsHeaders(env),
+				});
+			}
+
+			if (suffix === "/version") {
+				const obj = await env.CORPUS.get(`corpus/region/${region}/meta.json`);
+				if (!obj) {
+					return new Response("Region corpus not built yet", {
+						status: 503,
+						headers: corsHeaders(env),
+					});
+				}
+				return new Response(obj.body, {
+					headers: {
+						...corsHeaders(env),
+						"Content-Type": "application/json",
+						"Cache-Control":
+							"public, max-age=60, s-maxage=300, stale-while-revalidate=86400",
+					},
+				});
+			}
+
+			const key =
+				suffix === "/detail"
+					? `corpus/region/${region}/detail-latest.json.gz`
+					: `corpus/region/${region}/latest.json.gz`;
+
+			// Base region blob shares the /corpus edge-cache pattern; detail
+			// mirrors /corpus-detail (no edge cache, just R2 + serveCorpus).
+			if (suffix !== "/detail") {
+				const cache = (caches as unknown as { default: Cache }).default;
+				const cacheKey = new Request(url.toString(), { method: "GET" });
+				const cached = await cache.match(cacheKey);
+				if (cached) return serveCorpus(cached, request, env);
+
+				const obj = await env.CORPUS.get(key);
+				if (!obj) {
+					return new Response("Region corpus not built yet", {
+						status: 503,
+						headers: corsHeaders(env),
+					});
+				}
+				const res = new Response(obj.body, {
+					headers: {
+						"Content-Type": "application/octet-stream",
+						ETag: `"${obj.etag}"`,
+						"Cache-Control":
+							"public, s-maxage=3600, stale-while-revalidate=86400",
+					},
+				});
+				ctx.waitUntil(cache.put(cacheKey, res.clone()));
+				return serveCorpus(res, request, env);
+			}
+
+			const obj = await env.CORPUS.get(key);
+			if (!obj) {
+				return new Response("Region detail not built yet", {
 					status: 503,
 					headers: corsHeaders(env),
 				});
