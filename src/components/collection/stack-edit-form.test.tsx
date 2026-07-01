@@ -1,6 +1,7 @@
 // stack-edit-form.test.tsx — draft→Save model
 import { beforeEach, expect, test } from "bun:test";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { CardVariant } from "../../lib/card-variants";
 import { addStack, useUserland } from "../../store/userland/userland-store";
 import { setupUserlandTest } from "../../test-utils";
 import { StackEditForm } from "./stack-edit-form";
@@ -309,6 +310,38 @@ test("create: condition Select selecting NM is persisted on Save", async () => {
 		expect(stacks).toHaveLength(1);
 		expect(stacks[0].condition).toBe("NM");
 	});
+});
+
+const VARIANTS: CardVariant[] = [
+	{
+		variantId: "a",
+		type: "holo",
+		subtype: "unlimited",
+		size: "standard",
+		stamp: null,
+	},
+	{
+		variantId: "b",
+		type: "holo",
+		subtype: "shadowless",
+		size: "standard",
+		stamp: ["1st-edition"],
+	},
+];
+
+test("create form renders a printing option per detailed variant", () => {
+	render(
+		<StackEditForm
+			mode="create"
+			cardId="base1-4"
+			variantsDetailed={VARIANTS}
+			onSaved={() => {}}
+			onCancel={() => {}}
+		/>,
+	);
+	// The humanized labels are present as selectable options.
+	screen.getByText("Unlimited · Holo");
+	screen.getByText("1st Edition · Shadowless · Holo");
 });
 
 test("create: graded stack with PSA+9 is persisted on Save", async () => {
