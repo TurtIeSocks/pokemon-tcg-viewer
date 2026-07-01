@@ -1,8 +1,15 @@
 // src/components/shell/set-tile.test.tsx
 import { expect, test } from "bun:test";
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import { renderInRouter } from "../../test-utils";
 import { SetTile } from "./set-tile";
+
+/** Force an <img>'s intrinsic size (happy-dom never decodes), then fire load. */
+function loadWithSize(img: HTMLImageElement, w: number, h: number): void {
+	Object.defineProperty(img, "naturalWidth", { value: w, configurable: true });
+	Object.defineProperty(img, "naturalHeight", { value: h, configurable: true });
+	fireEvent.load(img);
+}
 
 const set = {
 	id: "base1",
@@ -54,6 +61,39 @@ test("root link is a rounded glass tile with an accessible label", async () => {
 	expect(link).not.toBeNull();
 	expect(link.className).toContain("rounded-2xl");
 	expect(link.getAttribute("aria-label")).toBe("Browse Base");
+});
+
+test("a portrait card-back placeholder logo falls back to the set name", async () => {
+	// pokemontcg.io returns the Poké Ball card back (640×892) with a 404 body; the
+	// browser fires `load`, so onError can't catch it. A portrait logo is that
+	// placeholder → drop it and show the set name instead.
+	const cardBackSet = {
+		id: "mee",
+		name: "Mega Evolution Energy",
+		slug: "mega-evolution-energy",
+		logo: "cardback.png",
+		symbol: "s.png",
+		total: 10,
+	};
+	const { container } = await renderInRouter(
+		<SetTile seriesSlug="me" set={cardBackSet} />,
+	);
+	const logo = screen.getByAltText("Mega Evolution Energy") as HTMLImageElement;
+	loadWithSize(logo, 640, 892);
+
+	// Logo removed; the set name is shown as the placeholder.
+	expect(
+		container.querySelector('img[alt="Mega Evolution Energy"]'),
+	).toBeNull();
+	expect(screen.getByText("Mega Evolution Energy")).toBeDefined();
+});
+
+test("a landscape logo is kept (real wordmark, not the placeholder)", async () => {
+	await renderInRouter(<SetTile seriesSlug="base" set={set} />);
+	const logo = screen.getByAltText("Base") as HTMLImageElement;
+	loadWithSize(logo, 2500, 1281);
+	// Still the image (no name fallback).
+	expect(screen.getByAltText("Base")).toBeDefined();
 });
 
 test("vaultLink routes to the vault per-set page", async () => {

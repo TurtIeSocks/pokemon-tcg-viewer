@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import type { NavSet } from "../../lib/nav-tree";
 import { ProgressRing } from "../ui/progress-ring";
@@ -11,6 +11,18 @@ import { ProgressRing } from "../ui/progress-ring";
  */
 function nonEmptyUrl(url: string | null | undefined): string | undefined {
 	return url ? url : undefined;
+}
+
+/**
+ * pokemontcg.io answers a missing logo/symbol with a 404 whose BODY is the
+ * Poké Ball card back (portrait, 640×892). The browser decodes it and fires
+ * `load` (valid PNG), NOT `error`, so a plain onError can't catch it and the
+ * card back renders as if it were the set's art. Real set logos + symbols are
+ * landscape or square wordmarks; only the card-back placeholder is portrait —
+ * so a taller-than-wide asset is the placeholder. Treat it as missing.
+ */
+function isCardBackPlaceholder(img: HTMLImageElement): boolean {
+	return img.naturalWidth > 0 && img.naturalHeight > img.naturalWidth;
 }
 
 /**
@@ -38,11 +50,28 @@ export function SetTile({
 	vaultLink?: boolean;
 }) {
 	const [logoFailed, setLogoFailed] = useState(false);
+	const [symbolFailed, setSymbolFailed] = useState(false);
+	const logoRef = useRef<HTMLImageElement>(null);
+	const symbolRef = useRef<HTMLImageElement>(null);
 	const showCount = ownedCount != null;
 	const logo = nonEmptyUrl(set.logo);
-	// biome-ignore lint/correctness/useExhaustiveDependencies: reset on logo change
-	useEffect(() => setLogoFailed(false), [set.logo]);
 	const symbol = nonEmptyUrl(set.symbol);
+	// Reset + re-check on url change. A cached/SSR image can finish loading before
+	// React binds onLoad (the project's cached-image race), so the portrait
+	// card-back check must ALSO run here against the already-`complete` image —
+	// onLoad alone would miss it and render the Poké Ball placeholder.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: re-check on logo change
+	useEffect(() => {
+		setLogoFailed(false);
+		const img = logoRef.current;
+		if (img?.complete && isCardBackPlaceholder(img)) setLogoFailed(true);
+	}, [set.logo]);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: re-check on symbol change
+	useEffect(() => {
+		setSymbolFailed(false);
+		const img = symbolRef.current;
+		if (img?.complete && isCardBackPlaceholder(img)) setSymbolFailed(true);
+	}, [set.symbol]);
 	const pct =
 		showCount && set.total > 0
 			? Math.min(100, Math.round((ownedCount / set.total) * 100))
@@ -66,7 +95,7 @@ export function SetTile({
 			className="group relative block aspect-[4/5] w-full max-w-full overflow-hidden rounded-2xl transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-8px_rgba(0,0,0,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none motion-reduce:hover:translate-y-0"
 		>
 			{/* ── Backdrop: the set logo, blurred + saturated → per-set color field ── */}
-			{logo && (
+			{logo && !logoFailed && (
 				<img
 					src={logo}
 					alt=""
@@ -98,9 +127,13 @@ export function SetTile({
 				<span className="flex w-full flex-1 items-center justify-center px-1">
 					{logo && !logoFailed ? (
 						<img
+							ref={logoRef}
 							src={logo}
 							alt={set.name}
 							onError={() => setLogoFailed(true)}
+							onLoad={(e) => {
+								if (isCardBackPlaceholder(e.currentTarget)) setLogoFailed(true);
+							}}
 							className="max-h-[60%] max-w-[88%] object-contain drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)]"
 						/>
 					) : (
@@ -114,11 +147,17 @@ export function SetTile({
 				{showCount ? (
 					<span className="flex w-full items-center gap-3">
 						<ProgressRing pct={pct}>
-							{symbol ? (
+							{symbol && !symbolFailed ? (
 								<img
+									ref={symbolRef}
 									src={symbol}
 									alt=""
 									aria-hidden="true"
+									onError={() => setSymbolFailed(true)}
+									onLoad={(e) => {
+										if (isCardBackPlaceholder(e.currentTarget))
+											setSymbolFailed(true);
+									}}
 									className="h-5 w-5 object-contain"
 								/>
 							) : null}
@@ -132,11 +171,16 @@ export function SetTile({
 							</span>
 						</span>
 					</span>
-				) : symbol ? (
+				) : symbol && !symbolFailed ? (
 					<img
+						ref={symbolRef}
 						src={symbol}
 						alt=""
 						aria-hidden="true"
+						onError={() => setSymbolFailed(true)}
+						onLoad={(e) => {
+							if (isCardBackPlaceholder(e.currentTarget)) setSymbolFailed(true);
+						}}
 						className="h-7 w-7 self-end object-contain opacity-80"
 					/>
 				) : null}

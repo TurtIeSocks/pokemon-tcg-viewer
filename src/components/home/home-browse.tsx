@@ -17,6 +17,12 @@ import {
 const CARD_COUNT_FALLBACK = 20359;
 const LATEST_COUNT = 8;
 
+// Series that aren't the physical, "core" TCG. Their sets stay in the sidebar +
+// Browse-by-era, but are hidden from "Latest sets" — they sort as newest by year
+// yet aren't collectible cards. Pokémon TCG Pocket is a digital-only mobile game
+// (Genetic Apex etc.). Match on the derived series slug; extend the set to add more.
+const NON_CORE_SERIES = new Set(["pokemon-tcg-pocket"]);
+
 /**
  * Evergreen "explore the catalog" body below the home hero — a credibility stat
  * line, a browse-by-era pill cloud, and a grid of the newest sets. Always present
@@ -38,7 +44,10 @@ export function HomeBrowse({ tree }: { tree: NavTree }) {
 
 	// Newest sets: flatten the whole tree and sort by era year desc, so the grid
 	// is always full even when the most recent series has only a set or two.
+	// Non-core series (TCG Pocket) are dropped here only — they remain in the
+	// sidebar + Browse-by-era pills below.
 	const latest = tree
+		.filter((series) => !NON_CORE_SERIES.has(series.slug))
 		.flatMap((series) => series.sets.map((set) => ({ series, set })))
 		.sort((a, b) => b.series.year - a.series.year)
 		.slice(0, LATEST_COUNT);
