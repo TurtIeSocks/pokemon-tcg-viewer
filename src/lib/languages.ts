@@ -126,8 +126,8 @@ export function isSupportedLanguage(lang: string): lang is SupportedLanguage {
 
 /**
  * Normalize an arbitrary recorded language to one the catalog can render.
- * Unsupported languages (e.g. a legacy `ja` stack) fall back to English, which
- * is what the catalog renders for them anyway.
+ * Unsupported languages (e.g. an unrecognized ISO code) fall back to English,
+ * which is what the catalog renders for them anyway.
  */
 export function toSupportedLanguage(
 	lang: string | null | undefined,
