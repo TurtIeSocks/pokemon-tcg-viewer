@@ -21,7 +21,7 @@ export function HomeHero() {
 	// browse launchpad renders from it server-side, no loader added to "/".
 	const tree = getRouteApi("__root__").useLoaderData();
 	return (
-		<div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4">
+		<div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4 pb-12 sm:pb-16">
 			{/* my-auto centers the content when it fits the viewport and collapses
 			    to 0 (top-aligned, scrollable, no clipping) once it overflows. The
 			    hero + recents stay a narrow centered column; the browse launchpad
