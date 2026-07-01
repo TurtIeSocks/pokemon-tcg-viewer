@@ -44,7 +44,13 @@ function PricesPage() {
 			card={card}
 			crossLinks={crossLinks}
 			tab="pricing"
-			onTabChange={(tab) => void navigate({ to: TAB_MASK[tab], params })}
+			onTabChange={(tab) =>
+				void navigate({
+					to: TAB_MASK[tab],
+					params,
+					search: (prev) => ({ lang: prev.lang ?? null }),
+				})
+			}
 			series={params.series}
 			set={params.set}
 		/>

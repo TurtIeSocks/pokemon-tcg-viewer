@@ -83,7 +83,11 @@ function CardPage() {
 	}, [card, addRecentlyViewed]);
 
 	const onTabChange = (tab: keyof typeof TAB_MASK) =>
-		void navigate({ to: TAB_MASK[tab], params });
+		void navigate({
+			to: TAB_MASK[tab],
+			params,
+			search: (prev) => ({ lang: prev.lang ?? null }),
+		});
 
 	return (
 		<CardPageView
