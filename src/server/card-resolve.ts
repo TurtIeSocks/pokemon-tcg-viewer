@@ -1,5 +1,6 @@
 import type { HoloCardData } from "../components/holo-card";
 import { buildSetCardSlugs, type SetCardSlugs } from "../lib/card-slugs";
+import type { Region } from "../lib/languages";
 import { queryCorpusServer } from "./corpus-loader";
 
 // Re-export the pure slug builder for server-side callers' convenience. Client
@@ -9,22 +10,25 @@ import { queryCorpusServer } from "./corpus-loader";
 // browser bundle. (Guarded by scripts/check-client-bundle.ts.)
 export { buildSetCardSlugs, type SetCardSlugs };
 
-// Fetch + slug a whole set, memoized per set id for the process lifetime.
+// Fetch + slug a whole set, memoized per (region, set id) for the process
+// lifetime — keying by region too keeps an Asian-region set (queried via the
+// asia corpus) from colliding with a west-cache entry of the same set id.
 const setCache = new Map<
 	string,
 	Promise<{ cards: HoloCardData[]; slugs: SetCardSlugs }>
 >();
 
-async function loadSet(setId: string) {
-	const all = await queryCorpusServer({ setId, relevance: false });
+async function loadSet(setId: string, region: Region) {
+	const all = await queryCorpusServer({ setId, relevance: false }, region);
 	return { cards: all, slugs: buildSetCardSlugs(all) };
 }
 
-function getSet(setId: string) {
-	let p = setCache.get(setId);
+function getSet(setId: string, region: Region) {
+	const key = `${region}:${setId}`;
+	let p = setCache.get(key);
 	if (!p) {
-		p = loadSet(setId);
-		setCache.set(setId, p);
+		p = loadSet(setId, region);
+		setCache.set(key, p);
 	}
 	return p;
 }
@@ -33,14 +37,16 @@ function getSet(setId: string) {
 export async function resolveCardInSet(
 	setId: string,
 	cardSlug: string,
+	region: Region = "west",
 ): Promise<string | undefined> {
-	return (await getSet(setId)).slugs.idBySlug.get(cardSlug);
+	return (await getSet(setId, region)).slugs.idBySlug.get(cardSlug);
 }
 
 /** Canonical card slug for a card id within its set (or undefined). */
 export async function cardSlugForId(
 	setId: string,
 	cardId: string,
+	region: Region = "west",
 ): Promise<string | undefined> {
-	return (await getSet(setId)).slugs.slugById.get(cardId);
+	return (await getSet(setId, region)).slugs.slugById.get(cardId);
 }

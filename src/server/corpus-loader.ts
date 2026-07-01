@@ -1,5 +1,6 @@
 import { gunzipSync } from "node:zlib";
 import type { HoloCardData } from "../components/holo-card";
+import type { Region } from "../lib/languages";
 import {
 	buildIndex,
 	type CorpusIndex,
@@ -30,41 +31,56 @@ interface ServerCorpus {
 	setsById: Map<string, PokemonSet>;
 }
 
-// Memoize for the process lifetime — a deploy restart picks up a fresh corpus.
-// Mirrors the getNavTreeFn memoization pattern.
-let cached: Promise<ServerCorpus> | null = null;
+/** Corpus blob URL for a region. West keeps the original unsuffixed path. */
+function corpusUrl(region: Region): string {
+	return region === "asia"
+		? `${apiBase()}/corpus-region/asia`
+		: `${apiBase()}/corpus`;
+}
 
-async function loadServerCorpus(): Promise<ServerCorpus> {
+// Memoize ONE index PER REGION for the process lifetime — a deploy restart
+// picks up a fresh corpus. Mirrors the getNavTreeFn memoization pattern (and
+// the client-side per-region in-flight map in store/corpus/corpus-runtime.ts).
+const cached = new Map<Region, Promise<ServerCorpus>>();
+
+async function loadServerCorpus(region: Region): Promise<ServerCorpus> {
 	const [gzRes, sets] = await Promise.all([
-		fetch(`${apiBase()}/corpus`),
+		fetch(corpusUrl(region)),
 		fetchAllSets(),
 	]);
-	if (!gzRes.ok) throw new Error(`/corpus fetch failed: ${gzRes.status}`);
+	if (!gzRes.ok)
+		throw new Error(`${corpusUrl(region)} fetch failed: ${gzRes.status}`);
 	const gz = await gzRes.arrayBuffer();
 	const cards = decodeCorpusGz(gz);
 	return {
-		index: buildIndex(cards),
+		index: buildIndex(cards, region),
 		setsById: new Map(sets.map((s) => [s.id, s])),
 	};
 }
 
-function getServerCorpus(): Promise<ServerCorpus> {
-	if (!cached)
-		cached = loadServerCorpus().catch((e) => {
-			cached = null; // allow retry on next request after a transient failure
+function getServerCorpus(region: Region): Promise<ServerCorpus> {
+	let entry = cached.get(region);
+	if (!entry) {
+		entry = loadServerCorpus(region).catch((e) => {
+			cached.delete(region); // allow retry on next request after a transient failure
 			throw e;
 		});
-	return cached;
+		cached.set(region, entry);
+	}
+	return entry;
 }
 
 /**
- * Query the server-side corpus. Returns the full sorted match list. Server-only
- * (see the file header) — route loaders reach it through the createServerFn
- * wrappers in ./corpus-server, never by importing this directly.
+ * Query the server-side corpus for one region (default `west`, so existing
+ * callers that don't pass a region are byte-compatible). Returns the full
+ * sorted match list. Server-only (see the file header) — route loaders reach
+ * it through the createServerFn wrappers in ./corpus-server, never by
+ * importing this directly.
  */
 export async function queryCorpusServer(
 	q: CorpusQuery,
+	region: Region = "west",
 ): Promise<HoloCardData[]> {
-	const { index, setsById } = await getServerCorpus();
+	const { index, setsById } = await getServerCorpus(region);
 	return queryCorpus(index, q, setsById);
 }
