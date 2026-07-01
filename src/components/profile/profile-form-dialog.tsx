@@ -28,6 +28,11 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { fieldErrorText } from "@/lib/field-error";
+import {
+	LANGUAGE_LABELS,
+	SUPPORTED_LANGUAGES,
+	toSupportedLanguage,
+} from "@/lib/languages";
 import { cn } from "@/lib/utils";
 import { useStore } from "../../store";
 import type { Profile } from "../../store/userland/types";
@@ -45,6 +50,7 @@ const profileFormSchema = z.object({
 	bio: z.string(),
 	avatarPreset: z.string(),
 	favoriteSetId: z.string(),
+	displayLanguage: z.string(),
 });
 
 /** Props for {@link ProfileFormDialog}. */
@@ -76,6 +82,7 @@ export function ProfileFormDialog({
 			bio: profile?.bio ?? "",
 			avatarPreset: profile?.avatarPreset ?? DEFAULT_AVATAR_PRESET_ID,
 			favoriteSetId: profile?.favoriteSetId ?? NONE,
+			displayLanguage: toSupportedLanguage(profile?.displayLanguage) as string,
 		},
 		validators: { onSubmit: profileFormSchema },
 		onSubmit: async ({ value }) => {
@@ -85,6 +92,7 @@ export function ProfileFormDialog({
 				avatarPreset: value.avatarPreset,
 				favoriteSetId:
 					value.favoriteSetId === NONE ? null : value.favoriteSetId,
+				displayLanguage: value.displayLanguage,
 			});
 			onOpenChange(false);
 		},
@@ -218,6 +226,32 @@ export function ProfileFormDialog({
 											{setOptions.map((s) => (
 												<SelectItem key={s.id} value={s.id}>
 													{s.name}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</Field>
+							)}
+						/>
+
+						{/* Catalog display language */}
+						<form.Field
+							name="displayLanguage"
+							// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
+							children={(field) => (
+								<Field>
+									<FieldLabel htmlFor={field.name}>Catalog language</FieldLabel>
+									<Select
+										value={field.state.value}
+										onValueChange={(v) => field.handleChange(v)}
+									>
+										<SelectTrigger id={field.name}>
+											<SelectValue placeholder="English" />
+										</SelectTrigger>
+										<SelectContent>
+											{SUPPORTED_LANGUAGES.map((lang) => (
+												<SelectItem key={lang} value={lang}>
+													{LANGUAGE_LABELS[lang]}
 												</SelectItem>
 											))}
 										</SelectContent>

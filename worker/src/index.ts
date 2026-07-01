@@ -1,11 +1,18 @@
 export interface Env {
-	POKEMONTCG_API_KEY: string;
 	/** Allowed browser origin for CORS; defaults to "*". */
 	ALLOW_ORIGIN?: string;
 	CORPUS: R2Bucket;
 }
 
-const ORIGIN = "https://api.pokemontcg.io";
+const ORIGIN = "https://api.tcgdex.net";
+
+// Western-language overlays shipped in Phase 1b (plus the English base).
+const SUPPORTED_LANGS = ["en", "fr", "de", "es", "it", "pt"] as const;
+type SupportedLang = (typeof SUPPORTED_LANGS)[number];
+
+function isSupportedLang(lang: string): lang is SupportedLang {
+	return (SUPPORTED_LANGS as readonly string[]).includes(lang);
+}
 
 function corsHeaders(env: Env): Record<string, string> {
 	return {
@@ -37,9 +44,7 @@ function withCors(res: Response, env: Env): Response {
 }
 
 function fetchOrigin(url: URL, env: Env): Promise<Response> {
-	return fetch(ORIGIN + url.pathname + url.search, {
-		headers: { "X-Api-Key": env.POKEMONTCG_API_KEY },
-	});
+	return fetch(ORIGIN + url.pathname + url.search);
 }
 
 // Add shared-cache SWR directives to the stored copy. The edge serves the
@@ -120,6 +125,63 @@ export default {
 			const obj = await env.CORPUS.get("corpus/detail-latest.json.gz");
 			if (!obj) {
 				return new Response("Detail not built yet", {
+					status: 503,
+					headers: corsHeaders(env),
+				});
+			}
+			const res = new Response(obj.body, {
+				headers: {
+					"Content-Type": "application/octet-stream",
+					ETag: `"${obj.etag}"`,
+					"Cache-Control":
+						"public, s-maxage=3600, stale-while-revalidate=86400",
+				},
+			});
+			return serveCorpus(res, request, env);
+		}
+
+		// GET /corpus-i18n/:lang/version -> overlay meta JSON (like /corpus-detail/version).
+		const i18nVersionMatch = url.pathname.match(
+			/^\/corpus-i18n\/([^/]+)\/version$/,
+		);
+		if (i18nVersionMatch) {
+			const lang = i18nVersionMatch[1];
+			if (!isSupportedLang(lang)) {
+				return new Response("Not Found", {
+					status: 404,
+					headers: corsHeaders(env),
+				});
+			}
+			const obj = await env.CORPUS.get(`corpus/i18n/${lang}/meta.json`);
+			if (!obj) {
+				return new Response("Overlay not built yet", {
+					status: 503,
+					headers: corsHeaders(env),
+				});
+			}
+			return new Response(obj.body, {
+				headers: {
+					...corsHeaders(env),
+					"Content-Type": "application/json",
+					"Cache-Control":
+						"public, max-age=60, s-maxage=300, stale-while-revalidate=86400",
+				},
+			});
+		}
+
+		// GET /corpus-i18n/:lang -> overlay names blob (like /corpus-detail).
+		const i18nMatch = url.pathname.match(/^\/corpus-i18n\/([^/]+)$/);
+		if (i18nMatch) {
+			const lang = i18nMatch[1];
+			if (!isSupportedLang(lang)) {
+				return new Response("Not Found", {
+					status: 404,
+					headers: corsHeaders(env),
+				});
+			}
+			const obj = await env.CORPUS.get(`corpus/i18n/${lang}/names.json.gz`);
+			if (!obj) {
+				return new Response("Overlay not built yet", {
 					status: 503,
 					headers: corsHeaders(env),
 				});

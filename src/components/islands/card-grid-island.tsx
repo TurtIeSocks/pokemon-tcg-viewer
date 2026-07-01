@@ -18,6 +18,11 @@ import {
 	useSlugIndex,
 } from "../../store/corpus/corpus-runtime";
 import { loadDetail } from "../../store/corpus/detail-runtime";
+import {
+	useActiveI18nKey,
+	useDisplayLanguage,
+	useEnsureI18n,
+} from "../../store/corpus/i18n-active-hooks";
 import { useOwnedCardIdSet } from "../../store/userland/selectors";
 import { CollectionToggle } from "../collection-toggle";
 import { type HoloCardData, holoCardProps } from "../holo-card";
@@ -67,16 +72,26 @@ export function CardGridIsland({
 	const ownedFilter: OwnedFilter | undefined =
 		search.owned === "all" ? undefined : { mode: search.owned, ownedCardIds };
 
+	// Lazily load the active display-language overlay (no-op for en) and re-fetch
+	// the grid when the language (or its loaded overlay version) changes so
+	// localized names/images replace EN — including once the overlay finishes
+	// downloading after a switch.
+	useEnsureI18n();
+	const i18nKey = useActiveI18nKey();
+	const displayLang = useDisplayLanguage();
+
 	// Stable key for the active query; changing it resets pagination.
-	// Include owned mode + count so toggling the filter / adding a card refetches.
+	// Include owned mode + count so toggling the filter / adding a card refetches,
+	// and the active-language key so a switch (or overlay load) re-derives rows.
 	const queryKey = useMemo(
 		() =>
 			JSON.stringify([
 				search,
 				context,
 				search.owned !== "all" ? ownedCardIds.size : null,
+				i18nKey,
 			]),
-		[search, context, ownedCardIds],
+		[search, context, ownedCardIds, i18nKey],
 	);
 
 	useEffect(() => {
@@ -157,7 +172,9 @@ export function CardGridIsland({
 		// a cached thumbnail. Skip in select mode (a click toggles selection).
 		const params = slugIndex ? cardRouteParams(slugIndex, card) : null;
 		const onPrefetch =
-			selectActive || !params ? undefined : () => prefetchCardDetail(params);
+			selectActive || !params
+				? undefined
+				: () => prefetchCardDetail(params, displayLang);
 
 		const cardContent = (
 			<FlipCard imageUrl={card.imageUrlSmall ?? card.imageUrl}>

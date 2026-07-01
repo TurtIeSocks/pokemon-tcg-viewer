@@ -48,15 +48,23 @@ const CORPUS = {
 				body: new Blob(['{"version":"abc","count":2,"builtAt":"x"}']).stream(),
 				etag: "metatag",
 			};
+		if (key === "corpus/i18n/fr/names.json.gz")
+			return { body: new Blob(["FR_NAMES_GZ"]).stream(), etag: "frtag" };
+		if (key === "corpus/i18n/fr/meta.json")
+			return {
+				body: new Blob([
+					'{"lang":"fr","version":"frv","count":3,"builtAt":"x"}',
+				]).stream(),
+				etag: "frmetatag",
+			};
 		return null;
 	},
 };
 
 const env = {
-	POKEMONTCG_API_KEY: "secret",
 	ALLOW_ORIGIN: "https://x.github.io",
 	CORPUS,
-} as unknown as { POKEMONTCG_API_KEY: string; ALLOW_ORIGIN: string };
+} as unknown as { ALLOW_ORIGIN: string };
 
 function envWithCorpus(obj: { body: string; etag: string } | null) {
 	return {
@@ -88,7 +96,7 @@ afterEach(() => {
 });
 
 describe("worker", () => {
-	test("injects the API key into the origin request and adds CORS", async () => {
+	test("proxies /v2 request to TCGdex and adds CORS", async () => {
 		const fetchMock = mock(
 			async () => new Response(JSON.stringify({ data: [] }), { status: 200 }),
 		);
@@ -103,9 +111,8 @@ describe("worker", () => {
 		expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
 			"https://x.github.io",
 		);
-		const callInit = fetchMock.mock.calls[0]?.[1] as RequestInit;
-		const headers = new Headers(callInit.headers);
-		expect(headers.get("X-Api-Key")).toBe("secret");
+		const callUrl = fetchMock.mock.calls[0]?.[0] as string;
+		expect(callUrl).toContain("https://api.tcgdex.net");
 	});
 
 	test("OPTIONS preflight returns 204 with CORS", async () => {
@@ -200,6 +207,92 @@ describe("worker", () => {
 		const res = await worker.fetch(
 			new Request("https://proxy.test/corpus-detail"),
 			emptyEnv,
+			ctx,
+		);
+		expect(res.status).toBe(503);
+	});
+
+	test("/corpus-i18n/:lang serves the overlay blob with an ETag and CORS", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus-i18n/fr"),
+			env,
+			ctx,
+		);
+		expect(res.status).toBe(200);
+		expect(res.headers.get("ETag")).toBe('"frtag"');
+		expect(res.headers.get("Content-Type")).toBe("application/octet-stream");
+		expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
+			"https://x.github.io",
+		);
+		expect(res.headers.get("Cache-Control")).toContain(
+			"stale-while-revalidate=86400",
+		);
+		expect(await res.text()).toBe("FR_NAMES_GZ");
+	});
+
+	test("/corpus-i18n/:lang returns 304 when If-None-Match matches", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus-i18n/fr", {
+				headers: { "If-None-Match": '"frtag"' },
+			}),
+			env,
+			ctx,
+		);
+		expect(res.status).toBe(304);
+	});
+
+	test("/corpus-i18n/:lang returns 503 when the overlay is absent", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus-i18n/de"),
+			env,
+			ctx,
+		);
+		expect(res.status).toBe(503);
+	});
+
+	test("/corpus-i18n rejects an unsupported lang with 404 + CORS", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus-i18n/ja"),
+			env,
+			ctx,
+		);
+		expect(res.status).toBe(404);
+		expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
+			"https://x.github.io",
+		);
+	});
+
+	test("/corpus-i18n/:lang/version serves the overlay meta JSON", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus-i18n/fr/version"),
+			env,
+			ctx,
+		);
+		expect(res.status).toBe(200);
+		expect(res.headers.get("Content-Type")).toBe("application/json");
+		expect(await res.json()).toMatchObject({
+			lang: "fr",
+			version: "frv",
+			count: 3,
+		});
+	});
+
+	test("/corpus-i18n/:lang/version rejects an unsupported lang with 404", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus-i18n/ja/version"),
+			env,
+			ctx,
+		);
+		expect(res.status).toBe(404);
+		expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
+			"https://x.github.io",
+		);
+	});
+
+	test("/corpus-i18n/:lang/version returns 503 when the meta is absent", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus-i18n/de/version"),
+			env,
 			ctx,
 		);
 		expect(res.status).toBe(503);

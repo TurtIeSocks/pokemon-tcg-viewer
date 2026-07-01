@@ -1,0 +1,64 @@
+import { expect, test } from "bun:test";
+import {
+	ptcgImageUrl,
+	ptcgSetImageUrl,
+	ptcgSetToTcgdex,
+	tcgdexCardToPtcg,
+	tcgdexSetToPtcg,
+} from "./id-crosswalk";
+
+test("set translation: verbatim sets are identity", () => {
+	expect(ptcgSetToTcgdex("swsh3")).toBe("swsh3");
+	expect(ptcgSetToTcgdex("base1")).toBe("base1");
+});
+
+test("set translation: divergent sets use the table both ways", () => {
+	expect(ptcgSetToTcgdex("sv1")).toBe("sv01");
+	expect(ptcgSetToTcgdex("base6")).toBe("lc");
+	expect(tcgdexSetToPtcg("sv01")).toBe("sv1");
+	expect(tcgdexSetToPtcg("lc")).toBe("base6");
+});
+
+test("tcgdexCardToPtcg: reverse setId + strip leading zeros on number", () => {
+	expect(tcgdexCardToPtcg("sv01-001")).toBe("sv1-1");
+	expect(tcgdexCardToPtcg("swsh3-136")).toBe("swsh3-136"); // verbatim
+	expect(tcgdexCardToPtcg("2019sm-12")).toBe("mcd19-12");
+});
+
+test("ptcgImageUrl builds hires + small CDN urls", () => {
+	expect(ptcgImageUrl("base1", "4")).toEqual({
+		large: "https://images.pokemontcg.io/base1/4_hires.png",
+		small: "https://images.pokemontcg.io/base1/4.png",
+	});
+});
+
+test("reverse crosswalk collision: swsh4.5 maps to swsh45 (not swsh45sv)", () => {
+	// swsh45 and swsh45sv both map to swsh4.5 in the PTCG→TCGdex table.
+	// The reverse map must resolve swsh4.5 → swsh45 (the primary print run),
+	// not swsh45sv (a special variant), so image fallback URLs are correct.
+	expect(tcgdexCardToPtcg("swsh4.5-1")).toBe("swsh45-1");
+});
+
+test("reverse crosswalk collision: cel25 maps to cel25 (not cel25c)", () => {
+	// cel25 and cel25c both map to the TCGdex id "cel25".
+	// The reverse map must resolve cel25 → cel25 (not cel25c).
+	expect(tcgdexCardToPtcg("cel25-1")).toBe("cel25-1");
+});
+
+test("tcgdexCardToPtcg: splits at the LAST dash so dashed set ids survive", () => {
+	// TCGdex set ids contain dashes (tk-ex-latia); localIds never do.
+	// Splitting at the first dash wrongly yields setId="tk". Split at the last.
+	expect(tcgdexCardToPtcg("tk-ex-latia-1")).toBe("tk1a-1");
+	expect(tcgdexCardToPtcg("tk-ex-latio-1")).toBe("tk1b-1");
+	expect(tcgdexCardToPtcg("tk-ex-p-2")).toBe("tk2a-2");
+	expect(tcgdexCardToPtcg("tk-ex-m-1")).toBe("tk2b-1");
+});
+
+test("ptcgSetImageUrl crosswalks the set id and builds a logo url", () => {
+	expect(ptcgSetImageUrl("base1", "logo")).toBe(
+		"https://images.pokemontcg.io/base1/logo.png",
+	);
+	expect(ptcgSetImageUrl("swsh4.5", "symbol")).toBe(
+		"https://images.pokemontcg.io/swsh45/symbol.png",
+	);
+});

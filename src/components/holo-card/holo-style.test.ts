@@ -103,6 +103,12 @@ describe("variantsToHolo", () => {
 	test("holofoil wins when both present", () => {
 		expect(variantsToHolo(["holofoil", "reverseHolofoil"])).toBe(true);
 	});
+	test("TCGdex 'holo' → true, and wins over a co-present 'normal' (dual-print)", () => {
+		expect(variantsToHolo(["holo"])).toBe(true);
+		// TCGdex flags both printings on a dual-print holo; the holo one is rendered.
+		expect(variantsToHolo(["normal", "holo"])).toBe(true);
+		expect(variantsToHolo(["holo", "reverse"])).toBe(true);
+	});
 	test("no data or ambiguous → undefined (defer to rarity)", () => {
 		expect(variantsToHolo(undefined)).toBeUndefined();
 		expect(variantsToHolo([])).toBeUndefined();

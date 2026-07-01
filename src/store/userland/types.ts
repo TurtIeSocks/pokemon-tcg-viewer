@@ -120,6 +120,7 @@ export interface Profile {
 	bio: string | null; // free text; null = unset
 	avatarPreset: string; // key into AVATAR_PRESETS (gradient); never an uploaded image
 	favoriteSetId: string | null; // corpus set id (FK); null = none picked
+	displayLanguage: string; // ISO 639-1; catalog render language; always present (default "en")
 	createdAt: number; // ms epoch; set on first save
 	updatedAt: number; // ms epoch; bumped each save
 	deletedAt: number | null; // ms epoch tombstone; null = live. Reserved for the sync adapter.
@@ -127,7 +128,10 @@ export interface Profile {
 
 /** update() patch: omitted keys untouched; null clears nullable fields. */
 export type ProfilePatch = Partial<
-	Pick<Profile, "displayName" | "bio" | "avatarPreset" | "favoriteSetId">
+	Pick<
+		Profile,
+		"displayName" | "bio" | "avatarPreset" | "favoriteSetId" | "displayLanguage"
+	>
 >;
 
 /**
@@ -137,7 +141,7 @@ export type ProfilePatch = Partial<
  * backup.ts `upgrade`).
  */
 export interface UserDataSnapshot {
-	schemaVersion: 5;
+	schemaVersion: 5 | 6;
 	exportedAt: number;
 	collection: Stack[];
 	binders: Binder[];

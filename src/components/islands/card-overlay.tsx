@@ -6,12 +6,17 @@ import {
 	parseCardOverlayParam,
 	peekCardDetail,
 } from "../../lib/card-detail";
+import { toSupportedLanguage } from "../../lib/languages";
 import { useStore } from "../../store";
 import {
 	useCorpusRuntime,
 	useSlugIndex,
 } from "../../store/corpus/corpus-runtime";
 import { useDetailRuntime } from "../../store/corpus/detail-runtime";
+import {
+	useActiveI18n,
+	useEnsureI18n,
+} from "../../store/corpus/i18n-active-hooks";
 import { CardModal } from "./card-modal";
 
 function detailHasCard(
@@ -49,6 +54,9 @@ export function CardOverlay() {
 	const index = useCorpusRuntime((s) => s.index);
 	const sets = useStore((s) => s.sets);
 	const detailById = useDetailRuntime((s) => s.detailById);
+	useEnsureI18n();
+	const i18n = useActiveI18n();
+	const lang = toSupportedLanguage(i18n?.lang);
 
 	const params = useMemo(() => parseCardOverlayParam(cardParam), [cardParam]);
 
@@ -57,9 +65,16 @@ export function CardOverlay() {
 	const optimistic = useMemo(
 		() =>
 			params
-				? optimisticCardFromCorpus(params, slugIndex, index, sets, detailById)
+				? optimisticCardFromCorpus(
+						params,
+						slugIndex,
+						index,
+						sets,
+						detailById,
+						i18n,
+					)
 				: null,
-		[params, slugIndex, index, sets, detailById],
+		[params, slugIndex, index, sets, detailById, i18n],
 	);
 
 	// Kick the RPC for any card whose detail isn't already settled, and re-render
@@ -67,18 +82,18 @@ export function CardOverlay() {
 	// truth, so a warm/prefetched card resolves synchronously with no loading flash.
 	const [, forceTick] = useReducer((x: number) => x + 1, 0);
 	useEffect(() => {
-		if (!params || peekCardDetail(params) !== undefined) return;
+		if (!params || peekCardDetail(params, lang) !== undefined) return;
 		let cancelled = false;
-		getCardDetail(params).finally(() => {
+		getCardDetail(params, lang).finally(() => {
 			if (!cancelled) forceTick();
 		});
 		return () => {
 			cancelled = true;
 		};
-	}, [params]);
+	}, [params, lang]);
 
 	if (!cardParam || !params) return null;
-	const settled = peekCardDetail(params); // value | null = settled; undefined = in flight
+	const settled = peekCardDetail(params, lang); // value | null = settled; undefined = in flight
 	const detail = settled ?? null;
 	// Prefer the full detail once it lands; fall back to the optimistic corpus
 	// card meanwhile. Null only when neither the corpus nor the server has it.

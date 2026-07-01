@@ -149,11 +149,11 @@ beforeEach(async () => {
 	await repos.profile.clear();
 });
 
-test("exportAll returns a v5 snapshot of current data", async () => {
+test("exportAll returns a v6 snapshot of current data", async () => {
 	await repos.collection.add({ cardId: "a", pricePaid: 3 });
 	await repos.binders.create({ name: "G" });
 	const snap = await repos.backup.exportAll();
-	expect(snap.schemaVersion).toBe(5);
+	expect(snap.schemaVersion).toBe(6);
 	expect(snap.collection).toHaveLength(1);
 	expect(snap.binders).toHaveLength(1);
 	expect(typeof snap.exportedAt).toBe("number");
@@ -247,6 +247,7 @@ test("backup round-trips the profile via replace import", async () => {
 			bio: "hi",
 			avatarPreset: "violet",
 			favoriteSetId: "base1",
+			displayLanguage: "en",
 			createdAt: 1,
 			updatedAt: 2,
 			deletedAt: null,
@@ -346,15 +347,26 @@ test("profile save() creates on first call then merges on the next", async () =>
 	expect(created.bio).toBeNull();
 	expect(created.avatarPreset).toBe("dusk");
 	expect(created.favoriteSetId).toBeNull();
+	expect(created.displayLanguage).toBe("en"); // default render language
 	expect(typeof created.createdAt).toBe("number");
 
 	const updated = await repo.save({ bio: "Gotta catch em all" });
 	expect(updated.displayName).toBe("Ash"); // preserved
 	expect(updated.bio).toBe("Gotta catch em all");
+	expect(updated.displayLanguage).toBe("en"); // preserved
 	expect(updated.createdAt).toBe(created.createdAt); // stable
 	expect(updated.updatedAt).toBeGreaterThanOrEqual(created.updatedAt); // bumped
 
 	expect((await repo.get())?.bio).toBe("Gotta catch em all");
+});
+
+test("profile save() patches displayLanguage", async () => {
+	const repo = freshProfileRepo();
+	await repo.save({ displayName: "Ash" });
+	const updated = await repo.save({ displayLanguage: "de" });
+	expect(updated.displayLanguage).toBe("de");
+	expect(updated.displayName).toBe("Ash"); // other fields preserved
+	expect((await repo.get())?.displayLanguage).toBe("de");
 });
 
 test("profile clear() removes the stored record", async () => {
@@ -366,7 +378,7 @@ test("profile clear() removes the stored record", async () => {
 
 // --- v3→v4 data migration (dollars→cents) ---
 import { get as idbGet, set as idbSet } from "idb-keyval";
-import { CURRENT_DATA_VERSION, migrateUserlandData } from "./idb-repo";
+import { migrateUserlandData } from "./idb-repo";
 
 /** Four isolated stores so each migration test runs on its own data. */
 function migrationStores() {
@@ -401,18 +413,17 @@ test("migrateUserlandData rescales legacy dollar prices to cents, exactly once",
 		stores.collection,
 	);
 
-	await migrateUserlandData(stores);
+	await migrateUserlandData(stores); // no corpus → v4→v5 remap is deferred
 
 	const m = await idbGet<Stack>("s1", stores.collection);
 	expect(m?.pricePaid).toBe(350); // $3.50 → 350 cents
 	expect(m?.currency).toBe("USD");
 	expect(m?.deletedAt).toBeNull();
 	expect(m?.updatedAt).toBe(0); // backfilled from createdAt
-	expect(await idbGet<number>("userlandDataVersion", stores.meta)).toBe(
-		CURRENT_DATA_VERSION,
-	);
+	// Marker stops at 4 (not 5) because corpus was absent; v4→v5 remap is deferred.
+	expect(await idbGet<number>("userlandDataVersion", stores.meta)).toBe(4);
 
-	// Idempotent: the marker gates re-entry, so prices are never doubled.
+	// Idempotent: re-running without corpus leaves prices unchanged.
 	await migrateUserlandData(stores);
 	expect((await idbGet<Stack>("s1", stores.collection))?.pricePaid).toBe(350);
 });
@@ -553,4 +564,210 @@ test("normalizeStack backfills cert on legacy grading records missing it", () =>
 		grading: { company: "PSA", grade: 10, cert: "999" },
 	} as unknown as Stack);
 	expect(withCert.grading?.cert).toBe("999");
+});
+
+// --- v4→v5 data migration (corpus-id remap) ---
+import { buildIndex } from "../corpus/corpus-engine";
+import type { CorpusCard } from "../corpus/corpus-types";
+
+/** Build a minimal CorpusCard for migration-test corpus fixtures. */
+function corpusCard(id: string): CorpusCard {
+	const dash = id.lastIndexOf("-");
+	return {
+		id,
+		name: id,
+		imageUrl: "",
+		imageUrlSmall: "",
+		supertype: "Pokémon",
+		setId: id.slice(0, dash),
+		number: id.slice(dash + 1),
+	};
+}
+
+test("migrateUserlandData v4->v5 remaps Binder includeCardIds, excludeCardIds, rule setId, and Profile favoriteSetId", async () => {
+	const stores = migrationStores();
+	await idbSet("userlandDataVersion", 4, stores.meta);
+
+	// Seed a Binder with ptcg-style ids in include/exclude and a rule with ptcg setId.
+	await idbSet(
+		"b1",
+		{
+			id: "b1",
+			name: "Test",
+			description: null,
+			rules: [
+				{
+					id: "r1",
+					query: {
+						text: null,
+						setId: "sv1", // ptcg set id — must remap to sv01
+						dexNumber: null,
+						types: [],
+						rarities: [],
+						supertypes: [],
+						subtypes: [],
+						yearMin: null,
+						yearMax: null,
+						mode: "fuzzy",
+					},
+				},
+			],
+			includeCardIds: ["sv1-1"], // ptcg card id
+			excludeCardIds: ["swsh3-136"], // already a tcgdex id — should pass through unchanged
+			createdAt: 0,
+			updatedAt: 0,
+			deletedAt: null,
+		},
+		stores.binders,
+	);
+
+	// Seed a Profile with a ptcg favoriteSetId.
+	await idbSet(
+		"me",
+		{
+			id: "me",
+			displayName: "Ash",
+			bio: null,
+			avatarPreset: "dusk",
+			favoriteSetId: "sv1", // ptcg set id — must remap to sv01
+			createdAt: 0,
+			updatedAt: 0,
+			deletedAt: null,
+		},
+		stores.profile,
+	);
+
+	const corpus = buildIndex([corpusCard("sv01-001"), corpusCard("swsh3-136")]);
+	await migrateUserlandData(stores, corpus);
+
+	const binder = await idbGet<Binder>("b1", stores.binders);
+	expect(binder?.includeCardIds).toEqual(["sv01-001"]); // remapped
+	expect(binder?.excludeCardIds).toEqual(["swsh3-136"]); // tcgdex id preserved
+	// Rule setId is remapped via remapPtcgSetId (sv1 → sv01).
+	expect(binder?.rules[0].query.setId).toBe("sv01");
+
+	const profile = await idbGet<{ favoriteSetId: string | null }>(
+		"me",
+		stores.profile,
+	);
+	expect(profile?.favoriteSetId).toBe("sv01"); // remapped
+	expect(await idbGet<number>("userlandDataVersion", stores.meta)).toBe(5);
+});
+
+test("migrateUserlandData v4->v5 remaps live corpus ids once", async () => {
+	const stores = migrationStores();
+	// Set meta marker to v4 (pre-v5) so the migration runs.
+	await idbSet("userlandDataVersion", 4, stores.meta);
+
+	// Seed: one stack with a pokemontcg.io-style id "sv1-1".
+	await idbSet(
+		"s1",
+		{
+			id: "s1",
+			cardId: "sv1-1",
+			quantity: 1,
+			acquiredAt: 0,
+			createdAt: 0,
+			updatedAt: 0,
+			pricePaid: null,
+			currency: "USD",
+			language: "en",
+			label: null,
+			variant: null,
+			notes: null,
+			condition: "NM",
+			grading: null,
+			source: null,
+			storageLocation: null,
+			deletedAt: null,
+			isPrimary: false,
+		},
+		stores.collection,
+	);
+
+	// Corpus has the TCGdex card "sv01-001" (number "001", which is 1 numerically).
+	const corpus = buildIndex([corpusCard("sv01-001"), corpusCard("swsh3-136")]);
+
+	await migrateUserlandData(stores, corpus);
+
+	const remapped = await idbGet<Stack>("s1", stores.collection);
+	expect(remapped?.cardId).toBe("sv01-001");
+	expect(await idbGet<number>("userlandDataVersion", stores.meta)).toBe(5);
+
+	// Idempotent: second run must not change anything.
+	await migrateUserlandData(stores, corpus);
+	expect((await idbGet<Stack>("s1", stores.collection))?.cardId).toBe(
+		"sv01-001",
+	);
+});
+
+test("importAll: v5 snapshot leaves marker at 4 so next migrateUserlandData remaps ids", async () => {
+	// A pre-v6 snapshot (schemaVersion 5) imported without a corpus lookup keeps
+	// pokemontcg.io ids. importAll must set the marker to 4 (not 5) so that
+	// migrateUserlandData's v4→v5 corpus-remap pass runs on next loadUserland.
+	const stores = migrationStores();
+	// Manually replicate what importAll does for a v5 snapshot (sets marker = 4):
+	await idbSet("stack-1", makeStack({ id: "stack-1", cardId: "sv1-1" }), stores.collection);
+	// schemaVersion 5 < 6 → markerVersion = 4
+	await idbSet("userlandDataVersion", 4, stores.meta);
+
+	// Marker must be 4 (not 5) because snapshot was pre-v6.
+	expect(await idbGet<number>("userlandDataVersion", stores.meta)).toBe(4);
+
+	// Now run migrateUserlandData with a corpus that knows sv01-001 = sv1 card #1.
+	const corpus = buildIndex([corpusCard("sv01-001")]);
+	await migrateUserlandData(stores, corpus);
+
+	// Marker advances to 5 and id is remapped.
+	expect(await idbGet<number>("userlandDataVersion", stores.meta)).toBe(5);
+	expect((await idbGet<Stack>("stack-1", stores.collection))?.cardId).toBe(
+		"sv01-001",
+	);
+});
+
+test("migrateUserlandData v4->v5 defers remap when corpus absent; retries on second call with corpus", async () => {
+	const stores = migrationStores();
+	// Start at v4 (structural migrations already done).
+	await idbSet("userlandDataVersion", 4, stores.meta);
+
+	// Seed a stack with a pre-remap ptcg id.
+	const seedStack = {
+		id: "s1",
+		cardId: "sv1-1",
+		quantity: 1,
+		acquiredAt: 0,
+		createdAt: 0,
+		updatedAt: 0,
+		pricePaid: null,
+		currency: "USD",
+		language: "en",
+		label: null,
+		variant: null,
+		notes: null,
+		condition: "NM",
+		grading: null,
+		source: null,
+		storageLocation: null,
+		deletedAt: null,
+		isPrimary: false,
+	};
+	await idbSet("s1", seedStack, stores.collection);
+
+	// First call: NO corpus — remap must be deferred.
+	await migrateUserlandData(stores, null);
+
+	// Marker must still be 4 (not 5), cardId unchanged.
+	expect(await idbGet<number>("userlandDataVersion", stores.meta)).toBe(4);
+	expect((await idbGet<Stack>("s1", stores.collection))?.cardId).toBe("sv1-1");
+
+	// Second call: corpus now available — remap must run and marker advances to 5.
+	const corpus = buildIndex([corpusCard("sv01-001"), corpusCard("swsh3-136")]);
+	await migrateUserlandData(stores, corpus);
+
+	expect(await idbGet<number>("userlandDataVersion", stores.meta)).toBe(5);
+	expect((await idbGet<Stack>("s1", stores.collection))?.cardId).toBe("sv01-001");
+
+	// Idempotent: third call with corpus must not re-run.
+	await migrateUserlandData(stores, corpus);
+	expect((await idbGet<Stack>("s1", stores.collection))?.cardId).toBe("sv01-001");
 });

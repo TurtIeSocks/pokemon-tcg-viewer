@@ -1,36 +1,78 @@
 import { describe, expect, test } from "bun:test";
-import { apiCardToFocusProps, apiCardToProps } from "./card-mappers";
+import { apiCardToFocusProps, mapTcgdexFocusCard } from "./card-mappers";
 
-describe("apiCardToProps", () => {
-	test("maps prices keys to variants", () => {
-		const out = apiCardToProps({
-			id: "swsh9-154",
-			name: "Charizard VSTAR",
-			supertype: "Pokémon",
-			number: "154",
-			set: { id: "swsh9", name: "Brilliant Stars", series: "Sword & Shield" },
-			images: { small: "s.png", large: "l.png" },
-			tcgplayer: { prices: { holofoil: {}, reverseHolofoil: {} } },
-		});
-		expect(out.variants).toEqual(["holofoil", "reverseHolofoil"]);
-		expect(out.imageUrl).toBe("l.png");
-		expect(out.setSeries).toBe("Sword & Shield");
+test("mapTcgdexFocusCard coerces numeric hp and attack damage to strings", () => {
+	const f = mapTcgdexFocusCard({
+		id: "swsh3-1",
+		localId: "1",
+		name: "Bulbasaur",
+		category: "Pokemon",
+		set: { id: "swsh3", name: "Darkness Ablaze" },
+		hp: 70 as unknown as string, // API returns number
+		attacks: [
+			{ name: "Vine Whip", cost: ["Grass"], damage: 30 as unknown as string },
+		],
 	});
-	test("variants is undefined when no prices", () => {
-		const out = apiCardToProps({
-			id: "base1-4",
-			name: "Charizard",
-			supertype: "Pokémon",
-			number: "4",
-			set: { id: "base1", name: "Base", series: "Base" },
-			images: { small: "s", large: "l" },
-		});
-		expect(out.variants).toBeUndefined();
-	});
+	expect(f.hp).toBe("70");
+	expect(typeof f.hp).toBe("string");
+	expect(f.attacks?.[0].damage).toBe("30");
+	expect(typeof f.attacks?.[0].damage).toBe("string");
+});
+
+test("mapTcgdexFocusCard maps core fields and drops pricing", () => {
+	const f = mapTcgdexFocusCard({
+		id: "swsh3-136",
+		localId: "136",
+		name: "Furret",
+		category: "Pokemon",
+		image: "https://assets.tcgdex.net/en/swsh/swsh3/136",
+		set: { id: "swsh3", name: "Darkness Ablaze" },
+		illustrator: "Mitsuhiro Arita",
+		rarity: "Uncommon",
+		pricing: { cardmarket: { avg: 0.5 }, tcgplayer: { market: 0.4 } },
+	} as never);
+	expect(f.id).toBe("swsh3-136");
+	expect(f.name).toBe("Furret");
+	expect(f.artist).toBe("Mitsuhiro Arita");
+	expect(f.imageUrl).toBe(
+		"https://assets.tcgdex.net/en/swsh/swsh3/136/high.webp",
+	);
+	expect("tcgplayer" in f).toBe(false);
+	expect("cardmarket" in f).toBe(false);
+});
+
+test("mapTcgdexFocusCard assembles subtypes + accented supertype (TCGdex has neither field)", () => {
+	const f = mapTcgdexFocusCard({
+		id: "base1-4",
+		localId: "4",
+		name: "Charizard",
+		category: "Pokemon",
+		set: { id: "base1", name: "Base" },
+		stage: "Stage2",
+	} as never);
+	expect(f.subtypes).toEqual(["Stage2"]); // assembled, not read from a `subtypes` field
+	expect(f.supertype).toBe("Pokémon"); // accented, from category
+	// setSeries/setReleaseDate are joined from the nav tree by the caller, not here.
+	expect(f.setSeries).toBe("");
+	expect(f.setReleaseDate).toBeUndefined();
+});
+
+test("mapTcgdexFocusCard maps TCGdex dexId to nationalPokedexNumbers", () => {
+	// TCGdex sends `dexId`; reading the wrong field dropped the Pokemon
+	// "View all <species>" cross-link on the detail view.
+	const f = mapTcgdexFocusCard({
+		id: "base1-1",
+		localId: "1",
+		name: "Alakazam",
+		category: "Pokemon",
+		set: { id: "base1", name: "Base" },
+		dexId: [65],
+	} as never);
+	expect(f.nationalPokedexNumbers).toEqual([65]);
 });
 
 describe("apiCardToFocusProps", () => {
-	test("carries attacks and tcgplayer through", () => {
+	test("carries attacks through", () => {
 		const out = apiCardToFocusProps({
 			id: "swsh9-154",
 			name: "Charizard VSTAR",

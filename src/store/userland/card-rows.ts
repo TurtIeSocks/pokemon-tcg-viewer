@@ -1,6 +1,10 @@
 import type { HoloCardData } from "../../components/holo-card";
 import type { PokemonSet } from "../../server/card-mappers";
-import { type CorpusIndex, hydrateCard } from "../corpus/corpus-engine";
+import {
+	type CorpusIndex,
+	hydrateCard,
+	type I18nOverlay,
+} from "../corpus/corpus-engine";
 import { compareCardNumber } from "../corpus/natural-compare";
 import { groupByCardId, sumQuantity } from "./group";
 import type { Stack } from "./types";
@@ -32,6 +36,7 @@ export function buildCardRows(
 	items: Stack[],
 	index: CorpusIndex,
 	setsById: Map<string, PokemonSet>,
+	i18n?: I18nOverlay | null,
 ): CardRow[] {
 	const byCard = groupByCardId(items);
 	const rows: CardRow[] = [];
@@ -42,7 +47,7 @@ export function buildCardRows(
 			stacks.find((c) => c.isPrimary) ??
 			stacks.reduce((a, b) => (b.createdAt < a.createdAt ? b : a));
 		rows.push({
-			card: hydrateCard(cc, setsById),
+			card: hydrateCard(cc, setsById, i18n),
 			stacks,
 			primary,
 			count: sumQuantity(stacks),

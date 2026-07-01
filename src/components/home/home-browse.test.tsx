@@ -78,3 +78,32 @@ test("Latest sets are newest-era-first even when the newest series is short", as
 	// Sorted by series year desc: the 2023 SV sets come before the 1999/2000 ones.
 	expect(tiles[0].getAttribute("aria-label")).toMatch(/SV Base|Paldea/);
 });
+
+test("non-core series (TCG Pocket) are hidden from Latest sets but kept in Browse-by-era", async () => {
+	useCorpusRuntime.setState({ index: buildIndex([]) });
+	const tree: NavTree = [
+		{ name: "Base", slug: "base", year: 1999, sets: [set("base", "Base Set")] },
+		{
+			// Newest by year, but digital-only → must not appear in Latest sets.
+			name: "Pokémon TCG Pocket",
+			slug: "pokemon-tcg-pocket",
+			year: 2024,
+			sets: [set("A1", "Genetic Apex")],
+		},
+	];
+	const { container } = await renderInRouter(<HomeBrowse tree={tree} />);
+
+	// Era pill for TCG Pocket is still present (browsable from the pill cloud).
+	const eraPill = [
+		...container.querySelectorAll('a[data-variant="soft"]'),
+	].find((a) => a.textContent === "Pokémon TCG Pocket");
+	expect(eraPill).toBeTruthy();
+
+	// ...but its set has no tile in Latest sets, while the core set does.
+	expect(
+		container.querySelector('a[aria-label="Browse Genetic Apex"]'),
+	).toBeNull();
+	expect(
+		container.querySelector('a[aria-label="Browse Base Set"]'),
+	).toBeTruthy();
+});

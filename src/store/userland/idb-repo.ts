@@ -11,6 +11,8 @@ import {
 	type UseStore,
 } from "idb-keyval";
 import { DEFAULT_AVATAR_PRESET_ID } from "../../components/profile/avatar-presets";
+import type { CorpusIndex } from "../corpus/corpus-engine";
+import { remapPtcgCardId, remapPtcgSetId } from "./id-remap";
 import type {
 	BackupRepo,
 	BindersRepo,
@@ -32,7 +34,7 @@ export const LOCAL_PROFILE_ID = "me";
 /** idb-keyval key (in the meta store) holding the migrated-to data version. */
 const DATA_VERSION_KEY = "userlandDataVersion";
 /** Bump when a NON-idempotent local-data migration is required (see `migrateUserlandData`). */
-export const CURRENT_DATA_VERSION = 4;
+export const CURRENT_DATA_VERSION = 5;
 
 /** Assign a v7 id + timestamps, default acquiredAt, and null-fill optional fields. */
 function fillStack(input: NewStack): Stack {
@@ -152,7 +154,7 @@ function createIdbBackupRepo(
 				profile.get(),
 			]);
 			return {
-				schemaVersion: 5 as const,
+				schemaVersion: 6 as const,
 				exportedAt: Date.now(),
 				collection: c,
 				binders: b,
@@ -179,11 +181,17 @@ function createIdbBackupRepo(
 			if (snapshot.profile) {
 				await set(LOCAL_PROFILE_ID, snapshot.profile, profileStore);
 			}
-			// parseSnapshot already upgraded these rows to the current version, so
-			// stamp the marker. Without this, importing into a fresh install (marker
-			// absent ⇒ 0) would let a later migrateUserlandData re-scale the
-			// already-cents prices a second time.
-			await set(DATA_VERSION_KEY, CURRENT_DATA_VERSION, metaStore);
+			// Stamp the data-version marker so migrateUserlandData knows what to do
+			// on the next loadUserland:
+			//   - snapshot.schemaVersion === 6: rows are already TCGdex-id-remapped.
+			//     Stamp CURRENT_DATA_VERSION (5) so the remap pass is skipped.
+			//   - snapshot.schemaVersion <= 5: parseSnapshot ran upgrade() WITHOUT a
+			//     corpus lookup (import-dialog calls parseSnapshot with no lookup arg),
+			//     so cardIds may still be pokemontcg.io ids. Leave the marker at 4 so
+			//     migrateUserlandData's v4→v5 corpus-remap pass runs on next load.
+			const markerVersion =
+				snapshot.schemaVersion >= 6 ? CURRENT_DATA_VERSION : 4;
+			await set(DATA_VERSION_KEY, markerVersion, metaStore);
 		},
 	};
 }
@@ -207,6 +215,7 @@ export function createIdbProfileRepo(
 						bio: patch.bio ?? null,
 						avatarPreset: patch.avatarPreset ?? DEFAULT_AVATAR_PRESET_ID,
 						favoriteSetId: patch.favoriteSetId ?? null,
+						displayLanguage: patch.displayLanguage ?? "en",
 						createdAt: now,
 						updatedAt: now,
 						deletedAt: null,
@@ -309,12 +318,17 @@ export async function migrateUserlandData(
 		profile: profileStore,
 		meta: metaStore,
 	},
+	corpusIndex?: CorpusIndex | null,
 ): Promise<void> {
 	const from = (await get<number>(DATA_VERSION_KEY, stores.meta)) ?? 0;
 	if (from >= CURRENT_DATA_VERSION) return;
-	await set(DATA_VERSION_KEY, CURRENT_DATA_VERSION, stores.meta);
 
 	if (from < 4) {
+		// Claim the marker BEFORE writes (crash-safety for the money rescale: a
+		// re-entered pass would multiply already-cents prices by 100 again).
+		// Claim up to 4 now; the corpus remap (v4→v5) manages its own marker below.
+		await set(DATA_VERSION_KEY, 4, stores.meta);
+
 		// pricePaid: dollars (whole units) → cents (minor units). Round to guard
 		// against float drift (e.g. 3.5 → 350, not 349.99999). Also normalise the
 		// new v4 fields so legacy rows match the current Stack shape.
@@ -349,5 +363,92 @@ export async function migrateUserlandData(
 				stores.profile,
 			);
 		}
+	}
+
+	// Re-read the marker after structural migrations — if the process skipped
+	// straight here (from === 4), `from` is already correct; if it ran the <4
+	// block above it advanced to 4 and we re-check below.
+	const afterStructural =
+		(await get<number>(DATA_VERSION_KEY, stores.meta)) ?? 0;
+
+	if (afterStructural < 5) {
+		// Remap pokemontcg.io corpus ids to TCGdex corpus ids across all userland
+		// entities. Uses the in-memory corpus index passed from loadUserland.
+		//
+		// CRITICAL: Unlike the structural v3→v4 migration (claim-first for crash
+		// safety), the v4→v5 corpus remap is DEFERRED when the corpus is absent.
+		// If corpusIndex is null/undefined/empty, we skip the remap AND do NOT
+		// advance the marker past 4 — so a subsequent loadUserland (after the
+		// corpus has loaded) will retry this step. Once the remap runs with a real
+		// corpus the marker advances to 5 and it never re-runs. This prevents
+		// silently sealing bad (un-remapped) data when corpus is unavailable.
+		const hasCorpus = !!corpusIndex && corpusIndex.cards.length > 0;
+		if (!hasCorpus) return; // defer: marker stays at 4, retry next load
+
+		// Build a (setId, numericLocalId) → tcgdexCardId lookup from the corpus.
+		// Key format: "{setId}:{num}" where num = Number(card.number).
+		// Built once before the remap loop (O(n) corpus scan, O(1) per card lookup).
+		const numericBySetAndNum = new Map<string, string>();
+		for (const card of corpusIndex.cards) {
+			const num = Number(card.number);
+			if (!Number.isNaN(num)) {
+				numericBySetAndNum.set(`${card.setId}:${num}`, card.id);
+			}
+		}
+		const lookup = (setId: string, num: number): string | null =>
+			numericBySetAndNum.get(`${setId}:${num}`) ?? null;
+
+		// Remap Stack.cardId.
+		const stackItems = await entries<string, Stack>(stores.collection);
+		const remappedStacks = stackItems.map(
+			([id, raw]) =>
+				[id, { ...raw, cardId: remapPtcgCardId(raw.cardId, lookup) }] as [
+					string,
+					Stack,
+				],
+		);
+		if (remappedStacks.length) await setMany(remappedStacks, stores.collection);
+
+		// Remap Binder.includeCardIds, .excludeCardIds, and .rules[].query.setId.
+		const binderItems = await entries<string, Binder>(stores.binders);
+		const remappedBinders = binderItems.map(([id, b]) => {
+			const remapped: Binder = {
+				...b,
+				includeCardIds: b.includeCardIds.map((cid) =>
+					remapPtcgCardId(cid, lookup),
+				),
+				excludeCardIds: b.excludeCardIds.map((cid) =>
+					remapPtcgCardId(cid, lookup),
+				),
+				rules: b.rules.map((rule) => ({
+					...rule,
+					query: {
+						...rule.query,
+						setId:
+							rule.query.setId != null
+								? remapPtcgSetId(rule.query.setId)
+								: null,
+					},
+				})),
+			};
+			return [id, remapped] as [string, Binder];
+		});
+		if (remappedBinders.length) await setMany(remappedBinders, stores.binders);
+
+		// Remap Profile.favoriteSetId.
+		const profile = await get<Profile>(LOCAL_PROFILE_ID, stores.profile);
+		if (profile?.favoriteSetId != null) {
+			await set(
+				LOCAL_PROFILE_ID,
+				{
+					...profile,
+					favoriteSetId: remapPtcgSetId(profile.favoriteSetId),
+				},
+				stores.profile,
+			);
+		}
+
+		// Corpus remap complete — advance marker to 5.
+		await set(DATA_VERSION_KEY, CURRENT_DATA_VERSION, stores.meta);
 	}
 }

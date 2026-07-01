@@ -5,6 +5,7 @@
 // so Vite drops this whole module from production bundles. The RNG and clock are
 // injected so the generators are deterministic under test.
 
+import type { SupportedLanguage } from "@/lib/languages";
 import type { CorpusCard } from "@/store/corpus/corpus-types";
 import type {
 	CardCondition,
@@ -72,10 +73,15 @@ const QUANTITIES: readonly (readonly [number, number])[] = [
 	[3, 12],
 	[4, 8],
 ];
-const LANGUAGES: readonly (readonly [string, number])[] = [
-	["en", 85],
-	["ja", 10],
-	["zh", 5],
+// Keys are typed to the catalog-supported set so this can't drift back to
+// weighting an unsupported language (the old ja/zh seed bug).
+const LANGUAGES: readonly (readonly [SupportedLanguage, number])[] = [
+	["en", 70],
+	["fr", 8],
+	["de", 7],
+	["es", 6],
+	["it", 5],
+	["pt", 4],
 ];
 const GRADERS = ["PSA", "CGC", "BGS"] as const;
 const GRADES = [8, 9, 9.5, 10] as const;

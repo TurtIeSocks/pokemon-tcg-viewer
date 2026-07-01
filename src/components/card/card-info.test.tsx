@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { render, screen } from "@testing-library/react";
 import { makeFocusCard } from "../../test-utils";
-import { CardInfo } from "./card-info";
+import { CardHeading, CardInfo } from "./card-info";
 
 const CARD = makeFocusCard({
 	id: "base1-4",
@@ -9,6 +9,7 @@ const CARD = makeFocusCard({
 	setName: "Base Set",
 	cardNumber: "4",
 	hp: "120",
+	rarity: "Rare Holo",
 	attacks: [
 		{
 			name: "Fire Spin",
@@ -19,16 +20,14 @@ const CARD = makeFocusCard({
 	],
 });
 
-test("showHeader defaults to true: renders the name", () => {
+test("CardInfo renders the attack body", () => {
 	render(<CardInfo card={CARD} />);
-	expect(screen.getByRole("heading", { name: "Charizard" })).toBeDefined();
+	expect(screen.getByText("Fire Spin")).toBeDefined();
 });
 
-test("showHeader=false: suppresses name and HP but keeps the attack", () => {
-	render(<CardInfo card={CARD} showHeader={false} />);
-	expect(screen.queryByRole("heading", { name: "Charizard" })).toBeNull();
-	// HP span suppressed: check for the literal HP label text node
-	expect(screen.queryByText("HP", { exact: true })).toBeNull();
-	// Body still renders.
-	expect(screen.getByText("Fire Spin")).toBeDefined();
+test("CardHeading renders the name, set · #, and rarity", () => {
+	render(<CardHeading card={CARD} />);
+	expect(screen.getByRole("heading", { name: "Charizard" })).toBeDefined();
+	expect(screen.getByText(/Base Set · #4/)).toBeDefined();
+	expect(screen.getByText(/Rare Holo/)).toBeDefined();
 });

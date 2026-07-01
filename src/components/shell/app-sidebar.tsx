@@ -8,6 +8,7 @@ import {
 	type LucideIcon,
 } from "lucide-react";
 import type React from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	Collapsible,
 	CollapsibleContent,
@@ -37,6 +38,7 @@ import {
 	type NavTree,
 	seriesMonogram,
 } from "../../lib/nav-tree";
+import { GlobalLanguageControl } from "../islands/global-language-control";
 import { SidebarUserMenu } from "./sidebar-user-menu";
 
 interface AppSidebarProps {
@@ -61,6 +63,7 @@ export function AppSidebar({ tree }: AppSidebarProps) {
 			</SidebarContent>
 
 			<SidebarFooter>
+				<GlobalLanguageControl />
 				<SidebarUserMenu />
 			</SidebarFooter>
 		</Sidebar>
@@ -213,9 +216,49 @@ interface SetItemProps {
 	seriesSlug: string;
 }
 
+/**
+ * Set-list icon: a series-style mono glass badge (the set monogram) fills the
+ * 24px slot immediately, then the pokemontcg.io symbol fades in over it on load.
+ * No pop-in (the slot is reserved by the badge), and a missing/dead symbol simply
+ * leaves the monogram — visually consistent with the series NavGlyph badges.
+ */
+function SetGlyph({ name, symbol }: { name: string; symbol?: string }) {
+	const [loaded, setLoaded] = useState(false);
+	const ref = useRef<HTMLImageElement>(null);
+	// A cached/already-decoded symbol can finish loading before React attaches the
+	// onLoad handler, so onLoad never fires and the image would stay invisible.
+	// Reconcile against `complete` once after mount; onLoad covers the async case.
+	useEffect(() => {
+		if (ref.current?.complete && ref.current.naturalWidth > 0) setLoaded(true);
+	}, []);
+	return (
+		<span
+			data-slot="icon"
+			className="relative grid size-6 shrink-0 place-items-center overflow-hidden rounded-[7px] border border-white/10 bg-white/5 font-mono text-[11px] font-semibold leading-none text-(--ink-muted) shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] group-data-[collapsible=icon]:-m-1"
+		>
+			{loaded ? null : seriesMonogram(name)}
+			{symbol ? (
+				<img
+					ref={ref}
+					src={symbol}
+					alt=""
+					onLoad={() => setLoaded(true)}
+					className={cn(
+						"absolute inset-0 m-auto max-h-4 max-w-4 object-contain transition-opacity duration-200",
+						loaded ? "opacity-100" : "opacity-0",
+					)}
+				/>
+			) : null}
+		</span>
+	);
+}
+
 function SetItem({ set, seriesSlug }: SetItemProps) {
 	const isActive = useIsActive(`/${seriesSlug}/${set.slug}`, { exact: true });
 	const { setOpenMobile } = useSidebar();
+	// Coerce a blank/nullish symbol url to `undefined` and skip the <img> — an
+	// empty `src=""` re-fetches the whole page (HTML spec → flash).
+	const symbol = set.symbol ? set.symbol : undefined;
 
 	return (
 		<SidebarMenuSubItem>
@@ -230,11 +273,7 @@ function SetItem({ set, seriesSlug }: SetItemProps) {
 					search={LIST_SEARCH_DEFAULTS}
 					onClick={() => setOpenMobile(false)}
 				>
-					<img
-						src={set.symbol}
-						alt=""
-						className="max-h-4 max-w-4 object-contain"
-					/>
+					<SetGlyph name={set.name} symbol={symbol} />
 					<span className="flex-1 truncate">{set.name}</span>
 					<span className="font-mono text-(--faint) text-xs tabular-nums opacity-70">
 						{set.total}

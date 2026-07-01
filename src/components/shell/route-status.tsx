@@ -43,10 +43,23 @@ export function RouteError({ error }: ErrorComponentProps) {
 	const router = useRouter();
 	const message =
 		error instanceof Error ? error.message : "Something went wrong.";
+	// In dev, surface the real error (name + stack + cause) so a thrown loader
+	// isn't an opaque "Something went wrong". Stays hidden in production.
+	const detail =
+		import.meta.env.DEV && error instanceof Error
+			? `${error.name}: ${error.message}\n\n${error.stack ?? "(no stack)"}${
+					error.cause != null ? `\n\nCaused by: ${String(error.cause)}` : ""
+				}`
+			: null;
 	return (
-		<div className="mx-auto flex h-full max-w-md flex-col items-center justify-center gap-3 px-4 py-16 text-center">
+		<div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center gap-3 px-4 py-16 text-center">
 			<h1 className="text-2xl font-bold">Something went wrong</h1>
 			<p className="max-w-prose text-sm text-muted-foreground">{message}</p>
+			{detail && (
+				<pre className="mt-1 max-h-80 w-full overflow-auto whitespace-pre-wrap rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-left font-mono text-xs text-destructive">
+					{detail}
+				</pre>
+			)}
 			<div className="mt-2 flex gap-2">
 				<Button variant="outline" size="sm" onClick={() => router.invalidate()}>
 					Try again

@@ -5,9 +5,11 @@ import type { PokemonSet } from "../../server/card-mappers";
 import {
 	type CorpusIndex,
 	hydrateCard,
+	type I18nOverlay,
 	setsById,
 } from "../corpus/corpus-engine";
 import { useCorpusRuntime } from "../corpus/corpus-runtime";
+import { useActiveI18n } from "../corpus/i18n-active-hooks";
 import { useStore } from "../index";
 import {
 	type BinderProgress,
@@ -52,6 +54,7 @@ export function joinOwnedViews(
 	items: Stack[],
 	index: CorpusIndex,
 	setsById: Map<string, PokemonSet>,
+	i18n?: I18nOverlay | null,
 ): HoloCardData[] {
 	const seen = new Set<string>();
 	const out: HoloCardData[] = [];
@@ -59,7 +62,7 @@ export function joinOwnedViews(
 		if (seen.has(item.cardId)) continue;
 		seen.add(item.cardId);
 		const card = index.byId.get(item.cardId);
-		if (card) out.push(hydrateCard(card, setsById));
+		if (card) out.push(hydrateCard(card, setsById, i18n));
 	}
 	return out;
 }
@@ -136,10 +139,11 @@ export function useOwnedCount(cardId: string): number {
 export function useOwnedCardViews(): HoloCardData[] {
 	const items = useUserland((s) => s.items);
 	const { index, sets } = useCorpusJoinInputs();
+	const i18n = useActiveI18n();
 	return useMemo(() => {
 		if (!index || !sets) return [];
-		return joinOwnedViews(Object.values(items), index, setsById(sets));
-	}, [items, index, sets]);
+		return joinOwnedViews(Object.values(items), index, setsById(sets), i18n);
+	}, [items, index, sets, i18n]);
 }
 
 /** Tally distinct owned cardIds into per-set counts via the corpus byId map. */
@@ -171,14 +175,15 @@ export function useOwnedCountBySet(): Map<string, number> {
 export function useOwnedCardRows(key: SortKey, dir: SortDir): CardRow[] {
 	const items = useUserland((s) => s.items);
 	const { index, sets } = useCorpusJoinInputs();
+	const i18n = useActiveI18n();
 	return useMemo(() => {
 		if (!index || !sets) return [];
 		return sortCardRows(
-			buildCardRows(Object.values(items), index, setsById(sets)),
+			buildCardRows(Object.values(items), index, setsById(sets), i18n),
 			key,
 			dir,
 		);
-	}, [items, index, sets, key, dir]);
+	}, [items, index, sets, key, dir, i18n]);
 }
 
 /** Hook: compute progress for a binder by id; null until corpus + sets + userland load. */

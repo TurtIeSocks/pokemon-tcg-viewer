@@ -1,8 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { setResponseHeader } from "@tanstack/react-start/server";
 import type { ListSearch } from "../lib/card-query";
+import { isSupportedLanguage } from "../lib/languages";
 import { LIST_SEARCH_DEFAULTS } from "../lib/list-search";
-import { findSet } from "../lib/nav-tree";
+import { findSeries } from "../lib/nav-tree";
 import { slugify } from "../lib/slug";
 import type { SearchMode } from "../store/corpus/fuzzy";
 import { cacheControl } from "./cache-headers";
@@ -126,11 +127,17 @@ export const getCardForRouteFn = createServerFn({ method: "GET" })
 			series?: unknown;
 			set?: unknown;
 			card?: unknown;
+			lang?: unknown;
 		};
 		return {
 			series: nonEmptyString(o.series, "series"),
 			set: nonEmptyString(o.set, "set"),
 			card: nonEmptyString(o.card, "card"),
+			// Optional display language; non-supported/absent → English detail.
+			lang:
+				typeof o.lang === "string" && isSupportedLanguage(o.lang)
+					? o.lang
+					: "en",
 		};
 	})
 	.handler(async ({ data }) => {
@@ -146,14 +153,16 @@ export const getCardForRouteFn = createServerFn({ method: "GET" })
 		);
 
 		const tree = await loadNavTree();
-		const set = findSet(tree, data.series, data.set);
-		if (!set) return null;
+		const series = findSeries(tree, data.series);
+		const set = series?.sets.find((s) => s.slug === data.set);
+		if (!series || !set) return null;
 		const cardId = await resolveCardInSet(set.id, data.card);
 		if (!cardId) return null;
 
-		// Card fetch + species list are independent once we have the id.
+		// Card fetch (in the requested language) + species list are independent
+		// once we have the id.
 		const [card, list] = await Promise.all([
-			getCardByIdCached(cardId),
+			getCardByIdCached(cardId, data.lang),
 			getPokemonListCached(),
 		]);
 
@@ -161,8 +170,14 @@ export const getCardForRouteFn = createServerFn({ method: "GET" })
 		for (const dex of card.nationalPokedexNumbers ?? []) {
 			const name = nameByDex(list, dex);
 			if (name) {
+				// Title-case the dex slug for display ("mr-mime" -> "Mr Mime") so the
+				// species link reads like the proper-cased Trainer/Energy links below;
+				// the route param keeps the raw slug.
+				const display = name
+					.replace(/-/g, " ")
+					.replace(/\b\w/g, (c) => c.toUpperCase());
 				crossLinks.push({
-					label: `View all ${name.replace(/-/g, " ")}`,
+					label: `View all ${display}`,
 					link: { to: "/pokemon/$name", params: { name } },
 				});
 			}
@@ -186,7 +201,15 @@ export const getCardForRouteFn = createServerFn({ method: "GET" })
 			},
 		});
 
-		return { card, crossLinks };
+		// A card's TCGdex SetBrief carries no serie/releaseDate, so the live mapper
+		// leaves setSeries/setReleaseDate empty. Join them from the nav tree here
+		// (a fresh copy — never mutate the per-process cached card).
+		const enriched = {
+			...card,
+			setSeries: series.name,
+			setReleaseDate: set.releaseDate,
+		};
+		return { card: enriched, crossLinks };
 	});
 
 /**

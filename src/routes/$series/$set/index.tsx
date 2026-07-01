@@ -7,9 +7,7 @@ import {
 	stripSearchParams,
 	useNavigate,
 } from "@tanstack/react-router";
-import { Package } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
 import type { HoloCardData } from "../../../components/holo-card";
 import { CardGridIsland } from "../../../components/islands/card-grid-island";
 import { CardSelectionProvider } from "../../../components/islands/card-selection";
@@ -149,10 +147,10 @@ function SetPageInner({
 						search={search}
 						context={{ setId: set.id }}
 					/>
-					<Button variant="outline" size="sm" onClick={() => setPackOpen(true)}>
+					{/* <Button variant="outline" size="sm" onClick={() => setPackOpen(true)}>
 						<Package className="size-4 sm:mr-2" />
 						<span className="hidden sm:inline">Open Packs</span>
-					</Button>
+					</Button> */}
 					<CardSortControl value={search} onChange={onChange} />
 				</ClientOnly>
 			</ResultsBar>
@@ -169,6 +167,7 @@ function SetPageInner({
 											set: params.set,
 											card: card.slug,
 										}}
+										search={{ lang: null }}
 									>
 										<img
 											src={card.imageUrlSmall}

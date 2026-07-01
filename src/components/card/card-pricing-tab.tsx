@@ -1,5 +1,6 @@
 import { GlassPanel } from "@/components/ui/glass";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PRICING_ENABLED } from "@/lib/pricing-flag";
 import type { FocusCardData } from "../../server/card-mappers";
 import { CardPrices } from "../islands/card-prices";
 
@@ -23,8 +24,9 @@ function PriceGhost() {
 }
 
 /**
- * Pricing tab body. For now: live market prices (TCGplayer / Cardmarket) plus a
- * labeled scaffold for the price-history build-out to come. No charts yet.
+ * Pricing tab body. Gated behind `PRICING_ENABLED` — returns null until the
+ * PriceCharting connector lands. When enabled, will show live market prices
+ * (TCGplayer / Cardmarket) plus a labeled scaffold for price-history charts.
  */
 export function CardPricingTab({
 	card,
@@ -33,6 +35,7 @@ export function CardPricingTab({
 	card: FocusCardData;
 	pending?: boolean;
 }) {
+	if (!PRICING_ENABLED) return null;
 	return (
 		<div className="flex flex-col gap-5">
 			<section aria-label="Market prices">

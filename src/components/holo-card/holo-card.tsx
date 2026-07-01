@@ -9,10 +9,32 @@ import { useFoilAssets } from "./use-foil-assets";
 import { useHoloEffect } from "./use-holo-effect";
 import { useTiltEffect } from "./use-tilt-effect";
 
+/**
+ * Coerce a blank-or-nullish image url to `undefined`. ~803 cards have no image
+ * in any source; older data also carries `""`. Returning `undefined` lets the
+ * caller omit the element entirely — never emit `src=""` / `srcSet=""`, which
+ * (per the HTML spec) re-fetches the whole page and causes a visible flash.
+ */
+function nonEmptyUrl(url: string | null | undefined): string | undefined {
+	return url ? url : undefined;
+}
+
 export interface HoloCardProps {
 	imageUrl: string;
 	/** Smaller image used for grid display; falls back to imageUrl. */
 	imageUrlSmall?: string;
+	/**
+	 * Baked English image url to retry once when the (localized) imageUrl 404s.
+	 * Set only when rendering a non-English language whose derived image differs;
+	 * undefined for English. See the onError reconciliation below.
+	 */
+	imageUrlFallback?: string;
+	/**
+	 * Baked English LOW-res url, the grid counterpart to imageUrlFallback. When a
+	 * localized image 404s in a grid, we fall back to this thumbnail rather than
+	 * the hi-res imageUrlFallback — else the grid loads a full-res image per tile.
+	 */
+	imageUrlSmallFallback?: string;
 	name: string;
 	rarity?: string;
 	// Drive holo style + per-card CDN foil/mask resolution (see useFoilAssets).
@@ -42,6 +64,8 @@ export interface HoloCardProps {
 export function HoloCard({
 	imageUrl,
 	imageUrlSmall,
+	imageUrlFallback,
+	imageUrlSmallFallback,
 	name,
 	rarity,
 	subtypes,
@@ -105,11 +129,53 @@ export function HoloCard({
 	// `complete` before onLoad can fire, so detect that too.
 	const [hdLoaded, setHdLoaded] = useState(false);
 	const fullRef = useRef<HTMLImageElement>(null);
+
+	// If the image url 404s — true blanks point at a dead url that is the only
+	// one we have — drop to the bare frame instead of a broken-image icon. The
+	// flag makes onError fire once: once errored, the <img> is unmounted so it
+	// can't loop.
+	const [errored, setErrored] = useState(false);
+	// Localized-image reconciliation: a non-English derived image may 404 where
+	// English exists (imageUrlFallback). On the first error, retry the EN url
+	// once by re-rendering both <source> and <img> at the fallback url; only if
+	// EN also fails do we fall through to the empty state. Loop-safe: each url is
+	// tried at most once (localized → EN → empty).
+	const [usingFallback, setUsingFallback] = useState(false);
+	// Reset load/error/fallback state when the displayed card changes. imageUrl is
+	// the intended trigger even though the body only reads it via the ref's cached
+	// image; biome flags it as "unnecessary" — keep it (a single-line ignore is
+	// required because the directive must sit directly above the hook).
+	// biome-ignore lint/correctness/useExhaustiveDependencies: imageUrl is the intended re-run trigger; see comment above.
 	useEffect(() => {
 		setHdLoaded(false);
+		setErrored(false);
+		setUsingFallback(false);
 		const img = fullRef.current;
 		if (img?.complete && img.naturalWidth > 0) setHdLoaded(true);
 	}, [imageUrl]);
+
+	// One shared error handler for every <img>. Retry the EN fallback once, then
+	// give up to the empty state.
+	function handleImgError() {
+		if (!usingFallback && imageUrlFallback && imageUrlFallback !== imageUrl) {
+			setUsingFallback(true);
+			return;
+		}
+		setErrored(true);
+	}
+
+	// The url to actually render: the EN fallback once a localized image failed,
+	// otherwise the (possibly localized) imageUrl/Small. `||` (not `??`) so an
+	// empty-string imageUrlSmall falls through to imageUrl rather than src="".
+	// The grid keeps a thumbnail on fallback (imageUrlSmallFallback = EN low.webp);
+	// only when that is absent does it drop to the hi-res imageUrlFallback.
+	const resolvedLarge = usingFallback ? imageUrlFallback : imageUrl;
+	const resolvedSmall = usingFallback
+		? (imageUrlSmallFallback ?? imageUrlFallback)
+		: imageUrlSmall;
+	const gridUrl = nonEmptyUrl(resolvedSmall || resolvedLarge);
+	const focusUrl = nonEmptyUrl(resolvedLarge);
+	const hasImage = !errored && (size === "focus" ? focusUrl : gridUrl);
 
 	return (
 		// biome-ignore lint/a11y/useSemanticElements: <div> is intentional — a <button> cannot contain block-level children like <img>+overlay
@@ -126,7 +192,28 @@ export function HoloCard({
 			aria-label={name}
 			{...dataAttrs}
 		>
-			{size === "focus" ? (
+			{/* When there is no usable image (blank in every source, or the baked
+			    url 404'd), render the card's IDENTITY instead of a bare frame —
+			    name + number + set so a collector can tell what it is without
+			    clicking. STATIC: text only, no <img>/<source> (an empty/blank url
+			    re-fetches the page → flash), no animation, no timer. */}
+			{!hasImage ? (
+				<div className="holo-card-empty">
+					<span className="holo-card-empty-name">{name}</span>
+					{(cardNumber || series) && (
+						<span className="holo-card-empty-meta">
+							{cardNumber && (
+								<span className="holo-card-empty-number tabular-nums">
+									#{cardNumber}
+								</span>
+							)}
+							{cardNumber && series && <span aria-hidden="true"> · </span>}
+							{series}
+						</span>
+					)}
+					<span className="holo-card-empty-cue">no image</span>
+				</div>
+			) : size === "focus" ? (
 				<>
 					{/* Thumbnail placeholder: same URL the grid used, so it is a cache
 					    hit and paints instantly. Blurred until the full-res lands. */}
@@ -135,7 +222,7 @@ export function HoloCard({
 							"holo-card-image holo-card-image--placeholder",
 							hdLoaded && "is-loaded",
 						)}
-						src={cdnImage(imageUrl, { w: 300 })}
+						src={cdnImage(focusUrl as string, { w: 300 })}
 						alt=""
 						aria-hidden="true"
 					/>
@@ -143,7 +230,7 @@ export function HoloCard({
 					<picture>
 						<source
 							type="image/webp"
-							srcSet={`${cdnImage(imageUrl, { w: 734 })} 1x, ${cdnImage(imageUrl, { w: 734, dpr: 2 })} 2x`}
+							srcSet={`${cdnImage(focusUrl as string, { w: 734 })} 1x, ${cdnImage(focusUrl as string, { w: 734, dpr: 2 })} 2x`}
 						/>
 						<img
 							ref={fullRef}
@@ -151,12 +238,13 @@ export function HoloCard({
 								"holo-card-image holo-card-image--full",
 								hdLoaded && "is-loaded",
 							)}
-							src={imageUrl}
+							src={focusUrl}
 							alt=""
 							loading="eager"
 							decoding="async"
 							fetchPriority="high"
 							onLoad={() => setHdLoaded(true)}
+							onError={handleImgError}
 						/>
 					</picture>
 					{!hdLoaded && (
@@ -169,17 +257,31 @@ export function HoloCard({
 				<picture>
 					<source
 						type="image/webp"
-						srcSet={`${cdnImage(imageUrl, { w: 300 })} 1x, ${cdnImage(imageUrl, { w: 300, dpr: 2 })} 2x`}
+						srcSet={`${cdnImage(gridUrl as string, { w: 300 })} 1x, ${cdnImage(gridUrl as string, { w: 300, dpr: 2 })} 2x`}
 					/>
 					<img
 						className="holo-card-image"
-						src={imageUrlSmall ?? imageUrl}
+						src={gridUrl}
 						alt=""
 						loading="lazy"
 						decoding="async"
 						fetchPriority="auto"
+						onError={handleImgError}
 					/>
 				</picture>
+			)}
+			{/* Image is the English print because TCGdex lacks a localized scan for
+			    the active language (usingFallback). Purely image-driven — independent
+			    of whether the NAME is localized (a card can have a German name but no
+			    German image), so it stays truthful in both grid and focus. */}
+			{usingFallback && hasImage && (
+				<span
+					className="holo-card-lang-badge"
+					role="img"
+					aria-label="Shown in English"
+				>
+					EN
+				</span>
 			)}
 			<div className="holo-card-overlay">{hoverOverlay}</div>
 			{owned && (

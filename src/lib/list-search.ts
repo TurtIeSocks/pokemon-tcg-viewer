@@ -5,6 +5,7 @@ import type {
 	OwnedMode,
 	ViewMode,
 } from "./card-query";
+import { isSupportedLanguage, type SupportedLanguage } from "./languages";
 import type { SortDir } from "./sort";
 
 /**
@@ -28,6 +29,7 @@ export const LIST_SEARCH_DEFAULTS: ListSearch = {
 	mode: "fuzzy",
 	sort: "default",
 	dir: "asc",
+	lang: null,
 };
 
 const VALID_SEARCH_PARAMS = [
@@ -95,6 +97,11 @@ export function validateListSearch(
 				: "default";
 		})(),
 		dir: (search.dir === "desc" ? "desc" : "asc") as SortDir,
+		// null → use the viewer default; a concrete value must be a supported lang.
+		lang:
+			typeof search.lang === "string" && isSupportedLanguage(search.lang)
+				? (search.lang as SupportedLanguage)
+				: null,
 	};
 }
 
@@ -123,6 +130,8 @@ export function listSearchToUrl(
 	if (s.sort !== undefined)
 		out.sort = s.sort !== "default" ? s.sort : undefined;
 	if (s.dir !== undefined) out.dir = s.dir !== "asc" ? s.dir : undefined;
+	// Include lang only when an explicit per-page override is set (null = default).
+	if (s.lang !== undefined) out.lang = s.lang ?? undefined;
 
 	return out;
 }

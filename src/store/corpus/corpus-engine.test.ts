@@ -375,3 +375,80 @@ test("sort default preserves the existing card-number order", () => {
 		).map((c) => c.id),
 	).toEqual(["base1-2", "base1-4", "swsh1-25", "base1-58"]);
 });
+
+// --- i18n overlay (Phase 1b) ---
+
+test("hydrateCard with no i18n keeps the EN name + baked image urls", () => {
+	const setsById = new Map([["base1", base1]]);
+	const out = hydrateCard(
+		corpusCard("base1-4", {
+			setId: "base1",
+			name: "Charizard",
+			imageBase: "base/base1/4",
+			imageUrl: "https://images.pokemontcg.io/base1/4_hires.png",
+			imageUrlSmall: "https://images.pokemontcg.io/base1/4.png",
+		}),
+		setsById,
+	);
+	expect(out.name).toBe("Charizard");
+	expect(out.imageUrl).toBe("https://images.pokemontcg.io/base1/4_hires.png");
+});
+
+test("hydrateCard overlays a localized name when the id is in the map", () => {
+	const setsById = new Map([["base1", base1]]);
+	const namesById = new Map([["base1-4", "Dracaufeu"]]);
+	const out = hydrateCard(
+		corpusCard("base1-4", { setId: "base1", name: "Charizard" }),
+		setsById,
+		{ lang: "fr", namesById },
+	);
+	expect(out.name).toBe("Dracaufeu");
+});
+
+test("hydrateCard falls back to the EN name on an overlay miss", () => {
+	const setsById = new Map([["base1", base1]]);
+	const namesById = new Map<string, string>(); // empty → every lookup misses
+	const out = hydrateCard(
+		corpusCard("base1-4", { setId: "base1", name: "Charizard" }),
+		setsById,
+		{ lang: "fr", namesById },
+	);
+	expect(out.name).toBe("Charizard");
+});
+
+test("hydrateCard derives the localized image url from imageBase", () => {
+	const setsById = new Map([["base1", base1]]);
+	const out = hydrateCard(
+		corpusCard("base1-4", {
+			setId: "base1",
+			name: "Charizard",
+			imageBase: "base/base1/4",
+			imageUrl: "https://images.pokemontcg.io/base1/4_hires.png",
+			imageUrlSmall: "https://images.pokemontcg.io/base1/4.png",
+		}),
+		setsById,
+		{ lang: "fr", namesById: null },
+	);
+	expect(out.imageUrl).toBe(
+		"https://assets.tcgdex.net/fr/base/base1/4/high.webp",
+	);
+	expect(out.imageUrlSmall).toBe(
+		"https://assets.tcgdex.net/fr/base/base1/4/low.webp",
+	);
+});
+
+test("queryCorpus threads the i18n overlay into every hydrated row", () => {
+	const namesById = new Map([
+		["base1-4", "Dracaufeu"],
+		["base1-58", "Pikachu (fr)"],
+	]);
+	const r = queryCorpus(index, { setId: "base1", relevance: false }, setsById, {
+		lang: "fr",
+		namesById,
+	});
+	const byId = new Map(r.map((c) => [c.id, c.name]));
+	expect(byId.get("base1-4")).toBe("Dracaufeu");
+	expect(byId.get("base1-58")).toBe("Pikachu (fr)");
+	// base1-2 (Blastoise) is not in the overlay → EN fallback.
+	expect(byId.get("base1-2")).toBe("Blastoise");
+});

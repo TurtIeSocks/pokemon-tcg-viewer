@@ -1,5 +1,11 @@
 import { useRouter } from "@tanstack/react-router";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import {
 	type CardTab,
 	cardRouteParams,
@@ -8,7 +14,8 @@ import {
 import type { FocusCardData } from "../../server/card-mappers";
 import { useSlugIndex } from "../../store/corpus/corpus-runtime";
 import { CardCockpit } from "../card/card-cockpit";
-import type { CrossLink } from "./cross-links";
+import { CardHeading } from "../card/card-info";
+import { CardCrossLinks, type CrossLink } from "./cross-links";
 
 interface CardModalProps {
 	card: FocusCardData;
@@ -38,18 +45,27 @@ export function CardModal({
 		<Dialog open onOpenChange={(o) => !o && onClose()}>
 			<DialogContent
 				aria-describedby={undefined}
-				className="max-w-4xl overflow-hidden p-0 sm:max-w-4xl"
+				className="max-w-4xl sm:max-w-4xl"
 			>
-				<DialogTitle className="sr-only">{card.name}</DialogTitle>
+				{/* Radix needs a DialogTitle for the dialog's accessible name; the
+				    visible identity is CardHeading (shared with the dedicated page). */}
+				<DialogTitle className="sr-only">
+					{card.name} · {card.setName}
+				</DialogTitle>
+				<DialogHeader>
+					<CardHeading card={card} />
+				</DialogHeader>
 				<div className="max-h-[90vh] overflow-y-auto">
 					<CardCockpit
 						card={card}
-						crossLinks={crossLinks}
 						tab={tab}
 						onTabChange={onTabChange}
 						pending={pending}
 					/>
 				</div>
+				<DialogFooter>
+					<CardCrossLinks links={crossLinks} />
+				</DialogFooter>
 			</DialogContent>
 		</Dialog>
 	);

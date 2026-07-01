@@ -11,9 +11,14 @@ interface PersistedStore {
 	setsFetchedAt: number | null;
 }
 
+// v10: TCGdex became the catalog source, changing set ids (e.g. base6 -> lc,
+// sm75 -> sm7.5, plus TCGdex-only sets like Pokémon TCG Pocket). The persisted
+// pokemontcg.io sets cache is now invalid — the bump discards it so loadSets
+// refetches the TCGdex set list (otherwise renamed sets fail to join and card
+// modal links break for existing users).
 // v9: collection moved out of the persist blob into the repo-backed userland
 // store (src/store/userland). Only the sets cache is persisted here now.
-const STORAGE_VERSION = 9;
+const STORAGE_VERSION = 10;
 
 export const useStore = create<AppStore>()(
 	persist(createSetsSlice, {
@@ -24,13 +29,10 @@ export const useStore = create<AppStore>()(
 			sets: state.sets,
 			setsFetchedAt: state.setsFetchedAt,
 		}),
-		// Older blobs may carry `owned` + cards-cache keys; we only keep the sets cache.
-		migrate: (persisted) => {
-			const p = (persisted ?? {}) as Partial<PersistedStore>;
-			return {
-				sets: p.sets ?? null,
-				setsFetchedAt: p.setsFetchedAt ?? null,
-			} as PersistedStore;
-		},
+		// A version bump invalidates the cached sets (ids/shape may have changed,
+		// e.g. the pokemontcg.io -> TCGdex swap at v10): drop them so loadSets
+		// refetches fresh. Older blobs may also carry legacy `owned`/cards-cache
+		// keys, which are likewise discarded.
+		migrate: () => ({ sets: null, setsFetchedAt: null }) as PersistedStore,
 	}),
 );

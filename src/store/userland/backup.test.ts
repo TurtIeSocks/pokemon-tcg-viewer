@@ -1,6 +1,12 @@
 // src/store/userland/backup.test.ts
 import { expect, test } from "bun:test";
-import { isValidSnapshot, parseSnapshot, snapshotFilename } from "./backup";
+import {
+	isValidSnapshot,
+	parseSnapshot,
+	SUPPORTED_VERSIONS,
+	snapshotFilename,
+	upgrade,
+} from "./backup";
 import type { UserDataSnapshot } from "./types";
 
 const good: UserDataSnapshot = {
@@ -97,8 +103,11 @@ test("isValidSnapshot rejects binder item missing name", () => {
 	).toBe(false);
 });
 
-test("parseSnapshot returns the snapshot for valid JSON", () => {
-	expect(parseSnapshot(JSON.stringify(good))).toEqual(good);
+test("parseSnapshot returns a v6 snapshot for valid v5 JSON", () => {
+	expect(parseSnapshot(JSON.stringify(good))).toEqual({
+		...good,
+		schemaVersion: 6,
+	});
 });
 
 test("parseSnapshot throws on bad JSON and bad shape", () => {
@@ -111,7 +120,7 @@ test("parseSnapshot throws when binders is missing", () => {
 	expect(() => parseSnapshot(JSON.stringify(withoutBinders))).toThrow();
 });
 
-test("parseSnapshot upgrades a v1 snapshot to v5 (quantity=1, dollars→cents, null provenance, language=en)", () => {
+test("parseSnapshot upgrades a v1 snapshot to v6 (quantity=1, dollars→cents, null provenance, language=en)", () => {
 	const v1 = JSON.stringify({
 		schemaVersion: 1,
 		exportedAt: 0,
@@ -131,7 +140,7 @@ test("parseSnapshot upgrades a v1 snapshot to v5 (quantity=1, dollars→cents, n
 		binders: [],
 	});
 	const snap = parseSnapshot(v1);
-	expect(snap.schemaVersion).toBe(5);
+	expect(snap.schemaVersion).toBe(6);
 	expect(snap.collection[0].quantity).toBe(1);
 	expect(snap.collection[0].pricePaid).toBe(350); // $3.50 → 350 cents
 	expect(snap.collection[0].currency).toBe("USD");
@@ -142,14 +151,14 @@ test("parseSnapshot upgrades a v1 snapshot to v5 (quantity=1, dollars→cents, n
 	expect(snap.profile).toBeNull();
 });
 
-test("parseSnapshot leaves a v4 snapshot's cents prices untouched (no double-scale) and upgrades to v5", () => {
+test("parseSnapshot leaves a v4 snapshot's cents prices untouched (no double-scale) and upgrades to v6", () => {
 	const v4 = {
 		...good,
 		schemaVersion: 4,
 		collection: [{ ...good.collection[0], pricePaid: 350 }],
 	};
 	const snap = parseSnapshot(JSON.stringify(v4));
-	expect(snap.schemaVersion).toBe(5);
+	expect(snap.schemaVersion).toBe(6);
 	expect(snap.collection[0].pricePaid).toBe(350);
 });
 
@@ -174,13 +183,14 @@ test("upgrade backfills required Stack fields on a minimal collection item", () 
 	expect(s.storageLocation).toBeNull();
 });
 
-test("isValidSnapshot accepts v1–v5; rejects other versions", () => {
+test("isValidSnapshot accepts v1–v6; rejects other versions", () => {
 	expect(isValidSnapshot({ ...good, schemaVersion: 1 })).toBe(true);
 	expect(isValidSnapshot({ ...good, schemaVersion: 2 })).toBe(true);
 	expect(isValidSnapshot({ ...good, schemaVersion: 3 })).toBe(true);
 	expect(isValidSnapshot({ ...good, schemaVersion: 4 })).toBe(true);
 	expect(isValidSnapshot({ ...good, schemaVersion: 5 })).toBe(true);
-	expect(isValidSnapshot({ ...good, schemaVersion: 6 })).toBe(false);
+	expect(isValidSnapshot({ ...good, schemaVersion: 6 })).toBe(true);
+	expect(isValidSnapshot({ ...good, schemaVersion: 7 })).toBe(false);
 });
 
 test("parseSnapshot keeps a valid profile on a v3 snapshot", () => {
@@ -215,10 +225,47 @@ test("parseSnapshot backfills a partial v3 profile (no undefined fields)", () =>
 		bio: null,
 		avatarPreset: "dusk",
 		favoriteSetId: null,
+		displayLanguage: "en",
 		createdAt: 0,
 		updatedAt: 0,
 		deletedAt: null,
 	});
+});
+
+test("parseSnapshot backfills profile.displayLanguage to 'en' when absent", () => {
+	// An older snapshot whose profile predates the displayLanguage field.
+	const withProfile = {
+		...good,
+		profile: {
+			id: "me",
+			displayName: "Ash",
+			bio: null,
+			avatarPreset: "dusk",
+			favoriteSetId: null,
+			createdAt: 1,
+			updatedAt: 1,
+		},
+	};
+	const snap = parseSnapshot(JSON.stringify(withProfile));
+	expect(snap.profile?.displayLanguage).toBe("en");
+});
+
+test("parseSnapshot round-trips an explicit profile.displayLanguage", () => {
+	const withProfile = {
+		...good,
+		profile: {
+			id: "me",
+			displayName: "Ash",
+			bio: null,
+			avatarPreset: "dusk",
+			favoriteSetId: null,
+			displayLanguage: "fr",
+			createdAt: 1,
+			updatedAt: 1,
+		},
+	};
+	const snap = parseSnapshot(JSON.stringify(withProfile));
+	expect(snap.profile?.displayLanguage).toBe("fr");
 });
 
 test("snapshotFilename formats the date", () => {
@@ -262,8 +309,8 @@ test("isValidSnapshot accepts v5", () => {
 	expect(isValidSnapshot(goodV5)).toBe(true);
 });
 
-test("isValidSnapshot rejects v6", () => {
-	expect(isValidSnapshot({ ...goodV5, schemaVersion: 6 })).toBe(false);
+test("isValidSnapshot accepts v6", () => {
+	expect(isValidSnapshot({ ...goodV5, schemaVersion: 6 })).toBe(true);
 });
 
 test("parseSnapshot upgrades a v4 snapshot to v5 — backfills language=en + grading cert=null", () => {
@@ -294,7 +341,7 @@ test("parseSnapshot upgrades a v4 snapshot to v5 — backfills language=en + gra
 		binders: [],
 	});
 	const snap = parseSnapshot(v4);
-	expect(snap.schemaVersion).toBe(5);
+	expect(snap.schemaVersion).toBe(6);
 	expect(snap.collection[0].language).toBe("en");
 	expect(snap.collection[0].grading?.cert).toBeNull();
 });
@@ -331,8 +378,77 @@ test("parseSnapshot preserves language on v4 snapshot that already has it", () =
 	expect(snap.collection[0].language).toBe("ja");
 });
 
-test("parseSnapshot passes a v5 snapshot through unchanged (language + cert preserved)", () => {
+test("parseSnapshot upgrades a v5 snapshot to v6 (language + cert preserved, ids remapped)", () => {
 	const snap = parseSnapshot(JSON.stringify(goodV5));
-	expect(snap.schemaVersion).toBe(5);
+	expect(snap.schemaVersion).toBe(6);
 	expect(snap.collection[0].language).toBe("en");
+});
+
+test("v5 -> v6 remaps all corpus-id references", () => {
+	const lookup = (s: string, n: number) =>
+		s === "sv01" && n === 1 ? "sv01-001" : null;
+	const v5 = {
+		schemaVersion: 5,
+		exportedAt: 0,
+		collection: [{ /* …minimal Stack… */ cardId: "sv1-1" } as never],
+		binders: [
+			{
+				/* …minimal Binder… */ includeCardIds: ["sv1-1"],
+				excludeCardIds: [],
+				rules: [{ id: "r", query: { setId: "sv1" } }],
+			} as never,
+		],
+		profile: { id: "u1", favoriteSetId: "sv1" } as never,
+	};
+	const v6 = upgrade(v5, lookup);
+	expect(v6.schemaVersion).toBe(6);
+	expect(v6.collection[0].cardId).toBe("sv01-001");
+	expect(v6.binders[0].includeCardIds).toEqual(["sv01-001"]);
+	expect(v6.binders[0].rules[0].query.setId).toBe("sv01");
+	expect(v6.profile?.favoriteSetId).toBe("sv01");
+});
+
+test("version support: v6 valid, v7 rejected", () => {
+	expect(SUPPORTED_VERSIONS.has(6)).toBe(true);
+	expect(SUPPORTED_VERSIONS.has(7)).toBe(false);
+});
+
+test("v4 -> v6: structurally upgraded (cents rescale) AND cardId remapped via lookup", () => {
+	// Proves pre-v5 backups now run the id-remap after structural upgrade.
+	const lookup = (s: string, n: number) =>
+		s === "sv01" && n === 1 ? "sv01-001" : null;
+	const v4: Record<string, unknown> = {
+		schemaVersion: 4,
+		exportedAt: 0,
+		collection: [
+			{
+				id: "s1",
+				cardId: "sv1-1", // ptcg id — should be remapped to sv01-001
+				quantity: 1,
+				acquiredAt: 1,
+				createdAt: 1,
+				updatedAt: 1,
+				deletedAt: null,
+				label: null,
+				pricePaid: 350, // already cents (v4+); must NOT be double-scaled
+				currency: "USD",
+				language: "en",
+				variant: null,
+				notes: null,
+				condition: null,
+				grading: null,
+				source: null,
+				storageLocation: null,
+				isPrimary: false,
+			},
+		],
+		binders: [],
+		profile: null,
+	};
+	const result = upgrade(v4 as never, lookup);
+	expect(result.schemaVersion).toBe(6);
+	// Id must be remapped
+	expect(result.collection[0].cardId).toBe("sv01-001");
+	// Price must NOT be double-scaled (was already cents in v4)
+	expect(result.collection[0].pricePaid).toBe(350);
 });

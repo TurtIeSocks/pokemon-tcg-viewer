@@ -6,6 +6,7 @@ import { OwnedMissingGrid } from "@/components/vault/owned-missing-grid";
 import { useStore } from "@/store";
 import { queryCorpus, setsById } from "@/store/corpus/corpus-engine";
 import { useCorpusRuntime } from "@/store/corpus/corpus-runtime";
+import { useActiveI18n, useEnsureI18n } from "@/store/corpus/i18n-active-hooks";
 import { useEnsureCorpus } from "@/store/corpus/use-ensure-corpus";
 import { useOwnedCardIdSet } from "@/store/userland/selectors";
 
@@ -16,10 +17,12 @@ export const Route = createFileRoute("/vault/sets/$set")({
 /** Exported for tests; wrap in a router context when rendering standalone. */
 export function VaultSetDetailInner() {
 	useEnsureCorpus();
+	useEnsureI18n();
 	const { set: setId } = Route.useParams();
 	const index = useCorpusRuntime((s) => s.index);
 	const sets = useStore((s) => s.sets);
 	const ownedCardIds = useOwnedCardIdSet();
+	const i18n = useActiveI18n();
 	const [mode, setMode] = useState<OwnedMissingMode>("all");
 
 	const { cards, setName } = useMemo(() => {
@@ -28,10 +31,10 @@ export function VaultSetDetailInner() {
 		const found = sets.find((s) => s.id === setId);
 		if (!found) return { cards: [], setName: null };
 		return {
-			cards: queryCorpus(index, { setId, relevance: false }, setMap),
+			cards: queryCorpus(index, { setId, relevance: false }, setMap, i18n),
 			setName: found.name,
 		};
-	}, [index, sets, setId]);
+	}, [index, sets, setId, i18n]);
 
 	if (!setName) {
 		return (

@@ -395,6 +395,7 @@ describe("backup.importAll", () => {
 				bio: null,
 				avatarPreset: "default",
 				favoriteSetId: null,
+				displayLanguage: "en",
 				createdAt: Date.now(),
 				updatedAt: Date.now(),
 				deletedAt: null as null,

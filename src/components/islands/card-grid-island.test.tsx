@@ -39,6 +39,7 @@ const defaultSearch = {
 	mode: "fuzzy" as const,
 	sort: "default" as const,
 	dir: "asc" as const,
+	lang: null,
 };
 
 beforeEach(() => {

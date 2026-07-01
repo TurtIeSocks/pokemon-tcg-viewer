@@ -1,5 +1,6 @@
 // src/store/userland/backup.ts
 import { DEFAULT_AVATAR_PRESET_ID } from "../../components/profile/avatar-presets";
+import { type CardLookup, remapPtcgCardId, remapPtcgSetId } from "./id-remap";
 import type { Stack, UserDataSnapshot } from "./types";
 
 /** Type guard: true when v is a non-null object. */
@@ -17,11 +18,11 @@ interface RawSnapshot {
 }
 
 /** Schema versions this build can read (and upgrade from). */
-const SUPPORTED_VERSIONS = new Set([1, 2, 3, 4, 5]);
+export const SUPPORTED_VERSIONS = new Set([1, 2, 3, 4, 5, 6]);
 
 /**
  * Type guard: validates that v has the minimum shape of a supported snapshot
- * (schemaVersion in {1,2,3,4}; collection/binders arrays with required id fields).
+ * (schemaVersion in {1,2,3,4,5,6}; collection/binders arrays with required id fields).
  */
 export function isValidSnapshot(v: unknown): v is RawSnapshot {
 	if (!isRecord(v)) return false;
@@ -56,14 +57,21 @@ function upgradeProfile(raw: unknown): UserDataSnapshot["profile"] {
 				: DEFAULT_AVATAR_PRESET_ID,
 		favoriteSetId:
 			typeof raw.favoriteSetId === "string" ? raw.favoriteSetId : null,
+		// Additive field (no schema bump): snapshots saved before displayLanguage
+		// existed lack the key; backfill "en" so it's never undefined.
+		displayLanguage:
+			typeof raw.displayLanguage === "string" ? raw.displayLanguage : "en",
 		createdAt: typeof raw.createdAt === "number" ? raw.createdAt : 0,
 		updatedAt: typeof raw.updatedAt === "number" ? raw.updatedAt : 0,
 		deletedAt: typeof raw.deletedAt === "number" ? raw.deletedAt : null,
 	};
 }
 
-/** Upgrade any supported snapshot to the current v5 shape (language + grading cert; backfills all prior fields). */
-function upgrade(snap: RawSnapshot): UserDataSnapshot {
+/** Upgrade any supported snapshot to the current v6 shape (corpus-id remap; backfills all prior fields). */
+export function upgrade(
+	snap: RawSnapshot,
+	lookup?: CardLookup,
+): UserDataSnapshot {
 	// Pre-v4 snapshots stored pricePaid in whole units (dollars); v4+ stores minor
 	// units (cents). Only rescale when importing from an older version — a v4+
 	// backup's prices are already cents and must pass through untouched.
@@ -115,13 +123,36 @@ function upgrade(snap: RawSnapshot): UserDataSnapshot {
 		...b,
 		deletedAt: typeof b.deletedAt === "number" ? b.deletedAt : null,
 	})) as unknown as UserDataSnapshot["binders"];
-	return {
-		schemaVersion: 5,
+	const result: UserDataSnapshot = {
+		schemaVersion: 6,
 		exportedAt: typeof snap.exportedAt === "number" ? snap.exportedAt : 0,
 		collection,
 		binders,
 		profile: upgradeProfile(snap.profile),
 	};
+	// v1–v5 → v6: remap ptcg corpus ids to tcgdex ids (only when a lookup is
+	// provided; callers without a corpus pass undefined and ids are left as-is).
+	// Runs after the structural upgrades above so even v1–v4 inputs are fully
+	// shaped (language, grading cert, cents) before the remap touches them.
+	if (snap.schemaVersion <= 5 && lookup) {
+		for (const s of result.collection)
+			s.cardId = remapPtcgCardId(s.cardId, lookup);
+		for (const b of result.binders) {
+			b.includeCardIds = b.includeCardIds.map((id) =>
+				remapPtcgCardId(id, lookup),
+			);
+			b.excludeCardIds = b.excludeCardIds.map((id) =>
+				remapPtcgCardId(id, lookup),
+			);
+			for (const r of b.rules)
+				if (r.query.setId) r.query.setId = remapPtcgSetId(r.query.setId);
+		}
+		if (result.profile?.favoriteSetId)
+			result.profile.favoriteSetId = remapPtcgSetId(
+				result.profile.favoriteSetId,
+			);
+	}
+	return result;
 }
 
 /** Parse, validate, and upgrade a JSON string to the current snapshot; throws a user-readable error on failure. */

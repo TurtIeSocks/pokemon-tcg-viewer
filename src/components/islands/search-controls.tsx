@@ -9,7 +9,9 @@ import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
+	SelectGroup,
 	SelectItem,
+	SelectLabel,
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
@@ -18,6 +20,7 @@ import type { PokemonFacet, SetFacets } from "@/server/set-facets";
 import { useUiPrefs } from "@/store/ui-prefs";
 import type { ListSearch, OwnedMode } from "../../lib/card-query";
 import { SearchModeMenu } from "./search-mode-menu";
+import { groupSubtypes } from "./subtype-groups";
 
 // Computed once at module load (client island) — avoids a `new Date()` on every
 // render (impure under React Compiler) and a server/client hydration mismatch.
@@ -53,29 +56,43 @@ function FilterSelect({
 	value,
 	options,
 	onChange,
+	grouped = false,
 }: {
 	label: string;
 	value: string[];
 	options: string[];
 	onChange: (v: string[]) => void;
+	grouped?: boolean;
 }) {
 	// Radix Select forbids an empty-string item value, so use a sentinel for "clear".
 	const ALL = "__all__";
+	const groups = grouped ? groupSubtypes(options) : null;
 	return (
 		<Select
 			value={value[0] ?? ALL}
 			onValueChange={(v) => onChange(v === ALL ? [] : [v])}
 		>
-			<SelectTrigger className="text-sm w-full">
+			<SelectTrigger className="text-sm w-full" aria-label={label}>
 				<SelectValue placeholder={label} />
 			</SelectTrigger>
 			<SelectContent>
 				<SelectItem value={ALL}>{`All ${label}`}</SelectItem>
-				{options.map((o) => (
-					<SelectItem key={o} value={o}>
-						{o}
-					</SelectItem>
-				))}
+				{groups
+					? groups.map((g) => (
+							<SelectGroup key={g.label}>
+								<SelectLabel>{g.label}</SelectLabel>
+								{g.items.map((o) => (
+									<SelectItem key={o} value={o}>
+										{o}
+									</SelectItem>
+								))}
+							</SelectGroup>
+						))
+					: options.map((o) => (
+							<SelectItem key={o} value={o}>
+								{o}
+							</SelectItem>
+						))}
 			</SelectContent>
 		</Select>
 	);
@@ -251,27 +268,28 @@ export function SearchControls({
 					<div className={`grid grid-cols-2 gap-2 ${gridColsClass}`}>
 						{!lockSupertype && (
 							<FilterSelect
-								label="Card Type"
+								label="Card Types"
 								value={value.supertype}
 								options={options.supertypes}
 								onChange={(v) => onChange({ supertype: v })}
 							/>
 						)}
 						<FilterSelect
-							label="Subtype"
+							label="Subtypes"
+							grouped
 							value={value.subtypes}
 							options={options.subtypes}
 							onChange={(v) => onChange({ subtypes: v })}
 						/>
 						<FilterSelect
-							label="Rarity"
+							label="Rarities"
 							value={value.rarity}
 							options={options.rarities}
 							onChange={(v) => onChange({ rarity: v })}
 						/>
 						{showEnergyType && (
 							<FilterSelect
-								label="Energy Type"
+								label="Energy Types"
 								value={value.types}
 								options={options.types}
 								onChange={(v) => onChange({ types: v })}

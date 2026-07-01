@@ -33,7 +33,7 @@ function makeCards(n: number): CorpusCard[] {
 }
 
 const CONDITIONS = new Set(["NM", "LP", "MP", "HP", "DMG"]);
-const LANGS = new Set(["en", "ja", "zh"]);
+const LANGS = new Set(["en", "fr", "de", "es", "it", "pt"]);
 const NOW = 1_700_000_000_000;
 
 test("generateSeedStacks returns the requested count of distinct cards", () => {

@@ -1,25 +1,33 @@
-import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { FocusCardData } from "../../server/card-mappers";
 import { EnergyIcon } from "./energy-icon";
 
-/** Human descriptor line, e.g. "Stage 1 Pokémon · Lightning · Evolves from Pikachu". */
-export function describeCard(card: FocusCardData): string {
-	const isPokemon = card.supertype === "Pokémon";
-	const parts: string[] = [];
-	if (isPokemon) {
-		const lead = [card.subtypes?.join(" "), card.supertype]
-			.filter(Boolean)
-			.join(" ");
-		parts.push(lead);
-		if (card.types?.length) parts.push(card.types.join(" / "));
-		if (card.evolvesFrom) parts.push(`Evolves from ${card.evolvesFrom}`);
-	} else {
-		parts.push(card.supertype);
-		if (card.subtypes?.length) parts.push(card.subtypes.join(", "));
-	}
-	return parts.join(" · ");
+/**
+ * Shared identity header for the card focus view: the name, the human
+ * descriptor, a rarity badge, and the set · # line. Rendered by both the modal
+ * (inside `DialogHeader`) and the dedicated page wrapper (`CardPageView`) so the
+ * two surfaces stay in sync. Presentational — a11y title semantics live in the
+ * consumer (the modal supplies a `DialogTitle`).
+ */
+export function CardHeading({ card }: { card: FocusCardData }) {
+	return (
+		<div className="flex min-w-0 flex-col gap-1">
+			<div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+				<h1 className="font-display text-lg font-semibold leading-tight text-[var(--ink)]">
+					{card.name}
+				</h1>
+				{card.rarity ? (
+					<Badge variant="default" className="shrink-0 self-center">
+						✦ {card.rarity}
+					</Badge>
+				) : null}
+			</div>
+			<div className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--ink-muted)]">
+				{card.supertype} · {card.setName} · #{card.cardNumber}
+			</div>
+		</div>
+	);
 }
 
 const SECTION =
@@ -160,24 +168,45 @@ function StatStripGhost() {
 }
 
 /**
- * The info column of the card focus view: kicker, header (name + HP),
- * descriptor, a growing body (abilities / attacks / rules), and a bottom
- * group (stat strip + the `footer` slot for prices + cross-links) that
- * stays aligned to the bottom of the card plate.
+ * Top meta block for the Details tab: the structured descriptors (subtype, type,
+ * evolves-from) pulled OUT of the dense identity heading into a clean labeled
+ * strip above the Ability/Attacks body. Renders nothing when a card has none.
+ */
+function CardMetaStrip({ card }: { card: FocusCardData }) {
+	const items: { label: string; value: string }[] = [];
+	if (card.subtypes?.length)
+		items.push({ label: "Subtype", value: card.subtypes.join(" ") });
+	if (card.types?.length)
+		items.push({ label: "Type", value: card.types.join(" / ") });
+	if (card.evolvesFrom)
+		items.push({ label: "Evolves from", value: card.evolvesFrom });
+	if (!items.length) return null;
+	return (
+		<div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-white/[0.07] pb-3.5 font-mono text-[11px] uppercase tracking-[0.05em] text-[var(--ink-muted)]">
+			{items.map((it) => (
+				<span key={it.label}>
+					{it.label} <b className="font-medium text-[var(--ink)]">{it.value}</b>
+				</span>
+			))}
+		</div>
+	);
+}
+
+/**
+ * The info column of the card focus view: a top meta strip (subtype / type /
+ * evolves-from), a growing body (abilities / attacks / rules / flavor) and a
+ * stat strip (weak / resist / retreat / illustrator). The identity header lives
+ * in {@link CardHeading}, rendered by the consumer.
  *
  * `pending` (only the optimistic corpus card is shown, detail still loading)
- * swaps the detail-only regions — HP, body, stat strip — for shimmer ghosts.
+ * swaps the detail-only regions — body + stat strip — for shimmer ghosts.
  */
 export function CardInfo({
 	card,
-	footer,
 	pending,
-	showHeader = true,
 }: {
 	card: FocusCardData;
-	footer?: ReactNode;
 	pending?: boolean;
-	showHeader?: boolean;
 }) {
 	const hasAbilities = !!card.abilities?.length;
 	const hasAttacks = !!card.attacks?.length;
@@ -185,41 +214,8 @@ export function CardInfo({
 	const emptyBody = !hasAbilities && !hasAttacks && !hasRules;
 	return (
 		<div className="flex min-w-0 flex-1 flex-col text-[var(--ink)]">
-			{showHeader ? (
-				<>
-					<div className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--ink-muted)]">
-						{card.setName} · #{card.cardNumber}
-					</div>
-
-					<div className="mt-1.5 flex items-baseline justify-between gap-3">
-						<h2 className="min-w-0 break-words font-display text-[clamp(1.75rem,6vw,2.5rem)] font-light leading-[1.05] tracking-[-0.01em]">
-							{card.name}
-						</h2>
-						{card.hp ? (
-							<span className="shrink-0 whitespace-nowrap font-mono text-sm text-[var(--ink-muted)]">
-								<b className="text-[1.4rem] font-bold text-[color:var(--primary)]">
-									{card.hp}
-								</b>{" "}
-								HP
-							</span>
-						) : pending ? (
-							<Skeleton className="h-7 w-14 shrink-0" aria-hidden="true" />
-						) : null}
-					</div>
-					<div className="mt-1.5 flex items-start justify-between gap-3">
-						<div className="min-w-0 font-display text-sm text-[var(--ink-muted)]">
-							{describeCard(card)}
-						</div>
-						{card.rarity ? (
-							<Badge variant="default" className="mt-0.5 shrink-0">
-								✦ {card.rarity}
-							</Badge>
-						) : null}
-					</div>
-				</>
-			) : null}
-
 			<div className="flex-1">
+				<CardMetaStrip card={card} />
 				{hasAbilities ? (
 					<>
 						<div className={SECTION}>
@@ -270,14 +266,7 @@ export function CardInfo({
 				{emptyBody && pending ? <BodyGhost /> : null}
 			</div>
 
-			<div>
-				{pending ? <StatStripGhost /> : <StatStrip card={card} />}
-				{footer ? (
-					<div className="mt-4 border-t border-white/[0.07] pt-3.5">
-						{footer}
-					</div>
-				) : null}
-			</div>
+			<div>{pending ? <StatStripGhost /> : <StatStrip card={card} />}</div>
 		</div>
 	);
 }
