@@ -157,7 +157,7 @@ test("lang: defaults to null (use viewer default)", () => {
 test("lang: validates a supported language, else null", () => {
 	expect(validateListSearch({ lang: "fr" }).lang).toBe("fr");
 	expect(validateListSearch({ lang: "pt" }).lang).toBe("pt");
-	expect(validateListSearch({ lang: "ja" }).lang).toBeNull(); // unsupported → default
+	expect(validateListSearch({ lang: "ru" }).lang).toBeNull(); // unsupported → default
 	expect(validateListSearch({ lang: "junk" }).lang).toBeNull();
 });
 test("lang: null stripped from URL; a concrete override serialized", () => {

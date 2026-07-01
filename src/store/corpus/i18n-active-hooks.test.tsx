@@ -101,7 +101,7 @@ afterEach(async () => {
 });
 
 test("useDisplayLanguage normalizes the profile language to the supported set", () => {
-	setProfileLanguage("ja"); // unsupported → en
+	setProfileLanguage("ru"); // unsupported → en
 	const { result, rerender } = renderHook(() => useDisplayLanguage());
 	expect(result.current).toBe("en");
 
