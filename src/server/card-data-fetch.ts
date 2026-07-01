@@ -72,10 +72,16 @@ const SETS_CONCURRENCY = 10;
  * resolves each set's detail (which carries releaseDate + serie) with a
  * small concurrency limit. Safe to call from within a server function
  * handler (avoids the cross-fn RPC hop).
+ *
+ * @param baseLang TCGdex locale to list/resolve sets from. Defaults to "en"
+ * (the Western catalog), which keeps existing callers byte-identical.
+ * Pass a Region's base language (see `REGION_BASE_LANGUAGE`) for another
+ * region's catalog — e.g. "ja" for the Asian region, which pokemontcg.io
+ * has no equivalent for.
  */
-export async function fetchAllSets(): Promise<PokemonSet[]> {
+export async function fetchAllSets(baseLang = "en"): Promise<PokemonSet[]> {
 	const base = apiBase();
-	const listResp = await fetch(`${base}/v2/en/sets`);
+	const listResp = await fetch(`${base}/v2/${baseLang}/sets`);
 	if (!listResp.ok) throw new Error("Unable to fetch sets list");
 	const list = (await listResp.json()) as TcgdexSetListEntry[];
 
@@ -84,7 +90,7 @@ export async function fetchAllSets(): Promise<PokemonSet[]> {
 		const batch = list.slice(i, i + SETS_CONCURRENCY);
 		const details = await Promise.all(
 			batch.map(async (entry) => {
-				const r = await fetch(`${base}/v2/en/sets/${entry.id}`);
+				const r = await fetch(`${base}/v2/${baseLang}/sets/${entry.id}`);
 				if (!r.ok)
 					throw new Error(`Unable to fetch set detail for ${entry.id}`);
 				return (await r.json()) as TcgdexSetDetail;
