@@ -1,6 +1,10 @@
 // src/store/userland/userland-store.ts
 import { create } from "zustand";
 import { getBrowserClient, isCloudEnabled } from "../../lib/supabase/client";
+// Leaf store module (NOT ../corpus/corpus-runtime): importing the heavy corpus
+// module here — statically or dynamically — forms a chunk cycle that crashed the
+// prod bundle (TDZ "p is not a function"). The leaf carries only the store.
+import { useCorpusRuntime } from "../corpus/corpus-runtime-store";
 import { getRepos, migrateUserlandData } from "./idb-repo";
 import type { UserlandRepos } from "./repo";
 import { createSupabaseRepo } from "./supabase-repo";
@@ -331,15 +335,14 @@ export function loadUserland(): Promise<void> {
 		// block hydration.
 		//
 		// The corpus index is passed so the v4→v5 id-remap step has data to work
-		// with. Dynamic import avoids a static userland↔corpus cycle. If the corpus
+		// with, read from the leaf store (corpus-runtime-store) imported statically
+		// at the top — NOT the heavy corpus-runtime, whose import formed a prod
+		// chunk cycle (TDZ). If the corpus
 		// is not yet loaded (null), migrateUserlandData defers the remap step and
 		// leaves the marker at 4, so a subsequent loadUserland retries once the
 		// corpus is available.
 		if (!usingInjectedRepos) {
 			try {
-				const { useCorpusRuntime } = await import(
-					"../corpus/corpus-runtime"
-				);
 				const corpusIndex = useCorpusRuntime.getState().index;
 				await migrateUserlandData(undefined, corpusIndex);
 			} catch (e) {
