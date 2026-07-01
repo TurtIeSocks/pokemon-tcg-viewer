@@ -13,6 +13,11 @@ interface PtcgCard {
 const PTCG_BASE = process.env.PTCG_BASE ?? "https://api.pokemontcg.io/v2";
 const PAGE_SIZE = 250;
 const RETRIES = 3;
+// pokemontcg.io throws gateway 504s mid-crawl. A single page's sustained failure
+// must NOT discard the whole overlay (that shipped a TCGdex-only corpus with no
+// holo/hi-res enrichment). Keep what crawled, skip the bad page, and only bail
+// when the API is clearly down (this many pages fail in a row).
+const MAX_CONSECUTIVE_FAILURES = 5;
 
 async function fetchPage(
 	fetchImpl: typeof fetch,
@@ -41,8 +46,31 @@ export async function fetchPtcgOverlay(
 ): Promise<PtcgOverlay> {
 	const fetchImpl = opts.fetchImpl ?? fetch;
 	const out: PtcgOverlay = new Map();
+	let consecutiveFailures = 0;
+	let skippedPages = 0;
 	for (let page = 1; ; page++) {
-		const data = await fetchPage(fetchImpl, page);
+		let data: PtcgCard[];
+		try {
+			data = await fetchPage(fetchImpl, page);
+		} catch (e) {
+			// Keep the pages already crawled; skip this one and try the next. A
+			// partial overlay still enriches most cards (mergePtcgOverlay keeps the
+			// TCGdex values for the rest) — far better than throwing it all away.
+			// Bail only when the API looks down (too many failures in a row).
+			skippedPages++;
+			consecutiveFailures++;
+			console.warn(
+				`  ↳ ptcg overlay: page ${page} failed (${(e as Error).message}); skipping, kept ${out.size} cards`,
+			);
+			if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+				console.warn(
+					`  ↳ ptcg overlay: ${consecutiveFailures} pages failed in a row — stopping with a partial overlay (${out.size} cards, ${skippedPages} pages skipped)`,
+				);
+				break;
+			}
+			continue;
+		}
+		consecutiveFailures = 0;
 		for (const c of data) {
 			const entry: PtcgOverlayEntry = {};
 			if (c.rarity != null) entry.rarity = c.rarity;
@@ -51,5 +79,9 @@ export async function fetchPtcgOverlay(
 		}
 		if (data.length < PAGE_SIZE) break;
 	}
+	if (skippedPages > 0)
+		console.warn(
+			`  ↳ ptcg overlay: crawled with ${skippedPages} page(s) skipped → ${out.size} cards enriched (partial)`,
+		);
 	return out;
 }
