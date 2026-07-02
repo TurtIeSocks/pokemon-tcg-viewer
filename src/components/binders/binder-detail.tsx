@@ -85,37 +85,49 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 	useEnsureI18n();
 	const i18n = useActiveI18n();
 
-	// Build dexName resolver from the corpus index (active region; dex names are
-	// species names, English fallback is fine for the cross-link label).
+	// Dex-number → species-name map from the corpus index (active region; dex
+	// names are species names, English fallback is fine for the cross-link
+	// label). First occurrence wins, matching the previous .find() semantics.
+	const dexNameByNumber = useMemo(() => {
+		const map = new Map<number, string>();
+		if (!index) return map;
+		for (const card of index.cards) {
+			for (const n of card.nationalPokedexNumbers ?? []) {
+				if (!map.has(n)) map.set(n, card.name);
+			}
+		}
+		return map;
+	}, [index]);
+
 	const dexNameResolver = useMemo(
 		() =>
-			(n: number): string | undefined => {
-				if (!index) return undefined;
-				return index.cards.find((c) => c.nationalPokedexNumbers?.includes(n))
-					?.name;
-			},
-		[index],
+			(n: number): string | undefined =>
+				dexNameByNumber.get(n),
+		[dexNameByNumber],
 	);
 
-	// Build setName resolver from the merged (all-region) sets list.
+	// Merged (all-region) sets indexed by id — shared by the setName resolver
+	// and the member-card hydration below.
+	const setById = useMemo(() => setsById(allSets), [allSets]);
+
+	// Build setName resolver from the merged (all-region) sets map.
 	const setNameResolver = useMemo(
 		() =>
 			(setId: string): string | undefined =>
-				allSets.find((s) => s.id === setId)?.name,
-		[allSets],
+				setById.get(setId)?.name,
+		[setById],
 	);
 
 	// Hydrate member card list for the grid, resolving each id across regions.
 	const memberCards = useMemo(() => {
-		if (!memberIds || allSets.length === 0) return [];
-		const sb = setsById(allSets);
+		if (!memberIds || setById.size === 0) return [];
 		return Array.from(memberIds)
 			.map((id) => {
 				const card = resolveCardAcrossRegions(id, indices);
-				return card ? hydrateCard(card, sb, i18n) : null;
+				return card ? hydrateCard(card, setById, i18n) : null;
 			})
 			.filter((c): c is NonNullable<typeof c> => c !== null);
-	}, [memberIds, indices, allSets, i18n]);
+	}, [memberIds, indices, setById, i18n]);
 
 	async function handleDelete() {
 		if (

@@ -102,6 +102,32 @@ test("renders rule chip with human label", async () => {
 	});
 });
 
+test("renders dex rule chip with species name resolved from the corpus", async () => {
+	const binder = await createBinder({ name: "Dex Binder" });
+	await addRuleToBinder(binder.id, {
+		text: null,
+		setId: null,
+		dexNumber: 1,
+		types: [],
+		rarities: [],
+		supertypes: [],
+		subtypes: [],
+		yearMin: null,
+		yearMax: null,
+		mode: "fuzzy" as const,
+	});
+	const updated = useUserland.getState().binders[binder.id];
+
+	await renderDetail(updated);
+
+	// binderRuleLabel resolves dex 1 → "Bulbasaur" via dexNameResolver; the
+	// chip's remove-button label is unambiguous even if the member grid also
+	// shows the card name. Unresolved fallback would be "Remove rule #1".
+	await waitFor(() => {
+		expect(screen.getByLabelText("Remove rule Bulbasaur")).toBeDefined();
+	});
+});
+
 test("clicking rule × calls removeRuleFromBinder", async () => {
 	const binder = await createBinder({ name: "Rule Binder" });
 	await addRuleToBinder(binder.id, {
