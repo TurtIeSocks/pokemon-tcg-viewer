@@ -147,18 +147,24 @@ export async function buildI18n(
 		);
 	}
 
-	// `expected` is the language-invariant set total (every set's full card count);
-	// a Western overlay legitimately covers only the SUBSET of cards translated to that
-	// language (untranslated cards fall back to the EN name in hydrateCard), so partial
-	// coverage is normal, not an error. Guard only against a catastrophically broken crawl
-	// (network/endpoint failure that yields near-nothing), and log the real coverage.
+	// `expected` is the language-invariant set total (every set's full card count),
+	// so coverage% is NOT a per-language health metric: a name overlay legitimately
+	// covers only the SUBSET translated to that language (untranslated ids fall back
+	// to the base name in hydrateCard). TCGdex's real Asian coverage ranges from
+	// ~94% (zh-tw) down to ~3% (ko, 239 cards) — all valid. So only a
+	// catastrophically-empty crawl (a dead endpoint yielding ~nothing) is fatal;
+	// everything else is a warning. SKIP_I18N_COVERAGE_GATE overrides even that.
 	const coverage = expected > 0 ? entries.length / expected : 0;
 	log(
 		`[${lang}] coverage ${entries.length}/${expected} (${(coverage * 100).toFixed(0)}%)`,
 	);
-	if (coverage < 0.4)
+	if (entries.length === 0 && !process.env.SKIP_I18N_COVERAGE_GATE)
 		throw new Error(
-			`[${lang}] crawl looks broken: only ${entries.length} of ~${expected} (<40%)`,
+			`[${lang}] crawl looks broken: 0 names collected (dead endpoint?); set SKIP_I18N_COVERAGE_GATE=1 to override`,
+		);
+	if (coverage < 0.4)
+		console.warn(
+			`[${lang}] partial overlay: ${entries.length} of ~${expected} names (${(coverage * 100).toFixed(0)}%) — untranslated ids fall back to the base name`,
 		);
 
 	entries.sort((a, b) => a.id.localeCompare(b.id));
@@ -193,12 +199,26 @@ export async function writeI18n(result: I18nResult): Promise<I18nMeta> {
 if (import.meta.main) {
 	const startedAt = Date.now();
 	const coverageByLang: Record<string, number> = { en: 1 };
+	const failed: string[] = [];
+	// Build each lang independently: one broken overlay (dead endpoint) must not
+	// abort the others. A missing overlay just means that language falls back to
+	// the base names at runtime — keep-last-good, same as the corpus build.
 	for (const lang of I18N_LANGS) {
-		const result = await buildI18n(lang);
-		await writeI18n(result);
-		coverageByLang[lang] = Number(result.coverage.toFixed(2));
+		try {
+			const result = await buildI18n(lang);
+			await writeI18n(result);
+			coverageByLang[lang] = Number(result.coverage.toFixed(2));
+		} catch (e) {
+			failed.push(lang);
+			console.warn(
+				`[${lang}] overlay build FAILED, skipping: ${e instanceof Error ? e.message : String(e)}`,
+			);
+		}
 	}
 	const secs = ((Date.now() - startedAt) / 1000).toFixed(1);
-	console.log(`Built ${I18N_LANGS.length} overlays in ${secs}s`);
+	const built = I18N_LANGS.length - failed.length;
+	console.log(
+		`Built ${built}/${I18N_LANGS.length} overlays in ${secs}s${failed.length ? ` (failed: ${failed.join(", ")})` : ""}`,
+	);
 	console.log("LANGUAGE_COVERAGE =", JSON.stringify(coverageByLang));
 }

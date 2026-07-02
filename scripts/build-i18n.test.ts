@@ -129,12 +129,21 @@ test("buildI18n entry count and version reflect the crawled names (meta-ready)",
 	expect(version).toBe(i18nVersion(entries));
 });
 
-test("buildI18n throws only when the crawl is catastrophically broken (<40%)", async () => {
-	// Set declares 100 cards but only serves 1 (1% << 40%) => a broken crawl.
-	const thin: MockSet[] = [
+test("buildI18n throws only when the crawl collects ZERO names (dead endpoint)", async () => {
+	// Every set serves an empty cards[] => 0 names => a broken crawl.
+	const empty: MockSet[] = [{ id: "swsh3", total: 100, cards: [] }];
+	await expect(buildI18n("fr", opts(empty))).rejects.toThrow(/looks broken/);
+});
+
+test("buildI18n tolerates a sparse overlay (few names of many declared)", async () => {
+	// A name overlay legitimately covers only a subset — TCGdex's real Asian
+	// coverage runs as low as ~3% (ko). A sparse-but-nonzero crawl must NOT throw;
+	// untranslated ids fall back to the base name in hydrateCard.
+	const sparse: MockSet[] = [
 		{ id: "swsh3", total: 100, cards: [{ id: "swsh3-1", name: "Cizayox" }] },
 	];
-	await expect(buildI18n("fr", opts(thin))).rejects.toThrow(/looks broken/);
+	const { entries } = await buildI18n("fr", opts(sparse));
+	expect(entries).toHaveLength(1); // 1% coverage, still valid
 });
 
 test("buildI18n tolerates partial language coverage (untranslated cards skipped)", async () => {
