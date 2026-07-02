@@ -6,6 +6,7 @@ import { Button } from "../components/ui/button";
 import { Eyebrow } from "../components/ui/eyebrow";
 import { Stagger } from "../components/ui/motion";
 import { LIST_SEARCH_DEFAULTS } from "../lib/list-search";
+import { useActiveRegionNavTree } from "../store/corpus/region-nav-tree";
 
 const POPULAR = ["Pikachu", "Charizard", "Eevee", "Mewtwo", "Gengar"];
 
@@ -17,9 +18,9 @@ const BACKDROP = [
 ];
 
 export function HomeHero() {
-	// Nav tree comes from the root loader (already SSR-fetched + deduped); the
-	// browse launchpad renders from it server-side, no loader added to "/".
-	const tree = getRouteApi("__root__").useLoaderData();
+	// Nav tree comes from the root loader (SSR-fetched, west); follow the active
+	// region so switching to an Asian language reshapes the browse launchpad.
+	const tree = useActiveRegionNavTree(getRouteApi("__root__").useLoaderData());
 	return (
 		<div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4 pb-12 sm:pb-16">
 			{/* my-auto centers the content when it fits the viewport and collapses
