@@ -3,6 +3,9 @@ on:
   schedule:
     - cron: "0 4 * * 1" # Mondays 04:00 UTC
   workflow_dispatch: {}
+  # Callable so rebuild-corpus.yml can run it on a corpus-affecting change and then
+  # chain the worker deploy. `secrets: inherit` from the caller passes the R2 token.
+  workflow_call: {}
 
 # Least privilege: the job only reads the repo; R2 upload uses an API token.
 permissions:
