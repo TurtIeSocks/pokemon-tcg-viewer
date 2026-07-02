@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { cardManageLinkPropsFor, cardRouteParams } from "../../lib/card-route";
+import { cardManageLinkPropsFor } from "../../lib/card-route";
 import { faceLanguageFor } from "../../lib/languages";
-import { useSlugIndex } from "../../store/corpus/corpus-runtime";
+import { useCardRouteParamsForRegion } from "../../store/corpus/corpus-runtime";
 import { useDisplayLanguage } from "../../store/corpus/i18n-active-hooks";
 import type { CardRow } from "../../store/userland/card-rows";
 import { holoCardProps } from "../holo-card";
@@ -18,13 +18,17 @@ interface OwnedCardTileProps {
  * Shows a copy-count badge when count > 1.
  */
 export function OwnedCardTile({ row }: OwnedCardTileProps) {
-	const slugIndex = useSlugIndex();
 	const displayLanguage = useDisplayLanguage();
 	// A Japanese-lineage card has no English face (and vice versa) -- resolve
 	// the link's language by the card's region, not blindly by the active
 	// display language, so an owned asia card opens in its own face.
 	const linkLanguage = faceLanguageFor(row.card, displayLanguage);
-	const p = slugIndex ? cardRouteParams(slugIndex, row.card) : null;
+	// Resolve the route via the CARD's own region (not the active browse
+	// region's slug index): an owned card can belong to a region the viewer
+	// isn't currently browsing (e.g. an owned asia card while activeRegion is
+	// "west"), and the active-region slug index would never resolve it, always
+	// leaving the tile a non-interactive div. See cardRouteParamsForRegion.
+	const p = useCardRouteParamsForRegion(row.card, row.card.region ?? "west");
 
 	const inner = (
 		<>

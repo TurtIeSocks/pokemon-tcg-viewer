@@ -1,4 +1,7 @@
-import { afterEach, beforeEach, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, expect, mock, spyOn, test } from "bun:test";
+import type { PokemonSet } from "../../server/card-mappers";
+import { useStore } from "../index";
+import { buildIndex } from "./corpus-engine";
 import {
 	ensureRegionForLanguage,
 	ensureRegionsForOwned,
@@ -46,6 +49,7 @@ beforeEach(async () => {
 		version: null,
 		status: "idle",
 	});
+	useStore.setState({ sets: null, setsByRegion: {}, setsByRegionLoading: {} });
 });
 afterEach(() => {
 	globalThis.fetch = realFetch;
@@ -343,11 +347,23 @@ test("ensureRegionsForOwned triggers an asia load when an owned id is unresolved
 	);
 	globalThis.fetch = f as unknown as typeof fetch;
 
+	// Stub loadSetsForRegion: it delegates to getSetsFn, a createServerFn wrapper
+	// that can't be invoked directly outside the TanStack Start server runtime
+	// (throws "No Start context found in AsyncLocalStorage" -- same constraint
+	// documented in server/corpus-server.test.ts). The region-load ALSO calling
+	// loadSetsForRegion("asia") is asserted via this spy instead.
+	const loadSetsForRegionSpy = spyOn(
+		useStore.getState(),
+		"loadSetsForRegion",
+	).mockResolvedValue(undefined);
+
 	await ensureRegionsForOwned(["asia1-1"]);
 	expect(f).toHaveBeenCalled();
 	expect(useCorpusRuntime.getState().indices.asia?.cards[0]?.id).toBe(
 		"asia1-1",
 	);
+	expect(loadSetsForRegionSpy).toHaveBeenCalledWith("asia");
+	loadSetsForRegionSpy.mockRestore();
 });
 
 test("ensureRegionsForOwned is a no-op when every owned id resolves in west", async () => {
@@ -378,4 +394,79 @@ test("ensureRegionsForOwned does NOT load asia before the west baseline is prese
 	await ensureRegionsForOwned(["asia1-1"]);
 	expect(f).not.toHaveBeenCalled();
 	expect(useCorpusRuntime.getState().indices.asia).toBeUndefined();
+});
+
+// --- Region-aware client sets (asian-catalog fix E) -------------------------
+
+const asiaSet: PokemonSet = {
+	id: "asia1",
+	name: "Expansion Pack",
+	series: "Original Era",
+	releaseDate: "1996-10-20",
+	total: 1,
+	images: {},
+};
+
+const westSet: PokemonSet = {
+	id: "base1",
+	name: "Base Set",
+	series: "Base",
+	releaseDate: "1999-01-09",
+	total: 1,
+	images: {},
+};
+
+test("makeCorpusFetcher hydrates asia cards with the real asia set name once asia sets are loaded, and a year filter keeps them", async () => {
+	useCorpusRuntime.getState().setIndex("asia", buildIndex(asiaSample, "asia"));
+	useCorpusRuntime.getState().setActiveRegion("asia");
+	// Simulate loadSetsForRegion("asia") having populated the region-keyed cache
+	// (west `sets` stays whatever it was -- untouched by an asia load).
+	useStore.setState((s) => ({
+		setsByRegion: { ...s.setsByRegion, asia: [asiaSet] },
+	}));
+
+	const fetcher = makeCorpusFetcher({ relevance: false, yearMin: 1990 });
+	const { cards, totalCount } = await fetcher("k", 1, 20);
+	expect(totalCount).toBe(1);
+	expect(cards[0].id).toBe("asia1-1");
+	// Real set name/series, not the raw set-id fallback ("asia1", "").
+	expect(cards[0].setName).toBe("Expansion Pack");
+	expect(cards[0].setSeries).toBe("Original Era");
+
+	// A year filter that would exclude the card if setsForRegion returned
+	// undefined (Number(undefined) => NaN, always excluded) instead keeps it,
+	// because the release year (1996) resolves from the loaded asia set.
+	const excluded = await makeCorpusFetcher({
+		relevance: false,
+		yearMin: 2000,
+	})("k2", 1, 20);
+	expect(excluded.totalCount).toBe(0);
+});
+
+test("makeCorpusFetcher falls back to raw setId + drops the card from a year filter when asia sets have NOT loaded yet (pre-fix regression guard)", async () => {
+	useCorpusRuntime.getState().setIndex("asia", buildIndex(asiaSample, "asia"));
+	useCorpusRuntime.getState().setActiveRegion("asia");
+	// No asia sets loaded at all -- setsForRegion("asia") is undefined.
+
+	const fetcher = makeCorpusFetcher({ relevance: false });
+	const { cards } = await fetcher("k", 1, 20);
+	expect(cards[0].setName).toBe("asia1"); // raw set id fallback
+	expect(cards[0].setSeries).toBe("");
+
+	const yearFiltered = await makeCorpusFetcher({
+		relevance: false,
+		yearMin: 1990,
+	})("k2", 1, 20);
+	// Number(undefined) => NaN => excluded, even though 1996 would pass.
+	expect(yearFiltered.totalCount).toBe(0);
+});
+
+test("makeCorpusFetcher still reads west sets when activeRegion is west (unchanged)", async () => {
+	useCorpusRuntime.getState().setIndex("west", buildIndex(sample, "west"));
+	useStore.setState({ sets: [westSet], setsByRegion: { west: [westSet] } });
+
+	const fetcher = makeCorpusFetcher({ relevance: false });
+	const { cards } = await fetcher("k", 1, 20);
+	expect(cards[0].setName).toBe("Base Set");
+	expect(cards[0].setSeries).toBe("Base");
 });

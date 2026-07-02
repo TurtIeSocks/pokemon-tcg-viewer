@@ -6,6 +6,7 @@ import {
 	type SupportedLanguage,
 	toSupportedLanguage,
 } from "../../lib/languages";
+import { useStore } from "../index";
 import { useUserland } from "../userland/userland-store";
 import type { I18nOverlay } from "./corpus-engine";
 import { loadCorpus } from "./corpus-runtime";
@@ -68,8 +69,13 @@ export function useActiveI18nKey(): string {
  * mirror it: without this, `activeRegion` is stuck on "west" forever, so on
  * hydration a grid re-queries the (west) index and blanks the correctly-seeded
  * asia SSR page. So here we ALSO derive the region and activate it (load its
- * corpus + point `activeRegion` at it). West always loads via useEnsureCorpus;
- * this switches the active region to match the language.
+ * corpus + sets + point `activeRegion` at it). West always loads via
+ * useEnsureCorpus; this switches the active region to match the language.
+ * Loading the region's SETS alongside its corpus (not just the index) is
+ * required so `makeCorpusFetcher`/`getSlugIndex` (which read
+ * `setsForRegion(activeRegion)`) can hydrate real set names/dates and resolve
+ * slugs for an asia browse grid — without it, asia cards render with
+ * `setName` = the raw set code and drop out of any year filter.
  *
  * Called from every card-rendering context (grid, overlay, cockpit, palette);
  * they share the single runtime, and reading the URL here keeps them all
@@ -89,13 +95,15 @@ export function useEnsureI18n(): void {
 			: profileLang;
 	useEffect(() => {
 		void loadI18n(lang);
-		// Activate the base corpus region the language belongs to. loadCorpus is
-		// idempotent per region (no-ops if already loaded); switching to a Western
-		// language sets the region back to "west". Guard setActiveRegion against a
-		// redundant write (getState, not a subscription) so this effect can't churn
-		// the store into a re-render loop when the region is unchanged.
+		// Activate the base corpus region the language belongs to. loadCorpus and
+		// loadSetsForRegion are both idempotent per region (no-op if already
+		// loaded/loading); switching to a Western language sets the region back to
+		// "west". Guard setActiveRegion against a redundant write (getState, not a
+		// subscription) so this effect can't churn the store into a re-render loop
+		// when the region is unchanged.
 		const region = regionForLanguage(lang);
 		void loadCorpus(region);
+		void useStore.getState().loadSetsForRegion(region);
 		if (useCorpusRuntime.getState().activeRegion !== region) {
 			useCorpusRuntime.getState().setActiveRegion(region);
 		}

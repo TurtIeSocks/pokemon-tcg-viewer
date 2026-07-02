@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, expect, test } from "bun:test";
+import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 import {
 	createMemoryHistory,
 	createRootRoute,
@@ -6,6 +6,8 @@ import {
 	RouterProvider,
 } from "@tanstack/react-router";
 import { act, render, renderHook } from "@testing-library/react";
+import * as cardData from "../../server/card-data";
+import { useStore } from "../index";
 import { useUserland } from "../userland/userland-store";
 import { buildIndex } from "./corpus-engine";
 import { useCorpusRuntime } from "./corpus-runtime-store";
@@ -125,6 +127,14 @@ function mountEnsureI18n(initialUrl: string) {
 	return r;
 }
 
+// useEnsureI18n's region-activation effect also calls loadSetsForRegion, which
+// delegates to getSetsFn -- a createServerFn wrapper that can't be invoked
+// directly outside the TanStack Start server runtime in a unit test (see
+// sets-slice.test.ts). Stub it globally here so every test in this file gets a
+// quiet, resolved no-op by default; the dedicated test below installs its own
+// spy (and asserts on it) instead of relying on this one.
+let getSetsFnSpy: ReturnType<typeof spyOn> | undefined;
+
 beforeEach(async () => {
 	await resetI18nRuntimeForTests();
 	setI18nFetchersForTests({
@@ -140,12 +150,16 @@ beforeEach(async () => {
 	});
 	setProfileLanguage(undefined);
 	resetCorpusRegions();
+	useStore.setState({ setsByRegion: {}, setsByRegionLoading: {} });
+	getSetsFnSpy = spyOn(cardData, "getSetsFn").mockResolvedValue([]);
 });
 
 afterEach(async () => {
 	await resetI18nRuntimeForTests();
 	setProfileLanguage(undefined);
 	resetCorpusRegions();
+	getSetsFnSpy?.mockRestore();
+	getSetsFnSpy = undefined;
 });
 
 test("useDisplayLanguage normalizes the profile language to the supported set", () => {
@@ -258,4 +272,25 @@ test("useEnsureI18n activates the asia region from an Asian PROFILE language (no
 		await waitForI18n("ko");
 	});
 	expect(useCorpusRuntime.getState().activeRegion).toBe("asia");
+});
+
+test("useEnsureI18n also loads that region's SETS (not just its corpus index)", async () => {
+	// loadSetsForRegion delegates to getSetsFn, a createServerFn wrapper that
+	// can't be invoked directly outside the TanStack Start server runtime in a
+	// unit test (see sets-slice.test.ts) -- spy it instead of letting the real
+	// network path run, and assert the region-activation effect calls it with
+	// the activated region, mirroring what it already does for loadCorpus.
+	const loadSetsForRegionSpy = spyOn(
+		useStore.getState(),
+		"loadSetsForRegion",
+	).mockResolvedValue(undefined);
+
+	seedBothRegions();
+	mountEnsureI18n("/?lang=ja");
+	await act(async () => {
+		await waitForI18n("ja");
+	});
+
+	expect(loadSetsForRegionSpy).toHaveBeenCalledWith("asia");
+	loadSetsForRegionSpy.mockRestore();
 });

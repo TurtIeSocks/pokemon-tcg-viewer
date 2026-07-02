@@ -31,24 +31,23 @@ const asiaCards: CorpusCard[] = [
 	},
 ];
 
-const sets: PokemonSet[] = [
-	{
-		id: "base1",
-		name: "Base",
-		series: "Base",
-		releaseDate: "1999",
-		total: 1,
-		images: {},
-	},
-	{
-		id: "asia1",
-		name: "Expansion Pack",
-		series: "Original Era",
-		releaseDate: "1996",
-		total: 1,
-		images: {},
-	},
-];
+const westSet: PokemonSet = {
+	id: "base1",
+	name: "Base",
+	series: "Base",
+	releaseDate: "1999",
+	total: 1,
+	images: {},
+};
+
+const asiaSet: PokemonSet = {
+	id: "asia1",
+	name: "Expansion Pack",
+	series: "Original Era",
+	releaseDate: "1996",
+	total: 1,
+	images: {},
+};
 
 beforeEach(() => {
 	useCorpusRuntime.setState({
@@ -57,7 +56,15 @@ beforeEach(() => {
 		loading: {},
 		index: null,
 	});
-	useStore.setState({ sets });
+	// West sets via the plain `sets` field (unchanged shape); asia sets via the
+	// region-keyed cache -- the two regions' sets are never one combined list in
+	// the real client (see sets-slice.ts setsForRegion), only in this fixture's
+	// pre-region-split shape.
+	useStore.setState({
+		sets: [westSet],
+		setsByRegion: { west: [westSet], asia: [asiaSet] },
+		setsByRegionLoading: {},
+	});
 });
 
 afterEach(() => {
@@ -67,6 +74,7 @@ afterEach(() => {
 		loading: {},
 		index: null,
 	});
+	useStore.setState({ sets: null, setsByRegion: {}, setsByRegionLoading: {} });
 });
 
 /** Probe component: renders the reactive slug index's card-slug resolution. */
