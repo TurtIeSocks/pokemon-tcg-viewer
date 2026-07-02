@@ -65,6 +65,46 @@ test("checkStale flips to stale when the server version differs", async () => {
 	expect(useDetailRuntime.getState().status).toBe("stale");
 });
 
+test("syncDetail bails when the user disables offline mid-fetch", async () => {
+	setDetailFetchersForTests({
+		fetchVersion: async () => ({ version: "v1", count: 1, builtAt: "x" }),
+		fetchBlob: async () => blob(),
+	});
+	await enableOffline();
+
+	// Controllable version fetch: resolve only after the user disabled.
+	let release!: (meta: {
+		version: string;
+		count: number;
+		builtAt: string;
+	}) => void;
+	const pending = new Promise<{
+		version: string;
+		count: number;
+		builtAt: string;
+	}>((resolve) => {
+		release = resolve;
+	});
+	let blobCalls = 0;
+	setDetailFetchersForTests({
+		fetchVersion: () => pending,
+		fetchBlob: async () => {
+			blobCalls++;
+			return blob();
+		},
+	});
+
+	const sync = syncDetail();
+	await disableOffline(); // user turns the feature off while fetch is in flight
+	release({ version: "v2", count: 1, builtAt: "y" });
+	await sync;
+
+	const s = useDetailRuntime.getState();
+	expect(blobCalls).toBe(0); // no re-download
+	expect(s.enabled).toBe(false); // stays disabled
+	expect(s.status).toBe("off"); // no sync status written for a disabled feature
+});
+
 test("disableOffline clears the map and flag", async () => {
 	setDetailFetchersForTests({
 		fetchVersion: async () => ({ version: "v1", count: 1, builtAt: "x" }),

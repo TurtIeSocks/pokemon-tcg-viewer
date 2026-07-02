@@ -369,6 +369,14 @@ test("profile save() patches displayLanguage", async () => {
 	expect((await repo.get())?.displayLanguage).toBe("de");
 });
 
+test("profile save() serializes overlapping saves (no lost update)", async () => {
+	const repo = freshProfileRepo();
+	await Promise.all([repo.save({ displayName: "A" }), repo.save({ bio: "B" })]);
+	const stored = await repo.get();
+	expect(stored?.displayName).toBe("A");
+	expect(stored?.bio).toBe("B");
+});
+
 test("profile clear() removes the stored record", async () => {
 	const repo = freshProfileRepo();
 	await repo.save({ displayName: "Misty" });

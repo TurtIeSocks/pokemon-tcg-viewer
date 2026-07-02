@@ -351,30 +351,39 @@ export function createCacheRepos(uid: string): UserlandRepos {
 		},
 	};
 
+	// Serialize saves: two overlapping read-merge-writes would read the same
+	// `existing` and the later write would silently drop the earlier patch.
+	let profileSaveQueue: Promise<unknown> = Promise.resolve();
 	const profile: ProfileRepo = {
 		async get() {
 			return (await get<Profile>(LOCAL_PROFILE_ID, pStore)) ?? null;
 		},
 
-		async save(patch) {
-			const now = Date.now();
-			const existing = await get<Profile>(LOCAL_PROFILE_ID, pStore);
-			const next: Profile = existing
-				? { ...existing, ...patch, updatedAt: now }
-				: {
-						id: LOCAL_PROFILE_ID,
-						displayName: patch.displayName ?? "Collector",
-						bio: patch.bio ?? null,
-						avatarPreset: patch.avatarPreset ?? DEFAULT_AVATAR_PRESET_ID,
-						favoriteSetId: patch.favoriteSetId ?? null,
-						displayLanguage: patch.displayLanguage ?? "en",
-						createdAt: now,
-						updatedAt: now,
-						deletedAt: null,
-					};
-			await set(LOCAL_PROFILE_ID, next, pStore);
-			await markDirty(mStore, "profiles", [LOCAL_PROFILE_ID]);
-			return next;
+		save(patch) {
+			const run = profileSaveQueue.then(async () => {
+				const now = Date.now();
+				const existing = await get<Profile>(LOCAL_PROFILE_ID, pStore);
+				const next: Profile = existing
+					? { ...existing, ...patch, updatedAt: now }
+					: {
+							id: LOCAL_PROFILE_ID,
+							displayName: patch.displayName ?? "Collector",
+							bio: patch.bio ?? null,
+							avatarPreset: patch.avatarPreset ?? DEFAULT_AVATAR_PRESET_ID,
+							favoriteSetId: patch.favoriteSetId ?? null,
+							displayLanguage: patch.displayLanguage ?? "en",
+							createdAt: now,
+							updatedAt: now,
+							deletedAt: null,
+						};
+				await set(LOCAL_PROFILE_ID, next, pStore);
+				await markDirty(mStore, "profiles", [LOCAL_PROFILE_ID]);
+				return next;
+			});
+			// A rejected save must not poison the queue for later saves; the
+			// rejection still propagates to this call's caller via `run`.
+			profileSaveQueue = run.catch(() => {});
+			return run;
 		},
 
 		async clear() {

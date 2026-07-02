@@ -124,6 +124,10 @@ export async function enableOffline(): Promise<void> {
 export async function syncDetail(): Promise<void> {
 	try {
 		const { version } = await fetchVersion();
+		// The user may disable the feature while the version fetch is in
+		// flight; a disabled feature has no sync status to report and must
+		// not be re-downloaded/re-enabled behind their back.
+		if (!useDetailRuntime.getState().enabled) return;
 		if (version === useDetailRuntime.getState().version) {
 			useDetailRuntime.setState({ status: "ready" });
 			return;

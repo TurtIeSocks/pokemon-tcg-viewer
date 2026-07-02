@@ -186,6 +186,18 @@ describe("cache-repo profile", () => {
 		await repos.profile.save({ displayName: "Alice 2" });
 		expect((await dirtyIds(uid, "profiles")).has(profile.id)).toBe(true);
 	});
+
+	test("save serializes overlapping saves (no lost update)", async () => {
+		const uid = crypto.randomUUID();
+		const repos = createCacheRepos(uid);
+		await Promise.all([
+			repos.profile.save({ displayName: "A" }),
+			repos.profile.save({ bio: "B" }),
+		]);
+		const stored = await repos.profile.get();
+		expect(stored?.displayName).toBe("A");
+		expect(stored?.bio).toBe("B");
+	});
 });
 
 // ---------------------------------------------------------------------------
