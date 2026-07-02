@@ -90,13 +90,25 @@ export async function fetchAllSets(baseLang = "en"): Promise<PokemonSet[]> {
 		const batch = list.slice(i, i + SETS_CONCURRENCY);
 		const details = await Promise.all(
 			batch.map(async (entry) => {
-				const r = await fetch(`${base}/v2/${baseLang}/sets/${entry.id}`);
-				if (!r.ok)
-					throw new Error(`Unable to fetch set detail for ${entry.id}`);
+				// Encode the id: JP-lineage set ids contain characters like "+"
+				// (e.g. SM1+, SM3+) that are otherwise mangled in the path and 404.
+				const r = await fetch(
+					`${base}/v2/${baseLang}/sets/${encodeURIComponent(entry.id)}`,
+				);
+				if (!r.ok) {
+					// One unfetchable set must not abort the whole region's nav tree
+					// (a single throw here would reject the batch and blank the entire
+					// browse tree). Warn and drop just this set.
+					console.warn(
+						`skipping set "${entry.id}": detail fetch failed (${r.status})`,
+					);
+					return null;
+				}
 				return (await r.json()) as TcgdexSetDetail;
 			}),
 		);
 		for (const d of details) {
+			if (!d) continue;
 			// Skip phantom sets: TCGdex sometimes reports a cardCount but lists zero
 			// actual cards (e.g. `wp` "W Promotional" — cardCount.total 7, cards []).
 			// The corpus crawl gets 0 cards for these, so a phantom in the nav shows a
