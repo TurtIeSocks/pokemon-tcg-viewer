@@ -107,3 +107,24 @@ export function setsForRegion(
 		(region === "west" ? (state.sets ?? undefined) : undefined)
 	);
 }
+
+/**
+ * Every loaded region's sets, concatenated and de-duped by set `id` (set codes
+ * are globally unique across regions, so no collision is possible). Falls back
+ * to the plain `sets` field for `west` when `setsByRegion.west` hasn't been
+ * mirrored yet, same as {@link setsForRegion}. For cross-region consumers
+ * (owned collection, CSV import, shared snapshots, an owned-set view) where
+ * cards can belong to any loaded region and ids/set-codes are globally unique.
+ */
+export function allLoadedSets(
+	state: Pick<SetsSlice, "sets" | "setsByRegion">,
+): PokemonSet[] {
+	const byId = new Map<string, PokemonSet>();
+	const west = state.setsByRegion.west ?? state.sets ?? undefined;
+	if (west) for (const set of west) byId.set(set.id, set);
+	for (const [region, sets] of Object.entries(state.setsByRegion)) {
+		if (region === "west" || !sets) continue;
+		for (const set of sets) if (!byId.has(set.id)) byId.set(set.id, set);
+	}
+	return [...byId.values()];
+}

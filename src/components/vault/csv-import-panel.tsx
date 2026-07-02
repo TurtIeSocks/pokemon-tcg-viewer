@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { PokemonSet } from "../../server/card-mappers";
@@ -9,6 +10,7 @@ import {
 	setsById,
 } from "../../store/corpus/corpus-engine";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
+import { allLoadedSets } from "../../store/sets-slice";
 import {
 	applyMapping,
 	type ColumnMap,
@@ -97,12 +99,15 @@ export function CsvImportPanel({ rows, onClose }: CsvImportPanelProps) {
 	const [merge, setMerge] = useState(true);
 	const [overrides, setOverrides] = useState<Record<number, string>>({});
 	const index = useCorpusRuntime((s) => s.index);
-	const sets = useStore((s) => s.sets);
+	// Imported rows can be any language/region, so match against sets merged
+	// across every loaded region rather than the bare west list. useShallow
+	// keeps the array reference stable across renders.
+	const sets = useStore(useShallow(allLoadedSets));
 
 	const resolver = useMemo<ImportResolver>(() => {
 		const bySet = new Map<string, string>();
 		const bySetName = new Map<string, string>();
-		const setNames = sets ? setsById(sets) : null;
+		const setNames = sets.length > 0 ? setsById(sets) : null;
 		if (index) {
 			for (const card of index.byId.values()) {
 				bySet.set(`${card.setId}|${card.number}`, card.id);

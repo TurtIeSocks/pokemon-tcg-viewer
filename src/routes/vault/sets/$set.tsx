@@ -1,5 +1,6 @@
 import { ClientOnly, createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import type { OwnedMissingMode } from "@/components/vault/owned-missing-grid";
 import { OwnedMissingGrid } from "@/components/vault/owned-missing-grid";
@@ -8,6 +9,7 @@ import { queryCorpus, setsById } from "@/store/corpus/corpus-engine";
 import { useCorpusRuntime } from "@/store/corpus/corpus-runtime";
 import { useActiveI18n, useEnsureI18n } from "@/store/corpus/i18n-active-hooks";
 import { useEnsureCorpus } from "@/store/corpus/use-ensure-corpus";
+import { allLoadedSets } from "@/store/sets-slice";
 import { useOwnedCardIdSet } from "@/store/userland/selectors";
 
 export const Route = createFileRoute("/vault/sets/$set")({
@@ -20,13 +22,16 @@ export function VaultSetDetailInner() {
 	useEnsureI18n();
 	const { set: setId } = Route.useParams();
 	const index = useCorpusRuntime((s) => s.index);
-	const sets = useStore((s) => s.sets);
+	// The owned-set view's setId may be from any region (an asia set), so
+	// resolve it against sets merged across every loaded region. useShallow
+	// keeps the array reference stable across renders.
+	const sets = useStore(useShallow(allLoadedSets));
 	const ownedCardIds = useOwnedCardIdSet();
 	const i18n = useActiveI18n();
 	const [mode, setMode] = useState<OwnedMissingMode>("all");
 
 	const { cards, setName } = useMemo(() => {
-		if (!index || !sets) return { cards: [], setName: null };
+		if (!index || sets.length === 0) return { cards: [], setName: null };
 		const setMap = setsById(sets);
 		const found = sets.find((s) => s.id === setId);
 		if (!found) return { cards: [], setName: null };

@@ -6,6 +6,7 @@ import {
 } from "../../lib/card-query";
 import type { PokemonSet } from "../../server/card-mappers";
 import { useStore } from "../index";
+import { setsForRegion } from "../sets-slice";
 import { useOwnedCardIdSet } from "../userland/selectors";
 import { type CorpusIndex, queryCorpus, setsById } from "./corpus-engine";
 import { useCorpusRuntime } from "./corpus-runtime";
@@ -55,7 +56,8 @@ export function useFilteredCardIds(
 	seedIds: string[],
 ): string[] {
 	const index = useCorpusRuntime((s) => s.index);
-	const sets = useStore((s) => s.sets);
+	const activeRegion = useCorpusRuntime((s) => s.activeRegion);
+	const sets = useStore((s) => setsForRegion(s, activeRegion));
 	const ownedCardIds = useOwnedCardIdSet();
 
 	// Stable serialized identity of the query; only the owned *size* matters when
@@ -73,6 +75,13 @@ export function useFilteredCardIds(
 	// biome-ignore lint/correctness/useExhaustiveDependencies: `key` encodes search+context+owned; index/sets are stable refs that only change on load.
 	return useMemo(() => {
 		if (!search || !context) return seedIds;
-		return filterCardIds(index, sets, search, context, ownedCardIds, seedIds);
+		return filterCardIds(
+			index,
+			sets ?? null,
+			search,
+			context,
+			ownedCardIds,
+			seedIds,
+		);
 	}, [index, sets, key, seedIds]);
 }

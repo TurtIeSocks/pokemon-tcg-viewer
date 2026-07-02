@@ -158,3 +158,32 @@ test("snapshot without description renders only name", async () => {
 	// "A test description" should not appear
 	expect(screen.queryByText("A test description")).toBeNull();
 });
+
+test("resolves a card from a snapshot whose set only lives under an asia region cache (cross-region)", async () => {
+	const asiaSet: PokemonSet = {
+		id: "sv1a",
+		name: "Shiny Treasure ex",
+		series: "Scarlet & Violet",
+		releaseDate: "2023/12/01",
+		total: 1,
+		images: { symbol: "", logo: "" },
+	};
+	seedCorpus([
+		...cards,
+		makeCorpusCard({ id: "sv1a-1", name: "Pikachu ex", setId: "sv1a" }),
+	]);
+	// Only `sets` (west) has base1; sv1a lives exclusively under setsByRegion.asia.
+	useStore.setState((s) => ({
+		setsByRegion: { ...s.setsByRegion, asia: [asiaSet] },
+	}));
+
+	const snapshot = makeSnapshot({
+		cards: [{ cardId: "sv1a-1", owned: true }],
+	});
+	const encoded = encodeSnapshot(snapshot);
+	window.location.hash = `#b=${encoded}`;
+
+	await renderInner();
+
+	expect(screen.getByAltText("Pikachu ex")).toBeTruthy();
+});

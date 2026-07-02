@@ -11,7 +11,7 @@ import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 import * as cardData from "../server/card-data";
 import type { PokemonSet } from "../server/card-mappers";
 import { useStore } from "./index";
-import { setsForRegion } from "./sets-slice";
+import { allLoadedSets, setsForRegion } from "./sets-slice";
 
 const westSets: PokemonSet[] = [
 	{
@@ -94,6 +94,36 @@ test("loadSetsForRegion('asia') is idempotent: a second call is a no-op once asi
 
 	await useStore.getState().loadSetsForRegion("asia");
 	expect(getSetsFnSpy).toHaveBeenCalledTimes(1);
+});
+
+test("allLoadedSets returns an empty array when nothing has loaded", () => {
+	expect(allLoadedSets(useStore.getState())).toEqual([]);
+});
+
+test("allLoadedSets returns the west list when only west has loaded (via the plain `sets` fallback)", () => {
+	useStore.setState({ sets: westSets });
+	expect(allLoadedSets(useStore.getState())).toEqual(westSets);
+});
+
+test("allLoadedSets merges west + asia and de-dupes by set id", () => {
+	useStore.setState({
+		sets: westSets,
+		setsByRegion: { west: westSets, asia: asiaSets },
+	});
+	const merged = allLoadedSets(useStore.getState());
+	expect(merged).toHaveLength(westSets.length + asiaSets.length);
+	expect(merged).toEqual(expect.arrayContaining([...westSets, ...asiaSets]));
+
+	// De-dupe: an asia set sharing an id with a west set collapses to one entry,
+	// preferring the west copy (west merged first).
+	const overriddenAsia: PokemonSet[] = [{ ...westSets[0], name: "Duplicate" }];
+	useStore.setState({
+		sets: westSets,
+		setsByRegion: { west: westSets, asia: overriddenAsia },
+	});
+	const deduped = allLoadedSets(useStore.getState());
+	expect(deduped).toHaveLength(westSets.length);
+	expect(deduped[0]).toBe(westSets[0]);
 });
 
 test("loadSetsForRegion('asia') de-dupes concurrent calls onto one in-flight request", async () => {
