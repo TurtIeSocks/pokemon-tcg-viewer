@@ -1,6 +1,10 @@
 import type { HoloCardData } from "../../components/holo-card";
 import { cardImage } from "../../lib/card-image";
-import type { Region } from "../../lib/languages";
+import {
+	faceLanguageFor,
+	type Region,
+	toSupportedLanguage,
+} from "../../lib/languages";
 import { slugify } from "../../lib/slug";
 import type { SortDir } from "../../lib/sort";
 import type { PokemonSet } from "../../server/card-mappers";
@@ -137,10 +141,22 @@ export function hydrateCard(
 	i18n?: I18nOverlay | null,
 ): HoloCardData {
 	const set = setsById.get(card.setId);
-	// EN fallback: an overlay miss (or no overlay) keeps the baked English name.
-	const name = i18n?.namesById?.get(card.id) ?? card.name;
-	// Image url is derived per language; en (or no imageBase) returns the baked urls.
-	const { imageUrl, imageUrlSmall } = cardImage(card, i18n?.lang ?? "en");
+	// A card's language "face" is chosen by its region, not blindly by the active
+	// display language -- there is no English face for a Japanese-lineage card
+	// and no Japanese face for a Western card (see faceLanguageFor).
+	const activeLang = toSupportedLanguage(i18n?.lang);
+	const faceLang = faceLanguageFor(card, activeLang);
+	// Only apply the i18n overlay when the active overlay's language actually IS
+	// the resolved face language -- an overlay for a language that doesn't match
+	// the card's region (e.g. a `ja` overlay over a west card) must never leak
+	// its name onto that card. An overlay miss (or no overlay) keeps the base name.
+	const name =
+		i18n && i18n.lang === faceLang
+			? (i18n.namesById?.get(card.id) ?? card.name)
+			: card.name;
+	// Image url is derived per resolved face language; en (or no imageBase)
+	// returns the baked urls.
+	const { imageUrl, imageUrlSmall } = cardImage(card, faceLang);
 	// When the localized url differs from the baked EN url, hand the renderer the
 	// EN url so it can reconcile a localized 404 back to English (a language may
 	// lack an image EN has). Only set it when there is actually a fallback target.
@@ -167,6 +183,7 @@ export function hydrateCard(
 		cardNumber: card.number,
 		nationalPokedexNumbers: card.nationalPokedexNumbers,
 		variants: card.variants,
+		region: card.region,
 	};
 }
 

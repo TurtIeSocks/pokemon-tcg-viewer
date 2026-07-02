@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import {
 	ASIAN_LANGUAGES,
+	faceLanguageFor,
 	isSupportedLanguage,
 	LANGUAGE_REGION,
 	REGION_BASE_LANGUAGE,
@@ -41,5 +42,24 @@ describe("region model", () => {
 			"zh-cn",
 			"zh-tw",
 		]);
+	});
+});
+
+describe("faceLanguageFor", () => {
+	it("west card + active en -> en face (unchanged)", () => {
+		expect(faceLanguageFor({ region: "west" }, "en")).toBe("en");
+	});
+	it("west card + active ja -> en face (region base, not ja)", () => {
+		expect(faceLanguageFor({ region: "west" }, "ja")).toBe("en");
+	});
+	it("asia card + active en -> ja face (region base)", () => {
+		expect(faceLanguageFor({ region: "asia" }, "en")).toBe("ja");
+	});
+	it("asia card + active ko -> ko face (matches region)", () => {
+		expect(faceLanguageFor({ region: "asia" }, "ko")).toBe("ko");
+	});
+	it("defaults an absent region to west", () => {
+		expect(faceLanguageFor({}, "en")).toBe("en");
+		expect(faceLanguageFor({}, "ja")).toBe("en");
 	});
 });

@@ -134,3 +134,26 @@ export function toSupportedLanguage(
 ): SupportedLanguage {
 	return lang && isSupportedLanguage(lang) ? lang : "en";
 }
+
+/**
+ * Resolve which language "face" of a card to render: there is no English face
+ * for a Japanese-lineage card and no Japanese face for a Western card, so the
+ * face language is chosen by the card's region, not blindly by the active
+ * display language. When the active language's region matches the card's
+ * region, render in that active language (e.g. an asia card + active `ko` ->
+ * `ko`). Otherwise fall back to the card's region base language (e.g. a west
+ * card + active `ja` -> `en`; an asia card + active `en` -> `ja`).
+ *
+ * Lives here (not corpus-engine.ts) so non-corpus callers (card-route link
+ * builders, Vault tiles) can compute a card's face language without importing
+ * corpus types -- only `Region` is needed, and it already lives in this module.
+ */
+export function faceLanguageFor(
+	card: { region?: Region },
+	activeLang: SupportedLanguage,
+): SupportedLanguage {
+	const cardRegion = card.region ?? "west";
+	return regionForLanguage(activeLang) === cardRegion
+		? activeLang
+		: REGION_BASE_LANGUAGE[cardRegion];
+}

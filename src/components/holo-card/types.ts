@@ -1,3 +1,5 @@
+import type { Region } from "../../lib/languages";
+
 /**
  * Card data shape consumed by <HoloCard /> and the cross-link overlays.
  * Matches the previous external package's HoloCardData with the additions
@@ -35,4 +37,11 @@ export interface HoloCardData {
 	 * Undefined when the card has no TCGplayer data.
 	 */
 	variants?: string[];
+	/**
+	 * Which catalog region this card belongs to, joined from `CorpusCard.region`
+	 * by `hydrateCard`. Optional so pre-existing HoloCardData fixtures need no
+	 * churn; absent means treat as `west` (the default every existing caller
+	 * already gets) -- see `faceLanguageFor`.
+	 */
+	region?: Region;
 }

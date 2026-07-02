@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { cardManageLinkPropsFor, cardRouteParams } from "../../lib/card-route";
+import { faceLanguageFor } from "../../lib/languages";
 import { useSlugIndex } from "../../store/corpus/corpus-runtime";
 import { useDisplayLanguage } from "../../store/corpus/i18n-active-hooks";
 import type { CardRow } from "../../store/userland/card-rows";
@@ -19,6 +20,10 @@ interface OwnedCardTileProps {
 export function OwnedCardTile({ row }: OwnedCardTileProps) {
 	const slugIndex = useSlugIndex();
 	const displayLanguage = useDisplayLanguage();
+	// A Japanese-lineage card has no English face (and vice versa) -- resolve
+	// the link's language by the card's region, not blindly by the active
+	// display language, so an owned asia card opens in its own face.
+	const linkLanguage = faceLanguageFor(row.card, displayLanguage);
 	const p = slugIndex ? cardRouteParams(slugIndex, row.card) : null;
 
 	const inner = (
@@ -35,7 +40,7 @@ export function OwnedCardTile({ row }: OwnedCardTileProps) {
 	if (p) {
 		return (
 			<Link
-				{...cardManageLinkPropsFor(p, displayLanguage)}
+				{...cardManageLinkPropsFor(p, linkLanguage)}
 				className="relative block w-full text-left rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-wash)]"
 				aria-label={`Manage stacks of ${row.card.name}`}
 			>
