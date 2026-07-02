@@ -92,9 +92,10 @@ export function regionForLanguage(lang: string): Region {
  * After each corpus rebuild, paste the `LANGUAGE_COVERAGE = {...}` line it logs
  * at the end of the run to refresh the numbers here.
  *
- * The six Asian overlays (ja/ko/zh-tw/zh-cn/th/id) are placeholders pending
- * the Phase 2 region-catalog crawl; `build-i18n` will regenerate real
- * coverage for them once that data lands. // asian-catalog: wired in Task A2+
+ * ja is the Asian region's full baseline (1). The other five Asian overlays cover
+ * only the subset TCGdex localizes — a fraction of the ja catalog — and the rest
+ * falls back to the ja name. These are the build-i18n crawl figures against the
+ * Docker mirror (2026-07-02); refresh them from the logged line after a rebuild.
  */
 export const LANGUAGE_COVERAGE: Record<SupportedLanguage, number> = {
 	en: 1,
@@ -104,11 +105,11 @@ export const LANGUAGE_COVERAGE: Record<SupportedLanguage, number> = {
 	it: 0.65,
 	pt: 0.59,
 	ja: 1,
-	ko: 0,
-	"zh-tw": 0,
-	"zh-cn": 0,
-	th: 0,
-	id: 0,
+	ko: 0.03,
+	"zh-tw": 0.83,
+	"zh-cn": 0.13,
+	th: 0.39,
+	id: 0.36,
 };
 
 /**
