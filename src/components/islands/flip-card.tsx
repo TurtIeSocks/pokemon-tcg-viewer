@@ -12,8 +12,9 @@ const SLOW_MS = 250;
 type Phase = "loading" | "back" | "flipping" | "done";
 
 interface FlipCardProps {
-	/** The front image to watch (the one the card actually displays). */
-	imageUrl: string;
+	/** The front image to watch (the one the card actually displays). Absent
+	 * (`undefined`) means the card has no image — nothing to wait for. */
+	imageUrl: string | undefined;
 	children: ReactNode;
 }
 
@@ -29,6 +30,11 @@ export function FlipCard({ imageUrl, children }: FlipCardProps) {
 	const [phase, setPhase] = useState<Phase>("loading");
 
 	useEffect(() => {
+		if (!imageUrl) {
+			// No image to load — reveal the front (its no-image state) immediately.
+			setPhase("done");
+			return;
+		}
 		let cancelled = false;
 		const img = new Image();
 		const onReady = () => {

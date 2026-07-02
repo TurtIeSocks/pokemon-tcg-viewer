@@ -25,7 +25,7 @@ import {
 } from "../../store/corpus/i18n-active-hooks";
 import { useOwnedCardIdSet } from "../../store/userland/selectors";
 import { CollectionToggle } from "../collection-toggle";
-import { type HoloCardData, holoCardProps } from "../holo-card";
+import { cardThumbSrc, type HoloCardData, holoCardProps } from "../holo-card";
 import { useCardSelection } from "./card-selection";
 import { FlipCard } from "./flip-card";
 import { HoloCardIsland } from "./holo-card-island";
@@ -177,7 +177,7 @@ export function CardGridIsland({
 				: () => prefetchCardDetail(params, displayLang);
 
 		const cardContent = (
-			<FlipCard imageUrl={card.imageUrlSmall ?? card.imageUrl}>
+			<FlipCard imageUrl={cardThumbSrc(card)}>
 				<HoloCardIsland
 					{...holoCardProps(card)}
 					onPrefetch={onPrefetch}

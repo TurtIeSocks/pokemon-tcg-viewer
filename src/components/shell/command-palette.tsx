@@ -31,7 +31,7 @@ import {
 } from "../../store/corpus/i18n-active-hooks";
 import { useStore } from "../../store/index";
 import { useRecentsStore } from "../../store/recents";
-import type { HoloCardData } from "../holo-card";
+import { cardThumbSrc, type HoloCardData } from "../holo-card";
 import { NAV_DESTINATIONS } from "./command-palette-data";
 
 const KBD =
@@ -210,7 +210,7 @@ export function CommandPalette({ tree }: { tree: NavTree }) {
 								onSelect={() => goToCard(card)}
 							>
 								<img
-									src={card.imageUrlSmall}
+									src={cardThumbSrc(card)}
 									alt=""
 									loading="lazy"
 									className="size-7 shrink-0 rounded object-contain"
@@ -248,7 +248,7 @@ export function CommandPalette({ tree }: { tree: NavTree }) {
 								onSelect={() => goToCard(card)}
 							>
 								<img
-									src={card.imageUrlSmall}
+									src={cardThumbSrc(card)}
 									alt=""
 									loading="lazy"
 									className="size-7 shrink-0 rounded object-contain"

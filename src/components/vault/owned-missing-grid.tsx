@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import type { HoloCardData } from "../holo-card";
+import { cardThumbSrc, type HoloCardData } from "../holo-card";
 
 /** Filter mode for the grid. */
 export type OwnedMissingMode = "all" | "owned" | "missing";
@@ -63,7 +63,7 @@ export function OwnedMissingGrid({
 		>
 			{visible.map((card) => {
 				const owned = ownedCardIds.has(card.id);
-				const src = card.imageUrlSmall ?? card.imageUrl;
+				const src = cardThumbSrc(card);
 				const cardInner = (
 					<>
 						<div className="relative aspect-[2.5/3.5]">

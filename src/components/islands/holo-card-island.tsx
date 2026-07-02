@@ -1,5 +1,5 @@
 import { ClientOnly } from "@tanstack/react-router";
-import { HoloCard, type HoloCardProps } from "../holo-card";
+import { cardThumbSrc, HoloCard, type HoloCardProps } from "../holo-card";
 
 /**
  * Server renders a plain <img> (crawlable, no hydration risk); the client
@@ -12,7 +12,7 @@ export function HoloCardIsland(props: HoloCardProps) {
 		<ClientOnly
 			fallback={
 				<img
-					src={imageUrlSmall ?? imageUrl}
+					src={cardThumbSrc({ imageUrl, imageUrlSmall })}
 					alt={name}
 					loading="lazy"
 					className="w-full rounded"
