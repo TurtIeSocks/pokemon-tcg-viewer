@@ -3,12 +3,30 @@ import {
 	ASIAN_LANGUAGES,
 	faceLanguageFor,
 	isSupportedLanguage,
+	LANGUAGE_COVERAGE,
 	LANGUAGE_REGION,
 	REGION_BASE_LANGUAGE,
 	regionForLanguage,
 	SUPPORTED_LANGUAGES,
 	toSupportedLanguage,
 } from "./languages";
+
+describe("LANGUAGE_COVERAGE (generated language-coverage.json)", () => {
+	it("has a 0..1 entry for every supported language, no extras", () => {
+		expect(Object.keys(LANGUAGE_COVERAGE).sort()).toEqual(
+			[...SUPPORTED_LANGUAGES].sort(),
+		);
+		for (const [lang, cov] of Object.entries(LANGUAGE_COVERAGE)) {
+			expect(cov, `${lang} coverage in range`).toBeGreaterThanOrEqual(0);
+			expect(cov, `${lang} coverage in range`).toBeLessThanOrEqual(1);
+		}
+	});
+
+	it("the two region baselines are fully covered", () => {
+		expect(LANGUAGE_COVERAGE.en).toBe(1);
+		expect(LANGUAGE_COVERAGE.ja).toBe(1);
+	});
+});
 
 describe("region model", () => {
 	it("classifies every supported language into a region", () => {

@@ -6,8 +6,23 @@ import {
 	type I18nEntry,
 	i18nVersion,
 	langBase,
+	mergeCoverage,
 	writeI18n,
 } from "./build-i18n";
+
+test("mergeCoverage: crawl wins, en/ja pinned to 1, failed langs keep last-good", () => {
+	const current = { en: 1, fr: 0.9, ja: 1, ko: 0.03, "zh-tw": 0.8 };
+	// This run: fr improved, zh-tw crawled higher; ko FAILED (absent from crawl).
+	const crawled = { en: 1, fr: 0.93, "zh-tw": 0.85 };
+	const out = mergeCoverage(current, crawled);
+	expect(out.fr).toBe(0.93); // crawl wins
+	expect(out["zh-tw"]).toBe(0.85);
+	expect(out.ko).toBe(0.03); // absent from crawl → keep-last-good, not zeroed
+	expect(out.en).toBe(1); // baseline pinned
+	expect(out.ja).toBe(1); // baseline pinned (never in a crawl)
+	// Ordered en-first, ja before the Asian overlays, for a stable diff.
+	expect(Object.keys(out)).toEqual(["en", "fr", "ja", "ko", "zh-tw"]);
+});
 
 test("I18N_LANGS overlays Western + Asian langs, excluding both base langs", () => {
 	const langs = new Set<string>(I18N_LANGS);

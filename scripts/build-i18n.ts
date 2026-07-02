@@ -1,7 +1,63 @@
 import { createHash } from "node:crypto";
+import { readFileSync, writeFileSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { gzipSync } from "node:zlib";
 import { fetchJson as realFetchJson } from "./build-corpus";
+
+/** Region-baseline + display-language order, for a stable coverage-json diff. */
+const COVERAGE_ORDER = [
+	"en",
+	"fr",
+	"de",
+	"es",
+	"it",
+	"pt",
+	"ja",
+	"ko",
+	"zh-tw",
+	"zh-cn",
+	"th",
+	"id",
+];
+const COVERAGE_FILE = "src/lib/language-coverage.json";
+
+/**
+ * Merge freshly-crawled coverage over the previous map (the picker's partial-
+ * coverage hint). en + ja are the region baselines (1). A lang absent from the
+ * crawl (it failed this run) keeps its previous value — keep-last-good, so a
+ * transient crawl error never zeroes it. Output is ordered for a stable diff. Pure.
+ */
+export function mergeCoverage(
+	current: Record<string, number>,
+	crawled: Record<string, number>,
+): Record<string, number> {
+	const next: Record<string, number> = {
+		...current,
+		...crawled,
+		en: 1,
+		ja: 1,
+	};
+	return Object.fromEntries(
+		COVERAGE_ORDER.filter((l) => l in next).map((l) => [l, next[l]]),
+	);
+}
+
+/**
+ * Rewrite src/lib/language-coverage.json from a crawl. Gated behind WRITE_COVERAGE=1
+ * so the R2 corpus build never mutates source; the refresh-catalog-data workflow
+ * sets it.
+ */
+function writeCoverageJson(coverageByLang: Record<string, number>): void {
+	let current: Record<string, number> = {};
+	try {
+		current = JSON.parse(readFileSync(COVERAGE_FILE, "utf8"));
+	} catch {
+		/* first write */
+	}
+	const ordered = mergeCoverage(current, coverageByLang);
+	writeFileSync(COVERAGE_FILE, `${JSON.stringify(ordered, null, "\t")}\n`);
+	console.log(`wrote ${COVERAGE_FILE}`);
+}
 
 // Name-overlay languages. Western (fr/de/es/it/pt) overlay the English base
 // corpus; Asian (ko/zh-tw/zh-cn/th/id) overlay the Phase 2 Asian (ja) base
@@ -221,4 +277,5 @@ if (import.meta.main) {
 		`Built ${built}/${I18N_LANGS.length} overlays in ${secs}s${failed.length ? ` (failed: ${failed.join(", ")})` : ""}`,
 	);
 	console.log("LANGUAGE_COVERAGE =", JSON.stringify(coverageByLang));
+	if (process.env.WRITE_COVERAGE) writeCoverageJson(coverageByLang);
 }

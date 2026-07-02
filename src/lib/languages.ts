@@ -1,3 +1,5 @@
+import languageCoverage from "./language-coverage.json";
+
 /**
  * Catalog-supported display languages — the single source of truth for both the
  * display-language switcher and the per-stack `language` selector. The catalog
@@ -84,33 +86,16 @@ export function regionForLanguage(lang: string): Region {
 
 /**
  * Approximate fraction of the catalog each overlay covers (overlay card count /
- * total corpus), for a partial-coverage hint in the language picker. TCGdex's
- * Western data is uneven — es/pt lack most vintage cards, so those fall back to
- * English. en is the full baseline (1).
+ * total corpus), for a partial-coverage hint in the language picker. en + ja are
+ * the two region baselines (1); every other language covers only the subset
+ * TCGdex localizes, with the rest falling back to the base name.
  *
- * GENERATED: these values are computed mechanically by `scripts/build-i18n.ts`.
- * After each corpus rebuild, paste the `LANGUAGE_COVERAGE = {...}` line it logs
- * at the end of the run to refresh the numbers here.
- *
- * ja is the Asian region's full baseline (1). The other five Asian overlays cover
- * only the subset TCGdex localizes — a fraction of the ja catalog — and the rest
- * falls back to the ja name. These are the build-i18n crawl figures against the
- * Docker mirror (2026-07-02); refresh them from the logged line after a rebuild.
+ * GENERATED — do not hand-edit. `scripts/build-i18n.ts` (WRITE_COVERAGE=1) writes
+ * language-coverage.json from a live crawl; the `refresh-catalog-data` workflow
+ * regenerates it and opens a PR when TCGdex's coverage shifts.
  */
-export const LANGUAGE_COVERAGE: Record<SupportedLanguage, number> = {
-	en: 1,
-	fr: 0.92,
-	de: 0.84,
-	es: 0.65,
-	it: 0.65,
-	pt: 0.59,
-	ja: 1,
-	ko: 0.03,
-	"zh-tw": 0.83,
-	"zh-cn": 0.13,
-	th: 0.39,
-	id: 0.36,
-};
+export const LANGUAGE_COVERAGE: Record<SupportedLanguage, number> =
+	languageCoverage;
 
 /**
  * Languages that translate Pokémon *names* (Charizard → Glurak/Dracaufeu).

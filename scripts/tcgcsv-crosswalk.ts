@@ -12,10 +12,13 @@
 // Emits scripts/data/tcgcsv-crosswalk.json (committed) + a match report to stderr.
 // Run: bun run scripts/tcgcsv-crosswalk.ts
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 const MIRROR = process.env.API_BASE ?? "http://localhost:3000";
 const GROUPS_CACHE = "scripts/data/.cache/tcgcsv-groups-85.json";
+const GROUPS_URL = "https://tcgcsv.com/tcgplayer/85/groups";
+const UA =
+	"cardstack-jp-overlay/1.0 (+https://github.com/rin/pokemon-tcg-viewer)";
 const DEADSETS_CACHE = "scripts/data/.cache/tcgdex-ja-deadsets.json";
 const OUT = "scripts/data/tcgcsv-crosswalk.json";
 const OVERLAY_SETS_TS = "src/lib/corpus/overlay-sets.ts";
@@ -111,10 +114,27 @@ async function loadDeadSets(): Promise<DeadSet[]> {
 	return targets;
 }
 
-function main() {
-	const groups = (
-		JSON.parse(readFileSync(GROUPS_CACHE, "utf8")) as { results: TcgcsvGroup[] }
-	).results;
+/** tcgcsv category-85 groups, from the disk cache or a one-shot fetch (CI has no
+ * pre-seeded cache). REFRESH_GROUPS=1 forces a re-fetch. */
+async function loadGroups(): Promise<TcgcsvGroup[]> {
+	if (process.env.REFRESH_GROUPS !== "1" && existsSync(GROUPS_CACHE))
+		return (
+			JSON.parse(readFileSync(GROUPS_CACHE, "utf8")) as {
+				results: TcgcsvGroup[];
+			}
+		).results;
+	const r = await fetch(GROUPS_URL, { headers: { "User-Agent": UA } });
+	if (!r.ok) throw new Error(`tcgcsv groups -> ${r.status}`);
+	const body = await r.text();
+	mkdirSync(GROUPS_CACHE.slice(0, GROUPS_CACHE.lastIndexOf("/")), {
+		recursive: true,
+	});
+	writeFileSync(GROUPS_CACHE, body);
+	return (JSON.parse(body) as { results: TcgcsvGroup[] }).results;
+}
+
+async function main() {
+	const groups = await loadGroups();
 	const push = (m: Map<string, TcgcsvGroup[]>, k: string, g: TcgcsvGroup) => {
 		const arr = m.get(k);
 		if (arr) arr.push(g);
@@ -188,7 +208,8 @@ function main() {
 
 		const resolvedCollisions = collisions.filter((c) => !(c.setId in manual));
 
-		writeFileSync(OUT, `${JSON.stringify(crosswalk, null, 2)}\n`);
+		// Tab-indent to match Biome so a regen never produces formatting-only churn.
+		writeFileSync(OUT, `${JSON.stringify(crosswalk, null, "\t")}\n`);
 
 		// Emit the runtime allowlist: fetchAllSets phantom-skips any TCGdex set with
 		// 0 cards, which would drop the ADD (empty) overlay sets from the nav tree.
@@ -234,4 +255,7 @@ function main() {
 	});
 }
 
-main();
+main().catch((e) => {
+	console.error(e);
+	process.exit(1);
+});
