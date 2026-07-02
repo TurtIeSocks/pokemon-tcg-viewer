@@ -47,12 +47,25 @@ test("setting asia does not drop west", () => {
 	expect(useCorpusRuntime.getState().indices.asia).toBe(asia);
 });
 
-test("index falls back to indices.west when activeRegion has no index yet", () => {
+test("index is null (not a west fallback) when activeRegion has no index yet", () => {
 	const west = fakeIndex("west-1");
 	useCorpusRuntime.getState().setIndex("west", west);
 	useCorpusRuntime.getState().setActiveRegion("asia");
-	// asia has no index set — back-compat `index` falls back to west.
-	expect(useCorpusRuntime.getState().index).toBe(west);
+	// asia is active but not loaded yet — `index` must be null so a browse grid
+	// stays on its correct (asia) SSR seed rather than flashing west content.
+	// (A cross-region `?? indices.west` fallback here is the browse bug: it makes
+	// CardGridIsland re-query the west index and blank the asia grid on hydration.)
+	expect(useCorpusRuntime.getState().index).toBeNull();
+});
+
+test("index resolves the asia index once it loads under an active asia region", () => {
+	const west = fakeIndex("west-1");
+	const asia = fakeIndex("asia-1");
+	useCorpusRuntime.getState().setIndex("west", west);
+	useCorpusRuntime.getState().setActiveRegion("asia");
+	expect(useCorpusRuntime.getState().index).toBeNull(); // not loaded yet
+	useCorpusRuntime.getState().setIndex("asia", asia);
+	expect(useCorpusRuntime.getState().index).toBe(asia); // now resolves asia
 });
 
 test("back-compat setState({ index }) shim writes through to indices.west", () => {

@@ -22,8 +22,8 @@ import type { CorpusIndex } from "./corpus-engine";
  * and tests doing `useCorpusRuntime.setState({ index })`) predate the region split
  * and outnumber the region-aware call sites, so `index` stays a real,
  * always-in-sync field — a back-compat READ path (`indices[activeRegion] ??
- * indices.west ?? null`) recomputed by `setIndex`/`setActiveRegion`, plus a
- * back-compat WRITE shim in `setState` that treats a bare `index` as shorthand
+ * null`, the ACTIVE region only) recomputed by `setIndex`/`setActiveRegion`, plus
+ * a back-compat WRITE shim in `setState` that treats a bare `index` as shorthand
  * for the `west` region. This is lower churn than touching the ~15 files that
  * select `.index` today. `loading` is region-keyed from the start (no bare-value
  * back-compat) — use the `setLoading` action.
@@ -36,8 +36,8 @@ export interface CorpusRuntimeState {
 	/** True while loadCorpus is actively fetching/decompressing a region's corpus. */
 	loading: Partial<Record<Region, boolean>>;
 	/**
-	 * Back-compat: `indices[activeRegion] ?? indices.west ?? null`. Kept as a real
-	 * field (not a getter) so `useCorpusRuntime((s) => s.index)` selectors and
+	 * Back-compat: `indices[activeRegion] ?? null` (the ACTIVE region only). Kept as
+	 * a real field (not a getter) so `useCorpusRuntime((s) => s.index)` selectors and
 	 * `useCorpusRuntime.getState().index` reads — both pre-existing, un-migrated
 	 * call sites — keep working unchanged.
 	 */
@@ -82,7 +82,11 @@ function deriveIndex(
 	indices: Partial<Record<Region, CorpusIndex>>,
 	activeRegion: Region,
 ): CorpusIndex | null {
-	return indices[activeRegion] ?? indices.west ?? null;
+	// The ACTIVE region's index only — NO cross-region `?? indices.west` fallback.
+	// When asia is active but not yet loaded, `index` must be null so a browse grid
+	// stays on its correct (asia) SSR seed and `corpusReady` reads false, rather
+	// than falling back to the west index and blanking the asia grid on hydration.
+	return indices[activeRegion] ?? null;
 }
 
 // Non-persisted store — holds the ~20k-card index (per region) in memory only.

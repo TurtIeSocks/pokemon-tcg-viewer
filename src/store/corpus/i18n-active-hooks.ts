@@ -2,11 +2,14 @@ import { useSearch } from "@tanstack/react-router";
 import { useEffect } from "react";
 import {
 	isSupportedLanguage,
+	regionForLanguage,
 	type SupportedLanguage,
 	toSupportedLanguage,
 } from "../../lib/languages";
 import { useUserland } from "../userland/userland-store";
 import type { I18nOverlay } from "./corpus-engine";
+import { loadCorpus } from "./corpus-runtime";
+import { useCorpusRuntime } from "./corpus-runtime-store";
 import { loadI18n, useI18nRuntime } from "./i18n-runtime";
 
 /**
@@ -52,13 +55,25 @@ export function useActiveI18nKey(): string {
 }
 
 /**
- * Keep the active overlay in sync with the effective display language: the
- * current page's `lang` URL param if set, else the viewer's profile default
- * (else "en"). Lazily loads (and downloads once) the overlay when it changes.
- * en-only users trigger zero network — loadI18n("en") clears the overlay
- * synchronously. Called from every card-rendering context (grid, overlay,
- * binders, vault, palette); they share the single runtime, and reading the URL
- * here keeps them all consistent with the active page without prop-threading.
+ * Keep the active overlay AND the active base-corpus region in sync with the
+ * effective display language: the current page's `lang` URL param if set, else
+ * the viewer's profile default (else "en"). Lazily loads (and downloads once)
+ * the overlay when it changes; en-only users trigger zero overlay network —
+ * loadI18n("en") clears the overlay synchronously.
+ *
+ * REGION ACTIVATION (asian-catalog): the display language also picks the base
+ * corpus. Language is the region axis — Western languages read the `west`
+ * catalog, Asian languages (ja/ko/zh-tw/zh-cn/th/id) read the `asia` catalog. Server
+ * SSR loaders already seed the right region from `?lang`, but the CLIENT must
+ * mirror it: without this, `activeRegion` is stuck on "west" forever, so on
+ * hydration a grid re-queries the (west) index and blanks the correctly-seeded
+ * asia SSR page. So here we ALSO derive the region and activate it (load its
+ * corpus + point `activeRegion` at it). West always loads via useEnsureCorpus;
+ * this switches the active region to match the language.
+ *
+ * Called from every card-rendering context (grid, overlay, cockpit, palette);
+ * they share the single runtime, and reading the URL here keeps them all
+ * consistent with the active page without prop-threading.
  */
 export function useEnsureI18n(): void {
 	// strict:false so this works on any route; a route without a `lang` param
@@ -74,5 +89,15 @@ export function useEnsureI18n(): void {
 			: profileLang;
 	useEffect(() => {
 		void loadI18n(lang);
+		// Activate the base corpus region the language belongs to. loadCorpus is
+		// idempotent per region (no-ops if already loaded); switching to a Western
+		// language sets the region back to "west". Guard setActiveRegion against a
+		// redundant write (getState, not a subscription) so this effect can't churn
+		// the store into a re-render loop when the region is unchanged.
+		const region = regionForLanguage(lang);
+		void loadCorpus(region);
+		if (useCorpusRuntime.getState().activeRegion !== region) {
+			useCorpusRuntime.getState().setActiveRegion(region);
+		}
 	}, [lang]);
 }

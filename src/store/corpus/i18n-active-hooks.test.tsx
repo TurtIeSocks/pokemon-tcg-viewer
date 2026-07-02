@@ -7,6 +7,9 @@ import {
 } from "@tanstack/react-router";
 import { act, render, renderHook } from "@testing-library/react";
 import { useUserland } from "../userland/userland-store";
+import { buildIndex } from "./corpus-engine";
+import { useCorpusRuntime } from "./corpus-runtime-store";
+import type { CorpusCard } from "./corpus-types";
 import {
 	useActiveI18n,
 	useDisplayLanguage,
@@ -34,6 +37,49 @@ const overlay = (records: { id: string; name: string }[]) => {
 	const b = gzipSync(Buffer.from(JSON.stringify(records)));
 	return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
 };
+
+// A single card per region. Seeding BOTH region indices makes loadCorpus(region)
+// early-return (it no-ops when that region is already loaded), so the region
+// activation under test never touches the network.
+const westCards: CorpusCard[] = [
+	{
+		id: "base1-4",
+		name: "Charizard",
+		imageUrl: "a",
+		imageUrlSmall: "b",
+		supertype: "Pokémon",
+		setId: "base1",
+		number: "4",
+	},
+];
+const asiaCards: CorpusCard[] = [
+	{
+		id: "asia1-1",
+		name: "Fushigidane",
+		imageUrl: "a",
+		imageUrlSmall: "b",
+		supertype: "Pokémon",
+		setId: "asia1",
+		number: "1",
+	},
+];
+
+function seedBothRegions(): void {
+	act(() => {
+		useCorpusRuntime.getState().setIndex("west", buildIndex(westCards, "west"));
+		useCorpusRuntime.getState().setIndex("asia", buildIndex(asiaCards, "asia"));
+		useCorpusRuntime.getState().setActiveRegion("west");
+	});
+}
+
+function resetCorpusRegions(): void {
+	useCorpusRuntime.setState({
+		indices: {},
+		activeRegion: "west",
+		loading: {},
+		index: null,
+	});
+}
 
 function setProfileLanguage(lang: string | undefined): void {
 	act(() => {
@@ -93,11 +139,13 @@ beforeEach(async () => {
 			]),
 	});
 	setProfileLanguage(undefined);
+	resetCorpusRegions();
 });
 
 afterEach(async () => {
 	await resetI18nRuntimeForTests();
 	setProfileLanguage(undefined);
+	resetCorpusRegions();
 });
 
 test("useDisplayLanguage normalizes the profile language to the supported set", () => {
@@ -173,4 +221,41 @@ test("useActiveI18n returns null for en and the overlay for a loaded language", 
 	});
 	expect(result.current?.lang).toBe("fr");
 	expect(result.current?.namesById?.get("base1-4")).toBe("Dracaufeu");
+});
+
+test("useEnsureI18n activates the asia region for an Asian URL lang, and back to west when it clears", async () => {
+	// Both regions pre-seeded so loadCorpus(region) is a no-op (no network).
+	seedBothRegions();
+	expect(useCorpusRuntime.getState().activeRegion).toBe("west");
+
+	// A page with ?lang=ja (an Asian language) must activate the asia region so
+	// the browse grid derives against the asia index, not west.
+	const r = mountEnsureI18n("/?lang=ja");
+	await act(async () => {
+		await waitForI18n("ja");
+	});
+	expect(useCorpusRuntime.getState().activeRegion).toBe("asia");
+	// `index` now resolves the ACTIVE (asia) index, not west.
+	expect(useCorpusRuntime.getState().index?.byId.has("asia1-1")).toBe(true);
+	expect(useCorpusRuntime.getState().index?.byId.has("base1-4")).toBe(false);
+
+	// Navigating to a Western language flips the active region back to west.
+	await act(async () => {
+		await r.navigate({ to: "/", search: { lang: "fr" } });
+		await waitForI18n("fr");
+	});
+	expect(useCorpusRuntime.getState().activeRegion).toBe("west");
+	expect(useCorpusRuntime.getState().index?.byId.has("base1-4")).toBe(true);
+});
+
+test("useEnsureI18n activates the asia region from an Asian PROFILE language (no URL param)", async () => {
+	seedBothRegions();
+	mountEnsureI18n("/"); // no ?lang → profile drives the region
+	expect(useCorpusRuntime.getState().activeRegion).toBe("west");
+
+	await act(async () => {
+		setProfileLanguage("ko");
+		await waitForI18n("ko");
+	});
+	expect(useCorpusRuntime.getState().activeRegion).toBe("asia");
 });
