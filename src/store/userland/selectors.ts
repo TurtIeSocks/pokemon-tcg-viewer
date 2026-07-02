@@ -20,6 +20,7 @@ import {
 	type BinderProgress,
 	binderMembers,
 	computeBinderProgress,
+	type RegionCorpus,
 } from "./binder-progress";
 import {
 	buildCardRows,
@@ -117,6 +118,30 @@ function useCorpusJoinInputs() {
 	const indices = useCorpusRuntime((s) => s.indices);
 	const sets = useStore((s) => s.sets);
 	return { index, indices, sets };
+}
+
+const REGION_ORDER = ["west", "asia"] as const satisfies readonly Region[];
+
+/**
+ * Every loaded region paired with its own set list, for cross-region binder
+ * rule matching (see `binderMembers`). Memoized on the store refs, so the array
+ * is stable until a region's corpus or sets actually change.
+ */
+function useRegionCorpora(): RegionCorpus[] {
+	const indices = useCorpusRuntime((s) => s.indices);
+	const setsByRegion = useStore((s) => s.setsByRegion);
+	const westSets = useStore((s) => s.sets);
+	return useMemo(() => {
+		const out: RegionCorpus[] = [];
+		for (const region of REGION_ORDER) {
+			const index = indices[region];
+			if (!index) continue;
+			const list =
+				setsByRegion[region] ?? (region === "west" ? westSets : null);
+			out.push({ index, setsMap: setsById(list ?? []) });
+		}
+		return out;
+	}, [indices, setsByRegion, westSets]);
 }
 
 // Module-level single-entry memo for the grouped owned index. `groupByCardId` is
@@ -227,27 +252,24 @@ export function useOwnedCardRows(key: SortKey, dir: SortDir): CardRow[] {
 
 /** Hook: compute progress for a binder by id; null until corpus + sets + userland load. */
 export function useBinderProgress(binderId: string): BinderProgress | null {
+	useEnsureUserland();
 	const binder = useUserland((s) => s.binders[binderId] ?? null);
 	const items = useUserland((s) => s.items);
-	const { index, sets } = useCorpusJoinInputs();
+	const regions = useRegionCorpora();
 	useEnsureOwnedRegions(items);
 	return useMemo(() => {
-		if (!binder || !index || !sets) return null;
-		return computeBinderProgress(
-			binder,
-			index,
-			setsById(sets),
-			ownedCardIdSet(items),
-		);
-	}, [binder, items, index, sets]);
+		if (!binder || regions.length === 0) return null;
+		return computeBinderProgress(binder, regions, ownedCardIdSet(items));
+	}, [binder, items, regions]);
 }
 
-/** Hook: compute the member card-id set for a binder by id; null until corpus + sets load. */
+/** Hook: compute the member card-id set for a binder by id; null until a corpus loads. */
 export function useBinderMembers(binderId: string): Set<string> | null {
+	useEnsureUserland();
 	const binder = useUserland((s) => s.binders[binderId] ?? null);
-	const { index, sets } = useCorpusJoinInputs();
+	const regions = useRegionCorpora();
 	return useMemo(() => {
-		if (!binder || !index || !sets) return null;
-		return binderMembers(binder, index, setsById(sets));
-	}, [binder, index, sets]);
+		if (!binder || regions.length === 0) return null;
+		return binderMembers(binder, regions);
+	}, [binder, regions]);
 }

@@ -3,17 +3,23 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Pencil, Share2, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { OwnedMissingGrid } from "@/components/vault/owned-missing-grid";
 import { binderRuleLabel } from "@/lib/binder-rule-label";
 import { useStore } from "../../store";
-import { hydrateCard, setsById } from "../../store/corpus/corpus-engine";
+import {
+	hydrateCard,
+	resolveCardAcrossRegions,
+	setsById,
+} from "../../store/corpus/corpus-engine";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
 import {
 	useActiveI18n,
 	useEnsureI18n,
 } from "../../store/corpus/i18n-active-hooks";
+import { allLoadedSets } from "../../store/sets-slice";
 import {
 	useBinderMembers,
 	useBinderProgress,
@@ -72,11 +78,15 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 	const ownedCardIds = useOwnedCardIdSet();
 
 	const index = useCorpusRuntime((s) => s.index);
-	const sets = useStore((s) => s.sets);
+	const indices = useCorpusRuntime((s) => s.indices);
+	// Members can span regions (a binder goal isn't region-bound), so resolve
+	// cards + set names across ALL loaded regions, not just the active one.
+	const allSets = useStore(useShallow(allLoadedSets));
 	useEnsureI18n();
 	const i18n = useActiveI18n();
 
-	// Build dexName resolver from the corpus index.
+	// Build dexName resolver from the corpus index (active region; dex names are
+	// species names, English fallback is fine for the cross-link label).
 	const dexNameResolver = useMemo(
 		() =>
 			(n: number): string | undefined => {
@@ -87,25 +97,25 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 		[index],
 	);
 
-	// Build setName resolver from the sets list.
+	// Build setName resolver from the merged (all-region) sets list.
 	const setNameResolver = useMemo(
 		() =>
 			(setId: string): string | undefined =>
-				sets?.find((s) => s.id === setId)?.name,
-		[sets],
+				allSets.find((s) => s.id === setId)?.name,
+		[allSets],
 	);
 
-	// Hydrate member card list for the grid.
+	// Hydrate member card list for the grid, resolving each id across regions.
 	const memberCards = useMemo(() => {
-		if (!memberIds || !index || !sets) return [];
-		const sb = setsById(sets);
+		if (!memberIds || allSets.length === 0) return [];
+		const sb = setsById(allSets);
 		return Array.from(memberIds)
 			.map((id) => {
-				const card = index.byId.get(id);
+				const card = resolveCardAcrossRegions(id, indices);
 				return card ? hydrateCard(card, sb, i18n) : null;
 			})
 			.filter((c): c is NonNullable<typeof c> => c !== null);
-	}, [memberIds, index, sets, i18n]);
+	}, [memberIds, indices, allSets, i18n]);
 
 	async function handleDelete() {
 		if (

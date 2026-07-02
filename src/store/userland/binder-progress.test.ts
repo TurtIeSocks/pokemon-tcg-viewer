@@ -6,6 +6,7 @@ import type { CorpusCard } from "../corpus/corpus-types";
 import {
 	binderMembers,
 	computeBinderProgress,
+	type RegionCorpus,
 	toCorpusQuery,
 } from "./binder-progress";
 import type { Binder, SerializedQuery } from "./types";
@@ -74,6 +75,9 @@ const setsMap = new Map<string, PokemonSet>([
 	["vintage1", set("vintage1", "1999-11-24")],
 	["modern1", set("modern1", "2001-01-01")],
 ]);
+
+// Single-region corpus list for the base cases below (cross-region has its own).
+const regions: RegionCorpus[] = [{ index, setsMap }];
 
 // --- toCorpusQuery ---
 
@@ -147,7 +151,7 @@ test("toCorpusQuery: filter arrays passed through into filters object", () => {
 // --- binderMembers ---
 
 test("binderMembers: no rules, no includes → empty set", () => {
-	const members = binderMembers(binder(), index, setsMap);
+	const members = binderMembers(binder(), regions);
 	expect(members.size).toBe(0);
 });
 
@@ -155,7 +159,7 @@ test("binderMembers: single rule returns matched cards", () => {
 	const b = binder({
 		rules: [{ id: "r1", query: sq({ supertypes: ["Trainer"] }) }],
 	});
-	const members = binderMembers(b, index, setsMap);
+	const members = binderMembers(b, regions);
 	expect(members.has("trainer-1")).toBe(true);
 	expect(members.size).toBe(1);
 });
@@ -170,7 +174,7 @@ test("binderMembers: two overlapping rules dedup in union (card matching both co
 			{ id: "r2", query: sq({ rarities: ["Rare Holo"] }) },
 		],
 	});
-	const members = binderMembers(b, index, setsMap);
+	const members = binderMembers(b, regions);
 	// All Pokémon cards: pika-1, char-1, bulb-1, old-1, new-1 (5)
 	expect(members.has("pika-1")).toBe(true);
 	expect(members.has("char-1")).toBe(true);
@@ -186,7 +190,7 @@ test("binderMembers: includeCardIds adds a card no rule matches", () => {
 		rules: [{ id: "r1", query: sq({ supertypes: ["Trainer"] }) }],
 		includeCardIds: ["pika-1"],
 	});
-	const members = binderMembers(b, index, setsMap);
+	const members = binderMembers(b, regions);
 	expect(members.has("trainer-1")).toBe(true);
 	expect(members.has("pika-1")).toBe(true);
 	expect(members.size).toBe(2);
@@ -198,7 +202,7 @@ test("binderMembers: excludeCardIds removes a card a rule matched", () => {
 		rules: [{ id: "r1", query: sq({ supertypes: ["Pokémon"] }) }],
 		excludeCardIds: ["char-1"],
 	});
-	const members = binderMembers(b, index, setsMap);
+	const members = binderMembers(b, regions);
 	expect(members.has("char-1")).toBe(false);
 	expect(members.has("pika-1")).toBe(true);
 });
@@ -211,7 +215,7 @@ test("binderMembers: year-bounded rule keeps only cards in sets up to yearMax", 
 			{ id: "r1", query: sq({ supertypes: ["Pokémon"], yearMax: 1999 }) },
 		],
 	});
-	const members = binderMembers(b, index, setsMap);
+	const members = binderMembers(b, regions);
 	expect(members.has("old-1")).toBe(true);
 	expect(members.has("pika-1")).toBe(true);
 	expect(members.has("bulb-1")).toBe(true);
@@ -227,7 +231,7 @@ test("computeBinderProgress: owned/total counts", () => {
 	});
 	// Pokémon cards: pika-1, char-1, bulb-1, old-1, new-1 → total = 5
 	const owned = new Set(["pika-1", "char-1"]);
-	const progress = computeBinderProgress(b, index, setsMap, owned);
+	const progress = computeBinderProgress(b, regions, owned);
 	expect(progress.total).toBe(5);
 	expect(progress.owned).toBe(2);
 	expect(progress.members.has("pika-1")).toBe(true);
@@ -236,8 +240,7 @@ test("computeBinderProgress: owned/total counts", () => {
 test("computeBinderProgress: empty binder → 0/0", () => {
 	const progress = computeBinderProgress(
 		binder(),
-		index,
-		setsMap,
+		regions,
 		new Set(["pika-1"]),
 	);
 	expect(progress.total).toBe(0);
@@ -251,12 +254,7 @@ test("computeBinderProgress: owned card not in binder not counted", () => {
 		rules: [{ id: "r1", query: sq({ supertypes: ["Trainer"] }) }],
 	});
 	// own pika-1 which is not in binder
-	const progress = computeBinderProgress(
-		b,
-		index,
-		setsMap,
-		new Set(["pika-1"]),
-	);
+	const progress = computeBinderProgress(b, regions, new Set(["pika-1"]));
 	expect(progress.total).toBe(1);
 	expect(progress.owned).toBe(0);
 });
@@ -269,9 +267,78 @@ test("computeBinderProgress: include+exclude combined with owned", () => {
 	});
 	// Pokémon (5) + trainer-1 (1) - new-1 (1) = 5
 	const owned = new Set(["pika-1", "trainer-1", "new-1"]);
-	const progress = computeBinderProgress(b, index, setsMap, owned);
+	const progress = computeBinderProgress(b, regions, owned);
 	// members: pika-1, char-1, bulb-1, old-1, trainer-1 (new-1 excluded)
 	expect(progress.total).toBe(5);
 	// owned from members: pika-1 ✓, trainer-1 ✓, new-1 ✗ (excluded)
 	expect(progress.owned).toBe(2);
+});
+
+// --- cross-region binders ---
+
+// A separate Asian-region corpus (JP-lineage ids/sets, disjoint from west).
+const asiaCards: CorpusCard[] = [
+	card("SV1a-1", "SV1a", {
+		name: "Charizard",
+		supertype: "Pokémon",
+		region: "asia",
+	}),
+	card("SV1a-2", "SV1a", {
+		name: "Pikachu",
+		supertype: "Pokémon",
+		region: "asia",
+	}),
+];
+const asiaIndex = buildIndex(asiaCards, "asia");
+const asiaSetsMap = new Map<string, PokemonSet>([
+	["SV1a", set("SV1a", "2023-03-10")],
+]);
+const bothRegions: RegionCorpus[] = [
+	{ index, setsMap },
+	{ index: asiaIndex, setsMap: asiaSetsMap },
+];
+
+// For the NAME-rule tests, the west side needs an explicitly-named card (the
+// shared fixture names cards after their id, so a "Charizard" text query would
+// never match `char-1`). A dedicated west+asia pair, both named "Charizard".
+const westNameIndex = buildIndex(
+	[card("base1-cz", "base1", { name: "Charizard", supertype: "Pokémon" })],
+	"west",
+);
+const nameRegions: RegionCorpus[] = [
+	{ index: westNameIndex, setsMap },
+	{ index: asiaIndex, setsMap: asiaSetsMap },
+];
+
+test("binderMembers: a name rule unions matches across regions (own it in either)", () => {
+	const b = binder({
+		rules: [{ id: "r1", query: sq({ text: "Charizard", mode: "contains" }) }],
+	});
+	const members = binderMembers(b, nameRegions);
+	// The west Charizard AND the JP-lineage Charizard both count toward the goal.
+	expect(members.has("base1-cz")).toBe(true);
+	expect(members.has("SV1a-1")).toBe(true);
+});
+
+test("binderMembers: a west-set rule matches only west; an asia-set rule only asia", () => {
+	const west = binder({ rules: [{ id: "r1", query: sq({ setId: "base1" }) }] });
+	const asia = binder({ rules: [{ id: "r1", query: sq({ setId: "SV1a" }) }] });
+	const westMembers = binderMembers(west, bothRegions);
+	const asiaMembers = binderMembers(asia, bothRegions);
+	// base1 (west) rule picks up no asia cards, and vice versa.
+	expect(westMembers.has("pika-1")).toBe(true);
+	expect([...westMembers].some((id) => id.startsWith("SV1a"))).toBe(false);
+	expect(asiaMembers.has("SV1a-1")).toBe(true);
+	expect(asiaMembers.has("SV1a-2")).toBe(true);
+	expect([...asiaMembers].some((id) => !id.startsWith("SV1a"))).toBe(false);
+});
+
+test("computeBinderProgress: owned counts span regions", () => {
+	const b = binder({
+		rules: [{ id: "r1", query: sq({ text: "Charizard", mode: "contains" }) }],
+	});
+	// Own the JP Charizard but not the west one: 1 of 2 members owned.
+	const progress = computeBinderProgress(b, nameRegions, new Set(["SV1a-1"]));
+	expect(progress.total).toBe(2);
+	expect(progress.owned).toBe(1);
 });
