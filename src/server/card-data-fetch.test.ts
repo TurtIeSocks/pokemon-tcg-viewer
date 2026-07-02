@@ -64,6 +64,7 @@ test("mapTcgdexSet maps to PokemonSet with TCGdex id + serie name", () => {
 		id: "swsh3",
 		name: "Darkness Ablaze",
 		series: "Sword & Shield",
+		seriesId: "swsh",
 		releaseDate: "2020-08-14",
 		printedTotal: 189,
 		total: 201,
