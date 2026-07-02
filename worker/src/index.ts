@@ -41,7 +41,16 @@ function corsHeaders(env: Env): Record<string, string> {
 	return {
 		"Access-Control-Allow-Origin": env.ALLOW_ORIGIN ?? "*",
 		"Access-Control-Allow-Methods": "GET,OPTIONS",
-		"Access-Control-Allow-Headers": "Content-Type",
+		// If-None-Match is a non-simple request header, so the client's conditional
+		// GET triggers a CORS preflight — the worker must allow it or the browser
+		// rejects the request (and loadCorpus falls back to stale stored bytes).
+		"Access-Control-Allow-Headers": "Content-Type, If-None-Match",
+		// Expose ETag to cross-origin fetch(): the app reads it to store the build
+		// hash and send If-None-Match on the next load. Without this, the browser
+		// hides ETag (res.headers.get("ETag") === null), the client stores "", never
+		// revalidates, and serveCorpus's 304 branch is dead — every load re-downloads
+		// the full corpus. See src/store/corpus/corpus-runtime.ts loadCorpus.
+		"Access-Control-Expose-Headers": "ETag",
 	};
 }
 

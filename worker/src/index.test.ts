@@ -157,6 +157,11 @@ describe("worker", () => {
 		);
 		expect(res.status).toBe(204);
 		expect(res.headers.get("Access-Control-Allow-Methods")).toContain("GET");
+		// The conditional GET sends If-None-Match, a non-simple header → preflight.
+		// It must be allowed or the browser rejects the corpus revalidation request.
+		expect(res.headers.get("Access-Control-Allow-Headers")).toContain(
+			"If-None-Match",
+		);
 	});
 
 	test("non-GET is rejected", async () => {
@@ -192,6 +197,9 @@ describe("worker", () => {
 		expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
 			"https://x.github.io",
 		);
+		// ETag must be CORS-exposed or a cross-origin fetch() reads null and the
+		// client can never send If-None-Match — the 304 path below would be dead.
+		expect(res.headers.get("Access-Control-Expose-Headers")).toContain("ETag");
 		expect(await res.text()).toBe("GZBYTES");
 	});
 
