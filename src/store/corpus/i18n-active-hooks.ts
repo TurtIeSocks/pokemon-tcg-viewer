@@ -1,5 +1,5 @@
 import { useSearch } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import {
 	isSupportedLanguage,
 	regionForLanguage,
@@ -29,12 +29,19 @@ export function isI18nFallback(
  * Reactive active overlay for React render paths. Subscribes to the narrowest
  * values (the lang primitive + the map reference) in the consuming hook, per
  * the S3 subscription pattern. Returns null for English.
+ *
+ * Memoized on `(lang, namesById)` so it returns a STABLE object reference across
+ * renders when neither changed — a fresh `{lang, namesById}` every render would
+ * defeat downstream `useMemo`s that take the overlay as a dependency (e.g. the
+ * owned-card-tile route-params memo) for non-English viewers.
  */
 export function useActiveI18n(): I18nOverlay | null {
 	const lang = useI18nRuntime((s) => s.lang);
 	const namesById = useI18nRuntime((s) => s.namesById);
-	if (lang === "en") return null;
-	return { lang, namesById };
+	return useMemo(
+		() => (lang === "en" ? null : { lang, namesById }),
+		[lang, namesById],
+	);
 }
 
 /** The user's chosen catalog render language (normalized to the supported set). */
