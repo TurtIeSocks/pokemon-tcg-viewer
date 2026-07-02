@@ -1,6 +1,11 @@
 import type { LinkProps } from "@tanstack/react-router";
 import { getActiveI18nLang } from "../store/corpus/i18n-active";
-import { isSupportedLanguage, type SupportedLanguage } from "./languages";
+import {
+	faceLanguageFor,
+	isSupportedLanguage,
+	type Region,
+	type SupportedLanguage,
+} from "./languages";
 import type { SlugIndex } from "./slug";
 
 export type CardTab = "details" | "collection" | "pricing";
@@ -116,14 +121,23 @@ export function cardModalLinkPropsFor(
 /**
  * {@link cardModalLinkPropsFor} resolved from a slug index, or null. Reads the
  * active display language imperatively so a link built outside a lang-bearing
- * route (e.g. a Vault tile) still carries `?lang` for an Asian card.
+ * route (e.g. a "recently viewed" tile or a search result) carries the right
+ * `?lang`. The face language is chosen by the CARD's region, not the raw active
+ * language: a Japanese-lineage card surfaced while browsing in English must link
+ * as `ja` (its region base), since there is no English face for it — see
+ * `faceLanguageFor`. A Western card under a Western language is unaffected.
  */
 export function cardModalLinkProps(
 	idx: SlugIndex,
-	card: { id: string; setId: string },
+	card: { id: string; setId: string; region?: Region },
 ): LinkProps | null {
 	const p = cardRouteParams(idx, card);
-	return p ? cardModalLinkPropsFor(p, activeLangOrNull()) : null;
+	return p
+		? cardModalLinkPropsFor(
+				p,
+				faceLanguageFor(card, activeLangOrNull() ?? "en"),
+			)
+		: null;
 }
 
 /**
@@ -144,14 +158,20 @@ export function cardManageLinkPropsFor(
 
 /**
  * {@link cardManageLinkPropsFor} resolved from a slug index, or null. Reads the
- * active display language imperatively, same as {@link cardModalLinkProps}.
+ * active display language imperatively and chooses the face language by the
+ * card's region, same as {@link cardModalLinkProps}.
  */
 export function cardManageLinkProps(
 	idx: SlugIndex,
-	card: { id: string; setId: string },
+	card: { id: string; setId: string; region?: Region },
 ): LinkProps | null {
 	const p = cardRouteParams(idx, card);
-	return p ? cardManageLinkPropsFor(p, activeLangOrNull()) : null;
+	return p
+		? cardManageLinkPropsFor(
+				p,
+				faceLanguageFor(card, activeLangOrNull() ?? "en"),
+			)
+		: null;
 }
 
 /**
