@@ -65,7 +65,10 @@ describe("deriveFacets pokemon", () => {
 	});
 
 	test("cards without a dex contribute no species option", () => {
-		const f = deriveFacets([c({ name: "Potion", supertype: "Trainer" })], dexName);
+		const f = deriveFacets(
+			[c({ name: "Potion", supertype: "Trainer" })],
+			dexName,
+		);
 		expect(f.pokemon).toEqual([]);
 	});
 
@@ -74,7 +77,9 @@ describe("deriveFacets pokemon", () => {
 			[c({ name: "Pikachu & Zekrom", nationalPokedexNumbers: [25, 644] })],
 			dexName,
 		);
-		expect(f.pokemon.map((p) => p.dex).sort((a, b) => a - b)).toEqual([25, 644]);
+		expect(f.pokemon.map((p) => p.dex).sort((a, b) => a - b)).toEqual([
+			25, 644,
+		]);
 		expect(f.pokemon.find((p) => p.dex === 25)?.name).toBe("Pikachu");
 		expect(f.pokemon.find((p) => p.dex === 644)?.name).toBe("#644");
 	});

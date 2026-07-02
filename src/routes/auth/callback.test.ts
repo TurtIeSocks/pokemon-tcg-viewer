@@ -10,7 +10,10 @@ const fakeSession = {
 } as unknown as Session;
 
 /** Minimal auth stub: an initial getSession value + an optional async-emitted session. */
-function makeAuth(opts: { initial: Session | null; emit?: Session | null }): Auth {
+function makeAuth(opts: {
+	initial: Session | null;
+	emit?: Session | null;
+}): Auth {
 	return {
 		async getSession() {
 			return { data: { session: opts.initial }, error: null };

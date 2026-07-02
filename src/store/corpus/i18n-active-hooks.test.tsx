@@ -150,6 +150,14 @@ beforeEach(async () => {
 	});
 	setProfileLanguage(undefined);
 	resetCorpusRegions();
+	// ALWAYS seed both region indices: useEnsureI18n's region-activation effect
+	// fires `void loadCorpus(region)` on mount, and with an empty index that hits
+	// the REAL network (apiBase() falls back to the prod worker). The un-awaited
+	// promise then writes the live corpus into the shared fake-indexeddb and the
+	// global corpus store — after this file's afterEach reset — breaking later
+	// test files (corpus-runtime.test.ts saw 23k cards instead of its mocked 1).
+	// Seeding makes loadCorpus early-return, so no test here touches the network.
+	seedBothRegions();
 	useStore.setState({ setsByRegion: {}, setsByRegionLoading: {} });
 	getSetsFnSpy = spyOn(cardData, "getSetsFn").mockResolvedValue([]);
 });

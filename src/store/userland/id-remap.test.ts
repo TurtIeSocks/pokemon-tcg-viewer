@@ -27,7 +27,9 @@ test("remapPtcgSetId translates set ids", () => {
 test("remapPtcgCardId: promo/gallery non-numeric localId folds set and keeps string (no NaN lookup)", () => {
 	// lookup should never be called for non-numeric localIds — the dead NaN path is gone.
 	const spy = (s: string, n: number) => {
-		throw new Error(`lookup must not be called for non-numeric localId: ${s}, ${n}`);
+		throw new Error(
+			`lookup must not be called for non-numeric localId: ${s}, ${n}`,
+		);
 	};
 	// swsh9tg crosswalks to swsh9 in the set table; "TG01" is a non-numeric localId.
 	expect(remapPtcgCardId("swsh9tg-TG01", spy)).toBe("swsh9-TG01");

@@ -1,7 +1,15 @@
-import { describe, expect, mock, test } from "bun:test";
+import { afterEach, describe, expect, mock, test } from "bun:test";
 import { gzipSync } from "node:zlib";
 import type { CorpusCard } from "../store/corpus/corpus-types";
 import { decodeCorpusGz, queryCorpusServer } from "./corpus-loader";
+
+// This file assigns `globalThis.fetch` directly (a bun mock has no auto-restore
+// the way spyOn does). Restore the real fetch after every test so the mock —
+// and its recorded calls — never leak into later test files.
+const realFetch = globalThis.fetch;
+afterEach(() => {
+	globalThis.fetch = realFetch;
+});
 
 const cards: CorpusCard[] = [
 	{
