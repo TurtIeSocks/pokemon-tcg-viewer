@@ -158,3 +158,41 @@ test("bad set id shows not-found state", async () => {
 		expect(screen.getByText(/set not found/i)).toBeTruthy();
 	});
 });
+
+test("resolves an owned asia set even though the west `sets` field never loaded it (cross-region)", async () => {
+	const asiaSet: PokemonSet = {
+		id: "sv1a",
+		name: "Shiny Treasure ex",
+		series: "Scarlet & Violet",
+		releaseDate: "2023/12/01",
+		total: 2,
+		images: { symbol: "", logo: "" },
+	};
+	const asiaCards = [
+		makeCorpusCard({
+			id: "sv1a-1",
+			name: "Pikachu ex",
+			setId: "sv1a",
+			number: "1",
+		}),
+		makeCorpusCard({
+			id: "sv1a-2",
+			name: "Eevee ex",
+			setId: "sv1a",
+			number: "2",
+		}),
+	];
+	seedCorpus([...cards, ...asiaCards]);
+	// Only `sets` (west) has base1; sv1a lives exclusively under setsByRegion.asia --
+	// mirrors an owned card whose set was never loaded into the west list.
+	useStore.setState((s) => ({
+		setsByRegion: { ...s.setsByRegion, asia: [asiaSet] },
+	}));
+
+	await renderSetDetail("sv1a", [makeItem("c1", "sv1a-1")]);
+
+	await waitFor(() => {
+		expect(screen.getByText("Shiny Treasure ex")).toBeTruthy();
+	});
+	expect(screen.getByText(/1\/2 owned/)).toBeTruthy();
+});

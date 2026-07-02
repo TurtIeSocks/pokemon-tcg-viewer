@@ -37,21 +37,46 @@ test("joinOwnedViews returns one HoloCardData per distinct owned card", () => {
 	const setsById = new Map([["base1", base1]]);
 	const views = joinOwnedViews(
 		[item("1", "a"), item("2", "a"), item("3", "b")],
-		index,
+		{ west: index },
 		setsById,
 	);
 	expect(views.map((v) => v.id).sort()).toEqual(["a", "b"]);
 	expect(views.find((v) => v.id === "a")?.setName).toBe("Base");
 });
 
-test("joinOwnedViews skips cards missing from the corpus", () => {
+test("joinOwnedViews skips cards missing from every loaded index", () => {
 	const index = buildIndex([corpusCard("a")]);
 	const views = joinOwnedViews(
 		[item("1", "a"), item("2", "ghost")],
-		index,
+		{ west: index },
 		new Map([["base1", base1]]),
 	);
 	expect(views.map((v) => v.id)).toEqual(["a"]);
+});
+
+test("joinOwnedViews includes an owned card that exists ONLY in the asia index (no more silent drop)", () => {
+	const west = buildIndex([corpusCard("a")]);
+	const asia = buildIndex([corpusCard("sv1a-001", "svjp1")], "asia");
+	const setsMap = new Map([
+		["base1", base1],
+		[
+			"svjp1",
+			{
+				id: "svjp1",
+				name: "Scarlet ex",
+				series: "SV",
+				releaseDate: "2023-01-20",
+				total: 78,
+				images: { symbol: "", logo: "" },
+			},
+		],
+	]);
+	const views = joinOwnedViews(
+		[item("1", "a"), item("2", "sv1a-001")],
+		{ west, asia },
+		setsMap,
+	);
+	expect(views.map((v) => v.id).sort()).toEqual(["a", "sv1a-001"]);
 });
 
 import { tallyOwnedBySet } from "./selectors";
@@ -62,16 +87,26 @@ test("tallyOwnedBySet tallies distinct cardIds by their set via corpus byId", ()
 		corpusCard("base1-2", "base1"),
 		corpusCard("xy1-5", "xy1"),
 	]);
-	const counts = tallyOwnedBySet(["base1-1", "base1-2", "xy1-5"], index);
+	const counts = tallyOwnedBySet(["base1-1", "base1-2", "xy1-5"], {
+		west: index,
+	});
 	expect(counts.get("base1")).toBe(2);
 	expect(counts.get("xy1")).toBe(1);
 });
 
-test("tallyOwnedBySet skips cardIds absent from the corpus", () => {
+test("tallyOwnedBySet skips cardIds absent from every loaded index", () => {
 	const index = buildIndex([corpusCard("base1-1", "base1")]);
-	const counts = tallyOwnedBySet(["base1-1", "ghost-9"], index);
+	const counts = tallyOwnedBySet(["base1-1", "ghost-9"], { west: index });
 	expect(counts.get("base1")).toBe(1);
 	expect([...counts.keys()]).toEqual(["base1"]);
+});
+
+test("tallyOwnedBySet counts an asia-only owned card's set (no more silent drop)", () => {
+	const west = buildIndex([corpusCard("base1-1", "base1")]);
+	const asia = buildIndex([corpusCard("sv1a-001", "svjp1")], "asia");
+	const counts = tallyOwnedBySet(["base1-1", "sv1a-001"], { west, asia });
+	expect(counts.get("base1")).toBe(1);
+	expect(counts.get("svjp1")).toBe(1);
 });
 
 import { ownedCardIdSet } from "./selectors";

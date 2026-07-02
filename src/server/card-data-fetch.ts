@@ -10,6 +10,7 @@
 // stripped server-fn handlers. Defense in depth behind scripts/check-client-bundle.ts.
 
 import { ptcgSetImageUrl } from "../lib/corpus/id-crosswalk";
+import { OVERLAY_SET_IDS } from "../lib/corpus/overlay-sets";
 import type { SupportedLanguage } from "../lib/languages";
 import {
 	type FocusCardData,
@@ -48,6 +49,7 @@ export function mapTcgdexSet(s: TcgdexSetDetail): PokemonSet {
 		id: s.id,
 		name: s.name,
 		series: s.serie.name,
+		seriesId: s.serie.id,
 		releaseDate: s.releaseDate ?? "",
 		printedTotal: s.cardCount.official,
 		total: s.cardCount.total,
@@ -72,10 +74,16 @@ const SETS_CONCURRENCY = 10;
  * resolves each set's detail (which carries releaseDate + serie) with a
  * small concurrency limit. Safe to call from within a server function
  * handler (avoids the cross-fn RPC hop).
+ *
+ * @param baseLang TCGdex locale to list/resolve sets from. Defaults to "en"
+ * (the Western catalog), which keeps existing callers byte-identical.
+ * Pass a Region's base language (see `REGION_BASE_LANGUAGE`) for another
+ * region's catalog — e.g. "ja" for the Asian region, which pokemontcg.io
+ * has no equivalent for.
  */
-export async function fetchAllSets(): Promise<PokemonSet[]> {
+export async function fetchAllSets(baseLang = "en"): Promise<PokemonSet[]> {
 	const base = apiBase();
-	const listResp = await fetch(`${base}/v2/en/sets`);
+	const listResp = await fetch(`${base}/v2/${baseLang}/sets`);
 	if (!listResp.ok) throw new Error("Unable to fetch sets list");
 	const list = (await listResp.json()) as TcgdexSetListEntry[];
 
@@ -84,18 +92,34 @@ export async function fetchAllSets(): Promise<PokemonSet[]> {
 		const batch = list.slice(i, i + SETS_CONCURRENCY);
 		const details = await Promise.all(
 			batch.map(async (entry) => {
-				const r = await fetch(`${base}/v2/en/sets/${entry.id}`);
-				if (!r.ok)
-					throw new Error(`Unable to fetch set detail for ${entry.id}`);
+				// Encode the id: JP-lineage set ids contain characters like "+"
+				// (e.g. SM1+, SM3+) that are otherwise mangled in the path and 404.
+				const r = await fetch(
+					`${base}/v2/${baseLang}/sets/${encodeURIComponent(entry.id)}`,
+				);
+				if (!r.ok) {
+					// One unfetchable set must not abort the whole region's nav tree
+					// (a single throw here would reject the batch and blank the entire
+					// browse tree). Warn and drop just this set.
+					console.warn(
+						`skipping set "${entry.id}": detail fetch failed (${r.status})`,
+					);
+					return null;
+				}
 				return (await r.json()) as TcgdexSetDetail;
 			}),
 		);
 		for (const d of details) {
+			if (!d) continue;
 			// Skip phantom sets: TCGdex sometimes reports a cardCount but lists zero
 			// actual cards (e.g. `wp` "W Promotional" — cardCount.total 7, cards []).
 			// The corpus crawl gets 0 cards for these, so a phantom in the nav shows a
 			// "7 in sidebar, 0 in grid" mismatch. Drop them so nav matches the corpus.
-			if (Array.isArray(d.cards) && d.cards.length === 0) {
+			if (
+				Array.isArray(d.cards) &&
+				d.cards.length === 0 &&
+				!OVERLAY_SET_IDS.has(d.id)
+			) {
 				console.warn(
 					`skipping phantom set "${d.id}" (${d.name}): cardCount ${d.cardCount.total} but 0 cards listed`,
 				);

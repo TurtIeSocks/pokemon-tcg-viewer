@@ -64,6 +64,7 @@ test("mapTcgdexSet maps to PokemonSet with TCGdex id + serie name", () => {
 		id: "swsh3",
 		name: "Darkness Ablaze",
 		series: "Sword & Shield",
+		seriesId: "swsh",
 		releaseDate: "2020-08-14",
 		printedTotal: 189,
 		total: 201,
@@ -157,6 +158,52 @@ test("fetchAllSets drops phantom sets that list zero cards", async () => {
 
 	const sets = await fetchAllSets();
 	expect(sets.map((s) => s.id)).toEqual(["base1"]); // wp filtered out
+});
+
+test("fetchAllSets defaults to the en base language", async () => {
+	const calls: string[] = [];
+	globalThis.fetch = mock(async (url: string | URL) => {
+		const u = String(url);
+		calls.push(u);
+		if (u.endsWith("/sets"))
+			return new Response(JSON.stringify([]), { status: 200 });
+		return new Response("[]", { status: 200 });
+	}) as unknown as typeof fetch;
+
+	await fetchAllSets();
+
+	expect(calls).toHaveLength(1);
+	expect(calls[0]).toContain("/v2/en/sets");
+});
+
+test("fetchAllSets(ja) lists and resolves sets from the ja base language", async () => {
+	const calls: string[] = [];
+	globalThis.fetch = mock(async (url: string | URL) => {
+		const u = String(url);
+		calls.push(u);
+		if (u.endsWith("/v2/ja/sets"))
+			return new Response(JSON.stringify([{ id: "sm1" }]), { status: 200 });
+		if (u.endsWith("/v2/ja/sets/sm1"))
+			return new Response(
+				JSON.stringify({
+					id: "sm1",
+					name: "コレクション サン&ムーン",
+					releaseDate: "2017-05-19",
+					cardCount: { total: 100, official: 95 },
+					serie: { id: "sm", name: "サン&ムーン" },
+					cards: [{ id: "sm1-1" }],
+				}),
+				{ status: 200 },
+			);
+		throw new Error(`unexpected fetch: ${u}`);
+	}) as unknown as typeof fetch;
+
+	const sets = await fetchAllSets("ja");
+
+	expect(calls).toContain(`${calls[0].split("/v2/")[0]}/v2/ja/sets`);
+	expect(calls.some((c) => c.endsWith("/v2/ja/sets"))).toBe(true);
+	expect(calls.some((c) => c.endsWith("/v2/ja/sets/sm1"))).toBe(true);
+	expect(sets.map((s) => s.id)).toEqual(["sm1"]);
 });
 
 test("fetchCardById requests the localized locale and maps it", async () => {

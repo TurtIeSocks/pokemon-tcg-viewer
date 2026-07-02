@@ -96,6 +96,22 @@ test("a landscape logo is kept (real wordmark, not the placeholder)", async () =
 	expect(screen.getByAltText("Base")).toBeDefined();
 });
 
+test("renders a logo-less set (common for Asian sets) without crashing", async () => {
+	const noLogoSet = {
+		id: "sm1-jp",
+		name: "コレクション",
+		slug: "collection-jp",
+		total: 60,
+	};
+	const { container } = await renderInRouter(
+		<SetTile seriesSlug="jp" set={noLogoSet} ownedCount={5} />,
+	);
+	// No logo/symbol -> falls back to the set name as text, no crash.
+	expect(screen.getByText("コレクション")).toBeDefined();
+	expect(screen.getByText("5/60")).toBeDefined();
+	expect(container.querySelector("img")).toBeNull();
+});
+
 test("vaultLink routes to the vault per-set page", async () => {
 	const { container } = await renderInRouter(
 		<SetTile seriesSlug="base" set={set} ownedCount={3} vaultLink />,

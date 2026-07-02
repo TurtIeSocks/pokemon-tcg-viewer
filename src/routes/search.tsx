@@ -29,6 +29,7 @@ import { useStore } from "../store";
 import { queryCorpus, setsById } from "../store/corpus/corpus-engine";
 import { useCorpusRuntime, useSlugIndex } from "../store/corpus/corpus-runtime";
 import { useRecentsStore } from "../store/recents";
+import { setsForRegion } from "../store/sets-slice";
 
 export const Route = createFileRoute("/search")({
 	validateSearch: validateListSearch,
@@ -114,9 +115,11 @@ function SearchPage() {
 		[applyPatch],
 	);
 
-	// Corpus + sets for BulkAddMenu cardIds derivation.
+	// Corpus + sets for BulkAddMenu cardIds derivation. Search is scoped to the
+	// active-region catalog, so this reads that region's sets (not always west).
 	const index = useCorpusRuntime((s) => s.index);
-	const sets = useStore((s) => s.sets);
+	const activeRegion = useCorpusRuntime((s) => s.activeRegion);
+	const sets = useStore((s) => setsForRegion(s, activeRegion));
 	const bulkCardIds = useMemo(() => {
 		if (!index || !sets) return [];
 		return queryCorpus(index, buildCorpusQuery(search, {}), setsById(sets)).map(

@@ -37,4 +37,14 @@ describe("getRarityClass", () => {
 		expect(getRarityClass("Rare")).toBe("no-foil");
 		expect(warnSpy).not.toHaveBeenCalled();
 	});
+
+	test("matches case-insensitively so raw TCGdex casing resolves", () => {
+		// The Asian region carries raw TCGdex rarity ("Double rare"), sentence case
+		// vs the ptcg.io title-case key ("Double Rare"). It must map to the same
+		// foil class, not fall to the generic fallback.
+		expect(getRarityClass("Double rare")).toBe(getRarityClass("Double Rare"));
+		expect(getRarityClass("Double rare")).toBe("holo-v");
+		expect(getRarityClass("common")).toBe("no-foil");
+		expect(warnSpy).not.toHaveBeenCalled();
+	});
 });

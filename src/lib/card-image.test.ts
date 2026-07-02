@@ -1,6 +1,7 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, test } from "bun:test";
+import type { FocusCardData } from "@/server/card-mappers";
 import type { CorpusCard } from "@/store/corpus/corpus-types";
-import { cardImage } from "./card-image";
+import { cardImage, withCorpusImage } from "./card-image";
 
 const card = (overrides: Partial<CorpusCard> = {}): CorpusCard => ({
 	id: "swsh3-136",
@@ -65,4 +66,40 @@ describe("cardImage", () => {
 			imageUrlSmall: "https://assets.tcgdex.net/de/swsh/swsh3/136/low.webp",
 		});
 	});
+});
+
+test("withCorpusImage overrides the live image with the corpus image", () => {
+	const live: FocusCardData = {
+		id: "neo3-1",
+		name: "Zubat",
+		supertype: "Pokémon",
+		setId: "neo3",
+		setName: "Awakening Legends",
+		setSeries: "Neo",
+		cardNumber: "1",
+		imageBase: null,
+		imageUrl: "https://images.pokemontcg.io/neo3/1_hires.png", // live fallback
+	};
+	const out = withCorpusImage(live, {
+		imageUrl: "https://tcgplayer-cdn.tcgplayer.com/product/575223_400w.jpg",
+		imageBase: null,
+	});
+	expect(out.imageUrl).toBe(
+		"https://tcgplayer-cdn.tcgplayer.com/product/575223_400w.jpg",
+	);
+	expect(out.imageBase).toBeNull();
+});
+
+test("withCorpusImage is a no-op when the corpus has no card", () => {
+	const live = { imageUrl: "x", imageBase: null } as FocusCardData;
+	expect(withCorpusImage(live, undefined)).toBe(live);
+});
+
+test("withCorpusImage carries a suppressed blank (card-back, not a wrong image)", () => {
+	const live = {
+		imageUrl: "https://images.pokemontcg.io/vs1/1.png",
+		imageBase: null,
+	} as FocusCardData;
+	const out = withCorpusImage(live, { imageUrl: "", imageBase: null });
+	expect(out.imageUrl).toBe("");
 });

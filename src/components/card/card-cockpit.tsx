@@ -5,6 +5,8 @@ import type { CardTab } from "../../lib/card-route";
 import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import { PRICING_ENABLED } from "../../lib/pricing-flag";
 import type { FocusCardData } from "../../server/card-mappers";
+import { resolveCardAcrossRegions } from "../../store/corpus/corpus-engine";
+import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
 import {
 	useActiveI18n,
 	useEnsureI18n,
@@ -42,15 +44,27 @@ export function CardCockpit({
 	// (the detail blob is EN-only — that needs per-language detail data).
 	useEnsureI18n();
 	const i18n = useActiveI18n();
-	const { imageUrl, imageUrlSmall } = cardImage(card, i18n?.lang ?? "en");
+	// Image source of truth = the CORPUS card, not this live-fetched FocusCardData.
+	// The live TCGdex fetch derives a pokemontcg.io fallback for cards with no native
+	// scan; the corpus holds the authoritative image (the tcgcsv JP overlay fill, the
+	// ptcg hi-res for west, or a deliberate blank). Prefer it so the focus view
+	// matches the grid; fall back to the FocusCardData only when the card's region
+	// corpus isn't loaded (e.g. SSR before hydration).
+	const indices = useCorpusRuntime((s) => s.indices);
+	const imageSource = resolveCardAcrossRegions(card.id, indices) ?? card;
+	const { imageUrl, imageUrlSmall } = cardImage(
+		imageSource,
+		i18n?.lang ?? "en",
+	);
 	const holo: HoloCardData = {
 		...toHoloCardData(card),
 		name: i18n?.namesById?.get(card.id) ?? card.name,
 		imageUrl,
 		imageUrlSmall,
-		// Reconcile a localized 404 back to the baked EN image (a language may lack
-		// an image EN has), matching the grid's hydrateCard behaviour.
-		imageUrlFallback: imageUrl !== card.imageUrl ? card.imageUrl : undefined,
+		// Reconcile a localized 404 back to the baked image (a language may lack an
+		// image the base has), matching the grid's hydrateCard behaviour.
+		imageUrlFallback:
+			imageUrl !== imageSource.imageUrl ? imageSource.imageUrl : undefined,
 	};
 	const accent = getReadableAccent(getCardAccent(card.types));
 	const variants = holo.variants;

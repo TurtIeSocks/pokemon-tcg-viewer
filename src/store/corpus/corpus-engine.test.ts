@@ -1,7 +1,12 @@
 import { expect, test } from "bun:test";
 import type { PokemonSet } from "../../server/card-mappers";
 import { makeCorpusCard } from "../../test-utils";
-import { buildIndex, hydrateCard, queryCorpus } from "./corpus-engine";
+import {
+	buildIndex,
+	hydrateCard,
+	queryCorpus,
+	resolveCardAcrossRegions,
+} from "./corpus-engine";
 import type { CorpusCard } from "./corpus-types";
 
 const card = (
@@ -451,4 +456,124 @@ test("queryCorpus threads the i18n overlay into every hydrated row", () => {
 	expect(byId.get("base1-58")).toBe("Pikachu (fr)");
 	// base1-2 (Blastoise) is not in the overlay → EN fallback.
 	expect(byId.get("base1-2")).toBe("Blastoise");
+});
+
+test("buildIndex defaults every card's region to west", () => {
+	const idx = buildIndex([card({ id: "base1-4", name: "Charizard" })]);
+	expect(idx.byId.get("base1-4")?.region).toBe("west");
+});
+
+test("buildIndex stamps the given region onto every card", () => {
+	const idx = buildIndex(
+		[
+			card({ id: "sv1a-001", name: "Nyoromo" }),
+			card({ id: "sv1a-002", name: "Nyorotono" }),
+		],
+		"asia",
+	);
+	expect(idx.cards.every((c) => c.region === "asia")).toBe(true);
+	expect(idx.byId.get("sv1a-001")?.region).toBe("asia");
+});
+
+test("resolveCardAcrossRegions finds a card in whichever loaded region has it", () => {
+	const west = buildIndex([card({ id: "base1-4", name: "Charizard" })]);
+	const asia = buildIndex([card({ id: "sv1a-001", name: "Nyoromo" })], "asia");
+	const found = resolveCardAcrossRegions("sv1a-001", { west, asia });
+	expect(found?.id).toBe("sv1a-001");
+	expect(found?.region).toBe("asia");
+});
+
+test("resolveCardAcrossRegions returns undefined when the id is in no loaded index", () => {
+	const west = buildIndex([card({ id: "base1-4", name: "Charizard" })]);
+	const asia = buildIndex([card({ id: "sv1a-001", name: "Nyoromo" })], "asia");
+	expect(
+		resolveCardAcrossRegions("missing-999", { west, asia }),
+	).toBeUndefined();
+});
+
+test("resolveCardAcrossRegions works with only one region loaded", () => {
+	const west = buildIndex([card({ id: "base1-4", name: "Charizard" })]);
+	expect(resolveCardAcrossRegions("base1-4", { west })?.id).toBe("base1-4");
+	expect(resolveCardAcrossRegions("sv1a-001", { west })).toBeUndefined();
+});
+
+// --- region-aware face language (Task D2) ---
+
+test("hydrateCard: west card + active en -> en face (unchanged)", () => {
+	const setsById = new Map([["base1", base1]]);
+	const out = hydrateCard(
+		corpusCard("base1-4", {
+			setId: "base1",
+			name: "Charizard",
+			region: "west",
+			imageBase: "base/base1/4",
+			imageUrl: "https://images.pokemontcg.io/base1/4_hires.png",
+			imageUrlSmall: "https://images.pokemontcg.io/base1/4.png",
+		}),
+		setsById,
+		{ lang: "en", namesById: null },
+	);
+	expect(out.name).toBe("Charizard");
+	expect(out.imageUrl).toBe("https://images.pokemontcg.io/base1/4_hires.png");
+});
+
+test("hydrateCard: west card + active ja -> en face (region base, not ja)", () => {
+	const setsById = new Map([["base1", base1]]);
+	const namesById = new Map([
+		["base1-4", "リザードン (ja overlay, should not apply)"],
+	]);
+	const out = hydrateCard(
+		corpusCard("base1-4", {
+			setId: "base1",
+			name: "Charizard",
+			region: "west",
+			imageBase: "base/base1/4",
+			imageUrl: "https://images.pokemontcg.io/base1/4_hires.png",
+			imageUrlSmall: "https://images.pokemontcg.io/base1/4.png",
+		}),
+		setsById,
+		{ lang: "ja", namesById },
+	);
+	expect(out.name).toBe("Charizard");
+	expect(out.imageUrl).toBe("https://images.pokemontcg.io/base1/4_hires.png");
+});
+
+test("hydrateCard: asia card + active en -> ja face (region base)", () => {
+	const setsById = new Map([["base1", base1]]);
+	const out = hydrateCard(
+		corpusCard("sv1a-001", {
+			setId: "base1",
+			name: "Nyoromo",
+			region: "asia",
+			imageBase: "sv/sv1a/001",
+			imageUrl: "https://images.pokemontcg.io/sv1a/001_hires.png",
+			imageUrlSmall: "https://images.pokemontcg.io/sv1a/001.png",
+		}),
+		setsById,
+		{ lang: "en", namesById: null },
+	);
+	expect(out.imageUrl).toBe(
+		"https://assets.tcgdex.net/ja/sv/sv1a/001/high.webp",
+	);
+});
+
+test("hydrateCard: asia card + active ko -> ko face (matches region)", () => {
+	const setsById = new Map([["base1", base1]]);
+	const namesById = new Map([["sv1a-001", "니시노쿠쿠"]]);
+	const out = hydrateCard(
+		corpusCard("sv1a-001", {
+			setId: "base1",
+			name: "Nyoromo",
+			region: "asia",
+			imageBase: "sv/sv1a/001",
+			imageUrl: "https://images.pokemontcg.io/sv1a/001_hires.png",
+			imageUrlSmall: "https://images.pokemontcg.io/sv1a/001.png",
+		}),
+		setsById,
+		{ lang: "ko", namesById },
+	);
+	expect(out.name).toBe("니시노쿠쿠");
+	expect(out.imageUrl).toBe(
+		"https://assets.tcgdex.net/ko/sv/sv1a/001/high.webp",
+	);
 });

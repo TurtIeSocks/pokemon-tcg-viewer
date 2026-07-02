@@ -1,0 +1,113 @@
+# Regenerate the two hand-maintained catalog-data artifacts from live upstream data
+# and open a PR when they change:
+#   - scripts/data/tcgcsv-crosswalk.json (+ src/lib/corpus/overlay-sets.ts) — the
+#     TCGdex-ja -> tcgcsv set map (auto-matched entries; genuine collisions still
+#     need a human in scripts/data/tcgcsv-crosswalk.manual.json)
+#   - src/lib/language-coverage.json — the language picker's coverage hints
+#
+# A PR (not a direct commit) keeps the human gate: review new crosswalk entries and
+# resolve any collisions the run reports before the numbers reach prod. The Monday
+# build-corpus run reads these committed files, so merging this before it picks up
+# fresh data (harmless if not — it just uses the previous snapshot).
+name: Refresh catalog data
+
+on:
+  schedule:
+    - cron: "0 3 * * 0" # Sundays 03:00 UTC (before Monday's build-corpus)
+  workflow_dispatch: {}
+
+# Needs write + PR scope to push the branch and open the PR. No R2 secrets here —
+# this job only regenerates committed source, it never uploads to R2.
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    services:
+      tcgdex:
+        image: tcgdex/server:edge
+        env:
+          MAX_WORKERS: 2
+          TCGCSV_USER_AGENT: cardstack-corpus-build/1.0
+        ports:
+          - 3000:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+
+      - name: Regenerate the tcgcsv crosswalk + overlay-sets allowlist
+        # MIRROR = API_BASE (root, no /v2). REFRESH_* force a fresh mirror crawl +
+        # tcgcsv groups fetch (CI has no pre-seeded cache). Collisions the auto-match
+        # can't resolve are logged, NOT committed — a human adds them to the manual
+        # file. Tee the report so the PR body can surface it.
+        env:
+          API_BASE: http://localhost:3000
+          REFRESH_DEADSETS: "1"
+          REFRESH_GROUPS: "1"
+        run: bun run scripts/tcgcsv-crosswalk.ts 2>&1 | tee /tmp/crosswalk.log
+
+      - name: Regenerate language coverage
+        # build-i18n crawls every overlay language and (WRITE_COVERAGE=1) rewrites
+        # language-coverage.json. langBase() swaps /en for each lang. The overlay
+        # blobs it also writes under corpus/i18n/ are discarded here (R2 upload is
+        # build-corpus's job, not this one).
+        env:
+          TCGDEX_BASE: http://localhost:3000/v2/en
+          WRITE_COVERAGE: "1"
+        run: bun run scripts/build-i18n.ts 2>&1 | tee /tmp/i18n.log
+
+      - name: Canonicalize the generated files
+        # The scripts and Biome may format slightly differently; format the outputs
+        # so only real content changes produce a diff (no formatting-only churn).
+        run: |
+          bunx biome format --write \
+            scripts/data/tcgcsv-crosswalk.json \
+            src/lib/corpus/overlay-sets.ts \
+            src/lib/language-coverage.json || true
+
+      - name: Open or update the PR if anything changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          FILES="scripts/data/tcgcsv-crosswalk.json src/lib/corpus/overlay-sets.ts src/lib/language-coverage.json"
+          if git diff --quiet -- $FILES; then
+            echo "No catalog-data changes — nothing to PR."
+            exit 0
+          fi
+
+          BR=chore/refresh-catalog-data
+
+          # Summary lines are grepped from OUR OWN scripts' output (fixed numeric
+          # formats — no upstream free text), then written to a body file so gh reads
+          # it verbatim (no shell re-interpretation of the content).
+          {
+            echo "Automated refresh of the committed catalog-data artifacts from live TCGdex + tcgcsv."
+            echo
+            echo "- crosswalk: $(grep -oE 'crosswalk: [0-9]+ matched' /tmp/crosswalk.log | tail -1 || echo regenerated)"
+            echo "- $(grep -oE 'collisions needing manual pick[^:]*: [0-9]+' /tmp/crosswalk.log | tail -1 || echo 'collisions: n/a') — a nonzero count needs a human to resolve in scripts/data/tcgcsv-crosswalk.manual.json (see the run log), else those sets stay unmatched."
+            echo "- coverage: $(grep -oE 'LANGUAGE_COVERAGE = .*' /tmp/i18n.log | tail -1 || echo regenerated)"
+            echo
+            echo "Review the diff, resolve any collisions, then merge. The next build-corpus run bakes these into the corpus."
+            echo
+            echo "Generated with Claude Code."
+          } > /tmp/pr-body.md
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BR"
+          git add $FILES
+          git commit -m "chore(catalog): refresh crosswalk + language coverage"
+          git push -f origin "$BR"
+
+          if [ -n "$(gh pr list --head "$BR" --state open --json number -q '.[0].number')" ]; then
+            gh pr edit "$BR" --body-file /tmp/pr-body.md
+            echo "Updated the existing PR for $BR."
+          else
+            gh pr create --head "$BR" --base main \
+              --title "chore(catalog): refresh crosswalk + language coverage" \
+              --body-file /tmp/pr-body.md
+          fi

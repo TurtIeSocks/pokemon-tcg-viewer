@@ -485,6 +485,32 @@ describe("<HoloCard />", () => {
 		expect(screen.getByText("EN")).toBeDefined();
 	});
 
+	test("an Asian card falling back to the Japanese base shows a JA badge, not EN", () => {
+		// Korean scan 404s → falls back to the ja base print. The badge must read the
+		// base from the fallback url (ja), not hardcode English.
+		const { container } = render(
+			<HoloCard
+				imageUrl="https://assets.tcgdex.net/ko/SV/SV3a/1/low.webp"
+				imageUrlSmall="https://assets.tcgdex.net/ko/SV/SV3a/1/low.webp"
+				imageUrlFallback="https://assets.tcgdex.net/ja/SV/SV3a/1/high.webp"
+				imageUrlSmallFallback="https://assets.tcgdex.net/ja/SV/SV3a/1/low.webp"
+				name="ユキメノコ"
+				cardNumber="1"
+				size="grid"
+			/>,
+		);
+		fireEvent.error(
+			container.querySelector("img.holo-card-image") as HTMLImageElement,
+		);
+		expect(screen.getByText("JA")).toBeDefined();
+		expect(screen.queryByText("EN")).toBeNull();
+		expect(
+			container
+				.querySelector(".holo-card-lang-badge")
+				?.getAttribute("aria-label"),
+		).toBe("Shown in Japanese");
+	});
+
 	test("an English card (no fallback url) never shows the EN badge", () => {
 		const { container } = render(
 			<HoloCard

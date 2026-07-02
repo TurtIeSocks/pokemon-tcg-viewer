@@ -12,11 +12,28 @@ import type { CorpusCard, DetailCard } from "../src/store/corpus/corpus-types";
 import { mergePtcgOverlay } from "./merge-overlay";
 import { fetchPtcgOverlay } from "./ptcg-overlay";
 
-const ASSET_PREFIX = "https://assets.tcgdex.net/en/";
-
 const PTCG_HOST = "https://images.pokemontcg.io/";
 
 const TCGDEX_BASE = process.env.TCGDEX_BASE ?? "https://api.tcgdex.net/v2/en";
+
+/**
+ * Derive the per-region TCGdex API base by swapping the trailing "/en" of
+ * TCGDEX_BASE for "/{baseLang}" (mirrors `langBase()` in build-i18n.ts). The
+ * public "https://api.tcgdex.net/v2/en" becomes "…/v2/ja" for the Asian
+ * catalog (the id superset region). Defaults to "en" so today's behavior is
+ * preserved byte-for-byte when `baseLang` is unset.
+ */
+export function baseUrlFor(
+	baseLang: string,
+	base: string = TCGDEX_BASE,
+): string {
+	return base.replace(/\/en$/, `/${baseLang}`);
+}
+
+/** Asset CDN prefix for a given base lang, e.g. "https://assets.tcgdex.net/ja/". */
+export function assetPrefixFor(baseLang: string): string {
+	return `https://assets.tcgdex.net/${baseLang}/`;
+}
 
 export interface TcgdexCard {
 	id: string;
@@ -61,7 +78,8 @@ function variantsOf(card: TcgdexCard): string[] | undefined {
 	return keys.length ? keys : undefined;
 }
 
-export function trimCard(card: TcgdexCard): CorpusCard {
+export function trimCard(card: TcgdexCard, baseLang = "en"): CorpusCard {
+	const assetPrefix = assetPrefixFor(baseLang);
 	const out: CorpusCard = {
 		id: card.id,
 		name: card.name,
@@ -73,8 +91,8 @@ export function trimCard(card: TcgdexCard): CorpusCard {
 		imageUrlSmall: "",
 	};
 	if (card.image) {
-		out.imageBase = card.image.startsWith(ASSET_PREFIX)
-			? card.image.slice(ASSET_PREFIX.length) // "swsh/swsh3/136"
+		out.imageBase = card.image.startsWith(assetPrefix)
+			? card.image.slice(assetPrefix.length) // "swsh/swsh3/136"
 			: card.image;
 		out.imageUrl = `${card.image}/high.webp`;
 		out.imageUrlSmall = `${card.image}/low.webp`;
@@ -165,7 +183,9 @@ const FALLBACK_PROBE_CONCURRENCY = 20;
 export async function resolveFallbackImages(
 	cards: CorpusCard[],
 	headFetch: HeadFetch = (url) => fetch(url, { method: "HEAD" }),
+	baseLang = "en",
 ): Promise<GapLog["images"]> {
+	const assetPrefix = assetPrefixFor(baseLang);
 	const targets = cards.filter((c) => c.imageUrl.startsWith(PTCG_HOST));
 	const dead = new Array<boolean>(targets.length);
 	await pLimit(
@@ -188,8 +208,8 @@ export async function resolveFallbackImages(
 			// crosswalk HIT whose EN image we overrode to ptcg.io). Restore the
 			// TCGdex url from imageBase instead of blanking, so a HIT never loses a
 			// good TCGdex image. Not a gap — TCGdex covers it.
-			card.imageUrl = `${ASSET_PREFIX}${card.imageBase}/high.webp`;
-			card.imageUrlSmall = `${ASSET_PREFIX}${card.imageBase}/low.webp`;
+			card.imageUrl = `${assetPrefix}${card.imageBase}/high.webp`;
+			card.imageUrlSmall = `${assetPrefix}${card.imageBase}/low.webp`;
 			continue;
 		}
 		card.imageUrl = "";
@@ -278,7 +298,16 @@ async function pLimit<T>(
  */
 const CARD_FETCH_CONCURRENCY = 15;
 
-export async function buildCorpus(): Promise<TcgdexCard[]> {
+export interface BuildCorpusOpts {
+	/** Region base language; defaults to "en" and preserves today's behavior. */
+	baseLang?: string;
+}
+
+export async function buildCorpus(
+	opts: BuildCorpusOpts = {},
+): Promise<TcgdexCard[]> {
+	const baseLang = opts.baseLang ?? "en";
+	const base = baseUrlFor(baseLang);
 	const onRetry = (
 		url: string,
 		attempt: number,
@@ -286,7 +315,7 @@ export async function buildCorpus(): Promise<TcgdexCard[]> {
 		waitMs: number,
 	) => console.warn(`  ↳ ${url}: ${reason} — retry ${attempt} in ${waitMs}ms`);
 
-	const sets = (await fetchJson(`${TCGDEX_BASE}/sets`, { onRetry })) as {
+	const sets = (await fetchJson(`${base}/sets`, { onRetry })) as {
 		id: string;
 		cardCount: { total: number };
 	}[];
@@ -317,11 +346,23 @@ export async function buildCorpus(): Promise<TcgdexCard[]> {
 	}[] = [];
 	for (let i = 0; i < sets.length; i++) {
 		const s = sets[i];
-		const setData = (await fetchJson(`${TCGDEX_BASE}/sets/${s.id}`, {
-			onRetry,
-		})) as {
+		// Encode the id: JP-lineage set ids contain "+" (e.g. SM1+, SM3+) that is
+		// otherwise mangled in the path and 404s. And a single unfetchable set must
+		// not abort the whole crawl (fetchJson throws after its retries), so skip it
+		// with a warning — the validation gate below still catches a broken crawl.
+		let setData: {
 			cards: { id: string; localId?: string; name?: string; image?: string }[];
 		};
+		try {
+			setData = (await fetchJson(`${base}/sets/${encodeURIComponent(s.id)}`, {
+				onRetry,
+			})) as typeof setData;
+		} catch (e) {
+			console.warn(
+				`  ↳ skipping set "${s.id}": ${e instanceof Error ? e.message : String(e)}`,
+			);
+			continue;
+		}
 		for (const c of setData.cards)
 			briefCards.push({
 				id: c.id,
@@ -336,6 +377,24 @@ export async function buildCorpus(): Promise<TcgdexCard[]> {
 		await new Promise((r) => setTimeout(r, 100));
 	}
 
+	// Build-validation gate. `expected` sums each set's declared cardCount, but a
+	// region can be legitimately PARTIAL: many JP promo/sub sets report a count
+	// yet list no per-card data (empty `set.cards[]`), so the real browsable JP
+	// catalog is well under its declared total. Only a CATASTROPHIC shortfall
+	// (mirror serving empty cards[] for ~everything) is fatal; a merely-partial
+	// crawl warns and proceeds. SKIP_CARD_COUNT_GATE overrides for local/preview.
+	const ratio = expected > 0 ? briefCards.length / expected : 1;
+	if (!process.env.SKIP_CARD_COUNT_GATE && briefCards.length < 0.1 * expected) {
+		throw new Error(
+			`[${baseLang}] corpus crawl catastrophically short — mirror set.cards[] likely empty (${briefCards.length} of ~${expected}, ${(ratio * 100).toFixed(0)}%)`,
+		);
+	}
+	if (ratio < 0.8) {
+		console.warn(
+			`[${baseLang}] partial crawl: ${briefCards.length} of ~${expected} expected cards (${(ratio * 100).toFixed(0)}%) — many sets declare a cardCount but list no per-card data`,
+		);
+	}
+
 	// Phase 2: fetch each full card record (the only source of rarity/types/variants/hp/attacks/…).
 	// Uses CARD_FETCH_CONCURRENCY concurrent requests against the local TCGdex Docker mirror.
 	console.log(
@@ -347,10 +406,10 @@ export async function buildCorpus(): Promise<TcgdexCard[]> {
 		briefCards.map((stub) => async () => {
 			let full: TcgdexCard;
 			try {
-				full = (await fetchJson(`${TCGDEX_BASE}/cards/${stub.id}`, {
-					onRetry,
-					retries: 2,
-				})) as TcgdexCard;
+				full = (await fetchJson(
+					`${base}/cards/${encodeURIComponent(stub.id)}`,
+					{ onRetry, retries: 2 },
+				)) as TcgdexCard;
 			} catch {
 				// TCGdex lists some cards in a set whose per-card endpoint 404s (a real
 				// data inconsistency — e.g. the Unown "?"/"!" cards in `exu`). One such
@@ -384,27 +443,64 @@ export async function buildCorpus(): Promise<TcgdexCard[]> {
 		console.warn(
 			`${fallbacks} card(s) used the brief-stub fallback (per-card endpoint 404).`,
 		);
-	if (cards.length < expected * 0.95)
-		throw new Error(`crawl incomplete: ${cards.length} of ~${expected}`);
-	console.log(`Crawl complete: ${cards.length} full card records.`);
+	// Phase-2 completeness: did we fetch (a card or its fallback stub for) ~every
+	// stub collected in Phase 1? Compare against `briefCards`, NOT the declared
+	// `expected` total — a region can legitimately collect far fewer stubs than
+	// its declared count (partial JP sets), and that shortfall is already handled
+	// by the Phase-1 gate above; here we only guard Phase 2 dropping stubs.
+	if (cards.length < briefCards.length * 0.95)
+		throw new Error(
+			`crawl incomplete: ${cards.length} of ${briefCards.length} stubs (declared ~${expected})`,
+		);
+	console.log(
+		`Crawl complete: ${cards.length} full card records (of ~${expected} declared).`,
+	);
 	return cards;
 }
 
-// Entrypoint: `bun run scripts/build-corpus.ts <outfile>`
-if (import.meta.main) {
-	const outfile = process.argv[2] ?? "corpus.json.gz";
-	const startedAt = Date.now();
-	const raw = await buildCorpus();
+/** Parse `--base-lang <lang>` out of argv; everything else is positional. */
+function parseArgs(argv: string[]): { positional: string[]; baseLang: string } {
+	const positional: string[] = [];
+	let baseLang = "en";
+	for (let i = 0; i < argv.length; i++) {
+		if (argv[i] === "--base-lang") {
+			baseLang = argv[++i] ?? baseLang;
+		} else {
+			positional.push(argv[i]);
+		}
+	}
+	return { positional, baseLang };
+}
 
-	const trimmed = raw.map(trimCard);
+// Entrypoint: `bun run scripts/build-corpus.ts <outfile> [--base-lang ja]`
+if (import.meta.main) {
+	const { positional, baseLang } = parseArgs(process.argv.slice(2));
+	const isAsia = baseLang !== "en";
+	const outfile =
+		positional[0] ?? (isAsia ? "corpus.asia.json.gz" : "corpus.json.gz");
+	const detailFile = isAsia
+		? "corpus-detail.asia.json.gz"
+		: "corpus-detail.json.gz";
+	const metaFile = isAsia
+		? "corpus-detail.asia.meta.json"
+		: "corpus-detail.meta.json";
+	const gapFile = isAsia ? "corpus-gap.asia.json" : "corpus-gap.json";
+
+	const startedAt = Date.now();
+	const raw = await buildCorpus({ baseLang });
+
+	const trimmed = raw.map((c) => trimCard(c, baseLang));
 	const detail = raw.map(detailCard).sort((a, b) => a.id.localeCompare(b.id));
 	const version = detailVersion(detail);
 
-	// Phase 3: overlay pokemontcg.io's richer English metadata. SKIP_PTCG_OVERLAY
-	// lets local/offline builds skip the second upstream. A failed crawl yields an
-	// empty overlay → mergePtcgOverlay keeps the TCGdex values (keep-last-good).
+	// Phase 3: overlay pokemontcg.io's richer English metadata. Only meaningful
+	// for the English base — JP-lineage cards have no ptcg counterpart and no
+	// crosswalk, so non-English base langs skip this upstream entirely.
+	// SKIP_PTCG_OVERLAY also lets local/offline EN builds skip it. A failed
+	// crawl yields an empty overlay → mergePtcgOverlay keeps the TCGdex values
+	// (keep-last-good).
 	let overlay = new Map();
-	if (!process.env.SKIP_PTCG_OVERLAY) {
+	if (!isAsia && !process.env.SKIP_PTCG_OVERLAY) {
 		try {
 			console.log("Crawling pokemontcg.io overlay…");
 			overlay = await fetchPtcgOverlay();
@@ -437,11 +533,40 @@ if (import.meta.main) {
 	// HEAD-probe the pokemontcg.io fallbacks; blank the dead ones and fold the
 	// resulting "no-fallback" gaps into the gap log alongside the TCGdex misses.
 	console.log("Probing pokemontcg.io fallback URLs…");
-	const noFallback = await resolveFallbackImages(merged);
+	const noFallback = await resolveFallbackImages(merged, undefined, baseLang);
 	const gaps = collectGaps(raw);
 	gaps.images.push(...noFallback);
 
-	const gz = gzipSync(Buffer.from(JSON.stringify(merged)));
+	// Phase 4 (Asian region only): overlay tcgcsv card data for the ~103 dead sets
+	// TCGdex serves with an empty cards[] (ADV/PCG/L/e-Card/XY-ja). English names,
+	// real JP-print images. Appended AFTER the ptcg fallback probe so overlay
+	// (tcgplayer-CDN) images aren't HEAD-probed against ptcg. A failed/empty crawl
+	// keeps the TCGdex-only corpus (keep-last-good). SKIP_TCGCSV_OVERLAY for offline.
+	let served = merged;
+	if (isAsia && !process.env.SKIP_TCGCSV_OVERLAY) {
+		try {
+			const { fetchTcgcsvOverlay, mergeTcgcsvOverlay, fetchNameToDex } =
+				await import("./tcgcsv-overlay");
+			const [overlayCards, nameToDex] = await Promise.all([
+				fetchTcgcsvOverlay(),
+				fetchNameToDex(),
+			]);
+			const r = mergeTcgcsvOverlay(merged, overlayCards, {
+				nameToDex,
+				suppressPtcgFallback: true,
+			});
+			served = r.merged;
+			console.log(
+				`tcgcsv overlay: +${r.added} cards, ${r.filled}+${r.filledFuzzy} images filled, ${r.suppressed} Western fallbacks suppressed → ${served.length} total asian cards`,
+			);
+		} catch (err) {
+			console.warn(
+				`tcgcsv overlay failed, keeping TCGdex-only asian corpus: ${err}`,
+			);
+		}
+	}
+
+	const gz = gzipSync(Buffer.from(JSON.stringify(served)));
 	const detailGz = gzipSync(Buffer.from(JSON.stringify(detail)));
 	const meta = {
 		version,
@@ -450,15 +575,15 @@ if (import.meta.main) {
 	};
 
 	await Bun.write(outfile, gz);
-	await Bun.write("corpus-detail.json.gz", detailGz);
-	await Bun.write("corpus-detail.meta.json", JSON.stringify(meta));
-	await Bun.write("corpus-gap.json", JSON.stringify(gaps));
+	await Bun.write(detailFile, detailGz);
+	await Bun.write(metaFile, JSON.stringify(meta));
+	await Bun.write(gapFile, JSON.stringify(gaps));
 
 	const mb = (gz.length / 1024 / 1024).toFixed(2);
 	const dmb = (detailGz.length / 1024 / 1024).toFixed(2);
 	const secs = ((Date.now() - startedAt) / 1000).toFixed(1);
 	console.log(
-		`Wrote ${merged.length} cards → ${outfile} (${mb} MB) + detail (${dmb} MB, v${version.slice(0, 8)}) in ${secs}s`,
+		`Wrote ${served.length} cards → ${outfile} (${mb} MB) + detail (${dmb} MB, v${version.slice(0, 8)}) in ${secs}s`,
 	);
 	const tcgdexMisses = gaps.images.filter(
 		(g) => g.reason === "tcgdex-missing",

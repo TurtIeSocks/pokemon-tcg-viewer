@@ -2,11 +2,40 @@ import { expect, test } from "bun:test";
 import {
 	buildI18n,
 	type FetchJson,
+	I18N_LANGS,
 	type I18nEntry,
 	i18nVersion,
 	langBase,
+	mergeCoverage,
 	writeI18n,
 } from "./build-i18n";
+
+test("mergeCoverage: crawl wins, en/ja pinned to 1, failed langs keep last-good", () => {
+	const current = { en: 1, fr: 0.9, ja: 1, ko: 0.03, "zh-tw": 0.8 };
+	// This run: fr improved, zh-tw crawled higher; ko FAILED (absent from crawl).
+	const crawled = { en: 1, fr: 0.93, "zh-tw": 0.85 };
+	const out = mergeCoverage(current, crawled);
+	expect(out.fr).toBe(0.93); // crawl wins
+	expect(out["zh-tw"]).toBe(0.85);
+	expect(out.ko).toBe(0.03); // absent from crawl → keep-last-good, not zeroed
+	expect(out.en).toBe(1); // baseline pinned
+	expect(out.ja).toBe(1); // baseline pinned (never in a crawl)
+	// Ordered en-first, ja before the Asian overlays, for a stable diff.
+	expect(Object.keys(out)).toEqual(["en", "fr", "ja", "ko", "zh-tw"]);
+});
+
+test("I18N_LANGS overlays Western + Asian langs, excluding both base langs", () => {
+	const langs = new Set<string>(I18N_LANGS);
+	// Western overlays (English base) still present.
+	for (const l of ["fr", "de", "es", "it", "pt"])
+		expect(langs.has(l)).toBe(true);
+	// Asian overlays (Japanese base) added in Phase 2.
+	for (const l of ["ko", "zh-tw", "zh-cn", "th", "id"])
+		expect(langs.has(l)).toBe(true);
+	// Base languages ship as the base corpus blob, never as an overlay.
+	expect(langs.has("en")).toBe(false);
+	expect(langs.has("ja")).toBe(false);
+});
 
 // A mock fetcher backed by an in-memory set tree. NO network: every url must be
 // served from `tree` or it throws, so a missing route fails loudly in the test.
@@ -115,12 +144,21 @@ test("buildI18n entry count and version reflect the crawled names (meta-ready)",
 	expect(version).toBe(i18nVersion(entries));
 });
 
-test("buildI18n throws only when the crawl is catastrophically broken (<40%)", async () => {
-	// Set declares 100 cards but only serves 1 (1% << 40%) => a broken crawl.
-	const thin: MockSet[] = [
+test("buildI18n throws only when the crawl collects ZERO names (dead endpoint)", async () => {
+	// Every set serves an empty cards[] => 0 names => a broken crawl.
+	const empty: MockSet[] = [{ id: "swsh3", total: 100, cards: [] }];
+	await expect(buildI18n("fr", opts(empty))).rejects.toThrow(/looks broken/);
+});
+
+test("buildI18n tolerates a sparse overlay (few names of many declared)", async () => {
+	// A name overlay legitimately covers only a subset — TCGdex's real Asian
+	// coverage runs as low as ~3% (ko). A sparse-but-nonzero crawl must NOT throw;
+	// untranslated ids fall back to the base name in hydrateCard.
+	const sparse: MockSet[] = [
 		{ id: "swsh3", total: 100, cards: [{ id: "swsh3-1", name: "Cizayox" }] },
 	];
-	await expect(buildI18n("fr", opts(thin))).rejects.toThrow(/looks broken/);
+	const { entries } = await buildI18n("fr", opts(sparse));
+	expect(entries).toHaveLength(1); // 1% coverage, still valid
 });
 
 test("buildI18n tolerates partial language coverage (untranslated cards skipped)", async () => {

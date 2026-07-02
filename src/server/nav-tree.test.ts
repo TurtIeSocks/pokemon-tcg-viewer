@@ -1,6 +1,6 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, mock, test } from "bun:test";
 import type { PokemonSet } from "./card-mappers";
-import { deriveNavTree, findSeries, findSet } from "./nav-tree";
+import { deriveNavTree, findSeries, findSet, loadNavTree } from "./nav-tree";
 
 const sets: PokemonSet[] = [
 	{
@@ -62,5 +62,59 @@ describe("deriveNavTree", () => {
 
 	test("tree is plain-JSON serializable (no Maps)", () => {
 		expect(JSON.parse(JSON.stringify(tree))).toEqual(tree);
+	});
+});
+
+const realFetch = globalThis.fetch;
+afterEach(() => {
+	globalThis.fetch = realFetch;
+});
+
+function mockSetsEndpoint(baseLang: string, setId: string, name: string) {
+	return mock(async (url: string | URL) => {
+		const u = String(url);
+		if (u.endsWith(`/v2/${baseLang}/sets`))
+			return new Response(JSON.stringify([{ id: setId }]), { status: 200 });
+		if (u.endsWith(`/v2/${baseLang}/sets/${setId}`))
+			return new Response(
+				JSON.stringify({
+					id: setId,
+					name,
+					releaseDate: "2020-01-01",
+					cardCount: { total: 1, official: 1 },
+					serie: { id: "s", name: "Series" },
+					cards: [{ id: `${setId}-1` }],
+				}),
+				{ status: 200 },
+			);
+		throw new Error(`unexpected fetch: ${u}`);
+	}) as unknown as typeof fetch;
+}
+
+describe("loadNavTree region memoization", () => {
+	test("memoizes the nav tree per region, hitting each region's endpoint once", async () => {
+		const westFetch = mockSetsEndpoint("en", "base1", "Base");
+		globalThis.fetch = westFetch;
+		const west1 = await loadNavTree("west");
+		const west2 = await loadNavTree("west");
+		expect(west1).toBe(west2); // same memoized object, west endpoint hit once
+		expect(westFetch).toHaveBeenCalledTimes(2); // list + 1 set detail
+
+		const asiaFetch = mockSetsEndpoint("ja", "sm1", "Sun & Moon (JA)");
+		globalThis.fetch = asiaFetch;
+		const asia1 = await loadNavTree("asia");
+		const asia2 = await loadNavTree("asia");
+		expect(asia1).toBe(asia2);
+		expect(asiaFetch).toHaveBeenCalledTimes(2); // asia's own list + detail, cached separately
+
+		// Region trees are distinct and reflect their own base-language data.
+		expect(asia1).not.toBe(west1);
+		expect(findSet(asia1, "series", "sun-moon-ja")?.id).toBe("sm1");
+		expect(findSet(west1, "series", "base")?.id).toBe("base1");
+
+		// west remains cached (not re-fetched) after asia was loaded.
+		const west3 = await loadNavTree("west");
+		expect(west3).toBe(west1);
+		expect(westFetch).toHaveBeenCalledTimes(2);
 	});
 });

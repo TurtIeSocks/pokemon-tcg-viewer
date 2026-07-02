@@ -26,12 +26,18 @@ import {
  * Render `ui` inside a minimal in-memory TanStack router so components that use
  * `<Link>` or router hooks work under test. Shared by the component tests that
  * previously each defined an identical copy of this wrapper.
+ *
+ * Returns the RTL render result plus the `router` instance. Most callers only
+ * destructure RTL fields (`container`, `getByText`, ...) and ignore `router`;
+ * a test asserting on a MASKED link (e.g. the manage-face overlay nav, which
+ * hides `search`/`state` from the visible `href` by design) needs `router` to
+ * read the real matched `router.state.location` after a click instead.
  */
 export async function renderInRouter(ui: ReactNode) {
 	const rootRoute = createRootRoute({ component: () => <>{ui}</> });
 	const router = createRouter({ routeTree: rootRoute });
 	await router.load();
-	return render(<RouterProvider router={router} />);
+	return { ...render(<RouterProvider router={router} />), router };
 }
 
 // --- Test fixture factories --------------------------------------------------

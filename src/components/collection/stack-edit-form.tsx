@@ -6,23 +6,31 @@ import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
+	SelectGroup,
 	SelectItem,
+	SelectLabel,
+	SelectSeparator,
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { fieldErrorText } from "@/lib/field-error";
+import {
+	ASIAN_LANGUAGES,
+	LANGUAGE_LABELS,
+	SUPPORTED_LANGUAGES,
+	type SupportedLanguage,
+} from "@/lib/languages";
 import { cn } from "@/lib/utils";
 import { type CardVariant, variantLabel } from "../../lib/card-variants";
 import type { Stack } from "../../store/userland/types";
 import { addStack, updateStack } from "../../store/userland/userland-store";
 import { formToPatch, itemToForm } from "./stack-form-mapping";
-import {
-	CONDITIONS,
-	GRADERS,
-	LANGUAGES,
-	stackFormSchema,
-} from "./stack-form-schema";
+import { CONDITIONS, GRADERS, stackFormSchema } from "./stack-form-schema";
+
+/** Western-region languages, in display order (everything not in ASIAN_LANGUAGES). */
+const WESTERN_LANGUAGES: readonly SupportedLanguage[] =
+	SUPPORTED_LANGUAGES.filter((lang) => !ASIAN_LANGUAGES.includes(lang));
 
 /** Radix Select prohibits value="". Use this sentinel for the "Unspecified" item. */
 const NONE = "__none__";
@@ -196,6 +204,64 @@ function SelectField<T extends string>({
 							{o}
 						</SelectItem>
 					))}
+				</SelectContent>
+			</Select>
+			{invalid && (
+				<FieldError errors={toFieldErrors(field.state.meta.errors)} />
+			)}
+		</Field>
+	);
+}
+
+/**
+ * Labeled Select bound to the stack's `language` field, grouped into "Western"
+ * and "Asian" sections (mirrors {@link import("../islands/card-language-control").LanguageRadioMenu}'s
+ * region split). Options show the human-readable {@link LANGUAGE_LABELS}
+ * rather than the raw ISO code; the stored value is still the ISO code string.
+ */
+function LanguageSelectField({
+	field,
+	label,
+	placeholder,
+}: {
+	field: FormFieldApi<string>;
+	label: string;
+	placeholder: string;
+}) {
+	const invalid = fieldIsInvalid(field);
+	return (
+		<Field data-invalid={invalid || undefined}>
+			<FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+			<Select
+				value={field.state.value === "" ? NONE : field.state.value}
+				onValueChange={(v) => field.handleChange(v === NONE ? "" : v)}
+			>
+				<SelectTrigger
+					id={field.name}
+					aria-invalid={invalid}
+					onBlur={field.handleBlur}
+				>
+					<SelectValue placeholder={placeholder} />
+				</SelectTrigger>
+				<SelectContent>
+					<SelectItem value={NONE}>Unspecified</SelectItem>
+					<SelectGroup>
+						<SelectLabel>Western</SelectLabel>
+						{WESTERN_LANGUAGES.map((lang) => (
+							<SelectItem key={lang} value={lang}>
+								{LANGUAGE_LABELS[lang]}
+							</SelectItem>
+						))}
+					</SelectGroup>
+					<SelectSeparator />
+					<SelectGroup>
+						<SelectLabel>Asian</SelectLabel>
+						{ASIAN_LANGUAGES.map((lang) => (
+							<SelectItem key={lang} value={lang}>
+								{LANGUAGE_LABELS[lang]}
+							</SelectItem>
+						))}
+					</SelectGroup>
 				</SelectContent>
 			</Select>
 			{invalid && (
@@ -546,16 +612,15 @@ export function StackEditForm({
 					)}
 				/>
 
-				{/* Language — ISO 639-1 select, default EN */}
+				{/* Language — ISO 639-1 select, grouped Western / Asian, default EN */}
 				<form.Field
 					name="language"
 					// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 					children={(field) => (
-						<SelectField
+						<LanguageSelectField
 							field={field}
 							label="Language"
 							placeholder="Select language…"
-							options={[...LANGUAGES]}
 						/>
 					)}
 				/>

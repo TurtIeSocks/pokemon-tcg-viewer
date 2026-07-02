@@ -57,6 +57,21 @@ const CORPUS = {
 				]).stream(),
 				etag: "frmetatag",
 			};
+		if (key === "corpus/i18n/ko/names.json.gz")
+			return { body: new Blob(["KO_NAMES_GZ"]).stream(), etag: "kotag" };
+		if (key === "corpus/region/asia/latest.json.gz")
+			return {
+				body: "ASIA_GZBYTES",
+				etag: "asiatag",
+				writeHttpMetadata: (_h: Headers) => {},
+			};
+		if (key === "corpus/region/asia/meta.json")
+			return {
+				body: new Blob([
+					'{"version":"asiav","count":5,"builtAt":"x"}',
+				]).stream(),
+				etag: "asiametatag",
+			};
 		return null;
 	},
 };
@@ -72,6 +87,25 @@ function envWithCorpus(obj: { body: string; etag: string } | null) {
 		CORPUS: {
 			get: async (key: string) => {
 				if (key === "corpus/latest.json.gz") {
+					if (!obj) return null;
+					return {
+						body: obj.body,
+						etag: obj.etag,
+						writeHttpMetadata: (_h: Headers) => {},
+					};
+				}
+				return CORPUS.get(key);
+			},
+		},
+	} as unknown as typeof env;
+}
+
+function envWithRegionCorpus(obj: { body: string; etag: string } | null) {
+	return {
+		...env,
+		CORPUS: {
+			get: async (key: string) => {
+				if (key === "corpus/region/asia/latest.json.gz") {
 					if (!obj) return null;
 					return {
 						body: obj.body,
@@ -123,6 +157,11 @@ describe("worker", () => {
 		);
 		expect(res.status).toBe(204);
 		expect(res.headers.get("Access-Control-Allow-Methods")).toContain("GET");
+		// The conditional GET sends If-None-Match, a non-simple header → preflight.
+		// It must be allowed or the browser rejects the corpus revalidation request.
+		expect(res.headers.get("Access-Control-Allow-Headers")).toContain(
+			"If-None-Match",
+		);
 	});
 
 	test("non-GET is rejected", async () => {
@@ -158,6 +197,9 @@ describe("worker", () => {
 		expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
 			"https://x.github.io",
 		);
+		// ETag must be CORS-exposed or a cross-origin fetch() reads null and the
+		// client can never send If-None-Match — the 304 path below would be dead.
+		expect(res.headers.get("Access-Control-Expose-Headers")).toContain("ETag");
 		expect(await res.text()).toBe("GZBYTES");
 	});
 
@@ -316,5 +358,87 @@ describe("worker", () => {
 		expect(pending.length).toBe(1); // background SWR refresh scheduled
 		await Promise.all(pending);
 		expect(n).toBe(2); // origin revalidated in the background
+	});
+
+	test("/corpus-i18n/ko serves the overlay blob (Asian overlay lang)", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus-i18n/ko"),
+			env,
+			ctx,
+		);
+		expect(res.status).toBe(200);
+		expect(res.headers.get("ETag")).toBe('"kotag"');
+		expect(await res.text()).toBe("KO_NAMES_GZ");
+	});
+
+	test("/corpus-i18n/ja rejects with 404 (ja is base corpus, no overlay)", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus-i18n/ja"),
+			env,
+			ctx,
+		);
+		expect(res.status).toBe(404);
+		expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
+			"https://x.github.io",
+		);
+	});
+
+	test("/corpus-region/asia serves the R2 blob with an ETag and CORS", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus-region/asia"),
+			envWithRegionCorpus({ body: "ASIA_GZBYTES", etag: "asiatag" }),
+			ctx,
+		);
+		expect(res.status).toBe(200);
+		expect(res.headers.get("ETag")).toBe('"asiatag"');
+		expect(res.headers.get("Content-Type")).toBe("application/octet-stream");
+		expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
+			"https://x.github.io",
+		);
+		expect(res.headers.get("Cache-Control")).toContain("s-maxage=3600");
+		expect(await res.text()).toBe("ASIA_GZBYTES");
+	});
+
+	test("/corpus-region/asia returns 304 when If-None-Match matches", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus-region/asia", {
+				headers: { "If-None-Match": '"asiatag"' },
+			}),
+			envWithRegionCorpus({ body: "ASIA_GZBYTES", etag: "asiatag" }),
+			ctx,
+		);
+		expect(res.status).toBe(304);
+	});
+
+	test("/corpus-region/asia returns 503 when the blob is absent", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus-region/asia"),
+			envWithRegionCorpus(null),
+			ctx,
+		);
+		expect(res.status).toBe(503);
+	});
+
+	test("/corpus-region/asia/version serves the meta JSON", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus-region/asia/version"),
+			env,
+			ctx,
+		);
+		expect(res.status).toBe(200);
+		expect(res.headers.get("Content-Type")).toBe("application/json");
+		expect(await res.json()).toMatchObject({ version: "asiav", count: 5 });
+	});
+
+	test("/corpus-region/xx rejects an unsupported region with 404 + CORS", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus-region/xx"),
+			env,
+			ctx,
+		);
+		expect(res.status).toBe(404);
+		expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
+			"https://x.github.io",
+		);
 	});
 });

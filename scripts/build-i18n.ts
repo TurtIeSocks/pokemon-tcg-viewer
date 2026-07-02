@@ -1,11 +1,82 @@
 import { createHash } from "node:crypto";
+import { readFileSync, writeFileSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { gzipSync } from "node:zlib";
 import { fetchJson as realFetchJson } from "./build-corpus";
 
-// Western languages overlaid on the English base corpus (Phase 1b supported set
-// minus "en"; en IS the base blob and needs no overlay).
-export const I18N_LANGS = ["fr", "de", "es", "it", "pt"] as const;
+/** Region-baseline + display-language order, for a stable coverage-json diff. */
+const COVERAGE_ORDER = [
+	"en",
+	"fr",
+	"de",
+	"es",
+	"it",
+	"pt",
+	"ja",
+	"ko",
+	"zh-tw",
+	"zh-cn",
+	"th",
+	"id",
+];
+const COVERAGE_FILE = "src/lib/language-coverage.json";
+
+/**
+ * Merge freshly-crawled coverage over the previous map (the picker's partial-
+ * coverage hint). en + ja are the region baselines (1). A lang absent from the
+ * crawl (it failed this run) keeps its previous value — keep-last-good, so a
+ * transient crawl error never zeroes it. Output is ordered for a stable diff. Pure.
+ */
+export function mergeCoverage(
+	current: Record<string, number>,
+	crawled: Record<string, number>,
+): Record<string, number> {
+	const next: Record<string, number> = {
+		...current,
+		...crawled,
+		en: 1,
+		ja: 1,
+	};
+	return Object.fromEntries(
+		COVERAGE_ORDER.filter((l) => l in next).map((l) => [l, next[l]]),
+	);
+}
+
+/**
+ * Rewrite src/lib/language-coverage.json from a crawl. Gated behind WRITE_COVERAGE=1
+ * so the R2 corpus build never mutates source; the refresh-catalog-data workflow
+ * sets it.
+ */
+function writeCoverageJson(coverageByLang: Record<string, number>): void {
+	let current: Record<string, number> = {};
+	try {
+		current = JSON.parse(readFileSync(COVERAGE_FILE, "utf8"));
+	} catch {
+		/* first write */
+	}
+	const ordered = mergeCoverage(current, coverageByLang);
+	writeFileSync(COVERAGE_FILE, `${JSON.stringify(ordered, null, "\t")}\n`);
+	console.log(`wrote ${COVERAGE_FILE}`);
+}
+
+// Name-overlay languages. Western (fr/de/es/it/pt) overlay the English base
+// corpus; Asian (ko/zh-tw/zh-cn/th/id) overlay the Phase 2 Asian (ja) base
+// corpus. Each region's base language ("en", "ja") IS the base blob and needs
+// no overlay, so neither appears here. langBase() crawls whatever ids /v2/{lang}
+// returns — JP-lineage ids for the Asian langs — so the same code path builds
+// both regions' overlays.
+export const I18N_LANGS = [
+	"fr",
+	"de",
+	"es",
+	"it",
+	"pt",
+	"ko",
+	"zh-tw",
+	"zh-cn",
+	"th",
+	"id",
+] as const;
 export type I18nLang = (typeof I18N_LANGS)[number];
 
 const TCGDEX_BASE = process.env.TCGDEX_BASE ?? "https://api.tcgdex.net/v2/en";
@@ -112,9 +183,19 @@ export async function buildI18n(
 	const entries: I18nEntry[] = [];
 	for (let i = 0; i < sets.length; i++) {
 		const s = sets[i];
-		const setData = (await fetchJson(`${base}/sets/${s.id}`, { onRetry })) as {
-			cards: { id: string; name?: string }[];
-		};
+		// Encode the id (JP-lineage set ids carry "+", e.g. SM1+) and skip a single
+		// unfetchable set rather than aborting the whole overlay crawl.
+		let setData: { cards: { id: string; name?: string }[] };
+		try {
+			setData = (await fetchJson(`${base}/sets/${encodeURIComponent(s.id)}`, {
+				onRetry,
+			})) as typeof setData;
+		} catch (e) {
+			log(
+				`  [${lang}] skipping set "${s.id}": ${e instanceof Error ? e.message : String(e)}`,
+			);
+			continue;
+		}
 		for (const c of setData.cards)
 			entries.push({ id: c.id, name: c.name ?? "" });
 		log(
@@ -122,18 +203,24 @@ export async function buildI18n(
 		);
 	}
 
-	// `expected` is the language-invariant set total (every set's full card count);
-	// a Western overlay legitimately covers only the SUBSET of cards translated to that
-	// language (untranslated cards fall back to the EN name in hydrateCard), so partial
-	// coverage is normal, not an error. Guard only against a catastrophically broken crawl
-	// (network/endpoint failure that yields near-nothing), and log the real coverage.
+	// `expected` is the language-invariant set total (every set's full card count),
+	// so coverage% is NOT a per-language health metric: a name overlay legitimately
+	// covers only the SUBSET translated to that language (untranslated ids fall back
+	// to the base name in hydrateCard). TCGdex's real Asian coverage ranges from
+	// ~94% (zh-tw) down to ~3% (ko, 239 cards) — all valid. So only a
+	// catastrophically-empty crawl (a dead endpoint yielding ~nothing) is fatal;
+	// everything else is a warning. SKIP_I18N_COVERAGE_GATE overrides even that.
 	const coverage = expected > 0 ? entries.length / expected : 0;
 	log(
 		`[${lang}] coverage ${entries.length}/${expected} (${(coverage * 100).toFixed(0)}%)`,
 	);
-	if (coverage < 0.4)
+	if (entries.length === 0 && !process.env.SKIP_I18N_COVERAGE_GATE)
 		throw new Error(
-			`[${lang}] crawl looks broken: only ${entries.length} of ~${expected} (<40%)`,
+			`[${lang}] crawl looks broken: 0 names collected (dead endpoint?); set SKIP_I18N_COVERAGE_GATE=1 to override`,
+		);
+	if (coverage < 0.4)
+		console.warn(
+			`[${lang}] partial overlay: ${entries.length} of ~${expected} names (${(coverage * 100).toFixed(0)}%) — untranslated ids fall back to the base name`,
 		);
 
 	entries.sort((a, b) => a.id.localeCompare(b.id));
@@ -168,12 +255,27 @@ export async function writeI18n(result: I18nResult): Promise<I18nMeta> {
 if (import.meta.main) {
 	const startedAt = Date.now();
 	const coverageByLang: Record<string, number> = { en: 1 };
+	const failed: string[] = [];
+	// Build each lang independently: one broken overlay (dead endpoint) must not
+	// abort the others. A missing overlay just means that language falls back to
+	// the base names at runtime — keep-last-good, same as the corpus build.
 	for (const lang of I18N_LANGS) {
-		const result = await buildI18n(lang);
-		await writeI18n(result);
-		coverageByLang[lang] = Number(result.coverage.toFixed(2));
+		try {
+			const result = await buildI18n(lang);
+			await writeI18n(result);
+			coverageByLang[lang] = Number(result.coverage.toFixed(2));
+		} catch (e) {
+			failed.push(lang);
+			console.warn(
+				`[${lang}] overlay build FAILED, skipping: ${e instanceof Error ? e.message : String(e)}`,
+			);
+		}
 	}
 	const secs = ((Date.now() - startedAt) / 1000).toFixed(1);
-	console.log(`Built ${I18N_LANGS.length} overlays in ${secs}s`);
+	const built = I18N_LANGS.length - failed.length;
+	console.log(
+		`Built ${built}/${I18N_LANGS.length} overlays in ${secs}s${failed.length ? ` (failed: ${failed.join(", ")})` : ""}`,
+	);
 	console.log("LANGUAGE_COVERAGE =", JSON.stringify(coverageByLang));
+	if (process.env.WRITE_COVERAGE) writeCoverageJson(coverageByLang);
 }

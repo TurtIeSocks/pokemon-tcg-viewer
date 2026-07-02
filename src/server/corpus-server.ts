@@ -1,7 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { setResponseHeader } from "@tanstack/react-start/server";
 import type { ListSearch } from "../lib/card-query";
-import { isSupportedLanguage } from "../lib/languages";
+import {
+	isSupportedLanguage,
+	regionForLanguage,
+	type SupportedLanguage,
+} from "../lib/languages";
 import { LIST_SEARCH_DEFAULTS } from "../lib/list-search";
 import { findSeries } from "../lib/nav-tree";
 import { slugify } from "../lib/slug";
@@ -39,12 +43,28 @@ interface RouteCrossLink {
 // calling these runs the body server-side on SSR and RPCs to our server on
 // client navigation.
 
+/** Parse+normalize an optional `lang` field: unsupported/absent → "en" (west). */
+function optionalLang(value: unknown): SupportedLanguage {
+	return typeof value === "string" && isSupportedLanguage(value) ? value : "en";
+}
+
 /** All cards in a set, natural (number) order. */
 export const getSetCardsFn = createServerFn({ method: "GET" })
-	.inputValidator((setId: unknown) => nonEmptyString(setId, "setId"))
-	.handler(async ({ data: setId }) => {
+	.inputValidator((input: unknown) => {
+		// Back-compat: existing callers pass a bare setId string. New callers may
+		// pass { setId, lang } to select the card's region.
+		if (typeof input === "string" || input == null)
+			return { setId: nonEmptyString(input, "setId"), lang: "en" };
+		const o = input as { setId?: unknown; lang?: unknown };
+		return {
+			setId: nonEmptyString(o.setId, "setId"),
+			lang: optionalLang(o.lang),
+		};
+	})
+	.handler(async ({ data }) => {
 		const { queryCorpusServer } = await import("./corpus-loader");
-		return queryCorpusServer({ setId, relevance: false });
+		const region = regionForLanguage(data.lang);
+		return queryCorpusServer({ setId: data.setId, relevance: false }, region);
 	});
 
 /**
@@ -54,61 +74,110 @@ export const getSetCardsFn = createServerFn({ method: "GET" })
  */
 export const searchCardsFn = createServerFn({ method: "GET" })
 	.inputValidator((input: unknown) => {
-		const o = (input ?? {}) as { query?: unknown; mode?: unknown };
+		const o = (input ?? {}) as {
+			query?: unknown;
+			mode?: unknown;
+			lang?: unknown;
+		};
 		const m = o.mode;
 		const mode: SearchMode =
 			m === "exact" || m === "contains" || m === "fuzzy" ? m : "fuzzy";
-		return { query: nonEmptyString(o.query, "query"), mode };
+		return {
+			query: nonEmptyString(o.query, "query"),
+			mode,
+			lang: optionalLang(o.lang),
+		};
 	})
 	.handler(async ({ data }) => {
 		const { queryCorpusServer } = await import("./corpus-loader");
-		return queryCorpusServer({
-			query: data.query,
-			setId: null,
-			relevance: true,
-			mode: data.mode,
-		});
+		const region = regionForLanguage(data.lang);
+		return queryCorpusServer(
+			{
+				query: data.query,
+				setId: null,
+				relevance: true,
+				mode: data.mode,
+			},
+			region,
+		);
 	});
 
 /** All cards for a national-dex number, across sets. */
 export const getDexCardsFn = createServerFn({ method: "GET" })
-	.inputValidator((dex: unknown) => boundedInt(dex, "dex", 1, MAX_DEX))
-	.handler(async ({ data: dex }) => {
+	.inputValidator((input: unknown) => {
+		// Back-compat: existing callers pass a bare dex number. New callers may
+		// pass { dex, lang } to select the card's region.
+		if (typeof input === "number" || typeof input === "string")
+			return { dex: boundedInt(input, "dex", 1, MAX_DEX), lang: "en" };
+		const o = (input ?? {}) as { dex?: unknown; lang?: unknown };
+		return {
+			dex: boundedInt(o.dex, "dex", 1, MAX_DEX),
+			lang: optionalLang(o.lang),
+		};
+	})
+	.handler(async ({ data }) => {
 		const { queryCorpusServer } = await import("./corpus-loader");
-		return queryCorpusServer({ dexNumber: dex, setId: null, relevance: false });
+		const region = regionForLanguage(data.lang);
+		return queryCorpusServer(
+			{ dexNumber: data.dex, setId: null, relevance: false },
+			region,
+		);
 	});
 
 /** All cards of one supertype (Trainer/Energy category browse), across sets. */
 export const getSupertypeCardsFn = createServerFn({ method: "GET" })
-	.inputValidator((s: unknown) => supertypeName(s))
-	.handler(async ({ data: supertype }) => {
+	.inputValidator((input: unknown) => {
+		// Back-compat: existing callers pass a bare supertype string. New callers
+		// may pass { supertype, lang } to select the card's region.
+		if (typeof input === "string")
+			return { supertype: supertypeName(input), lang: "en" };
+		const o = (input ?? {}) as { supertype?: unknown; lang?: unknown };
+		return {
+			supertype: supertypeName(o.supertype),
+			lang: optionalLang(o.lang),
+		};
+	})
+	.handler(async ({ data }) => {
 		const { queryCorpusServer } = await import("./corpus-loader");
-		return queryCorpusServer({
-			setId: null,
-			filters: { supertypes: [supertype] },
-			chronological: true,
-			relevance: false,
-		});
+		const region = regionForLanguage(data.lang);
+		return queryCorpusServer(
+			{
+				setId: null,
+				filters: { supertypes: [data.supertype] },
+				chronological: true,
+				relevance: false,
+			},
+			region,
+		);
 	});
 
 /** All printings of one named card within a supertype, across sets. */
 export const getNamedCardsFn = createServerFn({ method: "GET" })
 	.inputValidator((input: unknown) => {
-		const o = (input ?? {}) as { supertype?: unknown; name?: unknown };
+		const o = (input ?? {}) as {
+			supertype?: unknown;
+			name?: unknown;
+			lang?: unknown;
+		};
 		return {
 			supertype: supertypeName(o.supertype),
 			name: nonEmptyString(o.name, "name"),
+			lang: optionalLang(o.lang),
 		};
 	})
 	.handler(async ({ data }) => {
 		const { queryCorpusServer } = await import("./corpus-loader");
-		return queryCorpusServer({
-			setId: null,
-			filters: { supertypes: [data.supertype] },
-			nameSlug: data.name,
-			chronological: true,
-			relevance: false,
-		});
+		const region = regionForLanguage(data.lang);
+		return queryCorpusServer(
+			{
+				setId: null,
+				filters: { supertypes: [data.supertype] },
+				nameSlug: data.name,
+				chronological: true,
+				relevance: false,
+			},
+			region,
+		);
 	});
 
 /**
@@ -134,10 +203,7 @@ export const getCardForRouteFn = createServerFn({ method: "GET" })
 			set: nonEmptyString(o.set, "set"),
 			card: nonEmptyString(o.card, "card"),
 			// Optional display language; non-supported/absent → English detail.
-			lang:
-				typeof o.lang === "string" && isSupportedLanguage(o.lang)
-					? o.lang
-					: "en",
+			lang: optionalLang(o.lang),
 		};
 	})
 	.handler(async ({ data }) => {
@@ -151,19 +217,26 @@ export const getCardForRouteFn = createServerFn({ method: "GET" })
 		const { getCardByIdCached, getPokemonListCached } = await import(
 			"./card-data-fetch"
 		);
+		const { getServerCorpusCard } = await import("./corpus-loader");
+		const { withCorpusImage } = await import("../lib/card-image");
 
-		const tree = await loadNavTree();
+		const region = regionForLanguage(data.lang);
+
+		const tree = await loadNavTree(region);
 		const series = findSeries(tree, data.series);
 		const set = series?.sets.find((s) => s.slug === data.set);
 		if (!series || !set) return null;
-		const cardId = await resolveCardInSet(set.id, data.card);
+		const cardId = await resolveCardInSet(set.id, data.card, region);
 		if (!cardId) return null;
 
-		// Card fetch (in the requested language) + species list are independent
-		// once we have the id.
-		const [card, list] = await Promise.all([
+		// Card fetch (in the requested language) + species list + the corpus card
+		// are independent once we have the id. The corpus card reconciles the image
+		// (below); a failure there must not break the card load, so tolerate
+		// undefined (keeps the live-fetched image as the fallback).
+		const [card, list, corpusCard] = await Promise.all([
 			getCardByIdCached(cardId, data.lang),
 			getPokemonListCached(),
+			getServerCorpusCard(cardId, region).catch(() => undefined),
 		]);
 
 		const crossLinks: RouteCrossLink[] = [];
@@ -203,12 +276,14 @@ export const getCardForRouteFn = createServerFn({ method: "GET" })
 
 		// A card's TCGdex SetBrief carries no serie/releaseDate, so the live mapper
 		// leaves setSeries/setReleaseDate empty. Join them from the nav tree here
-		// (a fresh copy — never mutate the per-process cached card).
-		const enriched = {
-			...card,
-			setSeries: series.name,
-			setReleaseDate: set.releaseDate,
-		};
+		// (a fresh copy — never mutate the per-process cached card). withCorpusImage
+		// then swaps in the authoritative corpus image (the tcgcsv JP overlay fill /
+		// suppressed blank) so SSR emits the same image the grid shows — no
+		// wrong-image flash before the client corpus loads.
+		const enriched = withCorpusImage(
+			{ ...card, setSeries: series.name, setReleaseDate: set.releaseDate },
+			corpusCard,
+		);
 		return { card: enriched, crossLinks };
 	});
 
@@ -217,16 +292,20 @@ export const getCardForRouteFn = createServerFn({ method: "GET" })
  * Joins the cached species list with a single pass over the server corpus.
  * Highly cacheable (corpus is static) so let the edge serve repeats.
  */
-export const getPokedexFn = createServerFn({ method: "GET" }).handler(
-	async () => {
+export const getPokedexFn = createServerFn({ method: "GET" })
+	.inputValidator((input: unknown) => {
+		const o = (input ?? {}) as { lang?: unknown };
+		return { lang: optionalLang(o.lang) };
+	})
+	.handler(async ({ data }) => {
 		setResponseHeader("Cache-Control", cacheControl("ssr"));
+		const region = regionForLanguage(data.lang);
 		const [{ queryCorpusServer }, { getPokemonListCached }] = await Promise.all(
 			[import("./corpus-loader"), import("./card-data-fetch")],
 		);
 		const [cards, list] = await Promise.all([
-			queryCorpusServer({ setId: null, relevance: false }),
+			queryCorpusServer({ setId: null, relevance: false }, region),
 			getPokemonListCached(),
 		]);
 		return buildPokedex(cards, list);
-	},
-);
+	});

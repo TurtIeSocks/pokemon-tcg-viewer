@@ -11,6 +11,7 @@ import {
 	CommandShortcut,
 } from "@/components/ui/command";
 import { cardRouteProps } from "../../lib/card-route";
+import { isSupportedLanguage } from "../../lib/languages";
 import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import type { NavTree } from "../../lib/nav-tree";
 import { useCommandPalette } from "../../store/command-palette";
@@ -155,7 +156,12 @@ export function CommandPalette({ tree }: { tree: NavTree }) {
 
 	function goToCard(card: HoloCardData) {
 		if (!slugIndex) return;
-		const lp = cardRouteProps(slugIndex, card);
+		const lang = i18n?.lang;
+		const lp = cardRouteProps(
+			slugIndex,
+			card,
+			lang && isSupportedLanguage(lang) ? lang : null,
+		);
 		if (!lp) return;
 		close();
 		navigate(lp);

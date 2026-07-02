@@ -47,7 +47,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
-	useCorpusRuntime.setState({ index: null, loading: false });
+	useCorpusRuntime.setState({ index: null, loading: {} });
 	useStore.setState({ sets: null, setsFetchedAt: null });
 });
 

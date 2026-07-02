@@ -19,6 +19,24 @@ function nonEmptyUrl(url: string | null | undefined): string | undefined {
 	return url ? url : undefined;
 }
 
+/**
+ * Badge for the fallback image's language. The fallback is always a region BASE
+ * print (Western → English, Asian → Japanese), so read the base from the fallback
+ * url: a TCGdex url carries "/{lang}/", a pokemontcg.io (or other) url is English.
+ * Truthful across regions — a JP card whose Korean scan 404s shows "JA", not "EN".
+ */
+const FALLBACK_BADGE: Record<string, { code: string; name: string }> = {
+	en: { code: "EN", name: "English" },
+	ja: { code: "JA", name: "Japanese" },
+};
+function fallbackBadge(fallbackUrl: string | undefined): {
+	code: string;
+	name: string;
+} {
+	const lang = fallbackUrl?.match(/assets\.tcgdex\.net\/([a-z-]+)\//)?.[1];
+	return (lang && FALLBACK_BADGE[lang]) || FALLBACK_BADGE.en;
+}
+
 export interface HoloCardProps {
 	imageUrl: string;
 	/** Smaller image used for grid display; falls back to imageUrl. */
@@ -270,19 +288,26 @@ export function HoloCard({
 					/>
 				</picture>
 			)}
-			{/* Image is the English print because TCGdex lacks a localized scan for
-			    the active language (usingFallback). Purely image-driven — independent
-			    of whether the NAME is localized (a card can have a German name but no
-			    German image), so it stays truthful in both grid and focus. */}
-			{usingFallback && hasImage && (
-				<span
-					className="holo-card-lang-badge"
-					role="img"
-					aria-label="Shown in English"
-				>
-					EN
-				</span>
-			)}
+			{/* Image is the region BASE print because TCGdex lacks a localized scan
+			    for the active language (usingFallback) — English for the Western
+			    catalog, Japanese for the Asian one (read from the fallback url).
+			    Purely image-driven — independent of whether the NAME is localized (a
+			    card can have a localized name but no localized image), so it stays
+			    truthful in both grid and focus. */}
+			{usingFallback &&
+				hasImage &&
+				(() => {
+					const badge = fallbackBadge(imageUrlFallback);
+					return (
+						<span
+							className="holo-card-lang-badge"
+							role="img"
+							aria-label={`Shown in ${badge.name}`}
+						>
+							{badge.code}
+						</span>
+					);
+				})()}
 			<div className="holo-card-overlay">{hoverOverlay}</div>
 			{owned && (
 				<span

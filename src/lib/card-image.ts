@@ -1,3 +1,6 @@
+import type { FocusCardData } from "../server/card-mappers";
+import type { CorpusCard } from "../store/corpus/corpus-types";
+
 const CDN = "https://assets.tcgdex.net";
 
 export interface CardImageUrls {
@@ -36,4 +39,26 @@ export function cardImage(card: CardImageSource, lang: string): CardImageUrls {
 	}
 	const base = `${CDN}/${lang}/${card.imageBase}`;
 	return { imageUrl: `${base}/high.webp`, imageUrlSmall: `${base}/low.webp` };
+}
+
+/**
+ * Reconcile a live-fetched FocusCardData's IMAGE against the authoritative corpus
+ * card. The live TCGdex fetch (mapTcgdexFocusCard) derives a pokemontcg.io fallback
+ * for a card with no native scan; the corpus holds the real image — the tcgcsv JP
+ * overlay fill, the ptcg hi-res for west, or a deliberate blank (suppressed Western
+ * fallback). Preferring the corpus image makes the focus view match the grid on the
+ * FIRST (SSR) frame, so a cold page load no longer flashes the wrong image before
+ * the client corpus loads. Text fields (attacks/flavor) are untouched. No-op when
+ * the corpus has no card for this id (its region isn't loaded server-side).
+ */
+export function withCorpusImage(
+	card: FocusCardData,
+	corpusCard: Pick<CorpusCard, "imageUrl" | "imageBase"> | undefined | null,
+): FocusCardData {
+	if (!corpusCard) return card;
+	return {
+		...card,
+		imageUrl: corpusCard.imageUrl,
+		imageBase: corpusCard.imageBase ?? null,
+	};
 }

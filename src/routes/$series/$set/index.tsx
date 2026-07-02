@@ -23,6 +23,7 @@ import {
 	listSearchToUrl,
 	validateListSearch,
 } from "../../../lib/list-search";
+import { loaderLang, loaderRegion } from "../../../lib/loader-region";
 import { toSerializedQuery } from "../../../lib/serialized-query";
 import { getPokemonListFn } from "../../../server/card-data";
 import { getSetCardsFn } from "../../../server/corpus-server";
@@ -33,15 +34,21 @@ import { deriveFacets } from "../../../server/set-facets";
 export const Route = createFileRoute("/$series/$set/")({
 	validateSearch: validateListSearch,
 	search: { middlewares: [stripSearchParams(LIST_SEARCH_DEFAULTS)] },
-	loader: async ({ params }) => {
-		const tree = await getNavTreeFn();
+	loaderDeps: ({ search }) => ({ lang: search.lang }),
+	loader: async ({ params, deps }) => {
+		// Region from `?lang` when present (shared/cold link), else the active
+		// client region (an in-app sidebar/tile click carries no `?lang`). Pass the
+		// matching language to the server fns so they resolve the same region.
+		const region = loaderRegion(deps.lang);
+		const lang = loaderLang(deps.lang);
+		const tree = await getNavTreeFn({ data: { region } });
 		const set = findSet(tree, params.series, params.set);
 		if (!set) throw notFound();
 
 		// Species list runs in parallel with the set cards; it labels the Pokémon
 		// filter options (dex number → species name).
 		const [all, list] = await Promise.all([
-			getSetCardsFn({ data: set.id }),
+			getSetCardsFn({ data: { setId: set.id, lang } }),
 			getPokemonListFn(),
 		]);
 		const slugs = buildSetCardSlugs(all);

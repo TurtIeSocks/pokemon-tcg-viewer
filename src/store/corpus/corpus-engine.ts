@@ -1,5 +1,10 @@
 import type { HoloCardData } from "../../components/holo-card";
 import { cardImage } from "../../lib/card-image";
+import {
+	faceLanguageFor,
+	type Region,
+	toSupportedLanguage,
+} from "../../lib/languages";
 import { slugify } from "../../lib/slug";
 import type { SortDir } from "../../lib/sort";
 import type { PokemonSet } from "../../server/card-mappers";
@@ -60,23 +65,51 @@ export function setsById(
 	return new Map((sets ?? []).map((s) => [s.id, s]));
 }
 
-/** Build the in-memory search index from a flat card list (normalised names + token arrays). */
-export function buildIndex(cards: CorpusCard[]): CorpusIndex {
+/**
+ * Build the in-memory search index from a flat card list (normalised names +
+ * token arrays), stamping every card with its catalog `region`. Defaults to
+ * `west` so existing callers/fixtures that don't pass a region behave exactly
+ * as before.
+ */
+export function buildIndex(
+	cards: CorpusCard[],
+	region: Region = "west",
+): CorpusIndex {
 	// Single pass over the (large) card list builds all three structures at once.
 	const nameNorm: string[] = [];
 	const nameTokens: string[][] = [];
 	const byId = new Map<string, CorpusCard>();
+	const stamped: CorpusCard[] = [];
 	for (const c of cards) {
-		nameNorm.push(normalize(c.name));
+		const card = { ...c, region };
+		stamped.push(card);
+		nameNorm.push(normalize(card.name));
 		nameTokens.push(
-			c.name.split(/[\s-]+/).flatMap((t) => {
+			card.name.split(/[\s-]+/).flatMap((t) => {
 				const n = normalize(t);
 				return n ? [n] : [];
 			}),
 		);
-		byId.set(c.id, c);
+		byId.set(card.id, card);
 	}
-	return { cards, byId, nameNorm, nameTokens };
+	return { cards: stamped, byId, nameNorm, nameTokens };
+}
+
+/**
+ * Resolve a card id across every currently-loaded region index. Card ids are
+ * globally unique across the west/asia id universes, so the first index that
+ * has it wins — check order doesn't matter. Returns `undefined` if the id is
+ * in none of the loaded indices (e.g. its region hasn't been loaded yet).
+ */
+export function resolveCardAcrossRegions(
+	cardId: string,
+	indices: Partial<Record<Region, CorpusIndex>>,
+): CorpusCard | undefined {
+	for (const index of Object.values(indices)) {
+		const hit = index?.byId.get(cardId);
+		if (hit) return hit;
+	}
+	return undefined;
 }
 
 function intersects(a: string[] | undefined, sel: string[]): boolean {
@@ -108,10 +141,22 @@ export function hydrateCard(
 	i18n?: I18nOverlay | null,
 ): HoloCardData {
 	const set = setsById.get(card.setId);
-	// EN fallback: an overlay miss (or no overlay) keeps the baked English name.
-	const name = i18n?.namesById?.get(card.id) ?? card.name;
-	// Image url is derived per language; en (or no imageBase) returns the baked urls.
-	const { imageUrl, imageUrlSmall } = cardImage(card, i18n?.lang ?? "en");
+	// A card's language "face" is chosen by its region, not blindly by the active
+	// display language -- there is no English face for a Japanese-lineage card
+	// and no Japanese face for a Western card (see faceLanguageFor).
+	const activeLang = toSupportedLanguage(i18n?.lang);
+	const faceLang = faceLanguageFor(card, activeLang);
+	// Only apply the i18n overlay when the active overlay's language actually IS
+	// the resolved face language -- an overlay for a language that doesn't match
+	// the card's region (e.g. a `ja` overlay over a west card) must never leak
+	// its name onto that card. An overlay miss (or no overlay) keeps the base name.
+	const name =
+		i18n && i18n.lang === faceLang
+			? (i18n.namesById?.get(card.id) ?? card.name)
+			: card.name;
+	// Image url is derived per resolved face language; en (or no imageBase)
+	// returns the baked urls.
+	const { imageUrl, imageUrlSmall } = cardImage(card, faceLang);
 	// When the localized url differs from the baked EN url, hand the renderer the
 	// EN url so it can reconcile a localized 404 back to English (a language may
 	// lack an image EN has). Only set it when there is actually a fallback target.
@@ -138,6 +183,7 @@ export function hydrateCard(
 		cardNumber: card.number,
 		nationalPokedexNumbers: card.nationalPokedexNumbers,
 		variants: card.variants,
+		region: card.region,
 	};
 }
 

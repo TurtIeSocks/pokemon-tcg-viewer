@@ -45,6 +45,14 @@ worker/.wrangler/
 /corpus-detail.json.gz
 /corpus-detail.meta.json
 /corpus-gap.json
+# Asian-region corpus artifacts (built with --base-lang ja; same R2-only policy).
+/corpus.asia.json.gz
+/corpus-detail.asia.json.gz
+/corpus-detail.asia.meta.json
+/corpus-gap.asia.json
 # Per-language name overlays built by scripts/build-i18n.ts (CI builds + uploads
 # to R2; never committed, like the corpus blobs above).
 /corpus/
+# tcgcsv product cache (build intermediate; CI restores via actions/cache keyed on
+# tcgcsv's last-updated.txt). The crosswalk JSONs in scripts/data/ ARE committed.
+/scripts/data/.cache/

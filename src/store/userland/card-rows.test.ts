@@ -15,7 +15,7 @@ test("buildCardRows count sums quantity across a card's stacks", () => {
 			item("a", "base1-1", { quantity: 3 }),
 			item("b", "base1-1", { quantity: 2 }),
 		],
-		index,
+		{ west: index },
 		sets,
 	);
 	expect(rows).toHaveLength(1);
@@ -61,7 +61,7 @@ test("buildCardRows: one row per card, primary = isPrimary else earliest created
 			item("i1", "base1-4", { createdAt: 100 }),
 			item("i2", "base1-4", { createdAt: 50, isPrimary: true }),
 		],
-		index,
+		{ west: index },
 		sets,
 	);
 	expect(rows).toHaveLength(1);
@@ -75,10 +75,35 @@ test("buildCardRows: default primary = earliest createdAt when none flagged", ()
 			item("i1", "base1-4", { createdAt: 100 }),
 			item("i2", "base1-4", { createdAt: 50 }),
 		],
-		index,
+		{ west: index },
 		sets,
 	);
 	expect(rows[0].primary.id).toBe("i2");
+});
+
+test("buildCardRows: an owned card that exists ONLY in the asia index is included (not silently dropped)", () => {
+	// Regression test for the Vault silent-drop bug: an owned card whose id is
+	// only present in the asia region index must still render when the
+	// west+asia indices map is passed in.
+	const west = buildIndex([cc("base1-4", "base1", "4")]);
+	const asia = buildIndex([cc("sv1a-001", "svjp1", "1")], "asia");
+	const asiaSets = new Map(sets);
+	asiaSets.set("svjp1", {
+		id: "svjp1",
+		name: "Scarlet ex",
+		series: "SV",
+		releaseDate: "2023-01-20",
+		total: 78,
+		images: { symbol: "", logo: "" },
+	});
+
+	const rows = buildCardRows(
+		[item("a", "base1-4"), item("b", "sv1a-001")],
+		{ west, asia },
+		asiaSets,
+	);
+
+	expect(rows.map((r) => r.card.id).sort()).toEqual(["base1-4", "sv1a-001"]);
 });
 
 test("sortCardRows by set→number, year, price (nulls last), acquired", () => {
@@ -88,7 +113,7 @@ test("sortCardRows by set→number, year, price (nulls last), acquired", () => {
 			item("b", "base1-58", { pricePaid: null, acquiredAt: 100 }),
 			item("c", "base1-4", { pricePaid: 20, acquiredAt: 200 }),
 		],
-		index,
+		{ west: index },
 		sets,
 	);
 	expect(sortCardRows(rows, "set", "asc").map((r) => r.card.id)).toEqual([

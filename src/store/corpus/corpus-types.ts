@@ -1,3 +1,5 @@
+import type { Region } from "../../lib/languages";
+
 /**
  * Per-card metadata stored in the local corpus. Trimmed from the pokemontcg.io
  * card shape: enough to render the grid, match by name, filter, and sort.
@@ -23,6 +25,13 @@ export interface CorpusCard {
 	number: string;
 	nationalPokedexNumbers?: number[];
 	variants?: string[];
+	/**
+	 * Which catalog region this card belongs to, stamped by `buildIndex` at
+	 * index-build time (never stored in the corpus blob itself). Optional so
+	 * pre-existing CorpusCard fixtures need no churn; absent means treat as
+	 * `west` (the default every existing caller already gets).
+	 */
+	region?: Region;
 }
 
 /**

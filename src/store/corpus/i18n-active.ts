@@ -19,3 +19,14 @@ export function getActiveI18n(): I18nOverlay | null {
 	if (lang === "en") return null;
 	return { lang, namesById };
 }
+
+/**
+ * Active display language as a raw string, read imperatively (no React
+ * subscription). Unlike {@link getActiveI18n}, this returns `"en"` rather than
+ * null for the steady state — callers that need the language itself (e.g. to
+ * decide whether a generated card link should carry `?lang`) want the raw
+ * value, not the overlay-shaped null-for-en convention.
+ */
+export function getActiveI18nLang(): string {
+	return useI18nRuntime.getState().lang;
+}

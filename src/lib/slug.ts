@@ -24,6 +24,9 @@ export interface SluggableSet {
 	id: string;
 	name: string;
 	series: string;
+	/** TCGdex serie id (see PokemonSet.seriesId). Optional; used to slug a
+	 * non-sluggable (Japanese) series consistently across its sets. */
+	seriesId?: string;
 }
 
 export interface SlugIndex {
@@ -39,11 +42,46 @@ export interface SlugIndex {
 	cardSlugById: Map<string, string>;
 }
 
+/**
+ * A slug for a name that may not be sluggable at all. Latin names slugify
+ * normally; a fully non-Latin name (e.g. a Japanese set/series) slugifies to ""
+ * — fall back to the id so the URL stays stable + unique instead of collapsing
+ * to an empty segment. Western names never hit the fallback, so their slugs are
+ * byte-identical to before.
+ */
+function slugOrId(name: string, id: string): string {
+	return slugify(name) || slugify(id);
+}
+
+/**
+ * Slug for a series. A sluggable (Latin) name wins, so Western series are
+ * byte-identical. A non-sluggable (Japanese) name falls back to the TCGdex
+ * `serie.id` — the ONLY key that's consistent across a serie's sets: their set-id
+ * prefixes vary within one serie (serie "SM" holds SM1, SMP2, smD), so keying off
+ * the set-id prefix splits one serie into several same-named nav nodes. When no
+ * serie.id is supplied (older fixtures), fall back to the set-id letter run.
+ */
+function serieSlug(
+	seriesName: string,
+	seriesId: string | undefined,
+	memberSetId: string,
+): string {
+	const named = slugify(seriesName);
+	if (named) return named;
+	if (seriesId) {
+		const byId = slugify(seriesId);
+		if (byId) return byId;
+	}
+	const code = memberSetId.match(/^[A-Za-z]+/)?.[0] ?? memberSetId;
+	return slugify(code) || slugify(memberSetId);
+}
+
 /** Append the number to a card slug so two same-named cards stay distinct. */
 function cardSlugFor(card: CorpusCard): string {
-	const base = slugify(card.name);
-	const num = slugify(card.number);
-	return num ? `${base}-${num}` : base;
+	const parts = [slugify(card.name), slugify(card.number)].filter(Boolean);
+	// A non-Latin (Japanese) card name yields no parts — fall back to the id so
+	// the slug is never empty. Latin cards are unaffected.
+	return parts.join("-") || slugify(card.id);
 }
 
 /**
@@ -68,10 +106,10 @@ export function buildSlugIndex(
 	// Series + sets (sorted by id for deterministic collision suffixes).
 	const setsSorted = sets.toSorted((a, b) => a.id.localeCompare(b.id));
 	for (const set of setsSorted) {
-		const seriesSlug = slugify(set.series);
+		const seriesSlug = serieSlug(set.series, set.seriesId, set.id);
 		idx.seriesBySlug.set(seriesSlug, set.series);
 
-		let setSlug = slugify(set.name);
+		let setSlug = slugOrId(set.name, set.id);
 		const key = (s: string) => `${seriesSlug}/${s}`;
 		if (idx.setIdBySlug.has(key(setSlug))) setSlug = `${setSlug}-${set.id}`;
 		idx.setIdBySlug.set(key(setSlug), set.id);

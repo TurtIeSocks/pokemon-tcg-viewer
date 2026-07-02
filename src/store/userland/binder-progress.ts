@@ -31,21 +31,34 @@ export function toCorpusQuery(q: SerializedQuery): CorpusQuery {
 }
 
 /**
- * Compute the full membership set for a binder:
- * 1. Union all cards matched by each rule.
+ * One region's corpus + its own set list, paired so a rule matches against the
+ * right sets. Card ids are globally unique across regions, so unioning rule
+ * matches over every loaded region is safe (a west-set rule only hits the west
+ * corpus, an asia-set rule only asia, a name/dex rule hits both — owning the
+ * card in EITHER region counts toward the goal).
+ */
+export interface RegionCorpus {
+	index: CorpusIndex;
+	setsMap: Map<string, PokemonSet>;
+}
+
+/**
+ * Compute the full membership set for a binder, ACROSS every loaded region:
+ * 1. Union all cards matched by each rule, evaluated against each region.
  * 2. Add explicit includeCardIds.
  * 3. Remove explicit excludeCardIds.
  */
 export function binderMembers(
 	binder: Binder,
-	index: CorpusIndex,
-	setsMap: Map<string, PokemonSet>,
+	regions: RegionCorpus[],
 ): Set<string> {
 	const members = new Set<string>();
 
 	for (const rule of binder.rules) {
-		const cards = queryCorpus(index, toCorpusQuery(rule.query), setsMap);
-		for (const card of cards) members.add(card.id);
+		const q = toCorpusQuery(rule.query);
+		for (const { index, setsMap } of regions) {
+			for (const card of queryCorpus(index, q, setsMap)) members.add(card.id);
+		}
 	}
 
 	for (const id of binder.includeCardIds) members.add(id);
@@ -64,15 +77,15 @@ export interface BinderProgress {
 }
 
 /**
- * Compute owned/total progress for a binder given the user's owned card id set.
+ * Compute owned/total progress for a binder given the user's owned card id set,
+ * across every loaded region (see {@link binderMembers}).
  */
 export function computeBinderProgress(
 	binder: Binder,
-	index: CorpusIndex,
-	setsMap: Map<string, PokemonSet>,
+	regions: RegionCorpus[],
 	ownedCardIds: Set<string>,
 ): BinderProgress {
-	const members = binderMembers(binder, index, setsMap);
+	const members = binderMembers(binder, regions);
 	const total = members.size;
 	let owned = 0;
 	for (const id of members) {

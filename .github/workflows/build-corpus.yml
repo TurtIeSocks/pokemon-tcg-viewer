@@ -3,6 +3,9 @@ on:
   schedule:
     - cron: "0 4 * * 1" # Mondays 04:00 UTC
   workflow_dispatch: {}
+  # Callable so rebuild-corpus.yml can run it on a corpus-affecting change and then
+  # chain the worker deploy. `secrets: inherit` from the caller passes the R2 token.
+  workflow_call: {}
 
 # Least privilege: the job only reads the repo; R2 upload uses an API token.
 permissions:
@@ -25,11 +28,38 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-      - name: Build corpus blob
+      - name: Build corpus blob (Western/en base)
         env:
           TCGDEX_BASE: http://localhost:3000/v2/en
         run: bun run scripts/build-corpus.ts corpus.json.gz
-      - name: Build i18n overlays (fr/de/es/it/pt)
+      - name: tcgcsv freshness key
+        # tcgcsv asks callers not to re-scrape needlessly: their data refreshes
+        # ~daily and they publish /last-updated.txt as the change signal. We key
+        # the product cache on it so a run only re-scrapes when it changes.
+        run: curl -sS https://tcgcsv.com/last-updated.txt -o .tcgcsv-last-updated
+      - name: Cache tcgcsv product data
+        # On an exact-key hit the whole .cache dir (products + the overlay's own
+        # last-updated marker) is restored, so fetchTcgcsvOverlay's freshness gate
+        # matches and it makes ZERO product requests. On a change the key misses,
+        # restore-keys seeds the prior cache, the overlay re-scrapes, and the new
+        # cache is saved post-job.
+        uses: actions/cache@v4
+        with:
+          path: scripts/data/.cache
+          key: tcgcsv-products-${{ hashFiles('.tcgcsv-last-updated') }}
+          restore-keys: tcgcsv-products-
+      - name: Build corpus blob (Asian/ja base)
+        # baseUrlFor() swaps the trailing /en of TCGDEX_BASE for /ja, so the same
+        # mirror serves the JP-lineage catalog. --base-lang ja skips the
+        # pokemontcg.io overlay (no crosswalk for JP ids). Phase 4 then overlays
+        # tcgcsv card data onto the ~103 dead JP sets (see scripts/tcgcsv-overlay.ts)
+        # and writes the corpus*.asia.* outputs.
+        env:
+          TCGDEX_BASE: http://localhost:3000/v2/en
+        run: bun run scripts/build-corpus.ts corpus.asia.json.gz --base-lang ja
+      - name: Build i18n overlays (fr/de/es/it/pt + ko/zh-tw/zh-cn/th/id)
+        # build-i18n crawls each lang's own set tree via langBase(); the Asian
+        # langs resolve to JP-lineage ids that overlay the Asian base corpus.
         env:
           TCGDEX_BASE: http://localhost:3000/v2/en
         run: bun run scripts/build-i18n.ts
@@ -38,6 +68,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
+          # Western/en base corpus + detail.
           bunx wrangler r2 object put \
             pokemon-tcg-corpus/corpus/latest.json.gz \
             --file=corpus.json.gz --remote
@@ -47,7 +78,18 @@ jobs:
           bunx wrangler r2 object put \
             pokemon-tcg-corpus/corpus/detail-meta.json \
             --file=corpus-detail.meta.json --remote
-          for lang in fr de es it pt; do
+          # Asian/ja region base corpus + detail + version meta.
+          bunx wrangler r2 object put \
+            pokemon-tcg-corpus/corpus/region/asia/latest.json.gz \
+            --file=corpus.asia.json.gz --remote
+          bunx wrangler r2 object put \
+            pokemon-tcg-corpus/corpus/region/asia/detail-latest.json.gz \
+            --file=corpus-detail.asia.json.gz --remote
+          bunx wrangler r2 object put \
+            pokemon-tcg-corpus/corpus/region/asia/meta.json \
+            --file=corpus-detail.asia.meta.json --remote
+          # Name overlays: Western (en base) + Asian (ja base).
+          for lang in fr de es it pt ko zh-tw zh-cn th id; do
             bunx wrangler r2 object put \
               "pokemon-tcg-corpus/corpus/i18n/$lang/names.json.gz" \
               --file="corpus/i18n/$lang/names.json.gz" --remote
@@ -55,8 +97,10 @@ jobs:
               "pokemon-tcg-corpus/corpus/i18n/$lang/meta.json" \
               --file="corpus/i18n/$lang/meta.json" --remote
           done
-      - name: Upload gap log (inspect only)
+      - name: Upload gap logs (inspect only)
         uses: actions/upload-artifact@v4
         with:
           name: corpus-gap
-          path: corpus-gap.json
+          path: |
+            corpus-gap.json
+            corpus-gap.asia.json

@@ -30,6 +30,7 @@ import { titleCaseSlug } from "../lib/slug";
 import { isCloudEnabled } from "../lib/supabase/client";
 import { getNavTreeFn } from "../server/nav-tree";
 import { useCommandPalette } from "../store/command-palette";
+import { useActiveRegionNavTree } from "../store/corpus/region-nav-tree";
 import { subscribeAuth } from "../store/userland/userland-store";
 
 export const Route = createRootRoute({
@@ -189,7 +190,9 @@ function ShellHeader({ tree }: { tree: NavTree }) {
 }
 
 function RootComponent() {
-	const tree = Route.useLoaderData();
+	// The root loader tree is region-blind (west); follow the active region so a
+	// client-side language switch reshapes the sidebar/header/browse tree.
+	const tree = useActiveRegionNavTree(Route.useLoaderData());
 
 	// Wire Supabase auth listener once at app mount (client-side only).
 	// No-ops when cloud is disabled (no env vars set).
