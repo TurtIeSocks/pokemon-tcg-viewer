@@ -60,24 +60,68 @@ test("falls back to productId as local id when Number is absent", () => {
 	expect(c.id).toBe("PCG1-9999");
 });
 
-test("mergeTcgcsvOverlay appends only ids the base lacks (TCGdex wins)", () => {
+test("ADD: appends overlay cards for a set TCGdex has none of (empty set)", () => {
+	const base: CorpusCard[] = []; // ADV1 entirely absent from TCGdex
+	const overlay = [
+		productToCard(product({ ext: { Number: "001/055", HP: "50" } }), "ADV1"),
+		productToCard(product({ ext: { Number: "002/055", HP: "70" } }), "ADV1"),
+	];
+	const { merged, added, filled } = mergeTcgcsvOverlay(base, overlay);
+	expect(added).toBe(2);
+	expect(filled).toBe(0);
+	expect(merged).toHaveLength(2);
+});
+
+test("FILL: replaces the image on a base card with no TCGdex scan (imageBase null)", () => {
+	// TCGdex has the card + metadata but no scan → build left a ptcg English fallback.
 	const base: CorpusCard[] = [
 		{
-			id: "ADV1-1",
-			name: "Real TCGdex",
+			id: "neo3-001",
+			name: "Zubat",
 			supertype: "Pokémon",
-			setId: "ADV1",
+			setId: "neo3",
+			number: "001",
+			imageBase: null,
+			imageUrl: "https://images.pokemontcg.io/neo3/1.png",
+			imageUrlSmall: "https://images.pokemontcg.io/neo3/1.png",
+		},
+	];
+	// overlay number "001/057" → localId "1"; matched to base "001" via setNumKey.
+	const overlay = [
+		productToCard(
+			product({ productId: 575205, ext: { Number: "001/057", HP: "50" } }),
+			"neo3",
+		),
+	];
+	const { merged, added, filled } = mergeTcgcsvOverlay(base, overlay);
+	expect(added).toBe(0); // not a new card — the set exists in the base
+	expect(filled).toBe(1);
+	expect(merged[0].id).toBe("neo3-001"); // TCGdex id kept
+	expect(merged[0].imageUrl).toBe(
+		"https://tcgplayer-cdn.tcgplayer.com/product/575205_400w.jpg",
+	);
+});
+
+test("never touches a base card that already has a TCGdex scan, nor invents cards", () => {
+	const base: CorpusCard[] = [
+		{
+			id: "sv1-1",
+			name: "Sprigatito",
+			supertype: "Pokémon",
+			setId: "sv1",
 			number: "1",
-			imageUrl: "x",
-			imageUrlSmall: "y",
+			imageBase: "sv/sv1/1",
+			imageUrl: "https://assets.tcgdex.net/ja/sv/sv1/1/high.webp",
+			imageUrlSmall: "x",
 		},
 	];
 	const overlay = [
-		productToCard(product({ ext: { Number: "001/055", HP: "50" } }), "ADV1"), // ADV1-1: collides → skipped
-		productToCard(product({ ext: { Number: "002/055", HP: "70" } }), "ADV1"), // ADV1-2: new → added
+		productToCard(product({ ext: { Number: "001/258", HP: "70" } }), "sv1"), // matches sv1-1 but base has a scan → untouched
+		productToCard(product({ ext: { Number: "999/258", HP: "70" } }), "sv1"), // extra tcgcsv promo → NOT added (set present in base)
 	];
-	const { merged, added } = mergeTcgcsvOverlay(base, overlay);
-	expect(added).toBe(1);
-	expect(merged).toHaveLength(2);
-	expect(merged.find((c) => c.id === "ADV1-1")?.name).toBe("Real TCGdex"); // not overwritten
+	const { merged, added, filled } = mergeTcgcsvOverlay(base, overlay);
+	expect(added).toBe(0);
+	expect(filled).toBe(0);
+	expect(merged).toHaveLength(1);
+	expect(merged[0].imageBase).toBe("sv/sv1/1"); // untouched
 });

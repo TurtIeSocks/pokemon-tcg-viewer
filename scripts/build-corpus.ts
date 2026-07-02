@@ -552,7 +552,7 @@ if (import.meta.main) {
 			const r = mergeTcgcsvOverlay(merged, overlayCards);
 			served = r.merged;
 			console.log(
-				`tcgcsv overlay: +${r.added} cards → ${served.length} total asian cards`,
+				`tcgcsv overlay: +${r.added} cards, ${r.filled} images filled → ${served.length} total asian cards`,
 			);
 		} catch (err) {
 			console.warn(

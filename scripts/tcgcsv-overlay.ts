@@ -88,21 +88,54 @@ export function productToCard(p: TcgcsvProduct, setId: string): CorpusCard {
 	return card;
 }
 
-/** Non-destructive append: TCGdex cards always win; overlay only fills ids the
- * base corpus doesn't already have. Exported + pure for the unit test. */
+/** Match key = setId + leading-zero-normalized number. TCGdex uses zero-padded
+ * localIds ("001"); tcgcsv's minted number strips them ("1"). Fold both. */
+function setNumKey(setId: string, number: string): string {
+	const n = /^\d+$/.test(number) ? String(Number.parseInt(number, 10)) : number;
+	return `${setId}:${n.toLowerCase()}`;
+}
+
+/**
+ * Merge the tcgcsv overlay into the TCGdex base corpus. Two non-destructive modes,
+ * chosen per card by whether TCGdex already covers the set:
+ *  - ADD: for a set entirely absent from the base (a TCGdex empty-cards[] set), the
+ *    overlay card is appended.
+ *  - FILL: for a card the base already has but with NO native TCGdex scan
+ *    (`imageBase` null/absent — build-corpus otherwise leaves a pokemontcg.io
+ *    English fallback or a blank), the overlay's tcgplayer image replaces it.
+ * A card TCGdex already has a real scan for is never touched, and overlay cards are
+ * never ADDED into a set TCGdex already populates (no invented cards). Pure — for
+ * the unit test.
+ */
 export function mergeTcgcsvOverlay(
 	base: CorpusCard[],
 	overlay: CorpusCard[],
-): { merged: CorpusCard[]; added: number } {
-	const byId = new Map(base.map((c) => [c.id, c]));
+): { merged: CorpusCard[]; added: number; filled: number } {
+	const baseSetIds = new Set(base.map((c) => c.setId));
+	const overlayBySetNum = new Map(
+		overlay.map((o) => [setNumKey(o.setId, o.number), o]),
+	);
+
+	let filled = 0;
+	const merged = base.map((c) => {
+		if (c.imageBase != null) return c; // TCGdex has a real scan — keep it
+		const ov = overlayBySetNum.get(setNumKey(c.setId, c.number));
+		if (!ov) return c;
+		filled++;
+		return { ...c, imageUrl: ov.imageUrl, imageUrlSmall: ov.imageUrlSmall };
+	});
+
+	const seen = new Set(merged.map((c) => setNumKey(c.setId, c.number)));
 	let added = 0;
-	for (const c of overlay) {
-		if (!byId.has(c.id)) {
-			byId.set(c.id, c);
+	for (const ov of overlay) {
+		const key = setNumKey(ov.setId, ov.number);
+		if (!baseSetIds.has(ov.setId) && !seen.has(key)) {
+			merged.push(ov);
+			seen.add(key);
 			added++;
 		}
 	}
-	return { merged: [...byId.values()], added };
+	return { merged, added, filled };
 }
 
 async function fetchText(
@@ -209,10 +242,10 @@ async function main() {
 	const existing = JSON.parse(
 		gunzipSync(readFileSync(out)).toString(),
 	) as CorpusCard[];
-	const { merged, added } = mergeTcgcsvOverlay(existing, overlay);
+	const { merged, added, filled } = mergeTcgcsvOverlay(existing, overlay);
 	writeFileSync(out, gzipSync(Buffer.from(JSON.stringify(merged))));
 	console.error(
-		`merged: ${existing.length} existing + ${added} overlay -> ${merged.length} total -> ${out}`,
+		`merged: ${existing.length} existing + ${added} added + ${filled} images filled -> ${merged.length} total -> ${out}`,
 	);
 }
 
