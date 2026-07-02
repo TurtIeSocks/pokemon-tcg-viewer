@@ -95,47 +95,146 @@ function setNumKey(setId: string, number: string): string {
 	return `${setId}:${n.toLowerCase()}`;
 }
 
+const isRealImage = (url: string | undefined): boolean =>
+	!!url && /tcgplayer-cdn\.tcgplayer\.com|assets\.tcgdex\.net/.test(url);
+const isPtcgFallback = (url: string | undefined): boolean =>
+	!!url && url.includes("images.pokemontcg.io");
+/** A base card that still needs an image: no native TCGdex scan (imageBase null)
+ * and its imageUrl isn't already a real tcgplayer/tcgdex image. */
+const needsImage = (c: CorpusCard): boolean =>
+	c.imageBase == null && !isRealImage(c.imageUrl);
+
+/** English species list from PokéAPI → { lowercased-name: national-dex-number }.
+ * Bridges tcgcsv's English names to TCGdex's `nationalPokedexNumbers` for the old
+ * sets tcgcsv publishes no card numbers for. Returns an empty map on failure
+ * (the name/dex pass is then simply skipped — number-based fill still runs). */
+const POKEDEX_LIMIT = 1025;
+export async function fetchNameToDex(
+	fetchImpl: typeof fetch = fetch,
+): Promise<Map<string, number>> {
+	try {
+		const r = await fetchImpl(
+			`https://pokeapi.co/api/v2/pokemon?limit=${POKEDEX_LIMIT}`,
+		);
+		if (!r.ok) return new Map();
+		const j = (await r.json()) as { results: { name: string }[] };
+		return new Map(j.results.map((p, i) => [p.name.toLowerCase(), i + 1]));
+	} catch {
+		return new Map();
+	}
+}
+
+/** Best unambiguous overlay match for a still-imageless base card within its set:
+ * exact English name first, then national-dex-number (via nameToDex). Returns a
+ * match only when EXACTLY ONE overlay card qualifies (never guesses on a tie). */
+function uniqueMatch(
+	card: CorpusCard,
+	candidates: CorpusCard[],
+	nameToDex: Map<string, number>,
+): CorpusCard | undefined {
+	const byName = candidates.filter(
+		(o) => o.name.toLowerCase() === card.name.toLowerCase(),
+	);
+	if (byName.length === 1) return byName[0];
+	const dexes = new Set(card.nationalPokedexNumbers ?? []);
+	if (dexes.size === 0) return undefined;
+	const byDex = candidates.filter((o) => {
+		const d = nameToDex.get(o.name.toLowerCase());
+		return d != null && dexes.has(d);
+	});
+	return byDex.length === 1 ? byDex[0] : undefined;
+}
+
+export interface MergeOpts {
+	/** English-name → national-dex map (fetchNameToDex). Enables the name/dex fill
+	 * pass for old sets tcgcsv publishes no numbers for. */
+	nameToDex?: Map<string, number>;
+	/** Blank any remaining pokemontcg.io fallback image (a Western-only source) so a
+	 * still-imageless JP card shows a card-back instead of a wrong-language scan. */
+	suppressPtcgFallback?: boolean;
+}
+
 /**
- * Merge the tcgcsv overlay into the TCGdex base corpus. Two non-destructive modes,
- * chosen per card by whether TCGdex already covers the set:
- *  - ADD: for a set entirely absent from the base (a TCGdex empty-cards[] set), the
- *    overlay card is appended.
- *  - FILL: for a card the base already has but with NO native TCGdex scan
- *    (`imageBase` null/absent — build-corpus otherwise leaves a pokemontcg.io
- *    English fallback or a blank), the overlay's tcgplayer image replaces it.
- * A card TCGdex already has a real scan for is never touched, and overlay cards are
- * never ADDED into a set TCGdex already populates (no invented cards). Pure — for
- * the unit test.
+ * Merge the tcgcsv overlay into the TCGdex base corpus. Non-destructive; per card:
+ *  - ADD: a set entirely absent from the base (a TCGdex empty-cards[] set) gets its
+ *    overlay cards appended.
+ *  - FILL: a base card with NO native TCGdex scan (`imageBase` null) gets the
+ *    overlay's tcgplayer image — matched first by set+number, then (with
+ *    opts.nameToDex) by unambiguous English-name/national-dex.
+ * A card TCGdex already has a real scan for is never touched, and cards are never
+ * invented into a set TCGdex already populates. With opts.suppressPtcgFallback, any
+ * still-imageless card's pokemontcg.io fallback is blanked. Pure — for the test.
  */
 export function mergeTcgcsvOverlay(
 	base: CorpusCard[],
 	overlay: CorpusCard[],
-): { merged: CorpusCard[]; added: number; filled: number } {
+	opts: MergeOpts = {},
+): {
+	merged: CorpusCard[];
+	added: number;
+	filled: number;
+	filledFuzzy: number;
+	suppressed: number;
+} {
 	const baseSetIds = new Set(base.map((c) => c.setId));
-	const overlayBySetNum = new Map(
+	const merged = base.map((c) => ({ ...c }));
+
+	// Pass 1: number-based fill.
+	const bySetNum = new Map(
 		overlay.map((o) => [setNumKey(o.setId, o.number), o]),
 	);
-
 	let filled = 0;
-	const merged = base.map((c) => {
-		if (c.imageBase != null) return c; // TCGdex has a real scan — keep it
-		const ov = overlayBySetNum.get(setNumKey(c.setId, c.number));
-		if (!ov) return c;
-		filled++;
-		return { ...c, imageUrl: ov.imageUrl, imageUrlSmall: ov.imageUrlSmall };
-	});
+	for (const c of merged) {
+		if (!needsImage(c)) continue;
+		const ov = bySetNum.get(setNumKey(c.setId, c.number));
+		if (ov) {
+			c.imageUrl = ov.imageUrl;
+			c.imageUrlSmall = ov.imageUrlSmall;
+			filled++;
+		}
+	}
 
+	// Pass 2: name/dex fill for old sets with no tcgcsv numbers (opt-in).
+	let filledFuzzy = 0;
+	if (opts.nameToDex?.size) {
+		const bySet = new Map<string, CorpusCard[]>();
+		for (const o of overlay)
+			(bySet.get(o.setId) ?? bySet.set(o.setId, []).get(o.setId))?.push(o);
+		for (const c of merged) {
+			if (!needsImage(c)) continue;
+			const ov = uniqueMatch(c, bySet.get(c.setId) ?? [], opts.nameToDex);
+			if (ov) {
+				c.imageUrl = ov.imageUrl;
+				c.imageUrlSmall = ov.imageUrlSmall;
+				filledFuzzy++;
+			}
+		}
+	}
+
+	// Pass 3: suppress the Western ptcg fallback on whatever is still imageless.
+	let suppressed = 0;
+	if (opts.suppressPtcgFallback) {
+		for (const c of merged) {
+			if (needsImage(c) && isPtcgFallback(c.imageUrl)) {
+				c.imageUrl = "";
+				c.imageUrlSmall = "";
+				suppressed++;
+			}
+		}
+	}
+
+	// Pass 4: add cards for sets TCGdex has none of (empty sets).
 	const seen = new Set(merged.map((c) => setNumKey(c.setId, c.number)));
 	let added = 0;
 	for (const ov of overlay) {
 		const key = setNumKey(ov.setId, ov.number);
 		if (!baseSetIds.has(ov.setId) && !seen.has(key)) {
-			merged.push(ov);
+			merged.push({ ...ov });
 			seen.add(key);
 			added++;
 		}
 	}
-	return { merged, added, filled };
+	return { merged, added, filled, filledFuzzy, suppressed };
 }
 
 async function fetchText(
@@ -242,10 +341,15 @@ async function main() {
 	const existing = JSON.parse(
 		gunzipSync(readFileSync(out)).toString(),
 	) as CorpusCard[];
-	const { merged, added, filled } = mergeTcgcsvOverlay(existing, overlay);
+	const nameToDex = await fetchNameToDex();
+	const { merged, added, filled, filledFuzzy, suppressed } = mergeTcgcsvOverlay(
+		existing,
+		overlay,
+		{ nameToDex, suppressPtcgFallback: true },
+	);
 	writeFileSync(out, gzipSync(Buffer.from(JSON.stringify(merged))));
 	console.error(
-		`merged: ${existing.length} existing + ${added} added + ${filled} images filled -> ${merged.length} total -> ${out}`,
+		`merged: ${existing.length} existing + ${added} added + ${filled}+${filledFuzzy} images filled (${suppressed} fallbacks suppressed) -> ${merged.length} total -> ${out}`,
 	);
 }
 

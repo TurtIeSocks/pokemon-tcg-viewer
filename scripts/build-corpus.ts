@@ -545,14 +545,19 @@ if (import.meta.main) {
 	let served = merged;
 	if (isAsia && !process.env.SKIP_TCGCSV_OVERLAY) {
 		try {
-			const { fetchTcgcsvOverlay, mergeTcgcsvOverlay } = await import(
-				"./tcgcsv-overlay"
-			);
-			const overlayCards = await fetchTcgcsvOverlay();
-			const r = mergeTcgcsvOverlay(merged, overlayCards);
+			const { fetchTcgcsvOverlay, mergeTcgcsvOverlay, fetchNameToDex } =
+				await import("./tcgcsv-overlay");
+			const [overlayCards, nameToDex] = await Promise.all([
+				fetchTcgcsvOverlay(),
+				fetchNameToDex(),
+			]);
+			const r = mergeTcgcsvOverlay(merged, overlayCards, {
+				nameToDex,
+				suppressPtcgFallback: true,
+			});
 			served = r.merged;
 			console.log(
-				`tcgcsv overlay: +${r.added} cards, ${r.filled} images filled → ${served.length} total asian cards`,
+				`tcgcsv overlay: +${r.added} cards, ${r.filled}+${r.filledFuzzy} images filled, ${r.suppressed} Western fallbacks suppressed → ${served.length} total asian cards`,
 			);
 		} catch (err) {
 			console.warn(
