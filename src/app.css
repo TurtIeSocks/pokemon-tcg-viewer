@@ -15,6 +15,7 @@
 	font-display: swap;
 	src: url("/fonts/clash-display.woff2") format("woff2");
 }
+
 /* Space Grotesk — UI/body. OFL. */
 @font-face {
 	font-family: "Space Grotesk";
@@ -23,6 +24,7 @@
 	font-display: swap;
 	src: url("/fonts/space-grotesk.woff2") format("woff2");
 }
+
 /* Geist Mono — data/numbers. OFL. */
 @font-face {
 	font-family: "Geist Mono";
@@ -33,24 +35,39 @@
 }
 
 :root {
+	/* Dark UA surfaces: thin dark native scrollbars + form controls (dropped in the tailwind-token rebuild, 87f91e7). */
+	color-scheme: dark;
+
 	/* fonts */
 	--font-display: "Clash Display", "Space Grotesk", system-ui, sans-serif;
 	--font-sans: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
-	--font-serif: var(--font-display); /* transitional alias — existing `font-serif` usages render in Clash */
+	--font-serif: var(--font-display);
+	/* transitional alias — existing `font-serif` usages render in Clash */
 	--font-mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
 
 	/* ── Liquid Glass primitives (additive, namespaced to avoid shadcn collisions) ── */
-	--canvas: oklch(0.12 0.012 290); /* page/tray base */
-	--bg: oklch(0.175 0.017 290); /* solid panel / bezel core */
-	--glass: oklch(1 0 0 / 0.045); /* translucent glass fill */
-	--glass-2: oklch(1 0 0 / 0.07); /* raised glass fill */
-	--glass-tint: oklch(0.175 0.017 290 / 0.8); /* --bg dark-violet, translucent → tinted modal glass */
-	--ink: oklch(0.97 0.006 290); /* primary text */
-	--ink-muted: oklch(0.71 0.016 290); /* secondary text */
-	--faint: oklch(0.57 0.018 290); /* tertiary text / labels */
-	--primary-strong: oklch(0.79 0.15 295); /* accent hover */
-	--primary-ink: oklch(0.16 0.03 295); /* text/icon on filled violet */
-	--primary-wash: oklch(0.7 0.19 295 / 0.18); /* active rows, soft buttons */
+	--canvas: oklch(0.12 0.012 290);
+	/* page/tray base */
+	--bg: oklch(0.175 0.017 290);
+	/* solid panel / bezel core */
+	--glass: oklch(1 0 0 / 0.045);
+	/* translucent glass fill */
+	--glass-2: oklch(1 0 0 / 0.07);
+	/* raised glass fill */
+	--glass-tint: oklch(0.175 0.017 290 / 0.8);
+	/* --bg dark-violet, translucent → tinted modal glass */
+	--ink: oklch(0.97 0.006 290);
+	/* primary text */
+	--ink-muted: oklch(0.71 0.016 290);
+	/* secondary text */
+	--faint: oklch(0.57 0.018 290);
+	/* tertiary text / labels */
+	--primary-strong: oklch(0.79 0.15 295);
+	/* accent hover */
+	--primary-ink: oklch(0.16 0.03 295);
+	/* text/icon on filled violet */
+	--primary-wash: oklch(0.7 0.19 295 / 0.18);
+	/* active rows, soft buttons */
 	--success: oklch(0.78 0.15 162);
 	--warning: oklch(0.82 0.13 78);
 	--danger: oklch(0.7 0.19 18);
@@ -70,7 +87,8 @@
 	/* ── shadcn semantic tokens, re-pointed to the violet system ── */
 	--background: var(--canvas);
 	--foreground: var(--ink);
-	--card: var(--bg); /* opaque panel; glass surfaces use --glass via GlassPanel */
+	--card: var(--bg);
+	/* opaque panel; glass surfaces use --glass via GlassPanel */
 	--card-foreground: var(--ink);
 	--popover: var(--bg);
 	--popover-foreground: var(--ink);
@@ -78,9 +96,11 @@
 	--primary-foreground: var(--primary-ink);
 	--secondary: oklch(1 0 0 / 0.06);
 	--secondary-foreground: var(--ink);
-	--muted: oklch(0.24 0.02 290); /* dark surface for bg-muted */
+	--muted: oklch(0.24 0.02 290);
+	/* dark surface for bg-muted */
 	--muted-foreground: var(--ink-muted);
-	--accent: var(--primary); /* cyan retired → violet (also fixes set-tile ring var(--accent,…)) */
+	--accent: var(--primary);
+	/* cyan retired → violet (also fixes set-tile ring var(--accent,…)) */
 	--accent-foreground: var(--primary-ink);
 	--destructive: var(--danger);
 	--destructive-foreground: oklch(0.99 0 0);
@@ -145,6 +165,7 @@
 	* {
 		@apply border-border outline-ring/50;
 	}
+
 	html,
 	body,
 	#root {
@@ -152,6 +173,7 @@
 		padding: 0;
 		height: 100%;
 	}
+
 	body {
 		@apply bg-background text-foreground;
 		font-family: var(--font-sans);
@@ -159,6 +181,7 @@
 		text-rendering: optimizeLegibility;
 		position: relative;
 	}
+
 	/* Ambient violet mesh — fixed so it never repaints on scroll; sits behind content. */
 	body::before {
 		content: "";
@@ -168,6 +191,7 @@
 		pointer-events: none;
 		background: var(--ambient);
 	}
+
 	#root {
 		position: relative;
 		z-index: 1;
@@ -192,6 +216,7 @@
 [data-slot="sidebar-container"] {
 	padding-block: 12px !important;
 }
+
 [data-slot="sidebar-inner"] {
 	border-radius: 20px !important;
 	border: 1px solid var(--border) !important;
@@ -227,10 +252,12 @@
 /* Home hero backdrop: float via `translate` so it composes with Tailwind v4
    rotate/scale (separate properties) instead of clobbering `transform`. */
 @keyframes float-card {
+
 	0%,
 	100% {
 		translate: 0 0;
 	}
+
 	50% {
 		translate: 0 -12px;
 	}
@@ -238,6 +265,7 @@
 
 /* Honor reduced-motion for the router's View Transitions crossfade. */
 @media (prefers-reduced-motion: reduce) {
+
 	::view-transition-group(*),
 	::view-transition-old(*),
 	::view-transition-new(*) {
@@ -253,24 +281,45 @@
 		filter: blur(0);
 	}
 }
+
 @keyframes lg-shimmer {
 	100% {
 		transform: translateX(100%);
 	}
 }
+
 /* Entrance choreography: add `.stagger` to a parent; direct children rise in sequence. */
-.stagger > * {
+.stagger>* {
 	opacity: 0;
 	transform: translateY(18px);
 	filter: blur(6px);
 	animation: lg-rise 0.8s var(--ease) forwards;
 }
-.stagger > *:nth-child(1) { animation-delay: 0.04s; }
-.stagger > *:nth-child(2) { animation-delay: 0.12s; }
-.stagger > *:nth-child(3) { animation-delay: 0.2s; }
-.stagger > *:nth-child(4) { animation-delay: 0.28s; }
-.stagger > *:nth-child(5) { animation-delay: 0.36s; }
-.stagger > *:nth-child(6) { animation-delay: 0.44s; }
+
+.stagger>*:nth-child(1) {
+	animation-delay: 0.04s;
+}
+
+.stagger>*:nth-child(2) {
+	animation-delay: 0.12s;
+}
+
+.stagger>*:nth-child(3) {
+	animation-delay: 0.2s;
+}
+
+.stagger>*:nth-child(4) {
+	animation-delay: 0.28s;
+}
+
+.stagger>*:nth-child(5) {
+	animation-delay: 0.36s;
+}
+
+.stagger>*:nth-child(6) {
+	animation-delay: 0.44s;
+}
+
 /* Loading: shimmer sweep, never a spinner. */
 .skel {
 	position: relative;
@@ -278,6 +327,7 @@
 	background: var(--glass-2);
 	border-radius: 8px;
 }
+
 .skel::after {
 	content: "";
 	position: absolute;
@@ -286,13 +336,15 @@
 	background: linear-gradient(90deg, transparent, var(--primary-wash), transparent);
 	animation: lg-shimmer 1.8s var(--ease) infinite;
 }
+
 @media (prefers-reduced-motion: reduce) {
-	.stagger > * {
+	.stagger>* {
 		opacity: 1;
 		transform: none;
 		filter: none;
 		animation: none;
 	}
+
 	.skel::after {
 		animation: none;
 	}
