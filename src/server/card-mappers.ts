@@ -51,6 +51,11 @@ export interface PokemonSet {
 	id: string;
 	name: string;
 	series: string;
+	/** TCGdex serie id (e.g. "SM", "S", "SV"). Stable + ASCII, and consistent
+	 * across a serie's sets even when their set-id prefixes differ (SM1/SMP2/smD).
+	 * Used to slug/group JP series whose display name isn't sluggable. Optional so
+	 * pre-existing fixtures need no churn; absent falls back to the set-id prefix. */
+	seriesId?: string;
 	releaseDate: string;
 	printedTotal?: number;
 	total: number;

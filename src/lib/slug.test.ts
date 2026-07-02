@@ -161,3 +161,38 @@ describe("buildSlugIndex: non-Latin (Japanese) names fall back to ids", () => {
 		expect(idx.cardSlugById.get("PMCG2-1")).toBe("1");
 	});
 });
+
+describe("buildSlugIndex: seriesId groups sets with divergent set-id prefixes", () => {
+	// Real JP bug: serie "SM" (サン＆ムーン) holds SM12, SMP2, smD — different
+	// set-id prefixes (sm / smp / smd). Keying the series slug off the set-id prefix
+	// splits one serie into three same-named nav nodes. The TCGdex serie.id keeps
+	// them as ONE series.
+	const jpSets: SluggableSet[] = [
+		{
+			id: "SM12",
+			name: "オルタージェネシス",
+			series: "サン＆ムーン",
+			seriesId: "SM",
+		},
+		{
+			id: "SMP2",
+			name: "名探偵ピカチュウ",
+			series: "サン＆ムーン",
+			seriesId: "SM",
+		},
+		{
+			id: "smD",
+			name: "スターターセット",
+			series: "サン＆ムーン",
+			seriesId: "SM",
+		},
+	];
+	const idx = buildSlugIndex(jpSets, []);
+
+	test("all three sets share the serie.id-derived slug (one series node, not three)", () => {
+		expect(idx.setSlugById.get("SM12")?.seriesSlug).toBe("sm");
+		expect(idx.setSlugById.get("SMP2")?.seriesSlug).toBe("sm");
+		expect(idx.setSlugById.get("smD")?.seriesSlug).toBe("sm");
+		expect([...idx.seriesBySlug.keys()]).toEqual(["sm"]);
+	});
+});

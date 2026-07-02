@@ -24,6 +24,9 @@ export interface SluggableSet {
 	id: string;
 	name: string;
 	series: string;
+	/** TCGdex serie id (see PokemonSet.seriesId). Optional; used to slug a
+	 * non-sluggable (Japanese) series consistently across its sets. */
+	seriesId?: string;
 }
 
 export interface SlugIndex {
@@ -51,13 +54,24 @@ function slugOrId(name: string, id: string): string {
 }
 
 /**
- * Series have no id in the sets list, but TCGdex set ids share their serie code
- * as a leading letter run (PMCG2/PMCG3 -> "pmcg", S12/S9 -> "s"), consistent
- * across a series — so a non-sluggable (Japanese) series name falls back to that.
+ * Slug for a series. A sluggable (Latin) name wins, so Western series are
+ * byte-identical. A non-sluggable (Japanese) name falls back to the TCGdex
+ * `serie.id` — the ONLY key that's consistent across a serie's sets: their set-id
+ * prefixes vary within one serie (serie "SM" holds SM1, SMP2, smD), so keying off
+ * the set-id prefix splits one serie into several same-named nav nodes. When no
+ * serie.id is supplied (older fixtures), fall back to the set-id letter run.
  */
-function serieSlug(seriesName: string, memberSetId: string): string {
+function serieSlug(
+	seriesName: string,
+	seriesId: string | undefined,
+	memberSetId: string,
+): string {
 	const named = slugify(seriesName);
 	if (named) return named;
+	if (seriesId) {
+		const byId = slugify(seriesId);
+		if (byId) return byId;
+	}
 	const code = memberSetId.match(/^[A-Za-z]+/)?.[0] ?? memberSetId;
 	return slugify(code) || slugify(memberSetId);
 }
@@ -92,7 +106,7 @@ export function buildSlugIndex(
 	// Series + sets (sorted by id for deterministic collision suffixes).
 	const setsSorted = sets.toSorted((a, b) => a.id.localeCompare(b.id));
 	for (const set of setsSorted) {
-		const seriesSlug = serieSlug(set.series, set.id);
+		const seriesSlug = serieSlug(set.series, set.seriesId, set.id);
 		idx.seriesBySlug.set(seriesSlug, set.series);
 
 		let setSlug = slugOrId(set.name, set.id);

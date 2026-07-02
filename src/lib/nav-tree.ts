@@ -34,7 +34,12 @@ export type NavTree = NavSeries[];
  */
 export function deriveNavTree(sets: PokemonSet[]): NavTree {
 	const idx = buildSlugIndex(
-		sets.map((s) => ({ id: s.id, name: s.name, series: s.series })),
+		sets.map((s) => ({
+			id: s.id,
+			name: s.name,
+			series: s.series,
+			seriesId: s.seriesId, // forward the serie.id so JP series group by it
+		})),
 		[],
 	);
 	const bySlug = new Map<string, NavSeries>();

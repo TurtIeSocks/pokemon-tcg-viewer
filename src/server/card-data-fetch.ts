@@ -49,6 +49,7 @@ export function mapTcgdexSet(s: TcgdexSetDetail): PokemonSet {
 		id: s.id,
 		name: s.name,
 		series: s.serie.name,
+		seriesId: s.serie.id,
 		releaseDate: s.releaseDate ?? "",
 		printedTotal: s.cardCount.official,
 		total: s.cardCount.total,
