@@ -217,6 +217,8 @@ export const getCardForRouteFn = createServerFn({ method: "GET" })
 		const { getCardByIdCached, getPokemonListCached } = await import(
 			"./card-data-fetch"
 		);
+		const { getServerCorpusCard } = await import("./corpus-loader");
+		const { withCorpusImage } = await import("../lib/card-image");
 
 		const region = regionForLanguage(data.lang);
 
@@ -227,11 +229,14 @@ export const getCardForRouteFn = createServerFn({ method: "GET" })
 		const cardId = await resolveCardInSet(set.id, data.card, region);
 		if (!cardId) return null;
 
-		// Card fetch (in the requested language) + species list are independent
-		// once we have the id.
-		const [card, list] = await Promise.all([
+		// Card fetch (in the requested language) + species list + the corpus card
+		// are independent once we have the id. The corpus card reconciles the image
+		// (below); a failure there must not break the card load, so tolerate
+		// undefined (keeps the live-fetched image as the fallback).
+		const [card, list, corpusCard] = await Promise.all([
 			getCardByIdCached(cardId, data.lang),
 			getPokemonListCached(),
+			getServerCorpusCard(cardId, region).catch(() => undefined),
 		]);
 
 		const crossLinks: RouteCrossLink[] = [];
@@ -271,12 +276,14 @@ export const getCardForRouteFn = createServerFn({ method: "GET" })
 
 		// A card's TCGdex SetBrief carries no serie/releaseDate, so the live mapper
 		// leaves setSeries/setReleaseDate empty. Join them from the nav tree here
-		// (a fresh copy — never mutate the per-process cached card).
-		const enriched = {
-			...card,
-			setSeries: series.name,
-			setReleaseDate: set.releaseDate,
-		};
+		// (a fresh copy — never mutate the per-process cached card). withCorpusImage
+		// then swaps in the authoritative corpus image (the tcgcsv JP overlay fill /
+		// suppressed blank) so SSR emits the same image the grid shows — no
+		// wrong-image flash before the client corpus loads.
+		const enriched = withCorpusImage(
+			{ ...card, setSeries: series.name, setReleaseDate: set.releaseDate },
+			corpusCard,
+		);
 		return { card: enriched, crossLinks };
 	});
 

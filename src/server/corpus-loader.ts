@@ -88,3 +88,16 @@ export async function queryCorpusServer(
 	const { index, setsById } = await getServerCorpus(region);
 	return queryCorpus(index, q, setsById);
 }
+
+/**
+ * The raw corpus card for one id in a region, or undefined if absent. Used by the
+ * card-detail route to reconcile the live-fetched image against the authoritative
+ * corpus image (see `withCorpusImage`), so SSR emits the corpus image directly.
+ */
+export async function getServerCorpusCard(
+	cardId: string,
+	region: Region = "west",
+): Promise<CorpusCard | undefined> {
+	const { index } = await getServerCorpus(region);
+	return index.byId.get(cardId);
+}
