@@ -39,11 +39,35 @@ export interface SlugIndex {
 	cardSlugById: Map<string, string>;
 }
 
+/**
+ * A slug for a name that may not be sluggable at all. Latin names slugify
+ * normally; a fully non-Latin name (e.g. a Japanese set/series) slugifies to ""
+ * — fall back to the id so the URL stays stable + unique instead of collapsing
+ * to an empty segment. Western names never hit the fallback, so their slugs are
+ * byte-identical to before.
+ */
+function slugOrId(name: string, id: string): string {
+	return slugify(name) || slugify(id);
+}
+
+/**
+ * Series have no id in the sets list, but TCGdex set ids share their serie code
+ * as a leading letter run (PMCG2/PMCG3 -> "pmcg", S12/S9 -> "s"), consistent
+ * across a series — so a non-sluggable (Japanese) series name falls back to that.
+ */
+function serieSlug(seriesName: string, memberSetId: string): string {
+	const named = slugify(seriesName);
+	if (named) return named;
+	const code = memberSetId.match(/^[A-Za-z]+/)?.[0] ?? memberSetId;
+	return slugify(code) || slugify(memberSetId);
+}
+
 /** Append the number to a card slug so two same-named cards stay distinct. */
 function cardSlugFor(card: CorpusCard): string {
-	const base = slugify(card.name);
-	const num = slugify(card.number);
-	return num ? `${base}-${num}` : base;
+	const parts = [slugify(card.name), slugify(card.number)].filter(Boolean);
+	// A non-Latin (Japanese) card name yields no parts — fall back to the id so
+	// the slug is never empty. Latin cards are unaffected.
+	return parts.join("-") || slugify(card.id);
 }
 
 /**
@@ -68,10 +92,10 @@ export function buildSlugIndex(
 	// Series + sets (sorted by id for deterministic collision suffixes).
 	const setsSorted = sets.toSorted((a, b) => a.id.localeCompare(b.id));
 	for (const set of setsSorted) {
-		const seriesSlug = slugify(set.series);
+		const seriesSlug = serieSlug(set.series, set.id);
 		idx.seriesBySlug.set(seriesSlug, set.series);
 
-		let setSlug = slugify(set.name);
+		let setSlug = slugOrId(set.name, set.id);
 		const key = (s: string) => `${seriesSlug}/${s}`;
 		if (idx.setIdBySlug.has(key(setSlug))) setSlug = `${setSlug}-${set.id}`;
 		idx.setIdBySlug.set(key(setSlug), set.id);

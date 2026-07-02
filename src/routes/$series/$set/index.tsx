@@ -18,12 +18,12 @@ import { ResultsBar } from "../../../components/results-bar";
 import { SelectAndBulkAdd } from "../../../components/vault/select-and-bulk-add";
 import { cardModalLinkPropsFor } from "../../../lib/card-route";
 import { buildSetCardSlugs } from "../../../lib/card-slugs";
-import { regionForLanguage } from "../../../lib/languages";
 import {
 	LIST_SEARCH_DEFAULTS,
 	listSearchToUrl,
 	validateListSearch,
 } from "../../../lib/list-search";
+import { loaderLang, loaderRegion } from "../../../lib/loader-region";
 import { toSerializedQuery } from "../../../lib/serialized-query";
 import { getPokemonListFn } from "../../../server/card-data";
 import { getSetCardsFn } from "../../../server/corpus-server";
@@ -36,9 +36,11 @@ export const Route = createFileRoute("/$series/$set/")({
 	search: { middlewares: [stripSearchParams(LIST_SEARCH_DEFAULTS)] },
 	loaderDeps: ({ search }) => ({ lang: search.lang }),
 	loader: async ({ params, deps }) => {
-		// `?lang=ja` (or a per-page override) selects the Asian nav tree + corpus
-		// so the set page browses the correct region's catalog.
-		const region = regionForLanguage(deps.lang ?? "en");
+		// Region from `?lang` when present (shared/cold link), else the active
+		// client region (an in-app sidebar/tile click carries no `?lang`). Pass the
+		// matching language to the server fns so they resolve the same region.
+		const region = loaderRegion(deps.lang);
+		const lang = loaderLang(deps.lang);
 		const tree = await getNavTreeFn({ data: { region } });
 		const set = findSet(tree, params.series, params.set);
 		if (!set) throw notFound();
@@ -46,7 +48,7 @@ export const Route = createFileRoute("/$series/$set/")({
 		// Species list runs in parallel with the set cards; it labels the Pokémon
 		// filter options (dex number → species name).
 		const [all, list] = await Promise.all([
-			getSetCardsFn({ data: { setId: set.id, lang: deps.lang ?? "en" } }),
+			getSetCardsFn({ data: { setId: set.id, lang } }),
 			getPokemonListFn(),
 		]);
 		const slugs = buildSetCardSlugs(all);

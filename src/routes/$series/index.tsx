@@ -6,9 +6,9 @@ import { cardIdsInSets } from "../../components/vault/bulk-add";
 import { SelectAndBulkAdd } from "../../components/vault/select-and-bulk-add";
 import {
 	isSupportedLanguage,
-	regionForLanguage,
 	type SupportedLanguage,
 } from "../../lib/languages";
+import { loaderRegion } from "../../lib/loader-region";
 import { findSeries, getNavTreeFn } from "../../server/nav-tree";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
 import { useEnsureCorpus } from "../../store/corpus/use-ensure-corpus";
@@ -26,7 +26,9 @@ export const Route = createFileRoute("/$series/")({
 	}),
 	loaderDeps: ({ search }) => ({ lang: search.lang }),
 	loader: async ({ params, deps }) => {
-		const region = regionForLanguage(deps.lang ?? "en");
+		// Region from `?lang`, else the active client region (sidebar/tile clicks
+		// carry no `?lang`; the global picker switches region via the profile).
+		const region = loaderRegion(deps.lang);
 		const tree = await getNavTreeFn({ data: { region } });
 		const series = findSeries(tree, params.series);
 		if (!series) throw notFound();
