@@ -2,8 +2,10 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { fireEvent, screen } from "@testing-library/react";
 import { addStack } from "../../store/userland/userland-store";
 import {
+	makeCorpusCard,
 	makeFocusCard,
 	renderInRouter,
+	seedCorpus,
 	seedCorpusFor,
 	setupUserlandTest,
 } from "../../test-utils";
@@ -66,6 +68,35 @@ test("pricing tab coerces to Details while pricing is disabled", async () => {
 	// the Details pane rather than a blank panel.
 	expect(screen.getByText("Fire Spin")).toBeDefined();
 	expect(screen.queryByText(/market prices/i)).toBeNull();
+});
+
+test("focus art uses the corpus image, not the live-fetched fallback", async () => {
+	// The live TCGdex fetch derives a pokemontcg.io English fallback for a JP card
+	// with no native scan; the corpus holds the authoritative tcgcsv JP image. The
+	// focus view must render the corpus image (matching the grid), not the fallback.
+	seedCorpus([
+		makeCorpusCard({
+			id: "neo3-1",
+			setId: "neo3",
+			number: "1",
+			imageBase: null,
+			imageUrl: "https://tcgplayer-cdn.tcgplayer.com/product/575223_400w.jpg",
+			imageUrlSmall:
+				"https://tcgplayer-cdn.tcgplayer.com/product/575223_200w.jpg",
+		}),
+	]);
+	const focus = makeFocusCard({
+		id: "neo3-1",
+		setId: "neo3",
+		cardNumber: "1",
+		imageUrl: "https://images.pokemontcg.io/neo3/1_hires.png", // stale live fallback
+	});
+	await renderInRouter(
+		<CardCockpit card={focus} tab="details" onTabChange={() => {}} />,
+	);
+	const html = document.body.innerHTML;
+	expect(html).toContain("575223"); // corpus tcgplayer image
+	expect(html).not.toContain("pokemontcg.io"); // never the English fallback
 });
 
 test("clicking the Collection tab calls onTabChange('collection')", async () => {
