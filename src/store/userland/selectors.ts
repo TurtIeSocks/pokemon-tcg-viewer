@@ -98,6 +98,7 @@ function useEnsureOwnedRegions(items: Record<string, Stack>): void {
 	// without this the owned-Asian detection would either miss (early return) or,
 	// before the guard, eagerly load asia for every collector.
 	const westLoaded = useCorpusRuntime((s) => s.indices.west !== undefined);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: westLoaded is a deliberate re-trigger sentinel — ensureRegionsForOwned reads the west index via getState and no-ops until it is present, so we must re-run when west flips from absent to loaded even though the effect body never references the value.
 	useEffect(() => {
 		void ensureRegionsForOwned(ownedCardIdSet(items));
 	}, [items, westLoaded]);
