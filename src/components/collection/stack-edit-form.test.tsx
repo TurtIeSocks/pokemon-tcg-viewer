@@ -312,6 +312,32 @@ test("create: condition Select selecting NM is persisted on Save", async () => {
 	});
 });
 
+test("create: language select groups Western and Asian options and persists a picked Asian language", async () => {
+	render(
+		<StackEditForm
+			mode="create"
+			cardId="c"
+			onSaved={() => {}}
+			onCancel={() => {}}
+		/>,
+	);
+	const languageTrigger = document.getElementById("language");
+	if (!languageTrigger) throw new Error("language trigger not rendered");
+	fireEvent.click(languageTrigger);
+	expect(await screen.findByText("Western")).toBeDefined();
+	expect(screen.getByText("Asian")).toBeDefined();
+	const japanese = await screen.findByRole("option", { name: "日本語" });
+	fireEvent.click(japanese);
+	fireEvent.click(screen.getByRole("button", { name: /save/i }));
+	await waitFor(() => {
+		const stacks = Object.values(useUserland.getState().items).filter(
+			(i) => i.cardId === "c",
+		);
+		expect(stacks).toHaveLength(1);
+		expect(stacks[0].language).toBe("ja");
+	});
+});
+
 const VARIANTS: CardVariant[] = [
 	{
 		variantId: "a",
