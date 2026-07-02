@@ -89,14 +89,18 @@ function useEnsureUserland(): void {
  * printings, synced before they ever switched display language). Runs in an
  * effect keyed on the `items` reference — not inline in a selector/useMemo
  * body — so it fires once per actual collection change instead of once per
- * render, and never itself triggers a re-render (ensureRegionsForOwned only
- * calls loadCorpus, which updates the corpus-runtime store; this hook doesn't
- * subscribe to that store, so its own component doesn't re-render from it).
+ * render. It subscribes only to the boolean "is west loaded", so an asia load
+ * it triggers (which never toggles that boolean) cannot re-fire the effect.
  */
 function useEnsureOwnedRegions(items: Record<string, Stack>): void {
+	// Re-run once the west baseline is present: ensureRegionsForOwned no-ops until
+	// then (it can't distinguish "id unresolved" from "west not loaded yet"), so
+	// without this the owned-Asian detection would either miss (early return) or,
+	// before the guard, eagerly load asia for every collector.
+	const westLoaded = useCorpusRuntime((s) => s.indices.west !== undefined);
 	useEffect(() => {
 		void ensureRegionsForOwned(ownedCardIdSet(items));
-	}, [items]);
+	}, [items, westLoaded]);
 }
 
 /**

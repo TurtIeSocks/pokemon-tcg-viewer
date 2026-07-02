@@ -1,6 +1,6 @@
 import { gunzipSync } from "node:zlib";
 import type { HoloCardData } from "../components/holo-card";
-import type { Region } from "../lib/languages";
+import { REGION_BASE_LANGUAGE, type Region } from "../lib/languages";
 import {
 	buildIndex,
 	type CorpusIndex,
@@ -44,9 +44,13 @@ function corpusUrl(region: Region): string {
 const cached = new Map<Region, Promise<ServerCorpus>>();
 
 async function loadServerCorpus(region: Region): Promise<ServerCorpus> {
+	// The set tree MUST match the corpus region: an asia corpus (JP-lineage set
+	// ids like SV1a) paired with the west/en set list would resolve no sets, so
+	// every asia card would lose its setName/series/releaseDate and get dropped
+	// by the year filter. Mirror nav-tree.ts, which fetches per region base lang.
 	const [gzRes, sets] = await Promise.all([
 		fetch(corpusUrl(region)),
-		fetchAllSets(),
+		fetchAllSets(REGION_BASE_LANGUAGE[region]),
 	]);
 	if (!gzRes.ok)
 		throw new Error(`${corpusUrl(region)} fetch failed: ${gzRes.status}`);

@@ -366,3 +366,16 @@ test("ensureRegionsForOwned is a no-op when every owned id resolves in west", as
 	expect(f).not.toHaveBeenCalled();
 	expect(useCorpusRuntime.getState().indices.asia).toBeUndefined();
 });
+
+test("ensureRegionsForOwned does NOT load asia before the west baseline is present", async () => {
+	// west index unloaded: a naive `!byId?.has(id)` would treat the first owned id
+	// as unresolved and eagerly download the large Asian corpus for every user.
+	const f = mock(async () => {
+		throw new Error("should not fetch asia before west is loaded");
+	});
+	globalThis.fetch = f as unknown as typeof fetch;
+
+	await ensureRegionsForOwned(["asia1-1"]);
+	expect(f).not.toHaveBeenCalled();
+	expect(useCorpusRuntime.getState().indices.asia).toBeUndefined();
+});

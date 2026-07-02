@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useStore } from "../../store";
-import { setsById } from "../../store/corpus/corpus-engine";
+import {
+	resolveCardAcrossRegions,
+	setsById,
+} from "../../store/corpus/corpus-engine";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
 import { downloadSnapshot } from "../../store/userland/backup";
 import {
@@ -25,13 +28,17 @@ async function exportBackup(): Promise<void> {
 export function VaultBackupControls() {
 	const [importOpen, setImportOpen] = useState(false);
 	const items = useUserland((s) => s.items);
-	const index = useCorpusRuntime((s) => s.index);
+	// Resolve owned cards across ALL loaded regions (ids are globally unique), so
+	// an owned Asian card exports with real name/number rather than blank — the
+	// same cross-region fix the render path uses. setName still joins the western
+	// sets list (best-effort); an Asian set falls back to its id.
+	const indices = useCorpusRuntime((s) => s.indices);
 	const sets = useStore((s) => s.sets);
 
 	function exportCsv(mode: CsvMode) {
 		const byId = sets ? setsById(sets) : null;
 		const resolve = (cardId: string) => {
-			const c = index?.byId.get(cardId);
+			const c = resolveCardAcrossRegions(cardId, indices);
 			if (!c) return undefined;
 			const set = byId?.get(c.setId);
 			return {
