@@ -116,3 +116,48 @@ describe("slugify", () => {
 		expect(slugify("—&—")).toBe("");
 	});
 });
+
+describe("buildSlugIndex: non-Latin (Japanese) names fall back to ids", () => {
+	// Fully-Japanese series/set/card names slugify to "" — the URL must stay
+	// stable + unique via the id instead of collapsing to an empty segment.
+	const jpSets: SluggableSet[] = [
+		{
+			id: "PMCG2",
+			name: "ポケモンジャングル",
+			series: "ポケットモンスターカードゲーム",
+		},
+		{ id: "SV1S", name: "スカーレットex", series: "スカーレット&バイオレット" },
+	];
+	const jpCards: CorpusCard[] = [
+		{
+			id: "PMCG2-1",
+			name: "ピカチュウ",
+			imageUrl: "",
+			imageUrlSmall: "",
+			supertype: "Pokémon",
+			setId: "PMCG2",
+			number: "1",
+		},
+	];
+	const idx = buildSlugIndex(jpSets, jpCards);
+
+	test("series slug falls back to the set-id serie prefix, not empty", () => {
+		// PMCG2 -> serie code "pmcg"; the set slug falls back to the id.
+		expect(idx.setSlugById.get("PMCG2")).toEqual({
+			seriesSlug: "pmcg",
+			setSlug: "pmcg2",
+		});
+	});
+
+	test("a name with embedded ascii keeps that ascii (スカーレットex -> series sv)", () => {
+		expect(idx.setSlugById.get("SV1S")).toEqual({
+			seriesSlug: "sv",
+			setSlug: "ex",
+		});
+	});
+
+	test("card slug falls back to name+number, never empty", () => {
+		// ピカチュウ slugifies empty; the number keeps it addressable.
+		expect(idx.cardSlugById.get("PMCG2-1")).toBe("1");
+	});
+});
