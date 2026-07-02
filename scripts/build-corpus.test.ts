@@ -389,8 +389,57 @@ test("buildCorpus throws the build-validation gate when the mirror returns too f
 	}) as typeof fetch;
 	try {
 		await expect(buildCorpus({ baseLang: "ja" })).rejects.toThrow(
-			/too few cards/,
+			/catastrophically short/,
 		);
+	} finally {
+		globalThis.fetch = original;
+	}
+});
+
+test("buildCorpus proceeds on a merely-partial crawl (JP sets that list no cards)", async () => {
+	// One set fully served, one declaring 50 cards it lists none of — the real JP
+	// pattern. 50 of 100 expected is partial, not catastrophic: it must BUILD
+	// (returning the served cards), not throw.
+	const original = globalThis.fetch;
+	globalThis.fetch = (async (input: string | URL) => {
+		const url = String(input);
+		if (url.endsWith("/sets")) {
+			return new Response(
+				JSON.stringify([
+					{ id: "full", cardCount: { total: 50 } },
+					{ id: "empty", cardCount: { total: 50 } },
+				]),
+				{ status: 200 },
+			);
+		}
+		if (url.endsWith("/sets/full")) {
+			return new Response(
+				JSON.stringify({
+					cards: Array.from({ length: 50 }, (_, i) => ({
+						id: `full-${i}`,
+						localId: String(i),
+						name: `C${i}`,
+						image: "",
+					})),
+				}),
+				{ status: 200 },
+			);
+		}
+		if (url.endsWith("/sets/empty")) {
+			return new Response(JSON.stringify({ cards: [] }), { status: 200 });
+		}
+		if (url.includes("/cards/")) {
+			const id = url.split("/cards/")[1];
+			return new Response(
+				JSON.stringify({ id, localId: "1", name: "C", category: "Pokemon" }),
+				{ status: 200 },
+			);
+		}
+		throw new Error(`unexpected url ${url}`);
+	}) as typeof fetch;
+	try {
+		const cards = await buildCorpus({ baseLang: "ja" });
+		expect(cards.length).toBe(50);
 	} finally {
 		globalThis.fetch = original;
 	}

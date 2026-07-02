@@ -127,9 +127,19 @@ export async function buildI18n(
 	const entries: I18nEntry[] = [];
 	for (let i = 0; i < sets.length; i++) {
 		const s = sets[i];
-		const setData = (await fetchJson(`${base}/sets/${s.id}`, { onRetry })) as {
-			cards: { id: string; name?: string }[];
-		};
+		// Encode the id (JP-lineage set ids carry "+", e.g. SM1+) and skip a single
+		// unfetchable set rather than aborting the whole overlay crawl.
+		let setData: { cards: { id: string; name?: string }[] };
+		try {
+			setData = (await fetchJson(`${base}/sets/${encodeURIComponent(s.id)}`, {
+				onRetry,
+			})) as typeof setData;
+		} catch (e) {
+			log(
+				`  [${lang}] skipping set "${s.id}": ${e instanceof Error ? e.message : String(e)}`,
+			);
+			continue;
+		}
 		for (const c of setData.cards)
 			entries.push({ id: c.id, name: c.name ?? "" });
 		log(
