@@ -29,11 +29,28 @@ jobs:
         env:
           TCGDEX_BASE: http://localhost:3000/v2/en
         run: bun run scripts/build-corpus.ts corpus.json.gz
+      - name: tcgcsv freshness key
+        # tcgcsv asks callers not to re-scrape needlessly: their data refreshes
+        # ~daily and they publish /last-updated.txt as the change signal. We key
+        # the product cache on it so a run only re-scrapes when it changes.
+        run: curl -sS https://tcgcsv.com/last-updated.txt -o .tcgcsv-last-updated
+      - name: Cache tcgcsv product data
+        # On an exact-key hit the whole .cache dir (products + the overlay's own
+        # last-updated marker) is restored, so fetchTcgcsvOverlay's freshness gate
+        # matches and it makes ZERO product requests. On a change the key misses,
+        # restore-keys seeds the prior cache, the overlay re-scrapes, and the new
+        # cache is saved post-job.
+        uses: actions/cache@v4
+        with:
+          path: scripts/data/.cache
+          key: tcgcsv-products-${{ hashFiles('.tcgcsv-last-updated') }}
+          restore-keys: tcgcsv-products-
       - name: Build corpus blob (Asian/ja base)
         # baseUrlFor() swaps the trailing /en of TCGDEX_BASE for /ja, so the same
         # mirror serves the JP-lineage catalog. --base-lang ja skips the
-        # pokemontcg.io overlay (no crosswalk for JP ids) and writes the
-        # corpus*.asia.* outputs.
+        # pokemontcg.io overlay (no crosswalk for JP ids). Phase 4 then overlays
+        # tcgcsv card data onto the ~103 dead JP sets (see scripts/tcgcsv-overlay.ts)
+        # and writes the corpus*.asia.* outputs.
         env:
           TCGDEX_BASE: http://localhost:3000/v2/en
         run: bun run scripts/build-corpus.ts corpus.asia.json.gz --base-lang ja

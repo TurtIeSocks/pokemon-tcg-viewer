@@ -10,6 +10,7 @@
 // stripped server-fn handlers. Defense in depth behind scripts/check-client-bundle.ts.
 
 import { ptcgSetImageUrl } from "../lib/corpus/id-crosswalk";
+import { OVERLAY_SET_IDS } from "../lib/corpus/overlay-sets";
 import type { SupportedLanguage } from "../lib/languages";
 import {
 	type FocusCardData,
@@ -113,7 +114,11 @@ export async function fetchAllSets(baseLang = "en"): Promise<PokemonSet[]> {
 			// actual cards (e.g. `wp` "W Promotional" — cardCount.total 7, cards []).
 			// The corpus crawl gets 0 cards for these, so a phantom in the nav shows a
 			// "7 in sidebar, 0 in grid" mismatch. Drop them so nav matches the corpus.
-			if (Array.isArray(d.cards) && d.cards.length === 0) {
+			if (
+				Array.isArray(d.cards) &&
+				d.cards.length === 0 &&
+				!OVERLAY_SET_IDS.has(d.id)
+			) {
 				console.warn(
 					`skipping phantom set "${d.id}" (${d.name}): cardCount ${d.cardCount.total} but 0 cards listed`,
 				);

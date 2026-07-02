@@ -537,7 +537,31 @@ if (import.meta.main) {
 	const gaps = collectGaps(raw);
 	gaps.images.push(...noFallback);
 
-	const gz = gzipSync(Buffer.from(JSON.stringify(merged)));
+	// Phase 4 (Asian region only): overlay tcgcsv card data for the ~103 dead sets
+	// TCGdex serves with an empty cards[] (ADV/PCG/L/e-Card/XY-ja). English names,
+	// real JP-print images. Appended AFTER the ptcg fallback probe so overlay
+	// (tcgplayer-CDN) images aren't HEAD-probed against ptcg. A failed/empty crawl
+	// keeps the TCGdex-only corpus (keep-last-good). SKIP_TCGCSV_OVERLAY for offline.
+	let served = merged;
+	if (isAsia && !process.env.SKIP_TCGCSV_OVERLAY) {
+		try {
+			const { fetchTcgcsvOverlay, mergeTcgcsvOverlay } = await import(
+				"./tcgcsv-overlay"
+			);
+			const overlayCards = await fetchTcgcsvOverlay();
+			const r = mergeTcgcsvOverlay(merged, overlayCards);
+			served = r.merged;
+			console.log(
+				`tcgcsv overlay: +${r.added} cards → ${served.length} total asian cards`,
+			);
+		} catch (err) {
+			console.warn(
+				`tcgcsv overlay failed, keeping TCGdex-only asian corpus: ${err}`,
+			);
+		}
+	}
+
+	const gz = gzipSync(Buffer.from(JSON.stringify(served)));
 	const detailGz = gzipSync(Buffer.from(JSON.stringify(detail)));
 	const meta = {
 		version,
@@ -554,7 +578,7 @@ if (import.meta.main) {
 	const dmb = (detailGz.length / 1024 / 1024).toFixed(2);
 	const secs = ((Date.now() - startedAt) / 1000).toFixed(1);
 	console.log(
-		`Wrote ${merged.length} cards → ${outfile} (${mb} MB) + detail (${dmb} MB, v${version.slice(0, 8)}) in ${secs}s`,
+		`Wrote ${served.length} cards → ${outfile} (${mb} MB) + detail (${dmb} MB, v${version.slice(0, 8)}) in ${secs}s`,
 	);
 	const tcgdexMisses = gaps.images.filter(
 		(g) => g.reason === "tcgdex-missing",
