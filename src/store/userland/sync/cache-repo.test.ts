@@ -409,6 +409,7 @@ describe("backup.importAll", () => {
 				avatarPreset: "default",
 				favoriteSetId: null,
 				displayLanguage: "en",
+				displayCurrency: "USD",
 				createdAt: Date.now(),
 				updatedAt: Date.now(),
 				deletedAt: null as null,
