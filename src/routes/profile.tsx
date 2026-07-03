@@ -12,6 +12,7 @@ import { Stat } from "@/components/ui/stat";
 import type { NavTree } from "../lib/nav-tree";
 import { getNavTreeFn } from "../server/nav-tree";
 import { useEnsureCorpus } from "../store/corpus/use-ensure-corpus";
+import { formatPrice } from "../store/userland/money";
 import { useOwnedCountBySet } from "../store/userland/selectors";
 import { useCollectionStats } from "../store/userland/stats";
 import { useUserland } from "../store/userland/userland-store";
@@ -22,12 +23,9 @@ export const Route = createFileRoute("/profile")({
 	component: ProfilePage,
 });
 
-const USD = new Intl.NumberFormat("en-US", {
-	style: "currency",
-	currency: "USD",
-	minimumFractionDigits: 0,
-	maximumFractionDigits: 0,
-});
+const MIXED_CURRENCY_LABEL = "—";
+const MIXED_CURRENCY_HINT =
+	"Mixed currencies — total needs conversion (coming soon)";
 
 /** Format a "collecting since" epoch as a year, or "—" when empty. */
 function sinceYear(ms: number | null): string {
@@ -99,12 +97,17 @@ export function ProfilePageInner({ tree }: { tree: NavTree }) {
 								value={stats.setsTouched.toLocaleString()}
 								label="sets touched"
 							/>
-							{stats.estValue !== null && (
-								<Stat
-									value={USD.format(stats.estValue / 100)}
-									label="est. value"
-								/>
-							)}
+							{stats.estValue !== null &&
+								(stats.estValueCurrency !== null ? (
+									<Stat
+										value={formatPrice(stats.estValue, stats.estValueCurrency)}
+										label="est. value"
+									/>
+								) : (
+									<span title={MIXED_CURRENCY_HINT} role="note">
+										<Stat value={MIXED_CURRENCY_LABEL} label="est. value" />
+									</span>
+								))}
 							<Stat
 								value={sinceYear(stats.collectingSince)}
 								label="collecting since"

@@ -7,19 +7,12 @@ import { BezelPanel } from "@/components/ui/glass";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { Stat } from "@/components/ui/stat";
 import { ImportDialog } from "@/components/vault/import-dialog";
+import { formatPrice } from "@/store/userland/money";
 import { useCollectionStats } from "../../store/userland/stats";
 
-// Built once — constructing an Intl.NumberFormat per call is expensive.
-const USD_FORMAT = new Intl.NumberFormat("en-US", {
-	style: "currency",
-	currency: "USD",
-	minimumFractionDigits: 0,
-	maximumFractionDigits: 0,
-});
-function formatDollars(cents: number): string {
-	// estValue is summed in minor units (cents); the hero shows whole dollars.
-	return USD_FORMAT.format(cents / 100);
-}
+const MIXED_CURRENCY_LABEL = "—";
+const MIXED_CURRENCY_HINT =
+	"Mixed currencies — total needs conversion (coming soon)";
 
 /**
  * Double-bezel summary hero: big completion ring + 4 stats + Add/Import actions.
@@ -27,8 +20,14 @@ function formatDollars(cents: number): string {
  */
 export function VaultSummaryHero() {
 	const [importOpen, setImportOpen] = useState(false);
-	const { cardsOwned, setsTouched, completionPct, estValue, thisWeek } =
-		useCollectionStats();
+	const {
+		cardsOwned,
+		setsTouched,
+		completionPct,
+		estValue,
+		estValueCurrency,
+		thisWeek,
+	} = useCollectionStats();
 	const pct = completionPct;
 
 	return (
@@ -51,9 +50,17 @@ export function VaultSummaryHero() {
 					<div className="flex flex-1 flex-wrap gap-8">
 						<Stat value={cardsOwned.toLocaleString()} label="cards owned" />
 						<Stat value={setsTouched.toLocaleString()} label="sets touched" />
-						{estValue !== null && (
-							<Stat value={formatDollars(estValue)} label="est. value" />
-						)}
+						{estValue !== null &&
+							(estValueCurrency !== null ? (
+								<Stat
+									value={formatPrice(estValue, estValueCurrency)}
+									label="est. value"
+								/>
+							) : (
+								<span title={MIXED_CURRENCY_HINT} role="note">
+									<Stat value={MIXED_CURRENCY_LABEL} label="est. value" />
+								</span>
+							))}
 						{thisWeek > 0 && (
 							<Stat value={`+${thisWeek}`} label="this week" tone="up" />
 						)}
