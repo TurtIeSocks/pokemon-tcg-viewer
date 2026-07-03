@@ -284,3 +284,38 @@ test("round-trip: language and grading_cert survive export → parse → import"
 	expect(ns.language).toBe("fr");
 	expect(ns.grading?.cert).toBe("CERT99");
 });
+
+// --- currency: exponent-aware CSV export/import ---
+
+test("stacksToCsv exports price_paid_unit at the stack's currency exponent (JPY, 0-decimal)", () => {
+	const csv = stacksToCsv(
+		[stack({ pricePaid: 350, currency: "JPY" })],
+		"stack",
+		resolve,
+	);
+	const lines = csv.trim().split("\n");
+	const headers = lines[0].split(",");
+	const row = lines[1].split(",");
+	const priceIdx = headers.indexOf("price_paid_unit");
+	const currencyIdx = headers.indexOf("currency");
+	expect(row[priceIdx]).toBe("350"); // not "3.5"
+	expect(row[currencyIdx]).toBe("JPY");
+});
+
+test("rowToNewStack: pricePaid parses at the row's currency exponent (JPY)", () => {
+	const ns = rowToNewStack("base1-4", {
+		price_paid_unit: "350",
+		currency: "JPY",
+	});
+	expect(ns.pricePaid).toBe(350); // not 35000
+	expect(ns.currency).toBe("JPY");
+});
+
+test("round-trip: JPY price_paid_unit survives export → parse → import at 350 (not 35000)", () => {
+	const s = stack({ pricePaid: 350, currency: "JPY" });
+	const csv = stacksToCsv([s], "stack", resolve);
+	const { rows } = parseCsv(csv);
+	const ns = rowToNewStack("base1-4", rows[0]);
+	expect(ns.pricePaid).toBe(350);
+	expect(ns.currency).toBe("JPY");
+});

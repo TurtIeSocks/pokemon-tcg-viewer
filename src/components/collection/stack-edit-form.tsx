@@ -14,6 +14,11 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+	CURRENCY_LABELS,
+	SUPPORTED_CURRENCIES,
+	toSupportedCurrency,
+} from "@/lib/currencies";
 import { fieldErrorText } from "@/lib/field-error";
 import {
 	ASIAN_LANGUAGES,
@@ -24,7 +29,11 @@ import {
 import { cn } from "@/lib/utils";
 import { type CardVariant, variantLabel } from "../../lib/card-variants";
 import type { Stack } from "../../store/userland/types";
-import { addStack, updateStack } from "../../store/userland/userland-store";
+import {
+	addStack,
+	updateStack,
+	useUserland,
+} from "../../store/userland/userland-store";
 import { formToPatch, itemToForm } from "./stack-form-mapping";
 import { CONDITIONS, GRADERS, stackFormSchema } from "./stack-form-schema";
 
@@ -349,12 +358,13 @@ interface StackEditFormProps {
 	onCancel: () => void;
 }
 
-/** Blank defaults for a new stack form. */
+/** Blank defaults for a new stack form. `currency` is seeded per-instance from the profile's displayCurrency (see StackEditForm). */
 const BLANK_DEFAULTS = {
 	label: "",
 	quantity: "1",
 	acquiredAt: new Date().toISOString().slice(0, 10),
 	pricePaid: "",
+	currency: "USD",
 	language: "en",
 	variant: "",
 	variantId: "",
@@ -383,8 +393,11 @@ export function StackEditForm({
 	onSaved,
 	onCancel,
 }: StackEditFormProps) {
+	const profileCurrency = useUserland((s) => s.profile?.displayCurrency);
 	const defaultValues =
-		mode === "edit" && item ? itemToForm(item) : BLANK_DEFAULTS;
+		mode === "edit" && item
+			? itemToForm(item)
+			: { ...BLANK_DEFAULTS, currency: toSupportedCurrency(profileCurrency) };
 
 	const form = useForm({
 		defaultValues,
@@ -609,6 +622,32 @@ export function StackEditForm({
 							mono
 							ariaLabel="Price paid"
 						/>
+					)}
+				/>
+
+				{/* Currency — ISO 4217 select for the price paid */}
+				<form.Field
+					name="currency"
+					// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
+					children={(field) => (
+						<Field>
+							<FieldLabel htmlFor={field.name}>Currency</FieldLabel>
+							<Select
+								value={field.state.value}
+								onValueChange={(v) => field.handleChange(v)}
+							>
+								<SelectTrigger id={field.name}>
+									<SelectValue placeholder="USD" />
+								</SelectTrigger>
+								<SelectContent>
+									{SUPPORTED_CURRENCIES.map((c) => (
+										<SelectItem key={c} value={c}>
+											{CURRENCY_LABELS[c]}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</Field>
 					)}
 				/>
 

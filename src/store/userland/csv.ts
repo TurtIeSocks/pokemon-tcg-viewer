@@ -57,8 +57,9 @@ function rowValues(
 		grading_company: s.grading?.company ?? "",
 		grading_grade: s.grading == null ? "" : String(s.grading.grade),
 		grading_cert: s.grading?.cert ?? "",
-		// Stored in cents; CSV is human-facing + round-trippable, so export dollars.
-		price_paid_unit: minorUnitsToInput(s.pricePaid),
+		// Stored in minor units; CSV is human-facing + round-trippable, so export
+		// major units scaled by the stack's own currency exponent.
+		price_paid_unit: minorUnitsToInput(s.pricePaid, s.currency),
 		currency: s.pricePaid == null ? "" : s.currency,
 		acquired_at: dayMsToInput(s.acquiredAt),
 		source: s.source ?? "",
@@ -277,8 +278,12 @@ export function rowToNewStack(
 		cardId,
 		quantity: qty && qty >= 1 ? Math.floor(qty) : 1,
 		...(acquired != null ? { acquiredAt: acquired } : {}),
-		// CSV price is in dollars (major units); store cents. Currency defaults USD.
-		pricePaid: inputToMinorUnits(row.price_paid_unit ?? ""),
+		// CSV price is in major units; store minor units scaled by the row's own
+		// currency (defaults USD when blank).
+		pricePaid: inputToMinorUnits(
+			row.price_paid_unit ?? "",
+			row.currency?.trim() || "USD",
+		),
 		currency: row.currency?.trim() || "USD",
 		language: row.language?.trim() || "en",
 		variant: row.variant?.trim() || null,
