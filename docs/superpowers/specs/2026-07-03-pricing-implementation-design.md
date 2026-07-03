@@ -54,14 +54,15 @@ New workflow `build-prices.yml`, cron ~21:30 UTC (after tcgcsv's 20:00 refresh).
 1. Fetch `price-ids.json.gz` from R2.
 2. Fetch cardmarket `price_guide_6.json` (1 GET).
 3. Fetch tcgcsv `/tcgplayer/3/{groupId}/prices` for every Pokemon EN group (~250 GETs, retry + backoff like the corpus crawl).
-4. Fetch one ECB reference FX rate (EUR→USD; e.g. frankfurter.dev, free/public).
+4. Fetch the full ECB reference FX table (~31 currencies; frankfurter.dev, free/public, daily).
 5. Join by product id → emit **`corpus/prices/latest.json.gz`**:
 
 ```jsonc
 {
   "v": 1,
   "date": "2026-07-03",
-  "fx": { "EUR": 1.09 },
+  "fx": { "base": "EUR", "date": "2026-07-03",
+          "rates": { "USD": 1.09, "GBP": 0.85, "JPY": 170.2 /* …~31 ECB currencies */ } },
   "sources": { "tp": "2026-07-03", "cm": "2026-07-03" },
   "cards": {
     "base1-4": {
@@ -96,17 +97,21 @@ Clone the `/corpus` pattern (R2 + ETag + conditional GET + edge cache 1h + SWR):
 ### 5. Valuation engine (`src/store/userland/valuation.ts`, pure functions + selectors)
 
 - **Finish resolution:** `Stack.printing.type/subtype` → finish code; fallback chain: exact finish → `H` → `N` → cardmarket trend × FX.
-- **Currency:** rollups in USD. cardmarket-only cards (all ja) convert EUR→USD via blob `fx`, displayed with "≈" and a tooltip naming the rate + date. Per-card display shows native currency of each source.
+- **Currency (multi-currency v1):**
+  - New profile setting `displayCurrency` (ISO 4217; default auto-detected from browser locale, overridable). Every rollup and P&L renders in it. Supported set = the ECB reference table (~31 currencies).
+  - Per-card price lines stay **native per source** (tcgplayer USD, cardmarket EUR) with a "≈ converted" secondary value when native ≠ display currency. Any converted number is "≈"-labeled with rate + date in a tooltip.
+  - `Stack.currency` picker unlocks in the stack edit form (the reserved slot becomes editable; options = supported set). `pricePaid` is recorded in the true purchase currency; P&L converts both sides to the display currency **at today's rates** (documented simplification — no historical-rate forex accounting).
+  - `money.ts` gains an ISO 4217 minor-unit exponent map (JPY = 0, default 2, plus the handful of exceptions). Storage stays integer minor units; formatting goes through `Intl.NumberFormat` with the currency code.
 - **Condition:** per-card surfaces always show the NM market price. Portfolio estimates apply a documented constant multiplier table — NM 1.0, LP 0.85, MP 0.70, HP 0.55, DMG 0.40 — labeled "condition-adjusted estimate". Exported constant, one place.
 - **Grading:** no licensed graded source in v1. Graded stacks valued at raw NM price with a "raw price" badge. PriceCharting connector (post-license) upgrades this.
-- **Stats:** `useCollectionStats` gains `marketValue: number | null` and `unrealizedPnL: number | null` (market − cost basis, both in cents USD) alongside the existing cost-basis `estValue`.
+- **Stats:** `useCollectionStats` gains `marketValue: number | null` and `unrealizedPnL: number | null` (market − cost basis) alongside the existing cost-basis `estValue`. Canonical internal currency is **USD cents** (stats, history points, snapshots); conversion to `displayCurrency` happens at render, so changing the setting never rewrites stored data.
 - `buildPriceLines(card)` becomes real: reads the prices store, returns per-source lines with finish label, formatted price, updated date, deep link.
 
 ### 6. History
 
 - **Per-set rollup blobs** `corpus/prices/history/{setId}.json.gz`: `cardId → [[epochDay, marketCentsUSD], …]`, appended daily by the price build; downsampled — daily points for the last 90 days, weekly beyond. ~200 set blobs, each small. Card Pricing tab lazy-fetches its set's blob on open.
 - **Day-1 trend without accrual:** cardmarket `avg1/avg7/avg30` from the live blob renders trend chips immediately.
-- **Portfolio value-over-time (local-first):** when the app loads a blob with a new `date`, compute portfolio totals and write `{ date, totalCents, bySetCents }` through the repo port into IDB (new `snapshots` store; `updatedAt` + `deletedAt` tombstone, sync-ready like every userland entity). Vault chart reads local snapshots. **This removes roadmap 4.2's Supabase dependency.** Sync arrives later via the same repo port as everything else.
+- **Portfolio value-over-time (local-first):** when the app loads a blob with a new `date`, compute portfolio totals and write `{ date, totalCents, bySetCents }` (USD canonical) through the repo port into IDB (new `snapshots` store; `updatedAt` + `deletedAt` tombstone, sync-ready like every userland entity). Vault chart reads local snapshots. **This removes roadmap 4.2's Supabase dependency.** Sync arrives later via the same repo port as everything else.
 
 ### 7. UI surfaces
 
@@ -115,6 +120,7 @@ Clone the `/corpus` pattern (R2 + ETag + conditional GET + edge cache 1h + SWR):
 - **Vault hero + profile stats:** Market value, Cost basis, P&L (green/red), value-over-time chart (from local snapshots).
 - **Binder view:** binder market value.
 - **Hide-value toggle:** profile setting (alongside `displayLanguage`) + quick toggle on the vault hero. Hides every money surface, including the existing cost-basis `estValue`. Default: visible.
+- **Display currency select** on the profile (next to the hide toggle); **currency picker** in the stack edit form (defaults to the profile's display currency for new stacks).
 - **Grid tiles:** no price badges (speculation-averse default; revisit only on demand).
 - `PRICING_ENABLED` flips to `true` and remains as a kill switch.
 
@@ -130,12 +136,12 @@ Clone the `/corpus` pattern (R2 + ETag + conditional GET + edge cache 1h + SWR):
 - Card missing from blob → selectors return null → surface renders nothing ("No market data" in the Pricing tab).
 - Price build upstream failure → keep-last-good blob; client shows "updated N days ago" when `date` lags.
 - ja cards: `tp` absent → cardmarket-only lines; rollup uses CM × FX.
-- FX fetch failure at build → previous rate carried forward (labeled by date); if absent entirely, EUR values display native-only and drop out of the USD rollup rather than guessing.
+- FX fetch failure at build → previous table carried forward (labeled by date); if a rate for the chosen display currency is missing entirely, affected surfaces fall back to native-currency display and the rollup shows per-currency subtotals rather than guessing.
 - History blob 404 (new set) → chart section hidden, trend chips still render.
 
 ## Testing
 
-- Pure functions unit-tested: product-id join, finish fallback chain, FX conversion, condition multipliers, history downsampler, snapshot computation.
+- Pure functions unit-tested: product-id join, finish fallback chain, FX conversion (incl. 0-decimal currencies like JPY), minor-unit exponent formatting, condition multipliers, history downsampler, snapshot computation.
 - `build-prices.ts` tested against fixture JSONs (cardmarket guide sample, tcgcsv group sample, crosswalk sample) — no network in tests.
 - Runtime tests with fake fetch + `fake-indexeddb`; components rendering card grids pre-seed `useCorpusRuntime` per project test rules.
 - UI: hide-toggle hides all money surfaces; price lines render source/timestamp/link; P&L sign/color.
@@ -145,16 +151,16 @@ Clone the `/corpus` pattern (R2 + ETag + conditional GET + edge cache 1h + SWR):
 
 1. **Pipeline** — crosswalk harvest in build-corpus, `build-prices.ts`, daily Action, worker routes, blob fixtures + tests.
 2. **Card surfaces** — prices-runtime, real `buildPriceLines`, Pricing tab live (lines, trends, attribution), flag flip.
-3. **Valuation** — valuation.ts, stats market value + P&L, stack rows, binder value, hide-value toggle, FX handling.
+3. **Valuation** — valuation.ts, stats market value + P&L, stack rows, binder value, hide-value toggle, multi-currency (displayCurrency setting, money.ts exponents, stack currency picker, FX conversion).
 4. **History** — dated archives, per-set rollups, history charts, local portfolio snapshots + vault chart.
 
-Parked (post-v1): PriceCharting connector (needs written license), tcgcsv category-85 JP crosswalk (USD prices for ja cards), eBay/graded sources, price alerts, per-card condition price picker.
+Parked (post-v1): PriceCharting connector (needs written license), tcgcsv category-85 JP crosswalk (USD prices for ja cards), eBay/graded sources, price alerts, per-card condition price picker, historical-rate (purchase-date) FX for P&L.
 
 ## Assumptions (owner checkpoint — delegate mode)
 
 1. **Risk acceptance:** shipping tcgplayer-via-tcgcsv + cardmarket-via-public-guide under yellow licensing, mitigated by attribution, link-backs, and never paywalling prices. Community precedent (MTGJSON, TCGdex, pokemontcg.io, tcgcsv's own public archive) shows tolerance; contract-claim risk is not zero.
 2. **PriceCharting deferred** — roadmap 4.4 becomes "port + pursue written permission", not a v1 connector. Graded/sealed pricing waits for the deal.
-3. **USD** is the single rollup currency; EUR-only values convert via baked daily ECB rate, "≈"-labeled. No user currency preference in v1 (reserved slot, like `Stack.currency`).
+3. **Multi-currency v1:** user-selectable `displayCurrency` (default from browser locale), supported set = ECB reference table (~31 currencies); source prices stay native with "≈" conversions; `Stack.currency` picker unlocked. P&L converts at **today's** rates, not purchase-date rates (documented simplification).
 4. **Condition multipliers** apply to portfolio estimates only, from one constant table; per-card display is always NM market. No per-card condition price picker in v1.
 5. **History** is R2 rollups + local IDB snapshots — no Supabase dependency (changes roadmap 4.2's stated dep).
 6. **ja coverage v1** = cardmarket-only (~1.2k TCGdex-mapped ja cards); tcgcsv cat-85 crosswalk is a later stretch.
