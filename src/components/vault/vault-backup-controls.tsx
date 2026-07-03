@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { useStore } from "../../store";
 import {
@@ -35,7 +34,7 @@ export function VaultBackupControls() {
 	// joins every loaded region's sets too (allLoadedSets, deduped by id), so an
 	// Asian set exports its real name instead of falling back to its id.
 	const indices = useCorpusRuntime((s) => s.indices);
-	const sets = useStore(useShallow(allLoadedSets));
+	const sets = useStore(allLoadedSets);
 
 	function exportCsv(mode: CsvMode) {
 		const byId = sets ? setsById(sets) : null;

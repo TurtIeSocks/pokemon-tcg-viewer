@@ -1,6 +1,5 @@
 // src/store/userland/stats.ts
 import { useMemo, useState } from "react";
-import { useShallow } from "zustand/react/shallow";
 import { setsById } from "../corpus/corpus-engine";
 import { useStore } from "../index";
 import { allLoadedSets } from "../sets-slice";
@@ -37,9 +36,8 @@ export function useCollectionStats(): CollectionStats {
 	const countBySet = useOwnedCountBySet();
 	// Owned stats span every loaded region, not just west, so this merges
 	// sets across all loaded regions rather than reading the bare west list.
-	// useShallow keeps the array reference stable across renders (allLoadedSets
-	// rebuilds a new array every call; the underlying set objects are stable).
-	const sets = useStore(useShallow(allLoadedSets));
+	// allLoadedSets is memoized, so a plain subscription stays ref-stable.
+	const sets = useStore(allLoadedSets);
 	const [weekCutoff] = useState(() => Date.now() - WEEK_MS);
 
 	return useMemo(() => {

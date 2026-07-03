@@ -1,6 +1,5 @@
 import { ClientOnly, createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useShallow } from "zustand/react/shallow";
 import { OwnedMissingGrid } from "@/components/vault/owned-missing-grid";
 import { useStore } from "@/store";
 import { hydrateCard, setsById } from "@/store/corpus/corpus-engine";
@@ -34,8 +33,8 @@ export function SharedBinderInner() {
 	const index = useCorpusRuntime((s) => s.index);
 	// A shared snapshot can contain cards from any region, so resolve set
 	// metadata across every loaded region rather than the bare west list.
-	// useShallow keeps the array reference stable across renders.
-	const sets = useStore(useShallow(allLoadedSets));
+	// allLoadedSets is memoized, so a plain subscription stays ref-stable.
+	const sets = useStore(allLoadedSets);
 
 	const { hydrated, ownedCardIds } = useMemo(() => {
 		if (!snapshot || !index) {

@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { PokemonSet } from "../../server/card-mappers";
@@ -100,9 +99,9 @@ export function CsvImportPanel({ rows, onClose }: CsvImportPanelProps) {
 	const [overrides, setOverrides] = useState<Record<number, string>>({});
 	const index = useCorpusRuntime((s) => s.index);
 	// Imported rows can be any language/region, so match against sets merged
-	// across every loaded region rather than the bare west list. useShallow
-	// keeps the array reference stable across renders.
-	const sets = useStore(useShallow(allLoadedSets));
+	// across every loaded region rather than the bare west list. allLoadedSets is
+	// memoized, so a plain subscription stays ref-stable.
+	const sets = useStore(allLoadedSets);
 
 	const resolver = useMemo<ImportResolver>(() => {
 		const bySet = new Map<string, string>();

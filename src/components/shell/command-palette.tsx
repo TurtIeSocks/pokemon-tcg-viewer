@@ -1,7 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Boxes, History, Search } from "lucide-react";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { useShallow } from "zustand/react/shallow";
 import {
 	CommandDialog,
 	CommandEmpty,
@@ -63,9 +62,9 @@ export function CommandPalette({ tree }: { tree: NavTree }) {
 
 	const index = useCorpusRuntime((s) => s.index);
 	// ⌘K searches every loaded region's sets (not the bare west-only `sets`), so an
-	// Asian set resolves + is navigable. allLoadedSets builds a fresh array, so
-	// useShallow keeps the subscription/ref stable across unrelated store writes.
-	const sets = useStore(useShallow(allLoadedSets));
+	// Asian set resolves + is navigable. allLoadedSets is memoized (stable ref),
+	// so a plain subscription is enough — no useShallow.
+	const sets = useStore(allLoadedSets);
 	const slugIndex = useSlugIndex();
 	const recentSearches = useRecentsStore((s) => s.recentSearches);
 	const recentlyViewed = useRecentsStore((s) => s.recentlyViewed);

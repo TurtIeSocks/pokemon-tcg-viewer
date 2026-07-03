@@ -1,6 +1,5 @@
 // src/store/userland/selectors.ts
 import { useEffect, useMemo } from "react";
-import { useShallow } from "zustand/react/shallow";
 import type { HoloCardData } from "../../components/holo-card";
 import type { Region } from "../../lib/languages";
 import type { PokemonSet } from "../../server/card-mappers";
@@ -121,8 +120,8 @@ function useCorpusJoinInputs() {
 	// Owned cards can belong to ANY loaded region (ids are globally unique), so
 	// join against every loaded region's sets, not the bare west-only `sets` --
 	// otherwise an owned Asian card renders with a raw set-id name. allLoadedSets
-	// builds a fresh array, so useShallow keeps the ref stable across writes.
-	const sets = useStore(useShallow(allLoadedSets));
+	// is memoized, so a plain subscription stays ref-stable.
+	const sets = useStore(allLoadedSets);
 	return { index, indices, sets };
 }
 

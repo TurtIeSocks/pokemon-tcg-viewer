@@ -126,6 +126,28 @@ test("allLoadedSets merges west + asia and de-dupes by set id", () => {
 	expect(deduped[0]).toBe(westSets[0]);
 });
 
+test("allLoadedSets is memoized: stable ref for the same (sets, setsByRegion), fresh ref on change", () => {
+	useStore.setState({
+		sets: westSets,
+		setsByRegion: { west: westSets, asia: asiaSets },
+	});
+	const a = allLoadedSets(useStore.getState());
+	// Same inputs -> same array identity, so consumers can subscribe with a plain
+	// useStore(allLoadedSets) (Object.is) and skip re-renders — no useShallow.
+	expect(allLoadedSets(useStore.getState())).toBe(a);
+
+	// A write that leaves sets + setsByRegion refs untouched (e.g. a loading-flag
+	// toggle) returns the cached array — no spurious re-render.
+	useStore.setState({ setsByRegionLoading: { asia: true } });
+	expect(allLoadedSets(useStore.getState())).toBe(a);
+
+	// A real sets change (new setsByRegion ref) invalidates the memo.
+	useStore.setState({ setsByRegion: { west: westSets } });
+	const c = allLoadedSets(useStore.getState());
+	expect(c).not.toBe(a);
+	expect(c).toEqual(westSets);
+});
+
 test("loadSetsForRegion('asia') de-dupes concurrent calls onto one in-flight request", async () => {
 	let resolve: (v: PokemonSet[]) => void = () => {};
 	const pending = new Promise<PokemonSet[]>((r) => {

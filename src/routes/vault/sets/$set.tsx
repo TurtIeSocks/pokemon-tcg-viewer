@@ -1,6 +1,5 @@
 import { ClientOnly, createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import type { OwnedMissingMode } from "@/components/vault/owned-missing-grid";
 import { OwnedMissingGrid } from "@/components/vault/owned-missing-grid";
@@ -23,9 +22,9 @@ export function VaultSetDetailInner() {
 	const { set: setId } = Route.useParams();
 	const index = useCorpusRuntime((s) => s.index);
 	// The owned-set view's setId may be from any region (an asia set), so
-	// resolve it against sets merged across every loaded region. useShallow
-	// keeps the array reference stable across renders.
-	const sets = useStore(useShallow(allLoadedSets));
+	// resolve it against sets merged across every loaded region. allLoadedSets
+	// is memoized, so a plain subscription stays ref-stable.
+	const sets = useStore(allLoadedSets);
 	const ownedCardIds = useOwnedCardIdSet();
 	const i18n = useActiveI18n();
 	const [mode, setMode] = useState<OwnedMissingMode>("all");

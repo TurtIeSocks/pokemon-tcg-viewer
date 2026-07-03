@@ -3,7 +3,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Pencil, Share2, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { OwnedMissingGrid } from "@/components/vault/owned-missing-grid";
@@ -81,7 +80,7 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 	const indices = useCorpusRuntime((s) => s.indices);
 	// Members can span regions (a binder goal isn't region-bound), so resolve
 	// cards + set names across ALL loaded regions, not just the active one.
-	const allSets = useStore(useShallow(allLoadedSets));
+	const allSets = useStore(allLoadedSets);
 	useEnsureI18n();
 	const i18n = useActiveI18n();
 

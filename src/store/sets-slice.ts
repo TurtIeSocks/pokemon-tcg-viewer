@@ -108,15 +108,7 @@ export function setsForRegion(
 	);
 }
 
-/**
- * Every loaded region's sets, concatenated and de-duped by set `id` (set codes
- * are globally unique across regions, so no collision is possible). Falls back
- * to the plain `sets` field for `west` when `setsByRegion.west` hasn't been
- * mirrored yet, same as {@link setsForRegion}. For cross-region consumers
- * (owned collection, CSV import, shared snapshots, an owned-set view) where
- * cards can belong to any loaded region and ids/set-codes are globally unique.
- */
-export function allLoadedSets(
+function computeAllLoadedSets(
 	state: Pick<SetsSlice, "sets" | "setsByRegion">,
 ): PokemonSet[] {
 	const byId = new Map<string, PokemonSet>();
@@ -127,4 +119,40 @@ export function allLoadedSets(
 		for (const set of sets) if (!byId.has(set.id)) byId.set(set.id, set);
 	}
 	return [...byId.values()];
+}
+
+// Memoize the concatenated list per (setsByRegion, sets) identity — mirrors the
+// slugIndexFor WeakMap pattern. The list is a DERIVED array: recomputing it in
+// every subscriber on every store write is the skill's expensive-selector trap.
+// `setsByRegion` gets a fresh object ref on every sets load (loadSets /
+// loadSetsForRegion), so it's a safe WeakMap key that invalidates exactly when
+// the sets actually change; a loading-flag toggle leaves it (and `sets`)
+// untouched, so we return the cached array ref. The stable ref lets consumers
+// subscribe with a plain `useStore(allLoadedSets)` (Object.is) instead of
+// `useShallow` — computed once, shared across all subscribers.
+const allSetsMemo = new WeakMap<
+	object,
+	{ sets: PokemonSet[] | null; result: PokemonSet[] }
+>();
+
+/**
+ * Every loaded region's sets, concatenated and de-duped by set `id` (set codes
+ * are globally unique across regions, so no collision is possible). Falls back
+ * to the plain `sets` field for `west` when `setsByRegion.west` hasn't been
+ * mirrored yet, same as {@link setsForRegion}. For cross-region consumers
+ * (owned collection, CSV import, shared snapshots, an owned-set view) where
+ * cards can belong to any loaded region and ids/set-codes are globally unique.
+ *
+ * Memoized on `(setsByRegion, sets)` identity, so it returns a stable reference
+ * until the sets actually change — subscribe with a plain `useStore(allLoadedSets)`,
+ * no `useShallow` needed.
+ */
+export function allLoadedSets(
+	state: Pick<SetsSlice, "sets" | "setsByRegion">,
+): PokemonSet[] {
+	const cached = allSetsMemo.get(state.setsByRegion);
+	if (cached && cached.sets === state.sets) return cached.result;
+	const result = computeAllLoadedSets(state);
+	allSetsMemo.set(state.setsByRegion, { sets: state.sets, result });
+	return result;
 }

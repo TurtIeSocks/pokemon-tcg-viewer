@@ -3,7 +3,6 @@
 import { useForm } from "@tanstack/react-form";
 import { useMemo } from "react";
 import { z } from "zod";
-import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -70,9 +69,9 @@ export function ProfileFormDialog({
 	profile,
 }: ProfileFormDialogProps) {
 	// Favorite set can be from any region the collector browses, so offer every
-	// loaded region's sets (not the bare west-only `sets`). allLoadedSets builds a
-	// fresh array, so useShallow keeps the subscription/ref stable across writes.
-	const sets = useStore(useShallow(allLoadedSets));
+	// loaded region's sets (not the bare west-only `sets`). allLoadedSets is
+	// memoized, so a plain subscription stays ref-stable.
+	const sets = useStore(allLoadedSets);
 	const setOptions = useMemo(
 		() =>
 			sets
