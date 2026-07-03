@@ -1,4 +1,7 @@
-import { getRarityClass } from "./rarity";
+import altArts from "./alternate-arts.json";
+import { ptcgCardId } from "./foil-assets";
+import promos from "./promos.json";
+import { effectiveToClass, getEffectiveRarity } from "./rarity";
 
 /**
  * Pokémon TCG series (lowercased `set.series`) whose classic Rare Holo cards
@@ -12,8 +15,8 @@ import { getRarityClass } from "./rarity";
  *
  * ── USER-EDITABLE ─────────────────────────────────────────────────────────────
  * Add / remove series here to tune which eras render as cosmos vs the default
- * `holo-basic` (rainbow-scanline). Values are the pokemontcg.io `series` strings,
- * lowercased. If unsure, leave a series out — it falls back to holo-basic.
+ * rainbow-scanline "rare holo". Values are the pokemontcg.io `series` strings,
+ * lowercased. If unsure, leave a series out — it falls back to "rare holo".
  */
 export const COSMOS_SERIES: ReadonlySet<string> = new Set([
 	"base",
@@ -63,15 +66,152 @@ export function variantsToHolo(variants?: string[]): boolean | undefined {
 	return undefined; // e.g. reverse-only — ambiguous, defer to rarity
 }
 
+const ALT_ART_IDS: ReadonlySet<string> = new Set(altArts as string[]);
+const PROMO_STYLES = promos as Record<string, { style: string; etch: string }>;
+
+/** The two swshp promos simey hard-codes as Trainer Gallery (Special Delivery). */
+const TG_PROMO_IDS = new Set(["swshp-SWSH076", "swshp-SWSH077"]);
+
+export interface HoloPresentationInput {
+	rarity?: string;
+	series?: string;
+	setId?: string;
+	cardNumber?: string;
+	subtypes?: string[];
+	supertype?: string;
+	/** variantsToHolo(variants) — false = known non-holo printing. */
+	holo?: boolean;
+}
+
+export interface HoloPresentation {
+	/**
+	 * The simey-canonical rarity the CSS keys on via [data-rarity="…"], or null
+	 * for glare-only cards (commons / known non-holo printings).
+	 */
+	effectiveRarity: string | null;
+	/** True for Trainer/Galar Gallery cards → data-trainer-gallery="true". */
+	trainerGallery: boolean;
+	/** Internal class (tests/debugging); CSS keys on data-rarity, not this. */
+	className: string;
+}
+
 /**
- * Pick the holo CSS class from rarity + set series + (optional) holo signal +
- * set id.
- *   • holo === false → no-foil (a known non-holo printing, e.g. basep-8) — this
- *     overrides the rarity heuristic so non-holo promos/rares stay flat.
- *   • "Classic Collection" (Celebrations vintage reprints) → cosmos.
- *   • otherwise: classic holos (→ `holo-basic`) reroute to `holo-cosmos` for the
- *     vintage galaxy-foil eras (by series) or specific cosmos sets (by id);
- *     everything else is rarity-driven.
+ * Full presentation router — a 1:1 port of simey's CardProxy.svelte rarity
+ * pipeline, plus our era-aware cosmos routing and the holo-printing override.
+ *
+ * Order mirrors CardProxy: gallery-strip → promo remap → shiny-vault remap →
+ * alternate-art remap. The effective rarity lands in data-rarity (lowercase),
+ * which is what every selector in rarity-styles.css matches against.
+ */
+export function holoPresentation(
+	input: HoloPresentationInput,
+): HoloPresentation {
+	const { rarity, series, setId, cardNumber, subtypes, supertype, holo } =
+		input;
+	void supertype; // routing is rarity/number-driven; supertype flows via data attrs
+
+	let eff = getEffectiveRarity(rarity);
+
+	// Era routing: classic Rare Holo in a vintage era → cosmos galaxy foil.
+	if (
+		eff === "rare holo" &&
+		((series && COSMOS_SERIES.has(series.toLowerCase())) ||
+			(setId && COSMOS_SETS.has(setId.toLowerCase())))
+	) {
+		eff = "rare holo cosmos";
+	}
+
+	const number = cardNumber ?? "";
+	// ptcg.io-shaped id — the alt-arts/promos tables and simey's TG promo list
+	// are keyed on it (TCGdex renamed some sets and zero-pads numbers).
+	const id = setId && cardNumber ? ptcgCardId(setId, cardNumber) : "";
+	const subtypesLower = (subtypes ?? []).map((s) => s.toLowerCase());
+	const isShiny = number.toLowerCase().startsWith("sv");
+	const isGallery = /^[tg]g/i.test(number) || TG_PROMO_IDS.has(id);
+	const isAlternate = ALT_ART_IDS.has(id) && !isShiny && !isGallery;
+	const isPromo = setId?.toLowerCase() === "swshp";
+
+	if (isGallery && eff) {
+		if (eff.startsWith("trainer gallery")) {
+			eff = eff.replace(/trainer gallery\s*/, "");
+		}
+		if (eff.includes("rare holo v") && subtypesLower.includes("vmax")) {
+			eff = "rare holo vmax";
+		}
+		if (eff.includes("rare holo v") && subtypesLower.includes("vstar")) {
+			eff = "rare holo vstar";
+		}
+	}
+
+	if (isPromo) {
+		if (TG_PROMO_IDS.has(id)) {
+			eff = "rare secret";
+		} else if (subtypesLower.includes("v")) {
+			eff = "rare holo v";
+		} else if (subtypesLower.includes("v-union")) {
+			eff = "rare holo vunion";
+		} else if (subtypesLower.includes("vmax")) {
+			eff = "rare holo vmax";
+		} else if (subtypesLower.includes("vstar")) {
+			eff = "rare holo vstar";
+		} else if (subtypesLower.includes("radiant")) {
+			eff = "radiant rare";
+		}
+		const promoStyle = PROMO_STYLES[id];
+		if (promoStyle) {
+			const style = promoStyle.style.toLowerCase();
+			if (style === "swholo") eff = "rare holo";
+			else if (style === "cosmos") eff = "rare holo cosmos";
+		}
+	}
+
+	if (isShiny) {
+		if (eff === "rare shiny v" || eff === "rare holo v") eff = "rare shiny v";
+		if (eff === "rare shiny vmax" || eff === "rare holo vmax") {
+			eff = "rare shiny vmax";
+		}
+		// TCGdex flattens shiny V/VMAX to plain "Rare Shiny"; the subtype still
+		// carries the frame (CardProxy saw ptcg's split rarities instead).
+		if (eff === "rare shiny") {
+			if (subtypesLower.includes("vmax")) eff = "rare shiny vmax";
+			else if (subtypesLower.includes("v")) eff = "rare shiny v";
+		}
+	}
+
+	if (isAlternate && subtypesLower.includes("vmax")) {
+		eff = "rare rainbow alt";
+	}
+
+	// Known non-holo printing (TCGplayer variants say "normal", no holo). Only
+	// the classic-holo families genuinely come in non-holo printings (basep-8
+	// style promos, vintage dual prints) — premium families (V/ultra/shiny/…)
+	// are ALWAYS physically foil, and TCGdex variant flags are noisy there
+	// (shiny-vault + V promos arrive flagged "normal"). Applied AFTER the
+	// pipeline so a promo remapped to a foil family keeps its foil.
+	if (holo === false && (eff === null || DOWNGRADABLE_EFFECTIVE.has(eff))) {
+		return {
+			effectiveRarity: null,
+			trainerGallery: isGallery,
+			className: "no-foil",
+		};
+	}
+
+	return {
+		effectiveRarity: eff,
+		trainerGallery: isGallery,
+		className: effectiveToClass(eff),
+	};
+}
+
+/** Foil families that also exist as genuine non-holo printings. */
+const DOWNGRADABLE_EFFECTIVE: ReadonlySet<string> = new Set([
+	"rare holo",
+	"rare holo cosmos",
+]);
+
+/**
+ * Back-compat shim for the old class-only API (tests, misc callers).
+ * Prefer holoPresentation() — it also carries the data-rarity string.
  */
 export function getHoloClass(
 	rarity?: string,
@@ -79,15 +219,5 @@ export function getHoloClass(
 	holo?: boolean,
 	setId?: string,
 ): string {
-	if (holo === false) return "no-foil";
-	if (rarity?.toLowerCase() === "classic collection") return "holo-cosmos";
-	const cls = getRarityClass(rarity);
-	if (
-		cls === "holo-basic" &&
-		((series && COSMOS_SERIES.has(series.toLowerCase())) ||
-			(setId && COSMOS_SETS.has(setId.toLowerCase())))
-	) {
-		return "holo-cosmos";
-	}
-	return cls;
+	return holoPresentation({ rarity, series, setId, holo }).className;
 }

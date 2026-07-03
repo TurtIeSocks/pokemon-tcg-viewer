@@ -1,25 +1,65 @@
 import { useEffect, useRef } from "react";
-import {
-	DEFAULT_POINTER,
-	type HoloState,
-	isSettled,
-	setHoloVars,
-	stepHoloState,
-} from "./holo-vars";
-
-// Lerp factors per frame. ENGAGE is snappy (foil tracks the cursor closely);
-// RELEASE is slower so the card eases back to rest after the pointer leaves —
-// mirroring the spring feel of simey/pokemon-cards-css.
-const ENGAGE_K = 0.12;
-const RELEASE_K = 0.06;
+import { DEFAULT_POINTER, setHoloVars } from "./holo-vars";
 
 /**
- * Pointer-tracking hook for the holo card. Smooths pointer motion through a
- * requestAnimationFrame lerp loop and writes CSS custom properties directly to
- * the element's inline style — never calls setState — so pointer motion never
- * triggers a React render. Critical for the virtualized grid which mounts
- * dozens of cards simultaneously. The loop only runs while the card is
- * settling, then stops, so idle cards cost nothing.
+ * Spring constants — verbatim from simey/pokemon-cards-css Card.svelte.
+ * INTERACT drives pointer tracking (snappy, slight overshoot — the springy
+ * "physical foil" feel); SNAP eases the card back to rest after the pointer
+ * leaves, applied after a short delay like the original (the foil stays lit
+ * for a beat instead of dying the instant the cursor exits).
+ */
+const INTERACT = { stiffness: 0.066, damping: 0.25 };
+const SNAP = { stiffness: 0.01, damping: 0.06 };
+const RELEASE_DELAY_MS = 500;
+/** svelte/motion spring default precision. */
+const PRECISION = 0.01;
+
+interface SpringField {
+	cur: number;
+	last: number;
+	tgt: number;
+}
+
+function field(v: number): SpringField {
+	return { cur: v, last: v, tgt: v };
+}
+
+/**
+ * One tick of svelte/motion's spring integrator for a single scalar.
+ * dt is in 60fps frame units ((now - then) * 60 / 1000), like svelte.
+ * Returns true while still moving.
+ */
+function tickSpring(
+	f: SpringField,
+	dt: number,
+	stiffness: number,
+	damping: number,
+	invMass: number,
+): boolean {
+	const delta = f.tgt - f.cur;
+	const velocity = (f.cur - f.last) / (dt || 1 / 60);
+	const spring = stiffness * delta;
+	const damper = damping * velocity;
+	const acceleration = (spring - damper) * invMass;
+	const d = (velocity + acceleration) * dt;
+	if (Math.abs(d) < PRECISION && Math.abs(delta) < PRECISION) {
+		f.last = f.cur;
+		f.cur = f.tgt;
+		return false;
+	}
+	f.last = f.cur;
+	f.cur += d;
+	return true;
+}
+
+/**
+ * Pointer-tracking hook for the holo card. Runs simey's spring physics
+ * (ported from svelte/motion) through a requestAnimationFrame loop and writes
+ * CSS custom properties directly to the element's inline style — never calls
+ * setState — so pointer motion never triggers a React render. Critical for
+ * the virtualized grid which mounts dozens of cards simultaneously. The loop
+ * only runs while the springs are settling, then stops, so idle cards cost
+ * nothing.
  */
 export function useHoloEffect(forceFoil = false) {
 	const ref = useRef<HTMLDivElement>(null);
@@ -28,14 +68,22 @@ export function useHoloEffect(forceFoil = false) {
 		const el = ref.current;
 		if (!el) return;
 
-		const cur: HoloState = { x: DEFAULT_POINTER, y: DEFAULT_POINTER, o: 0 };
-		let tgt: HoloState = { x: DEFAULT_POINTER, y: DEFAULT_POINTER, o: 0 };
-		let k = ENGAGE_K;
+		const x = field(DEFAULT_POINTER);
+		const y = field(DEFAULT_POINTER);
+		const o = field(0);
+		let stiffness = INTERACT.stiffness;
+		let damping = INTERACT.damping;
+		// simey releases with {soft: 1}: acceleration ramps 0→1 over ~1s so the
+		// snap-back starts gently instead of jerking.
+		let invMass = 1;
+		let invMassRecovery = 0;
 		let rafId: number | null = null;
+		let lastTime = 0;
+		let releaseTimer: ReturnType<typeof setTimeout> | null = null;
 
 		// Centered, hidden static state so a card looks correct before any
 		// interaction (and before the first animation frame).
-		setHoloVars(el, cur.x, cur.y, cur.o);
+		setHoloVars(el, x.cur, y.cur, o.cur);
 
 		// Static galaxy offset for cosmos foils so each card shows a different
 		// region of the starfield (mirrors simey's per-card --cosmosbg seed).
@@ -51,46 +99,71 @@ export function useHoloEffect(forceFoil = false) {
 			return;
 		}
 
-		function frame() {
+		function frame(now: number) {
 			if (!el) return;
-			const next = stepHoloState(cur, tgt, k);
-			cur.x = next.x;
-			cur.y = next.y;
-			cur.o = next.o;
+			// Frame delta in 60fps units, like svelte/motion. Clamped so a
+			// backgrounded tab doesn't integrate one huge explosive step.
+			const dt = lastTime ? Math.min(((now - lastTime) * 60) / 1000, 4) : 1;
+			lastTime = now;
+			invMass = Math.min(invMass + invMassRecovery, 1);
 
-			if (isSettled(cur, tgt)) {
-				// Snap exactly onto the target for a clean final frame, then halt.
-				cur.x = tgt.x;
-				cur.y = tgt.y;
-				cur.o = tgt.o;
-				setHoloVars(el, cur.x, cur.y, cur.o);
+			// Array literal so all three axes tick every frame (|| would
+			// short-circuit and freeze the later axes mid-flight).
+			const moving = [
+				tickSpring(x, dt, stiffness, damping, invMass),
+				tickSpring(y, dt, stiffness, damping, invMass),
+				tickSpring(o, dt, stiffness, damping, invMass),
+			].some(Boolean);
+
+			setHoloVars(el, x.cur, y.cur, o.cur);
+
+			if (moving) {
+				rafId = requestAnimationFrame(frame);
+			} else {
 				rafId = null;
-				return;
+				lastTime = 0;
 			}
-
-			setHoloVars(el, cur.x, cur.y, cur.o);
-			rafId = requestAnimationFrame(frame);
 		}
 
 		function start() {
 			if (rafId === null) rafId = requestAnimationFrame(frame);
 		}
 
+		function engage() {
+			if (releaseTimer !== null) {
+				clearTimeout(releaseTimer);
+				releaseTimer = null;
+			}
+			stiffness = INTERACT.stiffness;
+			damping = INTERACT.damping;
+			invMass = 1;
+			invMassRecovery = 0;
+		}
+
 		function onMove(e: PointerEvent) {
 			if (!el) return;
 			const rect = el.getBoundingClientRect();
 			if (rect.width === 0 || rect.height === 0) return;
-			const px = ((e.clientX - rect.left) / rect.width) * 100;
-			const py = ((e.clientY - rect.top) / rect.height) * 100;
-			tgt = { x: px, y: py, o: 1 };
-			k = ENGAGE_K;
+			engage();
+			x.tgt = ((e.clientX - rect.left) / rect.width) * 100;
+			y.tgt = ((e.clientY - rect.top) / rect.height) * 100;
+			o.tgt = 1;
 			start();
 		}
 
 		function onLeave() {
-			tgt = { x: DEFAULT_POINTER, y: DEFAULT_POINTER, o: 0 };
-			k = RELEASE_K;
-			start();
+			if (releaseTimer !== null) clearTimeout(releaseTimer);
+			releaseTimer = setTimeout(() => {
+				releaseTimer = null;
+				stiffness = SNAP.stiffness;
+				damping = SNAP.damping;
+				invMass = 0;
+				invMassRecovery = 1 / 60; // {soft: 1} — recover over ~1s of frames
+				x.tgt = DEFAULT_POINTER;
+				y.tgt = DEFAULT_POINTER;
+				o.tgt = 0;
+				start();
+			}, RELEASE_DELAY_MS);
 		}
 
 		el.addEventListener("pointermove", onMove);
@@ -98,6 +171,7 @@ export function useHoloEffect(forceFoil = false) {
 		return () => {
 			el.removeEventListener("pointermove", onMove);
 			el.removeEventListener("pointerleave", onLeave);
+			if (releaseTimer !== null) clearTimeout(releaseTimer);
 			if (rafId !== null) cancelAnimationFrame(rafId);
 		};
 	}, [forceFoil]);

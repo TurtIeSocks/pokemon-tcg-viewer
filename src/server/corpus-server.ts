@@ -306,8 +306,21 @@ export const getCardForRouteFn = createServerFn({ method: "GET" })
 		// then swaps in the authoritative corpus image (the tcgcsv JP overlay fill /
 		// suppressed blank) so SSR emits the same image the grid shows — no
 		// wrong-image flash before the client corpus loads.
+		//
+		// Presentation fields also come from the corpus when it has the card: the
+		// live TCGdex detail flattens vintage "Rare Holo" → "Rare" and renames foil
+		// families ("Shiny rare V"), which would drive the WRONG holo effect on the
+		// focus card while the grid (corpus-fed) shows the right one. The corpus
+		// also carries the TCGplayer printing variants the live detail lacks.
 		const enriched = withCorpusImage(
-			{ ...card, setSeries: series.name, setReleaseDate: set.releaseDate },
+			{
+				...card,
+				setSeries: series.name,
+				setReleaseDate: set.releaseDate,
+				rarity: corpusCard?.rarity ?? card.rarity,
+				subtypes: corpusCard?.subtypes ?? card.subtypes,
+				variants: corpusCard?.variants ?? card.variants,
+			},
 			corpusCard,
 		);
 		return { card: enriched, crossLinks };

@@ -87,6 +87,12 @@ export interface FocusCardData extends CardStats {
 	setSeries: string;
 	cardNumber: string;
 	nationalPokedexNumbers?: number[];
+	/**
+	 * TCGplayer price-variant keys, joined from the corpus at route time (the
+	 * live TCGdex detail has no equivalent). Drives the holo/non-holo printing
+	 * split on the focus card exactly like the grid (variantsToHolo).
+	 */
+	variants?: string[];
 	/** Exact physical printings from TCGdex variants_detailed; undefined when absent. */
 	variantsDetailed?: CardVariant[];
 

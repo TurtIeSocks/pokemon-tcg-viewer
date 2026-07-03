@@ -16,6 +16,7 @@ export function toHoloCardData(card: FocusCardData): HoloCardData {
 		setReleaseDate: card.setReleaseDate,
 		cardNumber: card.cardNumber,
 		types: card.types,
+		variants: card.variants,
 		nationalPokedexNumbers: card.nationalPokedexNumbers,
 	};
 }

@@ -3,6 +3,7 @@ import {
 	COSMOS_SERIES,
 	COSMOS_SETS,
 	getHoloClass,
+	holoPresentation,
 	variantsToHolo,
 } from "./holo-style";
 
@@ -81,14 +82,165 @@ describe("getHoloClass", () => {
 		);
 	});
 
-	test("Shiny Ultra Rare → rainbow (was unmapped → holo-basic)", () => {
+	test("Shiny Ultra Rare → shiny-vmax (SV shiny vault, gold-glitter foil)", () => {
 		expect(getHoloClass("Shiny Ultra Rare", "Scarlet & Violet", true)).toBe(
-			"rainbow",
+			"shiny-vmax",
 		);
 	});
 
 	test("COSMOS_SETS holds lowercased set ids", () => {
 		expect(COSMOS_SETS.has("cel25")).toBe(true);
+	});
+});
+
+describe("holoPresentation (CardProxy pipeline)", () => {
+	let warnSpy: ReturnType<typeof spyOn>;
+	beforeEach(() => {
+		warnSpy = spyOn(console, "warn").mockImplementation(() => {});
+	});
+	afterEach(() => warnSpy.mockRestore());
+
+	test("plain rarity → effective simey rarity in data-rarity vocabulary", () => {
+		expect(
+			holoPresentation({ rarity: "Rare Holo VMAX", series: "Sword & Shield" }),
+		).toEqual({
+			effectiveRarity: "rare holo vmax",
+			trainerGallery: false,
+			className: "holo-vmax",
+		});
+	});
+
+	test("common → null effective rarity (glare only), no-foil class", () => {
+		expect(holoPresentation({ rarity: "Common" }).effectiveRarity).toBeNull();
+		expect(holoPresentation({ rarity: "Common" }).className).toBe("no-foil");
+	});
+
+	test("known non-holo printing → glare only regardless of rarity", () => {
+		expect(
+			holoPresentation({ rarity: "Rare Holo", holo: false }).effectiveRarity,
+		).toBeNull();
+	});
+
+	test("trainer gallery number strips the TG prefix and flags the attr", () => {
+		const p = holoPresentation({
+			rarity: "Trainer Gallery Rare Holo",
+			setId: "swsh12tg",
+			cardNumber: "TG05",
+		});
+		expect(p.effectiveRarity).toBe("rare holo");
+		expect(p.trainerGallery).toBe(true);
+	});
+
+	test("TG 'Rare Holo V' + VMAX subtype remaps to vmax (simey CardProxy)", () => {
+		const p = holoPresentation({
+			rarity: "Rare Holo V",
+			setId: "swsh12tg",
+			cardNumber: "TG20",
+			subtypes: ["VMAX"],
+		});
+		expect(p.effectiveRarity).toBe("rare holo vmax");
+		expect(p.trainerGallery).toBe(true);
+	});
+
+	test("shiny vault number (sv…) upgrades holo V/VMAX to shiny families", () => {
+		expect(
+			holoPresentation({
+				rarity: "Rare Holo V",
+				setId: "swsh45sv",
+				cardNumber: "SV110",
+			}).effectiveRarity,
+		).toBe("rare shiny v");
+		expect(
+			holoPresentation({
+				rarity: "Rare Holo VMAX",
+				setId: "swsh45sv",
+				cardNumber: "SV122",
+			}).effectiveRarity,
+		).toBe("rare shiny vmax");
+	});
+
+	test("swshp promo: subtype drives the family; promos.json overrides style", () => {
+		// SWSH076/077 are the Special Delivery secret promos.
+		expect(
+			holoPresentation({
+				rarity: "Promo",
+				setId: "swshp",
+				cardNumber: "SWSH076",
+			}),
+		).toEqual({
+			effectiveRarity: "rare secret",
+			trainerGallery: true,
+			className: "gold-secret",
+		});
+		// swshp-SWSH001 is SwHolo in promos.json → "rare holo".
+		expect(
+			holoPresentation({
+				rarity: "Promo",
+				setId: "swshp",
+				cardNumber: "SWSH001",
+				subtypes: ["Basic", "V"],
+			}).effectiveRarity,
+		).toBe("rare holo");
+		// A V promo without a promos.json entry keeps the V family.
+		expect(
+			holoPresentation({
+				rarity: "Promo",
+				setId: "swshp",
+				cardNumber: "SWSH300",
+				subtypes: ["Basic", "V"],
+			}).effectiveRarity,
+		).toBe("rare holo v");
+	});
+
+	test("alternate-art VMAX (alt-arts list) → rare rainbow alt", () => {
+		// swsh7-218 (Evolving Skies alt-art VMAX) is in alternate-arts.json.
+		expect(
+			holoPresentation({
+				rarity: "Rare Rainbow",
+				setId: "swsh7",
+				cardNumber: "218",
+				subtypes: ["VMAX"],
+			}).effectiveRarity,
+		).toBe("rare rainbow alt");
+	});
+
+	test("Special Illustration Rare → rare rainbow alt (not trainer gallery)", () => {
+		expect(
+			holoPresentation({ rarity: "Special Illustration Rare" }).effectiveRarity,
+		).toBe("rare rainbow alt");
+	});
+
+	test("noisy 'normal' variant flag cannot flatten always-foil families", () => {
+		// TCGdex flags shiny-vault and V-promo printings "normal"; those cards
+		// are always physically foil, so holo=false must not downgrade them.
+		expect(
+			holoPresentation({
+				rarity: "Rare Shiny",
+				setId: "swsh4.5",
+				cardNumber: "SV110",
+				subtypes: ["Basic", "V"],
+				holo: false,
+			}).effectiveRarity,
+		).toBe("rare shiny v");
+		expect(
+			holoPresentation({
+				rarity: "Promo",
+				setId: "swshp",
+				cardNumber: "SWSH179",
+				subtypes: ["Basic", "V"],
+				holo: false,
+			}).effectiveRarity,
+		).toBe("rare holo v");
+		// …but the classic-holo families still honor it (basep-8 style).
+		expect(
+			holoPresentation({ rarity: "Rare Holo", holo: false }).effectiveRarity,
+		).toBeNull();
+	});
+
+	test("vintage Rare Holo → rare holo cosmos via era table", () => {
+		expect(
+			holoPresentation({ rarity: "Rare Holo", series: "Neo" }).effectiveRarity,
+		).toBe("rare holo cosmos");
 	});
 });
 

@@ -4,7 +4,8 @@ import { cn } from "@/lib/utils";
 import "./holo-card.css";
 import "./rarity-styles.css";
 import { cdnImage } from "./cdn-image";
-import { getHoloClass, variantsToHolo } from "./holo-style";
+import { cdnSetId } from "./foil-assets";
+import { holoPresentation, variantsToHolo } from "./holo-style";
 import { useFoilAssets } from "./use-foil-assets";
 import { useHoloEffect } from "./use-holo-effect";
 import { useTiltEffect } from "./use-tilt-effect";
@@ -58,6 +59,8 @@ export interface HoloCardProps {
 	// Drive holo style + per-card CDN foil/mask resolution (see useFoilAssets).
 	subtypes?: string[];
 	supertype?: string;
+	/** Energy types — drive per-type glow/foil-brightness (simey type classes). */
+	types?: string[];
 	setId?: string;
 	/** pokemontcg.io set.series — drives era-aware holo style (e.g. cosmos). */
 	series?: string;
@@ -88,6 +91,7 @@ export function HoloCard({
 	rarity,
 	subtypes,
 	supertype,
+	types,
 	setId,
 	series,
 	variants,
@@ -104,29 +108,49 @@ export function HoloCard({
 }: HoloCardProps) {
 	const { ref } = useHoloEffect(forceFoil);
 	useTiltEffect({ ref, enabled: tilt });
-	const rarityClass = getHoloClass(
+	const holo = holoPresentation({
 		rarity,
 		series,
-		variantsToHolo(variants),
 		setId,
-	);
+		cardNumber,
+		subtypes,
+		supertype,
+		holo: variantsToHolo(variants),
+	});
 	// Real per-card CDN foil + mask (modern sets); 404 → procedural fallback.
-	const foil = useFoilAssets(setId, cardNumber, rarity, subtypes);
+	// Keyed on the EFFECTIVE rarity so the foil URL always agrees with the CSS
+	// recipe — raw strings vary by data source (corpus ptcg.io vs live TCGdex,
+	// promos whose raw rarity is "None") but the canonical one is stable.
+	const foil = useFoilAssets(
+		setId,
+		cardNumber,
+		holo.effectiveRarity ?? undefined,
+		subtypes,
+	);
 
-	// Mirror simey/pokemon-cards-css: the foil-confinement clip-paths in
-	// rarity-styles.css key off data-rarity + data-subtypes + data-supertype
-	// (e.g. [data-rarity="rare holo"][data-subtypes^="stage"]). Lowercased to
-	// match the attribute-selector values 1:1.
+	// Mirror simey/pokemon-cards-css: rarity-styles.css keys 1:1 off the same
+	// data attributes their CSS uses — data-rarity (the *effective* simey
+	// rarity from holoPresentation, not the raw corpus string), data-subtypes,
+	// data-supertype, data-set/data-number (per-card promo recipes) and
+	// data-trainer-gallery. All lowercased to match the selector values.
 	const dataAttrs: Record<string, string> = {};
-	if (rarity) dataAttrs["data-rarity"] = rarity.toLowerCase();
+	if (holo.effectiveRarity) dataAttrs["data-rarity"] = holo.effectiveRarity;
 	if (supertype) dataAttrs["data-supertype"] = supertype.toLowerCase();
 	if (subtypes?.length)
 		dataAttrs["data-subtypes"] = subtypes.join(" ").toLowerCase();
+	// Normalized to the simey/ptcg.io vocabulary — the per-card promo CSS
+	// (swsh-pikachu.css) keys on data-set="swsh12pt5" etc.
+	if (setId) dataAttrs["data-set"] = cdnSetId(setId);
+	if (cardNumber) dataAttrs["data-number"] = cardNumber.toLowerCase();
+	if (holo.trainerGallery) dataAttrs["data-trainer-gallery"] = "true";
 
 	const classes = [
 		"holo-card",
 		`size-${size}`,
-		rarityClass,
+		holo.className,
+		// Energy-type classes (water/fire/…) — simey keys --card-glow and the
+		// reverse-holo --foil-brightness table on these.
+		...(types ?? []).map((t) => t.toLowerCase()),
 		foil.masked ? "masked" : null,
 		owned ? "holo-card--owned" : null,
 		className,
@@ -308,6 +332,12 @@ export function HoloCard({
 						</span>
 					);
 				})()}
+			{/* Foil layer stack, 1:1 with simey's DOM: .card__shine → shine div
+			    (+ ::before/::after sub-layers), .card__glare → glare div
+			    (+ ::after). Real elements — CSS can't chain pseudo-elements, and
+			    the recipes need all five compositing layers. */}
+			<div className="holo-card-shine" aria-hidden="true" />
+			<div className="holo-card-glare" aria-hidden="true" />
 			<div className="holo-card-overlay">{hoverOverlay}</div>
 			{owned && (
 				<span
