@@ -2992,3 +2992,55 @@
 .holo-card:not(.masked)[data-rarity="rare shiny vmax"] {
 	--foil: url("/holo-textures/illusion.png");
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   OUR EXTENSION — vintage (WotC) frame clip windows
+   ─────────────────────────────────────────────────────────────────────────────
+   simey's clip variables assume the modern card layout (smaller window, SWSH
+   stage-badge notch shape). Classic WotC frames (Base→e-Card + old Black Star
+   Promos) have a bigger plain-rectangle window with the evolution badge
+   overlapping its top-left corner. data-frame="vintage" is set from
+   VINTAGE_FRAME_SERIES (holo-style.ts). Only the PROCEDURAL path cares —
+   masked cards' real CDN masks supersede clip windows.
+   Window measured off the base1 hi-res scan: x 6.5%→93.5%, y 10.5%→49%;
+   stage-badge notch x ≤22%, y ≤16%. Tune here if an era sits wrong.
+───────────────────────────────────────────────────────────────────────────── */
+
+.holo-card[data-frame="vintage"] {
+	--clip: inset(10.5% 6.5% 51% 6.5%);
+	--clip-trainer: inset(10.5% 6.5% 51% 6.5%);
+	--clip-stage: polygon(
+		93.5% 10.5%,
+		93.5% 49%,
+		6.5% 49%,
+		6.5% 16%,
+		22% 16%,
+		22% 10.5%
+	);
+	--clip-invert: polygon(
+		0% 0%,
+		100% 0%,
+		100% 100%,
+		0% 100%,
+		0% 49%,
+		93.5% 49%,
+		93.5% 10.5%,
+		6.5% 10.5%,
+		6.5% 49%,
+		0% 49%
+	);
+	--clip-stage-invert: polygon(
+		0% 0%,
+		100% 0%,
+		100% 100%,
+		0% 100%,
+		0% 49%,
+		93.5% 49%,
+		93.5% 10.5%,
+		22% 10.5%,
+		22% 16%,
+		6.5% 16%,
+		6.5% 49%,
+		0% 49%
+	);
+}

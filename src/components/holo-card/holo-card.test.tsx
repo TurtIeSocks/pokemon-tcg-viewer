@@ -125,6 +125,25 @@ describe("<HoloCard />", () => {
 		expect(root.classList.contains("reverse-holo")).toBe(true);
 	});
 
+	test("WotC-era series get data-frame=vintage; modern series don't", () => {
+		const { container } = render(
+			<HoloCard {...baseProps} rarity="Rare Holo" series="Base" />,
+		);
+		expect(
+			(container.querySelector(".holo-card") as HTMLElement).getAttribute(
+				"data-frame",
+			),
+		).toBe("vintage");
+		const modern = render(
+			<HoloCard {...baseProps} rarity="Rare Holo" series="Sword & Shield" />,
+		);
+		expect(
+			(modern.container.querySelector(".holo-card") as HTMLElement).getAttribute(
+				"data-frame",
+			),
+		).toBeNull();
+	});
+
 	test("glare-only cards omit data-rarity entirely", () => {
 		const { container } = render(<HoloCard {...baseProps} rarity="Common" />);
 		const root = container.querySelector(".holo-card") as HTMLElement;

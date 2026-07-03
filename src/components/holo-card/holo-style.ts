@@ -46,6 +46,27 @@ export const COSMOS_SETS: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Series whose cards use the classic WotC frame: a bigger, plain-rectangle
+ * art window (evolution badge overlapping its top-left corner) instead of
+ * the modern layout simey's clip-path windows assume. These get vintage clip
+ * variables via `data-frame="vintage"` (see rarity-styles.css); modern cards
+ * are unaffected — they carry real per-card CDN masks (`.masked`) that
+ * supersede clip windows entirely.
+ *
+ * Lowercased pokemontcg.io `series` strings. USER-EDITABLE — the lever to
+ * pull when an era's foil window sits wrong: add/remove a series here, or
+ * tune the inset/polygon percentages in the vintage block of
+ * rarity-styles.css.
+ */
+export const VINTAGE_FRAME_SERIES: ReadonlySet<string> = new Set([
+	"base",
+	"gym",
+	"neo",
+	"e-card",
+	"np", // Nintendo Black Star Promos — WotC-style frame
+]);
+
+/**
  * Interpret TCGplayer price-variant keys as a holo signal:
  *   • has "holofoil"        → true  (holo printing)
  *   • has "normal", no holo → false (non-holo printing — should not foil)

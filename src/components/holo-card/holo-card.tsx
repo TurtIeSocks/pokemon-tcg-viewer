@@ -5,7 +5,11 @@ import "./holo-card.css";
 import "./rarity-styles.css";
 import { cdnImage } from "./cdn-image";
 import { cdnSetId } from "./foil-assets";
-import { holoPresentation, variantsToHolo } from "./holo-style";
+import {
+	holoPresentation,
+	VINTAGE_FRAME_SERIES,
+	variantsToHolo,
+} from "./holo-style";
 import { useFoilAssets } from "./use-foil-assets";
 import { useHoloEffect } from "./use-holo-effect";
 import { useTiltEffect } from "./use-tilt-effect";
@@ -151,6 +155,11 @@ export function HoloCard({
 	if (setId) dataAttrs["data-set"] = cdnSetId(setId);
 	if (cardNumber) dataAttrs["data-number"] = cardNumber.toLowerCase();
 	if (holo.trainerGallery) dataAttrs["data-trainer-gallery"] = "true";
+	// WotC-era frames have a different art window; the vintage clip variables
+	// in rarity-styles.css key on this (procedural path only — masked cards'
+	// real CDN masks always win).
+	if (series && VINTAGE_FRAME_SERIES.has(series.toLowerCase()))
+		dataAttrs["data-frame"] = "vintage";
 
 	const classes = [
 		"holo-card",
