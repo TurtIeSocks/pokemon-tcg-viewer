@@ -3151,3 +3151,75 @@
 	.holo-card-shine {
 	clip-path: var(--clip-trainer-invert);
 }
+
+/* ── ENERGY KNOBS ─────────────────────────────────────────────────────────────
+   Vintage HOLO ENERGIES (Team Rocket Rainbow Energy etc.): the foil fills
+   the ENTIRE dark zone — from just under the ENERGY banner all the way down
+   to the name bar, nearly edge to edge. Much bigger than the Pokémon or
+   trainer windows:
+
+     0%                                100%
+  0% ┌──────────────────────────────────┐
+     │         ⚡ E N E R G Y            │
+     │ ┌──────────────────────────────┐ ◄── --vintage-energy-top
+     │ │                              │  │     (smaller = foil starts higher)
+     │ │       WHOLE ART ZONE         │  │
+     │ │          = FOIL              │  │
+     │ │                              │  │
+     │ └──────────────────────────────┘ ◄── --vintage-energy-bottom
+     │ ▲ Rainbow Energy · card text…  ▲  │     (bigger = reaches lower)
+     └─┼──────────────────────────────┼──┘
+       --vintage-energy-left          --vintage-energy-right
+       (smaller = wider left)         (bigger = wider right; from card LEFT)
+
+   Measured off the base5-17 Rainbow Energy hi-res scan. Same devtools
+   live-tuning trick (--card-opacity: 1). */
+.holo-card[data-frame="vintage"] {
+	--vintage-energy-top: 12.5%; /* foil TOP edge (under the ENERGY banner) */
+	--vintage-energy-bottom: 72%; /* foil BOTTOM edge (above the name bar) */
+	--vintage-energy-left: 5.5%; /* foil LEFT edge */
+	--vintage-energy-right: 94.5%; /* foil RIGHT edge (from card LEFT!) */
+
+	/* Derived (no need to touch). */
+	--clip-energy: inset(
+		var(--vintage-energy-top) calc(100% - var(--vintage-energy-right))
+			calc(100% - var(--vintage-energy-bottom)) var(--vintage-energy-left)
+	);
+	--clip-energy-invert: polygon(
+		0% 0%,
+		100% 0%,
+		100% 100%,
+		0% 100%,
+		0% var(--vintage-energy-bottom),
+		var(--vintage-energy-right) var(--vintage-energy-bottom),
+		var(--vintage-energy-right) var(--vintage-energy-top),
+		var(--vintage-energy-left) var(--vintage-energy-top),
+		var(--vintage-energy-left) var(--vintage-energy-bottom),
+		0% var(--vintage-energy-bottom)
+	);
+}
+
+/* simey's CSS has no energy handling at all (his site is SWSH Pokémon +
+   trainers), so both the shine AND the glare hotspot need explicit routing
+   on vintage frames. */
+.holo-card:not(.masked)[data-frame="vintage"][data-supertype="energy"]
+.holo-card-shine {
+	clip-path: var(--clip-energy);
+}
+
+.holo-card[data-frame="vintage"][data-supertype="energy"]
+	.holo-card-glare:after {
+	clip-path: var(--clip-energy);
+}
+
+.holo-card:not(
+		.masked
+	)[data-frame="vintage"][data-rarity$="reverse holo"][data-supertype="energy"]
+	.holo-card-shine {
+	clip-path: var(--clip-energy-invert);
+}
+
+.holo-card[data-frame="vintage"][data-rarity$="reverse holo"][data-supertype="energy"]
+	.holo-card-glare:after {
+	clip-path: var(--clip-energy-invert);
+}
