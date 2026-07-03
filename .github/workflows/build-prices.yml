@@ -1,0 +1,51 @@
+name: Build price blob
+on:
+  schedule:
+    - cron: "30 21 * * *" # daily 21:30 UTC — tcgcsv refreshes ~20:00 UTC
+  workflow_dispatch: {}
+
+# Least privilege: read the repo; R2 access via API token.
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Fetch crosswalks from R2
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          bunx wrangler r2 object get \
+            pokemon-tcg-corpus/corpus/price-ids.json.gz \
+            --file=price-ids.json.gz --remote
+          # Asia crosswalk is optional until the next asia corpus rebuild ships it.
+          bunx wrangler r2 object get \
+            pokemon-tcg-corpus/corpus/region/asia/price-ids.json.gz \
+            --file=price-ids.asia.json.gz --remote || true
+      - name: Build price blob
+        # Throws (fails the job) on catastrophic shortfall — yesterday's blob
+        # stays live in R2 (keep-last-good).
+        run: bun run scripts/build-prices.ts
+      - name: Upload to R2
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          bunx wrangler r2 object put \
+            pokemon-tcg-corpus/corpus/prices/latest.json.gz \
+            --file=prices.json.gz --remote
+          # Dated archive: raw material for PR 4's history rollups. Starts
+          # accruing from the first successful run.
+          bunx wrangler r2 object put \
+            "pokemon-tcg-corpus/corpus/prices/archive/$(date -u +%F).json.gz" \
+            --file=prices.json.gz --remote
+          # meta.json is the /corpus-prices/version staleness marker — put it
+          # last so a fresh latest is never advertised by a newer meta whose
+          # archive upload failed.
+          bunx wrangler r2 object put \
+            pokemon-tcg-corpus/corpus/prices/meta.json \
+            --file=prices-meta.json --remote

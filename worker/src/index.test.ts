@@ -72,6 +72,15 @@ const CORPUS = {
 				]).stream(),
 				etag: "asiametatag",
 			};
+		if (key === "corpus/prices/latest.json.gz")
+			return { body: "PRICES_GZ", etag: "pricestag" };
+		if (key === "corpus/prices/meta.json")
+			return {
+				body: new Blob([
+					'{"date":"2026-07-03","count":19000,"builtAt":"x"}',
+				]).stream(),
+				etag: "pricesmetatag",
+			};
 		return null;
 	},
 };
@@ -440,5 +449,52 @@ describe("worker", () => {
 		expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
 			"https://x.github.io",
 		);
+	});
+
+	test("/corpus-prices serves the prices blob with ETag + SWR caching", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus-prices"),
+			env,
+			ctx,
+		);
+		expect(res.status).toBe(200);
+		expect(res.headers.get("ETag")).toBe('"pricestag"');
+		expect(res.headers.get("Cache-Control")).toContain("s-maxage=3600");
+		expect(await res.text()).toBe("PRICES_GZ");
+	});
+
+	test("/corpus-prices returns 304 when If-None-Match matches", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus-prices", {
+				headers: { "If-None-Match": '"pricestag"' },
+			}),
+			env,
+			ctx,
+		);
+		expect(res.status).toBe(304);
+	});
+
+	test("/corpus-prices/version serves the meta JSON", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus-prices/version"),
+			env,
+			ctx,
+		);
+		expect(res.status).toBe(200);
+		expect(await res.json()).toEqual({
+			date: "2026-07-03",
+			count: 19000,
+			builtAt: "x",
+		});
+	});
+
+	test("/corpus-prices returns 503 when the object is missing", async () => {
+		const emptyEnv = { ...env, CORPUS: { get: async () => null } };
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus-prices"),
+			emptyEnv,
+			ctx,
+		);
+		expect(res.status).toBe(503);
 	});
 });

@@ -4,6 +4,7 @@ import {
 	fallbackImageUrl,
 	tcgdexSetToPtcg,
 } from "../src/lib/corpus/id-crosswalk";
+import type { PriceIdEntry, PriceIdsMap } from "../src/lib/corpus/price-types";
 import {
 	subtypesFromTcgdex,
 	supertypeFromCategory,
@@ -68,6 +69,16 @@ export interface TcgdexCard {
 	retreat?: number;
 	description?: string;
 	illustrator?: string;
+	// Live marketplace pricing attached by the TCGdex server (present when the
+	// mirror's price providers loaded; see build-prices pipeline). Only the
+	// product ids are harvested at build time — prices themselves come from the
+	// marketplaces' bulk feeds in scripts/build-prices.ts.
+	pricing?: {
+		cardmarket?: { idProduct?: number } | null;
+		tcgplayer?:
+			| ({ unit?: string; updated?: string } & Record<string, unknown>)
+			| null;
+	} | null;
 }
 
 function variantsOf(card: TcgdexCard): string[] | undefined {
@@ -151,6 +162,29 @@ export function detailCard(card: TcgdexCard): DetailRecord {
 export function detailVersion(records: DetailRecord[]): string {
 	const sorted = [...records].sort((a, b) => a.id.localeCompare(b.id));
 	return createHash("sha256").update(JSON.stringify(sorted)).digest("hex");
+}
+
+/**
+ * Extract the marketplace product ids from a card's live pricing block.
+ * tcgplayer finish blocks share one productId per card (the finish lives in
+ * the marketplace's subtype axis), so the first block's id is THE id.
+ */
+export function priceIdsOf(card: TcgdexCard): PriceIdEntry | null {
+	const cm = card.pricing?.cardmarket?.idProduct ?? null;
+	let tp: number | null = null;
+	const block = card.pricing?.tcgplayer;
+	if (block) {
+		for (const v of Object.values(block)) {
+			if (v && typeof v === "object") {
+				const pid = (v as { productId?: unknown }).productId;
+				if (typeof pid === "number") {
+					tp = pid;
+					break;
+				}
+			}
+		}
+	}
+	return cm === null && tp === null ? null : [cm, tp];
 }
 
 export interface GapLog {
@@ -267,7 +301,7 @@ export async function fetchJson(
  * Run `tasks` with at most `concurrency` in flight at any time.
  * Returns all results in the original order.
  */
-async function pLimit<T>(
+export async function pLimit<T>(
 	tasks: (() => Promise<T>)[],
 	concurrency: number,
 ): Promise<T[]> {
@@ -488,6 +522,22 @@ if (import.meta.main) {
 
 	const startedAt = Date.now();
 	const raw = await buildCorpus({ baseLang });
+
+	// Price crosswalk: cardId → marketplace product ids, for the daily
+	// build-prices join. Emitted before trimming (trimCard drops pricing).
+	const priceIds: PriceIdsMap = {};
+	for (const c of raw) {
+		const entry = priceIdsOf(c);
+		if (entry) priceIds[c.id] = entry;
+	}
+	const priceIdsFile = isAsia ? "price-ids.asia.json.gz" : "price-ids.json.gz";
+	await Bun.write(
+		priceIdsFile,
+		gzipSync(Buffer.from(JSON.stringify(priceIds))),
+	);
+	console.log(
+		`price crosswalk: ${Object.keys(priceIds).length}/${raw.length} cards carry marketplace ids → ${priceIdsFile}`,
+	);
 
 	const trimmed = raw.map((c) => trimCard(c, baseLang));
 	const detail = raw.map(detailCard).sort((a, b) => a.id.localeCompare(b.id));
