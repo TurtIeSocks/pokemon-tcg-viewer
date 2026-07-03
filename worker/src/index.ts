@@ -172,6 +172,44 @@ export default {
 			return serveCorpus(res, request, env);
 		}
 
+		// Daily market-price blob (spec 2026-07-03-pricing-implementation-design §3).
+		if (url.pathname === "/corpus-prices/version") {
+			const obj = await env.CORPUS.get("corpus/prices/meta.json");
+			if (!obj) {
+				return new Response("Prices not built yet", {
+					status: 503,
+					headers: corsHeaders(env),
+				});
+			}
+			return new Response(obj.body, {
+				headers: {
+					...corsHeaders(env),
+					"Content-Type": "application/json",
+					"Cache-Control":
+						"public, max-age=60, s-maxage=300, stale-while-revalidate=86400",
+				},
+			});
+		}
+
+		if (url.pathname === "/corpus-prices") {
+			const obj = await env.CORPUS.get("corpus/prices/latest.json.gz");
+			if (!obj) {
+				return new Response("Prices not built yet", {
+					status: 503,
+					headers: corsHeaders(env),
+				});
+			}
+			const res = new Response(obj.body, {
+				headers: {
+					"Content-Type": "application/octet-stream",
+					ETag: `"${obj.etag}"`,
+					"Cache-Control":
+						"public, s-maxage=3600, stale-while-revalidate=86400",
+				},
+			});
+			return serveCorpus(res, request, env);
+		}
+
 		// GET /corpus-i18n/:lang/version -> overlay meta JSON (like /corpus-detail/version).
 		const i18nVersionMatch = url.pathname.match(
 			/^\/corpus-i18n\/([^/]+)\/version$/,
