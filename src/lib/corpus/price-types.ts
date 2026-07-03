@@ -11,7 +11,7 @@ export type PriceIdsMap = Record<string, PriceIdEntry>;
 export type FinishCode = "N" | "H" | "R" | "1H" | "1N";
 
 /** tcgcsv subTypeName → finish code. Unknown names are logged + skipped at join. */
-export const TP_SUBTYPE_TO_CODE: Record<string, FinishCode> = {
+export const TP_SUBTYPE_TO_CODE: Partial<Record<string, FinishCode>> = {
 	Normal: "N",
 	Holofoil: "H",
 	"Reverse Holofoil": "R",

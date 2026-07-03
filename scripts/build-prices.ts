@@ -200,7 +200,7 @@ if (import.meta.main) {
 		fetchFx(),
 	]);
 	console.log(
-		`fetched: cardmarket ${cm.records.length} products (${cm.date}), tcgplayer ${tp.records.length} price rows across ${tp.groupCount} groups, fx ${Object.keys(fx.rates).length} rates`,
+		`fetched: cardmarket ${cm.records.length} products (${cm.date}), tcgplayer ${tp.records.length} price rows across ${tp.groupCount} groups, fx ${Object.keys(fx.rates).length} rates (${fx.date})`,
 	);
 
 	const date = new Date().toISOString().slice(0, 10);
@@ -210,6 +210,8 @@ if (import.meta.main) {
 		tpPrices: tp.records,
 		fx,
 		date,
+		// tp uses the build date by design — tcgcsv exposes no per-feed data
+		// timestamp, unlike cardmarket's cm.date.
 		sources: { tp: date, cm: cm.date },
 	});
 	if (unknownSubtypes.length) {

@@ -38,11 +38,14 @@ jobs:
           bunx wrangler r2 object put \
             pokemon-tcg-corpus/corpus/prices/latest.json.gz \
             --file=prices.json.gz --remote
-          bunx wrangler r2 object put \
-            pokemon-tcg-corpus/corpus/prices/meta.json \
-            --file=prices-meta.json --remote
           # Dated archive: raw material for PR 4's history rollups. Starts
           # accruing from the first successful run.
           bunx wrangler r2 object put \
             "pokemon-tcg-corpus/corpus/prices/archive/$(date -u +%F).json.gz" \
             --file=prices.json.gz --remote
+          # meta.json is the /corpus-prices/version staleness marker — put it
+          # last so a fresh latest is never advertised by a newer meta whose
+          # archive upload failed.
+          bunx wrangler r2 object put \
+            pokemon-tcg-corpus/corpus/prices/meta.json \
+            --file=prices-meta.json --remote

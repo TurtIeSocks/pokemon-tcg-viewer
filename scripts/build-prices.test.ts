@@ -103,6 +103,25 @@ test("joinPrices drops feedless cards and reports unknown subtypes", () => {
 	expect(unknownSubtypes).toEqual(["Weird Future Subtype"]);
 });
 
+test("joinPrices drops a card whose only finish has all-null prices", () => {
+	const { blob } = joinPrices({
+		priceIds: { "allnull-1": [null, 555555] },
+		cmGuide: [],
+		tpPrices: [
+			{
+				productId: 555555,
+				marketPrice: null,
+				lowPrice: null,
+				subTypeName: "Normal",
+			},
+		],
+		fx,
+		date: "2026-07-03",
+		sources,
+	});
+	expect(blob.cards["allnull-1"]).toBeUndefined();
+});
+
 function fakeFetch(routes: Record<string, unknown>) {
 	return async (url: string) => {
 		for (const [prefix, body] of Object.entries(routes)) {
