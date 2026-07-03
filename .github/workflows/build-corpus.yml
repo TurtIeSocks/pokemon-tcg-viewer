@@ -78,6 +78,9 @@ jobs:
           bunx wrangler r2 object put \
             pokemon-tcg-corpus/corpus/detail-meta.json \
             --file=corpus-detail.meta.json --remote
+          bunx wrangler r2 object put \
+            pokemon-tcg-corpus/corpus/price-ids.json.gz \
+            --file=price-ids.json.gz --remote
           # Asian/ja region base corpus + detail + version meta.
           bunx wrangler r2 object put \
             pokemon-tcg-corpus/corpus/region/asia/latest.json.gz \
@@ -88,6 +91,9 @@ jobs:
           bunx wrangler r2 object put \
             pokemon-tcg-corpus/corpus/region/asia/meta.json \
             --file=corpus-detail.asia.meta.json --remote
+          bunx wrangler r2 object put \
+            pokemon-tcg-corpus/corpus/region/asia/price-ids.json.gz \
+            --file=price-ids.asia.json.gz --remote
           # Name overlays: Western (en base) + Asian (ja base).
           for lang in fr de es it pt ko zh-tw zh-cn th id; do
             bunx wrangler r2 object put \

@@ -6,6 +6,7 @@ import {
 	collectGaps,
 	detailCard,
 	detailVersion,
+	priceIdsOf,
 	resolveFallbackImages,
 	type TcgdexCard,
 	trimCard,
@@ -443,4 +444,45 @@ test("buildCorpus proceeds on a merely-partial crawl (JP sets that list no cards
 	} finally {
 		globalThis.fetch = original;
 	}
+});
+
+test("priceIdsOf extracts both marketplace ids", () => {
+	const card = {
+		...withImage,
+		pricing: {
+			cardmarket: { idProduct: 273699, avg: 512.96 },
+			tcgplayer: {
+				unit: "USD",
+				updated: "2026-07-02T22:58:38.029Z",
+				holofoil: { productId: 42382, marketPrice: 720.34 },
+			},
+		},
+	} as TcgdexCard;
+	expect(priceIdsOf(card)).toEqual([273699, 42382]);
+});
+
+test("priceIdsOf takes the first finish block's productId (shared across finishes)", () => {
+	const card = {
+		...withImage,
+		pricing: {
+			cardmarket: null,
+			tcgplayer: {
+				unit: "USD",
+				updated: "x",
+				normal: { productId: 219333 },
+				"reverse-holofoil": { productId: 219333 },
+			},
+		},
+	} as TcgdexCard;
+	expect(priceIdsOf(card)).toEqual([null, 219333]);
+});
+
+test("priceIdsOf handles cardmarket-only (ja) and unpriced cards", () => {
+	const jaCard = {
+		...withImage,
+		pricing: { cardmarket: { idProduct: 719604 }, tcgplayer: null },
+	} as TcgdexCard;
+	expect(priceIdsOf(jaCard)).toEqual([719604, null]);
+	expect(priceIdsOf(withImage)).toBeNull(); // no pricing field at all
+	expect(priceIdsOf({ ...withImage, pricing: null } as TcgdexCard)).toBeNull();
 });
