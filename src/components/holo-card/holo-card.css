@@ -28,7 +28,13 @@
 	--card-glow: hsl(175, 100%, 90%);
 
 	position: relative;
-	display: block;
+	/* simey .card__rotator: the image + shine + glare stack as IN-FLOW grid
+	   items in cell 1/1, NOT absolutely-positioned z-indexed layers. This is
+	   load-bearing for the foil: Chrome resolves the mix-blend chain of
+	   positioned+z-indexed layers with clamped intermediates, which zeroes
+	   color-dodge sparkle over black (glitter speckle on gold/TG-secret cards
+	   vanishes). Verified by DOM-morph repro against poke-holo.simey.me. */
+	display: grid;
 	width: 100%;
 	/* Establish a size container so the empty-state text can scale to the card's
 	   own width via cqw units (grid thumbnails vs focus differ ~2x). */
@@ -92,8 +98,7 @@
 
 .holo-card-shine,
 .holo-card-glare {
-	position: absolute;
-	inset: 0;
+	grid-area: 1 / 1;
 	border-radius: inherit;
 	pointer-events: none;
 	overflow: hidden;
@@ -101,9 +106,16 @@
 	   sub-layers stack in cell 1/1 on their own translateZ plane. NOT
 	   equivalent to plain z-index stacking — the transform promotes each
 	   sub-layer into its own compositing unit, which changes how the
-	   blend-mode chain resolves (verified pixel-level on radiant's etch). */
+	   blend-mode chain resolves (verified pixel-level on radiant's etch).
+	   In-flow grid items — never position:absolute (that re-groups the
+	   blend chain and kills dodge sparkle over black). */
 	display: grid;
 	transform-style: preserve-3d;
+	/* simey base.css .card__front * — the GPU-promotion pair every foil
+	   layer carries. */
+	backface-visibility: hidden;
+	/* simey base.css `.card *`: anti-alias trick. */
+	outline: 1px solid transparent;
 	/* simey cards.css */
 	will-change:
 		transform, opacity, background-image, background-size, background-position,
@@ -111,8 +123,12 @@
 }
 
 .holo-card-shine {
-	z-index: 3;
 	transform: translateZ(1px);
+	/* simey base.css: the shine is a GRID ITEM, so z-index applies — it paints
+	   ABOVE the glare (z auto). Load-bearing: the hard-light glare lifts dark
+	   scan pixels first, and the shine's color-dodge then amplifies glitter
+	   over them into the gold-card sparkle. Glare-on-top mutes it entirely. */
+	z-index: 3;
 	background: transparent;
 	background-size: cover;
 	background-position: center;
@@ -135,6 +151,8 @@
 	transform: translateZ(1px);
 	border-radius: inherit;
 	pointer-events: none;
+	backface-visibility: hidden;
+	outline: 1px solid transparent;
 }
 
 .holo-card-shine:after {
@@ -149,7 +167,6 @@
 }
 
 .holo-card-glare {
-	z-index: 4;
 	transform: translateZ(1.41px);
 	background-image: radial-gradient(
 		farthest-corner circle at var(--pointer-x) var(--pointer-y),
@@ -166,6 +183,8 @@
 	grid-area: 1 / 1;
 	border-radius: inherit;
 	pointer-events: none;
+	backface-visibility: hidden;
+	outline: 1px solid transparent;
 }
 
 /* Masking — simey base.css: a loaded per-card mask confines the shine (and
@@ -214,20 +233,23 @@
 	max-width: 600px;
 }
 
+/* The <picture> wrapper is layout-transparent so every card image is a
+   direct grid item in cell 1/1 (in-flow — see the .holo-card grid note). */
+.holo-card picture {
+	display: contents;
+}
+
 .holo-card-image {
-	position: absolute;
-	inset: 0;
+	grid-area: 1 / 1;
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
 	display: block;
 	pointer-events: none;
-	z-index: 1;
 }
 
 /* Focus: the full-res image fades in over a cached thumbnail (blur-up). */
 .holo-card-image--placeholder {
-	z-index: 1;
 	filter: blur(10px) saturate(1.1);
 	transform: scale(1.04);
 	transition:
@@ -239,7 +261,6 @@
 	transform: none;
 }
 .holo-card-image--full {
-	z-index: 2;
 	opacity: 0;
 	transition: opacity 0.4s var(--ease);
 }
