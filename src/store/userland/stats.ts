@@ -23,8 +23,19 @@ export interface CollectionStats {
 	cardsOwned: number;
 	setsTouched: number;
 	completionPct: number;
-	/** Total cost basis in MINOR UNITS (cents); null when no priced stacks. Format via money.formatPrice or ÷100. */
+	/**
+	 * Total cost basis in MINOR UNITS, summed across priced stacks; null when no
+	 * priced stacks. Only safe to format/sum directly when `estValueCurrency` is
+	 * non-null — priced stacks spanning >1 currency need FX (PR3b) before they can
+	 * be added together, so the raw sum is currency-ambiguous in that case.
+	 */
 	estValue: number | null;
+	/**
+	 * The single ISO-4217 currency shared by every priced stack, or null when
+	 * there are zero priced stacks OR priced stacks span more than one currency
+	 * (mixed — can't sum without FX; render "—" instead of a wrong total).
+	 */
+	estValueCurrency: string | null;
 	thisWeek: number;
 	collectingSince: number | null;
 }
@@ -58,19 +69,23 @@ export function useCollectionStats(): CollectionStats {
 		let sum = 0;
 		let anyPrice = false;
 		let thisWeek = 0;
+		const currencies = new Set<string>();
 		for (const it of Object.values(items)) {
 			if (it.pricePaid !== null) {
 				sum += it.pricePaid * it.quantity;
 				anyPrice = true;
+				currencies.add(it.currency);
 			}
 			if (it.acquiredAt >= weekCutoff) thisWeek++;
 		}
+		const estValueCurrency = currencies.size === 1 ? [...currencies][0] : null;
 
 		return {
 			cardsOwned: ownedIndex.size,
 			setsTouched: countBySet.size,
 			completionPct,
 			estValue: anyPrice ? sum : null,
+			estValueCurrency,
 			thisWeek,
 			collectingSince: earliestAcquired(items),
 		};

@@ -248,6 +248,7 @@ const baseValues = {
 	quantity: "1",
 	acquiredAt: "2026-01-01",
 	pricePaid: "",
+	currency: "USD",
 	language: "en",
 	variant: "",
 	variantId: "",
@@ -279,4 +280,50 @@ test("itemToForm seeds variantId from the stack's printing", () => {
 		printing: VARIANTS[1],
 	} as Stack;
 	expect(itemToForm(item).variantId).toBe("b");
+});
+
+// --- currency: per-stack currency picker + exponent-aware pricePaid ---
+
+test("itemToForm carries currency and renders pricePaid at its exponent", () => {
+	const f = itemToForm(item({ pricePaid: 350, currency: "JPY" }));
+	expect(f.currency).toBe("JPY");
+	expect(f.pricePaid).toBe("350"); // 0-decimal, not "3.5"
+});
+
+test("itemToForm: missing currency defaults to 'USD'", () => {
+	const f = itemToForm(item({ currency: undefined as unknown as string }));
+	expect(f.currency).toBe("USD");
+});
+
+test("formToPatch includes currency and parses pricePaid at its exponent", () => {
+	const patch = formToPatch({
+		...baseValues,
+		pricePaid: "350",
+		currency: "JPY",
+	});
+	expect(patch.currency).toBe("JPY");
+	expect(patch.pricePaid).toBe(350); // not 35000
+});
+
+test("formToPatch: empty currency defaults to 'USD'", () => {
+	const patch = formToPatch({ ...baseValues, currency: "" });
+	expect(patch.currency).toBe("USD");
+});
+
+test("formFieldToPatch: currency → currency patch", () => {
+	expect(formFieldToPatch("currency", "EUR")).toEqual({ currency: "EUR" });
+});
+
+test("formFieldToPatch: empty currency → defaults to 'USD'", () => {
+	expect(formFieldToPatch("currency", "")).toEqual({ currency: "USD" });
+});
+
+test("formFieldToPatch: pricePaid honors ctx.currency exponent (JPY)", () => {
+	expect(formFieldToPatch("pricePaid", "350", { currency: "JPY" })).toEqual({
+		pricePaid: 350,
+	});
+});
+
+test("formFieldToPatch: pricePaid without ctx.currency defaults to USD exponent", () => {
+	expect(formFieldToPatch("pricePaid", "5")).toEqual({ pricePaid: 500 });
 });

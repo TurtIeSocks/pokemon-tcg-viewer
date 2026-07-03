@@ -29,3 +29,30 @@ test("empty display name shows a required error", async () => {
 	const err = await screen.findByRole("alert");
 	expect(err.textContent).toBe("Display name is required");
 });
+
+test("renders the Currency select with currency options", async () => {
+	render(<ProfileFormDialog open onOpenChange={() => {}} />);
+	expect(screen.getByText("Currency")).toBeTruthy();
+	const currencyTrigger = document.getElementById("displayCurrency");
+	if (!currencyTrigger) throw new Error("currency trigger not rendered");
+	fireEvent.click(currencyTrigger);
+	expect(await screen.findByRole("option", { name: /USD/ })).toBeTruthy();
+	expect(screen.getByRole("option", { name: /JPY/ })).toBeTruthy();
+});
+
+test("submitting persists the chosen display currency via updateProfile", async () => {
+	render(<ProfileFormDialog open onOpenChange={() => {}} />);
+	fireEvent.change(screen.getByLabelText(/display name/i), {
+		target: { value: "Ash" },
+	});
+	const currencyTrigger = document.getElementById("displayCurrency");
+	if (!currencyTrigger) throw new Error("currency trigger not rendered");
+	fireEvent.click(currencyTrigger);
+	const jpyOption = await screen.findByRole("option", { name: /JPY/ });
+	fireEvent.click(jpyOption);
+	// biome-ignore lint/style/noNonNullAssertion: form always present
+	fireEvent.submit(document.querySelector("form")!);
+	await waitFor(() => {
+		expect(useUserland.getState().profile?.displayCurrency).toBe("JPY");
+	});
+});

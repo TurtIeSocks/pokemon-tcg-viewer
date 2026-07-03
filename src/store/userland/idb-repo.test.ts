@@ -248,6 +248,7 @@ test("backup round-trips the profile via replace import", async () => {
 			avatarPreset: "violet",
 			favoriteSetId: "base1",
 			displayLanguage: "en",
+			displayCurrency: "USD",
 			createdAt: 1,
 			updatedAt: 2,
 			deletedAt: null,
@@ -367,6 +368,17 @@ test("profile save() patches displayLanguage", async () => {
 	expect(updated.displayLanguage).toBe("de");
 	expect(updated.displayName).toBe("Ash"); // other fields preserved
 	expect((await repo.get())?.displayLanguage).toBe("de");
+});
+
+test("profile save() persists displayCurrency and defaults it to USD", async () => {
+	const repo = freshProfileRepo();
+	const created = await repo.save({ displayName: "X", displayCurrency: "JPY" });
+	expect(created.displayCurrency).toBe("JPY");
+	expect((await repo.get())?.displayCurrency).toBe("JPY");
+
+	const otherRepo = freshProfileRepo();
+	const defaulted = await otherRepo.save({ displayName: "Y" });
+	expect(defaulted.displayCurrency).toBe("USD");
 });
 
 test("profile save() serializes overlapping saves (no lost update)", async () => {

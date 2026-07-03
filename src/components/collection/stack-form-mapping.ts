@@ -21,7 +21,8 @@ export function itemToForm(i: Stack): StackFormValues {
 		label: i.label ?? "",
 		quantity: String(i.quantity),
 		acquiredAt: dayMsToInput(i.acquiredAt),
-		pricePaid: minorUnitsToInput(i.pricePaid),
+		pricePaid: minorUnitsToInput(i.pricePaid, i.currency ?? "USD"),
+		currency: i.currency ?? "USD",
 		language: i.language ?? "en",
 		variant: i.variant ?? "",
 		variantId: i.printing?.variantId ?? "",
@@ -39,14 +40,12 @@ export function itemToForm(i: Stack): StackFormValues {
 
 /**
  * Converts a complete set of form values to the editable fields patch. Handles
- * the raw/graded split in one place; used by the draft→Save form. Omits
- * `currency`: the form has no currency input yet, so editing a stack must never
- * clobber its currency (new stacks default to USD via the repo's fillStack).
+ * the raw/graded split in one place; used by the draft→Save form.
  */
 export function formToPatch(
 	values: StackFormValues,
 	variantsDetailed?: CardVariant[],
-): Omit<EditableStackFields, "currency"> {
+): EditableStackFields {
 	// A picked detailed printing wins: it sets both the structured identity and
 	// the display label. Otherwise fall back to the coarse free-text variant.
 	const chosen = values.variantId
@@ -56,7 +55,8 @@ export function formToPatch(
 		label: values.label.trim() === "" ? null : values.label.trim(),
 		quantity: Math.max(1, Math.floor(Number(values.quantity)) || 1),
 		acquiredAt: inputDayToMs(values.acquiredAt),
-		pricePaid: inputToMinorUnits(values.pricePaid),
+		pricePaid: inputToMinorUnits(values.pricePaid, values.currency || "USD"),
+		currency: values.currency || "USD",
 		language: values.language || "en",
 		variant: chosen
 			? variantLabel(chosen)
@@ -90,7 +90,12 @@ export function formToPatch(
 export function formFieldToPatch(
 	field: keyof StackFormValues,
 	value: string,
-	ctx?: { gradingCompany?: string; grade?: string; gradingCert?: string },
+	ctx?: {
+		gradingCompany?: string;
+		grade?: string;
+		gradingCert?: string;
+		currency?: string;
+	},
 ): StackPatch {
 	switch (field) {
 		case "quantity":
@@ -98,7 +103,9 @@ export function formFieldToPatch(
 		case "acquiredAt":
 			return { acquiredAt: inputDayToMs(value) };
 		case "pricePaid":
-			return { pricePaid: inputToMinorUnits(value) };
+			return { pricePaid: inputToMinorUnits(value, ctx?.currency ?? "USD") };
+		case "currency":
+			return { currency: value || "USD" };
 		case "language":
 			return { language: value || "en" };
 		case "source":

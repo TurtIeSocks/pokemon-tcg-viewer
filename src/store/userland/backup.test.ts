@@ -227,6 +227,7 @@ test("parseSnapshot backfills a partial v3 profile (no undefined fields)", () =>
 		avatarPreset: "dusk",
 		favoriteSetId: null,
 		displayLanguage: "en",
+		displayCurrency: "USD",
 		createdAt: 0,
 		updatedAt: 0,
 		deletedAt: null,
@@ -267,6 +268,25 @@ test("parseSnapshot round-trips an explicit profile.displayLanguage", () => {
 	};
 	const snap = parseSnapshot(JSON.stringify(withProfile));
 	expect(snap.profile?.displayLanguage).toBe("fr");
+});
+
+test("parseSnapshot backfills profile.displayCurrency to 'USD' when absent", () => {
+	// An older snapshot whose profile predates the displayCurrency field.
+	const withProfile = {
+		...good,
+		profile: {
+			id: "me",
+			displayName: "Ash",
+			bio: null,
+			avatarPreset: "dusk",
+			favoriteSetId: null,
+			displayLanguage: "en",
+			createdAt: 1,
+			updatedAt: 1,
+		},
+	};
+	const snap = parseSnapshot(JSON.stringify(withProfile));
+	expect(snap.profile?.displayCurrency).toBe("USD");
 });
 
 test("snapshotFilename formats the date", () => {

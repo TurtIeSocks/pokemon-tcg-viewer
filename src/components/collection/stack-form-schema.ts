@@ -44,6 +44,7 @@ export const stackFormSchema = z.object({
 	quantity: z.string().refine(isPositiveIntStr, "Whole number ≥ 1"),
 	acquiredAt: z.string().refine(isValidDateStr, "Invalid date"),
 	pricePaid: z.string().refine(isMoneyOrEmpty, "Must be a number ≥ 0"),
+	currency: z.string(),
 	language: z.string(),
 	variant: z.string(),
 	variantId: z.string(),

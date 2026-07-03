@@ -27,6 +27,12 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+	CURRENCY_LABELS,
+	defaultCurrencyForLocale,
+	SUPPORTED_CURRENCIES,
+	toSupportedCurrency,
+} from "@/lib/currencies";
 import { fieldErrorText } from "@/lib/field-error";
 import {
 	LANGUAGE_LABELS,
@@ -52,6 +58,7 @@ const profileFormSchema = z.object({
 	avatarPreset: z.string(),
 	favoriteSetId: z.string(),
 	displayLanguage: z.string(),
+	displayCurrency: z.string(),
 });
 
 /** Props for {@link ProfileFormDialog}. */
@@ -87,6 +94,9 @@ export function ProfileFormDialog({
 			avatarPreset: profile?.avatarPreset ?? DEFAULT_AVATAR_PRESET_ID,
 			favoriteSetId: profile?.favoriteSetId ?? NONE,
 			displayLanguage: toSupportedLanguage(profile?.displayLanguage) as string,
+			displayCurrency: (profile?.displayCurrency
+				? toSupportedCurrency(profile.displayCurrency)
+				: defaultCurrencyForLocale()) as string,
 		},
 		validators: { onSubmit: profileFormSchema },
 		onSubmit: async ({ value }) => {
@@ -97,6 +107,7 @@ export function ProfileFormDialog({
 				favoriteSetId:
 					value.favoriteSetId === NONE ? null : value.favoriteSetId,
 				displayLanguage: value.displayLanguage,
+				displayCurrency: value.displayCurrency,
 			});
 			onOpenChange(false);
 		},
@@ -256,6 +267,32 @@ export function ProfileFormDialog({
 											{SUPPORTED_LANGUAGES.map((lang) => (
 												<SelectItem key={lang} value={lang}>
 													{LANGUAGE_LABELS[lang]}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</Field>
+							)}
+						/>
+
+						{/* Portfolio display currency */}
+						<form.Field
+							name="displayCurrency"
+							// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
+							children={(field) => (
+								<Field>
+									<FieldLabel htmlFor={field.name}>Currency</FieldLabel>
+									<Select
+										value={field.state.value}
+										onValueChange={(v) => field.handleChange(v)}
+									>
+										<SelectTrigger id={field.name}>
+											<SelectValue placeholder="USD" />
+										</SelectTrigger>
+										<SelectContent>
+											{SUPPORTED_CURRENCIES.map((c) => (
+												<SelectItem key={c} value={c}>
+													{CURRENCY_LABELS[c]}
 												</SelectItem>
 											))}
 										</SelectContent>
