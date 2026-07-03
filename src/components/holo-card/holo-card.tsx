@@ -69,6 +69,12 @@ export interface HoloCardProps {
 	cardNumber?: string;
 	owned?: boolean;
 	tilt?: boolean;
+	/**
+	 * Render this card's REVERSE HOLO printing — foil on the body, plain art
+	 * window (simey CardProxy `isReverse`). Callers decide from printing data:
+	 * a vault stack's recorded printing, or the card page's printing toggle.
+	 */
+	reverse?: boolean;
 	/** Debug: hold the foil statically lit (no hover needed). Dev tooling only. */
 	forceFoil?: boolean;
 
@@ -98,6 +104,7 @@ export function HoloCard({
 	cardNumber,
 	owned = false,
 	tilt = false,
+	reverse = false,
 	forceFoil = false,
 	onClick,
 	onPrefetch,
@@ -116,6 +123,7 @@ export function HoloCard({
 		subtypes,
 		supertype,
 		holo: variantsToHolo(variants),
+		reverse,
 	});
 	// Real per-card CDN foil + mask (modern sets); 404 → procedural fallback.
 	// Keyed on the EFFECTIVE rarity so the foil URL always agrees with the CSS

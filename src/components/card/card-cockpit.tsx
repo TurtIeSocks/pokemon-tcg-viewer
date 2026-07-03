@@ -1,7 +1,8 @@
 import { ClientOnly, Link } from "@tanstack/react-router";
-import type { CSSProperties } from "react";
+import { type CSSProperties, useEffect, useState } from "react";
 import { cardImage } from "@/lib/card-image";
 import type { CardTab } from "../../lib/card-route";
+import { hasReverseVariant } from "../../lib/card-variants";
 import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import { PRICING_ENABLED } from "../../lib/pricing-flag";
 import type { FocusCardData } from "../../server/card-mappers";
@@ -68,6 +69,13 @@ export function CardCockpit({
 	};
 	const accent = getReadableAccent(getCardAccent(card.types));
 	const variants = holo.variants;
+	// Printing toggle: flip the art rail between the standard printing and the
+	// reverse holo when the card was printed in both. Ephemeral view state —
+	// reset when the modal swipes to another card.
+	const canReverse = hasReverseVariant(variants);
+	const [showReverse, setShowReverse] = useState(false);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: card.id is the intended reset trigger.
+	useEffect(() => setShowReverse(false), [card.id]);
 	return (
 		<div className="@container" style={{ "--accent": accent } as CSSProperties}>
 			{/* Persistent card-art rail + a folder: organizer tabs opening onto a
@@ -87,10 +95,41 @@ export function CardCockpit({
 						>
 							<HoloCard
 								{...holoCardProps(holo)}
+								reverse={canReverse && showReverse}
 								size="focus"
 								className="w-full"
 							/>
 						</ClientOnly>
+						{canReverse && (
+							<ClientOnly fallback={null}>
+								<div
+									role="group"
+									aria-label="Printing"
+									className="inline-flex self-center rounded-[var(--r-pill)] border border-white/10 bg-white/[0.05] p-0.5 backdrop-blur-sm"
+								>
+									{(
+										[
+											[false, "Standard"],
+											[true, "Reverse Holo"],
+										] as const
+									).map(([isReverse, label]) => (
+										<button
+											key={label}
+											type="button"
+											aria-pressed={showReverse === isReverse}
+											onClick={() => setShowReverse(isReverse)}
+											className={`rounded-[var(--r-pill)] px-3 py-1 font-mono text-[0.65rem] uppercase tracking-[0.08em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] ${
+												showReverse === isReverse
+													? "bg-[var(--primary-wash)] text-[var(--primary-ink)]"
+													: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
+											}`}
+										>
+											{label}
+										</button>
+									))}
+								</div>
+							</ClientOnly>
+						)}
 					</div>
 				</div>
 

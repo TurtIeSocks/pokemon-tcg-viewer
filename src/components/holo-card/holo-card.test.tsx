@@ -116,6 +116,15 @@ describe("<HoloCard />", () => {
 		expect(root.classList.contains("water")).toBe(true);
 	});
 
+	test("reverse prop renders the reverse-holo printing", () => {
+		const { container } = render(
+			<HoloCard {...baseProps} rarity="Common" reverse />,
+		);
+		const root = container.querySelector(".holo-card") as HTMLElement;
+		expect(root.getAttribute("data-rarity")).toBe("common reverse holo");
+		expect(root.classList.contains("reverse-holo")).toBe(true);
+	});
+
 	test("glare-only cards omit data-rarity entirely", () => {
 		const { container } = render(<HoloCard {...baseProps} rarity="Common" />);
 		const root = container.querySelector(".holo-card") as HTMLElement;

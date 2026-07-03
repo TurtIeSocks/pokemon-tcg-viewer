@@ -237,6 +237,24 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		).toBeNull();
 	});
 
+	test("reverse printing suffixes the base rarity (CardProxy isReverse)", () => {
+		expect(holoPresentation({ rarity: "Common", reverse: true })).toEqual({
+			effectiveRarity: "common reverse holo",
+			trainerGallery: false,
+			className: "reverse-holo",
+		});
+		// A reverse printing is always physically foil — the noisy "normal"
+		// variant flag must not flatten it.
+		expect(
+			holoPresentation({ rarity: "Rare", reverse: true, holo: false })
+				.effectiveRarity,
+		).toBe("rare reverse holo");
+		// Missing rarity still produces a valid reverse family.
+		expect(holoPresentation({ reverse: true }).effectiveRarity).toBe(
+			"common reverse holo",
+		);
+	});
+
 	test("vintage Rare Holo → rare holo cosmos via era table", () => {
 		expect(
 			holoPresentation({ rarity: "Rare Holo", series: "Neo" }).effectiveRarity,

@@ -81,6 +81,13 @@ export interface HoloPresentationInput {
 	supertype?: string;
 	/** variantsToHolo(variants) — false = known non-holo printing. */
 	holo?: boolean;
+	/**
+	 * Render the card's REVERSE HOLO printing (foil everywhere except the art
+	 * window). Mirrors simey CardProxy's `isReverse` prop: the base rarity gets
+	 * a " reverse holo" suffix, which is all the reverse CSS keys on
+	 * ([data-rarity$="reverse holo"]) and what routes the CDN reverse mask.
+	 */
+	reverse?: boolean;
 }
 
 export interface HoloPresentation {
@@ -106,9 +113,29 @@ export interface HoloPresentation {
 export function holoPresentation(
 	input: HoloPresentationInput,
 ): HoloPresentation {
-	const { rarity, series, setId, cardNumber, subtypes, supertype, holo } =
-		input;
+	const {
+		rarity,
+		series,
+		setId,
+		cardNumber,
+		subtypes,
+		supertype,
+		holo,
+		reverse,
+	} = input;
 	void supertype; // routing is rarity/number-driven; supertype flows via data attrs
+
+	// Reverse holo printing: a per-PRINTING override, decided before everything
+	// else (a reverse is always physically foil, whatever the base rarity or
+	// the noisy variant flags say). CardProxy: rarity + " Reverse Holo".
+	if (reverse) {
+		const eff = `${(rarity ?? "common").toLowerCase()} reverse holo`;
+		return {
+			effectiveRarity: eff,
+			trainerGallery: false,
+			className: effectiveToClass(eff),
+		};
+	}
 
 	let eff = getEffectiveRarity(rarity);
 

@@ -32,3 +32,26 @@ test("variantLabel humanizes multi-token subtypes, keeping inter-digit hyphens",
 		"1999-2000 Copyright · Holo",
 	);
 });
+
+test("hasReverseVariant detects TCGdex + legacy TCGplayer keys", async () => {
+	const { hasReverseVariant } = await import("./card-variants");
+	expect(hasReverseVariant(["normal", "reverse"])).toBe(true);
+	expect(hasReverseVariant(["normal", "reverseHolofoil"])).toBe(true);
+	expect(hasReverseVariant(["normal", "holo"])).toBe(false);
+	expect(hasReverseVariant(undefined)).toBe(false);
+	expect(hasReverseVariant([])).toBe(false);
+});
+
+test("isReversePrinting prefers exact printing, falls back to legacy variant", async () => {
+	const { isReversePrinting } = await import("./card-variants");
+	expect(isReversePrinting({ printing: v({ type: "reverse" }) })).toBe(true);
+	expect(
+		isReversePrinting({ printing: v({ type: "holo" }), variant: "reverse" }),
+	).toBe(false);
+	expect(isReversePrinting({ printing: null, variant: "reverse" })).toBe(true);
+	expect(
+		isReversePrinting({ printing: null, variant: "reverseHolofoil" }),
+	).toBe(true);
+	expect(isReversePrinting({ printing: null, variant: "normal" })).toBe(false);
+	expect(isReversePrinting({ printing: null, variant: null })).toBe(false);
+});
