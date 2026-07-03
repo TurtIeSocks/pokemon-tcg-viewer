@@ -56,3 +56,4 @@ worker/.wrangler/
 # tcgcsv product cache (build intermediate; CI restores via actions/cache keyed on
 # tcgcsv's last-updated.txt). The crosswalk JSONs in scripts/data/ ARE committed.
 /scripts/data/.cache/
+.playwright-mcp

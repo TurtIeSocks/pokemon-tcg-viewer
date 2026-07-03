@@ -3038,10 +3038,10 @@
 
 .holo-card[data-frame="vintage"] {
 	/* ── THE SIX KNOBS ─────────────────────────────────────────────────── */
-	--vintage-window-top: 10.5%; /* foil TOP edge (just under the name bar) */
-	--vintage-window-bottom: 49%; /* foil BOTTOM edge (just above species bar) */
-	--vintage-window-left: 6.5%; /* foil LEFT edge (inner gold frame) */
-	--vintage-window-right: 93.5%; /* foil RIGHT edge (from card LEFT!) */
+	--vintage-window-top: 11%; /* foil TOP edge (just under the name bar) */
+	--vintage-window-bottom: 52%; /* foil BOTTOM edge (just above species bar) */
+	--vintage-window-left: 8%; /* foil LEFT edge (inner gold frame) */
+	--vintage-window-right: 91%; /* foil RIGHT edge (from card LEFT!) */
 	--vintage-badge-right: 22%; /* stage-badge notch: reaches this far right */
 	--vintage-badge-bottom: 16%; /* stage-badge notch: reaches this far down */
 
