@@ -40,12 +40,12 @@ Philosophy guardrail (from the roadmap): this is a collector ledger, not a specu
 `scripts/build-corpus.ts` already crawls full per-card records from the local TCGdex mirror. `trimCard()` stays price-free. The build additionally emits **`corpus/price-ids.json.gz`** to R2:
 
 ```jsonc
-{ "base1-4": { "cm": 273699, "tp": { "H": 42382 } } }
+{ "base1-4": [273699, 42382] }   // cardId → [cardmarket idProduct | null, tcgplayer productId | null]
 ```
 
 - Server-side artifact for the price builder only. Never shipped to clients.
-- Finish codes: `N` Normal, `H` Holofoil, `R` Reverse Holofoil, `F` 1st Edition (from tcgplayer subtype names; TCGdex pricing block keys).
-- Covers both regions (west + asia crawls both emit into the same map; card ids are globally unique).
+- One tcgplayer `productId` per card (verified: `normal` and `reverse-holofoil` share the same productId — the finish lives in tcgcsv's `subTypeName`). Finish codes are assigned at the daily join: `N` Normal, `H` Holofoil, `R` Reverse Holofoil, `1H`/`1N` 1st Edition Holofoil/Normal; unknown subtype names are logged and skipped.
+- Covers both regions (west + asia crawls each emit their own file; card ids are globally unique; the daily builder merges them).
 
 ### 2. Daily price build (`scripts/build-prices.ts` + new Action)
 
