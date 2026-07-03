@@ -3002,45 +3002,92 @@
    overlapping its top-left corner. data-frame="vintage" is set from
    VINTAGE_FRAME_SERIES (holo-style.ts). Only the PROCEDURAL path cares —
    masked cards' real CDN masks supersede clip windows.
-   Window measured off the base1 hi-res scan: x 6.5%→93.5%, y 10.5%→49%;
-   stage-badge notch x ≤22%, y ≤16%. Tune here if an era sits wrong.
-───────────────────────────────────────────────────────────────────────────── */
+
+   ══ TUNING GUIDE ═════════════════════════════════════════════════════════════
+   Edit ONLY the six --vintage-* knobs below — every clip shape (foil window,
+   stage-badge notch, reverse-holo inverse) is derived from them. All values
+   are % measured from the card's TOP-LEFT corner:
+
+        0%                                 100%
+     0% ┌───────────────────────────────────┐
+        │ STAGE 2      Blastoise    100 HP  │
+        │ ┌──────┬──────────────────────┐ ◄── --vintage-window-top
+        │ │badge ├──◄ --vintage-badge-  │   │      (smaller = foil starts higher)
+        │ ├──────┘       bottom/right   │   │
+        │ │                             │   │
+        │ │      ART WINDOW = FOIL      │   │
+        │ │   (reverse holo = foil on   │   │
+        │ │    everything BUT this)     │   │
+        │ └─────────────────────────────┘ ◄── --vintage-window-bottom
+        │ ▲ Shellfish Pokémon. Length…  ▲   │      (bigger = foil reaches lower)
+        │ │ attacks / body text         │   │
+        └─┼─────────────────────────────┼───┘
+          --vintage-window-left         --vintage-window-right
+          (smaller = wider left)        (bigger = wider right; NOTE: measured
+                                         from the LEFT edge, not an inset)
+
+   The badge notch only applies to Stage 1/2 cards ([data-subtypes^="stage"]);
+   Basics and Trainers get the clean rectangle. Live-tune in devtools: select
+   the .holo-card element, override a knob, and set --card-opacity: 1 to hold
+   the foil lit while you adjust.
+
+   Current values measured off the base1 hi-res scan. If a whole ERA sits
+   wrong (not just these numbers), the other lever is VINTAGE_FRAME_SERIES in
+   holo-style.ts (which series get this block at all).
+   ═════════════════════════════════════════════════════════════════════════ */
 
 .holo-card[data-frame="vintage"] {
-	--clip: inset(10.5% 6.5% 51% 6.5%);
-	--clip-trainer: inset(10.5% 6.5% 51% 6.5%);
-	--clip-stage: polygon(
-		93.5% 10.5%,
-		93.5% 49%,
-		6.5% 49%,
-		6.5% 16%,
-		22% 16%,
-		22% 10.5%
+	/* ── THE SIX KNOBS ─────────────────────────────────────────────────── */
+	--vintage-window-top: 10.5%; /* foil TOP edge (just under the name bar) */
+	--vintage-window-bottom: 49%; /* foil BOTTOM edge (just above species bar) */
+	--vintage-window-left: 6.5%; /* foil LEFT edge (inner gold frame) */
+	--vintage-window-right: 93.5%; /* foil RIGHT edge (from card LEFT!) */
+	--vintage-badge-right: 22%; /* stage-badge notch: reaches this far right */
+	--vintage-badge-bottom: 16%; /* stage-badge notch: reaches this far down */
+
+	/* ── DERIVED SHAPES (no need to touch) ─────────────────────────────── */
+	/* Plain window: Basic Pokémon + Trainers (badge sits outside the art). */
+	--clip: inset(
+		var(--vintage-window-top) calc(100% - var(--vintage-window-right))
+			calc(100% - var(--vintage-window-bottom)) var(--vintage-window-left)
 	);
+	--clip-trainer: var(--clip);
+	/* Stage 1/2 window: same rectangle minus the badge's top-left corner. */
+	--clip-stage: polygon(
+		var(--vintage-window-right) var(--vintage-window-top),
+		var(--vintage-window-right) var(--vintage-window-bottom),
+		var(--vintage-window-left) var(--vintage-window-bottom),
+		var(--vintage-window-left) var(--vintage-badge-bottom),
+		var(--vintage-badge-right) var(--vintage-badge-bottom),
+		var(--vintage-badge-right) var(--vintage-window-top)
+	);
+	/* Reverse holo: whole card face EXCEPT the plain window. */
 	--clip-invert: polygon(
 		0% 0%,
 		100% 0%,
 		100% 100%,
 		0% 100%,
-		0% 49%,
-		93.5% 49%,
-		93.5% 10.5%,
-		6.5% 10.5%,
-		6.5% 49%,
-		0% 49%
+		0% var(--vintage-window-bottom),
+		var(--vintage-window-right) var(--vintage-window-bottom),
+		var(--vintage-window-right) var(--vintage-window-top),
+		var(--vintage-window-left) var(--vintage-window-top),
+		var(--vintage-window-left) var(--vintage-window-bottom),
+		0% var(--vintage-window-bottom)
 	);
+	/* Reverse holo, Stage 1/2: everything except the notched window (the
+	   badge area is part of the frame, so it stays foiled). */
 	--clip-stage-invert: polygon(
 		0% 0%,
 		100% 0%,
 		100% 100%,
 		0% 100%,
-		0% 49%,
-		93.5% 49%,
-		93.5% 10.5%,
-		22% 10.5%,
-		22% 16%,
-		6.5% 16%,
-		6.5% 49%,
-		0% 49%
+		0% var(--vintage-window-bottom),
+		var(--vintage-window-right) var(--vintage-window-bottom),
+		var(--vintage-window-right) var(--vintage-window-top),
+		var(--vintage-badge-right) var(--vintage-window-top),
+		var(--vintage-badge-right) var(--vintage-badge-bottom),
+		var(--vintage-window-left) var(--vintage-badge-bottom),
+		var(--vintage-window-left) var(--vintage-window-bottom),
+		0% var(--vintage-window-bottom)
 	);
 }
