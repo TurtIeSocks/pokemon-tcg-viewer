@@ -9,16 +9,16 @@ function Harness() {
 	return <CardTabs tab={tab} onChange={setTab} />;
 }
 
-test("renders a tablist with two tabs and marks the active one", () => {
+test("renders a tablist with three tabs and marks the active one", () => {
 	render(<CardTabs tab="details" onChange={() => {}} />);
 	expect(screen.getByRole("tablist")).toBeDefined();
 	const tabs = screen.getAllByRole("tab");
-	expect(tabs.length).toBe(2);
+	expect(tabs.length).toBe(3);
 	expect(
 		screen.getByRole("tab", { name: "Details" }).getAttribute("aria-selected"),
 	).toBe("true");
-	// Pricing tab is hidden when PRICING_ENABLED is false.
-	expect(screen.queryByRole("tab", { name: "Pricing" })).toBeNull();
+	// Pricing tab is visible now that PRICING_ENABLED is true.
+	expect(screen.getByRole("tab", { name: "Pricing" })).toBeDefined();
 });
 
 test("clicking a tab calls onChange with its value", () => {
@@ -58,10 +58,10 @@ test("ArrowRight moves DOM focus to the newly active tab", () => {
 	);
 });
 
-test("ArrowLeft from Details wraps to Collection (last tab) via onChange", () => {
+test("ArrowLeft from Details wraps to Pricing (last tab) via onChange", () => {
 	const onChange = mock((_: CardTab) => {});
 	render(<CardTabs tab="details" onChange={onChange} />);
 	const details = screen.getByRole("tab", { name: "Details" });
 	fireEvent.keyDown(details, { key: "ArrowLeft" });
-	expect(onChange.mock.calls[0][0]).toBe("collection");
+	expect(onChange.mock.calls[0][0]).toBe("pricing");
 });

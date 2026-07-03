@@ -1,6 +1,10 @@
 // card-modal.test.tsx
-import { beforeEach, expect, test } from "bun:test";
+import { afterEach, beforeEach, expect, test } from "bun:test";
 import { screen } from "@testing-library/react";
+import {
+	resetPricesRuntimeForTests,
+	usePricesRuntime,
+} from "../../store/corpus/prices-runtime";
 import {
 	makeFocusCard,
 	renderInRouter,
@@ -24,6 +28,10 @@ beforeEach(async () => {
 	await setupUserlandTest();
 });
 
+afterEach(async () => {
+	await resetPricesRuntimeForTests();
+});
+
 test("renders the cockpit with a tablist", async () => {
 	await renderInRouter(
 		<CardModal card={CARD} crossLinks={[]} onClose={() => {}} tab="details" />,
@@ -41,13 +49,22 @@ test("tab='details' shows the Details body", async () => {
 	expect(screen.getByText("Fire Spin")).toBeDefined();
 });
 
-test("tab='pricing' coerces to details when pricing disabled", async () => {
+test("tab='pricing' shows the market-prices section", async () => {
+	usePricesRuntime.setState({
+		byId: new Map(Object.entries({ "base1-4": { tp: { H: [72034, 53499] } } })),
+		meta: {
+			date: "2026-07-03",
+			sources: { tp: "2026-07-03", cm: "2026-07-02" },
+			fx: { base: "EUR", date: "2026-07-03", rates: { USD: 1.09 } },
+		},
+		status: "ready",
+	});
 	await renderInRouter(
 		<CardModal card={CARD} crossLinks={[]} onClose={() => {}} tab="pricing" />,
 	);
-	// PRICING_ENABLED = false — card-cockpit coerces "pricing" → "details", so:
-	//   - no market-prices heading (pricing pane never renders)
-	//   - details body IS visible (Fire Spin attack shows)
-	expect(screen.queryByText(/market prices/i)).toBeNull();
-	expect(screen.getByText("Fire Spin")).toBeDefined();
+	// PRICING_ENABLED = true — the pricing pane renders live prices, so:
+	//   - the market-prices heading IS visible
+	//   - the details body (Fire Spin attack) is NOT shown on this tab
+	expect(screen.getByText(/market prices/i)).toBeDefined();
+	expect(screen.queryByText("Fire Spin")).toBeNull();
 });

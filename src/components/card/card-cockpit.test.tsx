@@ -1,5 +1,9 @@
-import { beforeEach, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, expect, mock, test } from "bun:test";
 import { fireEvent, screen } from "@testing-library/react";
+import {
+	resetPricesRuntimeForTests,
+	usePricesRuntime,
+} from "../../store/corpus/prices-runtime";
 import { addStack } from "../../store/userland/userland-store";
 import {
 	makeCorpusCard,
@@ -33,6 +37,10 @@ beforeEach(async () => {
 	await setupUserlandTest();
 });
 
+afterEach(async () => {
+	await resetPricesRuntimeForTests();
+});
+
 test("Details tab shows the attack body", async () => {
 	await renderInRouter(
 		<CardCockpit card={CARD} tab="details" onTabChange={() => {}} />,
@@ -50,24 +58,31 @@ test("Collection tab shows the StackManager; details body hidden", async () => {
 	expect(screen.queryByText("Fire Spin")).toBeNull();
 });
 
-test("renders Details and Collection folder tabs; Pricing hidden", async () => {
+test("renders Details, Collection, and Pricing folder tabs", async () => {
 	await renderInRouter(
 		<CardCockpit card={CARD} tab="details" onTabChange={() => {}} />,
 	);
 	expect(screen.getByRole("tab", { name: "Details" })).toBeDefined();
 	expect(screen.getByRole("tab", { name: "Collection" })).toBeDefined();
-	// Pricing is hidden while PRICING_ENABLED = false.
-	expect(screen.queryByRole("tab", { name: "Pricing" })).toBeNull();
+	// Pricing is visible now that PRICING_ENABLED = true.
+	expect(screen.getByRole("tab", { name: "Pricing" })).toBeDefined();
 });
 
-test("pricing tab coerces to Details while pricing is disabled", async () => {
+test("pricing tab shows the live market-prices section", async () => {
+	usePricesRuntime.setState({
+		byId: new Map(Object.entries({ "base1-4": { tp: { H: [72034, 53499] } } })),
+		meta: {
+			date: "2026-07-03",
+			sources: { tp: "2026-07-03", cm: "2026-07-02" },
+			fx: { base: "EUR", date: "2026-07-03", rates: { USD: 1.09 } },
+		},
+		status: "ready",
+	});
 	await renderInRouter(
 		<CardCockpit card={CARD} tab="pricing" onTabChange={() => {}} />,
 	);
-	// PRICING_ENABLED = false → the pricing tab is hidden and falls back to
-	// the Details pane rather than a blank panel.
-	expect(screen.getByText("Fire Spin")).toBeDefined();
-	expect(screen.queryByText(/market prices/i)).toBeNull();
+	expect(screen.getByText(/market prices/i)).toBeDefined();
+	expect(screen.queryByText("Fire Spin")).toBeNull();
 });
 
 test("focus art uses the corpus image, not the live-fetched fallback", async () => {
