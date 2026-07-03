@@ -125,6 +125,21 @@ describe("<HoloCard />", () => {
 		expect(root.classList.contains("reverse-holo")).toBe(true);
 	});
 
+	test("Japanese vintage series get data-frame=vintage too", () => {
+		const { container } = render(
+			<HoloCard
+				{...baseProps}
+				rarity="Holo Rare"
+				series="ポケットモンスターカードゲーム"
+			/>,
+		);
+		expect(
+			(container.querySelector(".holo-card") as HTMLElement).getAttribute(
+				"data-frame",
+			),
+		).toBe("vintage");
+	});
+
 	test("WotC-era series get data-frame=vintage; modern series don't", () => {
 		const { container } = render(
 			<HoloCard {...baseProps} rarity="Rare Holo" series="Base" />,
@@ -138,9 +153,9 @@ describe("<HoloCard />", () => {
 			<HoloCard {...baseProps} rarity="Rare Holo" series="Sword & Shield" />,
 		);
 		expect(
-			(modern.container.querySelector(".holo-card") as HTMLElement).getAttribute(
-				"data-frame",
-			),
+			(
+				modern.container.querySelector(".holo-card") as HTMLElement
+			).getAttribute("data-frame"),
 		).toBeNull();
 	});
 

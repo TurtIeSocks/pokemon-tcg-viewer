@@ -33,6 +33,20 @@ export const COSMOS_SERIES: ReadonlySet<string> = new Set([
 	"xy",
 	"sun & moon",
 	"np", // Nintendo Black Star Promos — vintage cosmos foil
+
+	// --- Asian region: TCGdex `serie.name` strings (the corpus joins series
+	// by NAME, and the JP names are the display strings below). Mirrors the
+	// Western table era-for-era.
+	"ポケットモンスターカードゲーム", // PMCG — original series (JP Base/Gym era)
+	"ポケモンカード★neo", // neo
+	"vs", // VS
+	"web", // web
+	"ポケモンカードe", // e — e-Card era
+	"adv", // ADV — EX era (Ruby/Sapphire)
+	"pcg", // PCG — EX era
+	"legend", // L — HGSS era
+	"xy break", // XYb ("xy" itself is already covered above)
+	"サン＆ムーン", // SM — Sun & Moon
 ]);
 
 /**
@@ -64,6 +78,14 @@ export const VINTAGE_FRAME_SERIES: ReadonlySet<string> = new Set([
 	"neo",
 	"e-card",
 	"np", // Nintendo Black Star Promos — WotC-style frame
+
+	// --- Asian region equivalents (TCGdex `serie.name` strings): the JP
+	// original-era frames share the WotC window geometry.
+	"ポケットモンスターカードゲーム", // PMCG — original series
+	"ポケモンカード★neo", // neo
+	"vs", // VS
+	"web", // web
+	"ポケモンカードe", // e — e-Card era
 ]);
 
 /**

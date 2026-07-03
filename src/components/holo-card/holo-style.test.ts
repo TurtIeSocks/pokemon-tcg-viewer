@@ -260,6 +260,29 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 			holoPresentation({ rarity: "Rare Holo", series: "Neo" }).effectiveRarity,
 		).toBe("rare holo cosmos");
 	});
+
+	test("Japanese vintage series route to cosmos (TCGdex serie names)", () => {
+		// PMCG1 リザードン and friends — the Asian corpus joins series by the
+		// Japanese display name, not the Western one.
+		expect(
+			holoPresentation({
+				rarity: "Holo Rare",
+				series: "ポケットモンスターカードゲーム",
+			}).effectiveRarity,
+		).toBe("rare holo cosmos");
+		expect(
+			holoPresentation({ rarity: "Holo Rare", series: "ポケモンカード★neo" })
+				.effectiveRarity,
+		).toBe("rare holo cosmos");
+		expect(
+			holoPresentation({ rarity: "Holo Rare", series: "ADV" }).effectiveRarity,
+		).toBe("rare holo cosmos");
+		// Modern JP stays rarity-driven.
+		expect(
+			holoPresentation({ rarity: "Holo Rare", series: "剣と盾" })
+				.effectiveRarity,
+		).toBe("rare holo");
+	});
 });
 
 describe("variantsToHolo", () => {
