@@ -65,6 +65,9 @@ function upgradeProfile(raw: unknown): UserDataSnapshot["profile"] {
 		// existed default to USD.
 		displayCurrency:
 			typeof raw.displayCurrency === "string" ? raw.displayCurrency : "USD",
+		// Additive field (no schema bump): snapshots saved before hideValue
+		// existed default to false (monetary surfaces visible).
+		hideValue: typeof raw.hideValue === "boolean" ? raw.hideValue : false,
 		createdAt: typeof raw.createdAt === "number" ? raw.createdAt : 0,
 		updatedAt: typeof raw.updatedAt === "number" ? raw.updatedAt : 0,
 		deletedAt: typeof raw.deletedAt === "number" ? raw.deletedAt : null,

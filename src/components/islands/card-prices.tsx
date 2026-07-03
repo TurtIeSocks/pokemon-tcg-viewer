@@ -1,10 +1,9 @@
 import { ClientOnly } from "@tanstack/react-router";
-import { useEffect } from "react";
 import { GlassPanel } from "@/components/ui/glass";
 import { buildPriceLines } from "@/lib/price-lines";
 import {
-	loadPrices,
 	useCardPriceEntry,
+	useEnsurePrices,
 	usePriceSourceDates,
 } from "@/store/corpus/prices-runtime";
 import type { FocusCardData } from "../../server/card-mappers";
@@ -21,11 +20,10 @@ export function CardPrices({ card }: { card: FocusCardData }) {
 }
 
 function PriceLines({ card }: { card: FocusCardData }) {
-	// Load once on mount; idempotent (IDB-first, deduped). A 503 before the first
-	// prod build resolves to status "unavailable" and simply renders no lines.
-	useEffect(() => {
-		loadPrices();
-	}, []);
+	// Load once on mount, then revalidate staleness; idempotent (IDB-first,
+	// deduped). A 503 before the first prod build resolves to status
+	// "unavailable" and simply renders no lines.
+	useEnsurePrices();
 
 	const entry = useCardPriceEntry(card.id);
 	const dates = usePriceSourceDates();

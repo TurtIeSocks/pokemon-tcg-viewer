@@ -71,6 +71,7 @@ export interface ProfileRow {
 	favorite_set_id: string | null;
 	display_language: string; // ISO 639-1 catalog render language (default "en")
 	display_currency: string; // ISO 4217 display/portfolio currency (default "USD")
+	hide_value: boolean; // hide all monetary surfaces (default false)
 	created_at: string;
 	updated_at: string;
 	deleted_at: string | null;
@@ -202,6 +203,7 @@ export function profileToRow(profile: Profile): ProfileRow {
 		favorite_set_id: profile.favoriteSetId,
 		display_language: profile.displayLanguage,
 		display_currency: profile.displayCurrency,
+		hide_value: profile.hideValue,
 		created_at: msToIso(profile.createdAt),
 		updated_at: msToIso(profile.updatedAt),
 		deleted_at: msOrNullToIso(profile.deletedAt),
@@ -221,6 +223,7 @@ export function rowToProfile(row: ProfileRow): Profile {
 			typeof row.display_language === "string" ? row.display_language : "en",
 		displayCurrency:
 			typeof row.display_currency === "string" ? row.display_currency : "USD",
+		hideValue: typeof row.hide_value === "boolean" ? row.hide_value : false,
 		createdAt: isoToMs(row.created_at),
 		updatedAt: isoToMs(row.updated_at),
 		deletedAt: isoOrNullToMs(row.deleted_at),

@@ -125,6 +125,7 @@ export interface Profile {
 	favoriteSetId: string | null; // corpus set id (FK); null = none picked
 	displayLanguage: string; // ISO 639-1; catalog render language; always present (default "en")
 	displayCurrency: string; // ISO 4217; portfolio/display currency; always present (default "USD")
+	hideValue: boolean; // hide all monetary surfaces; always present (default false)
 	createdAt: number; // ms epoch; set on first save
 	updatedAt: number; // ms epoch; bumped each save
 	deletedAt: number | null; // ms epoch tombstone; null = live. Reserved for the sync adapter.
@@ -140,6 +141,7 @@ export type ProfilePatch = Partial<
 		| "favoriteSetId"
 		| "displayLanguage"
 		| "displayCurrency"
+		| "hideValue"
 	>
 >;
 

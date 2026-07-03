@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 import { apiBase } from "../../lib/api-base-client";
@@ -155,6 +156,19 @@ export async function syncPrices(): Promise<void> {
 	} catch (e) {
 		if (isUnavailable(e)) usePricesRuntime.setState({ status: "unavailable" });
 	}
+}
+
+/**
+ * Mount hook: load the price blob (IDB-first, instant) then revalidate its date
+ * against the server and re-download if stale. Idempotent + deduped by
+ * loadPrices/downloadPrices' own guards, so multiple mounts are cheap. This is
+ * the sole wiring of syncPrices — without it a cached client never sees a newer
+ * daily blob until IDB is cleared.
+ */
+export function useEnsurePrices(): void {
+	useEffect(() => {
+		loadPrices().then(() => syncPrices());
+	}, []);
 }
 
 /** Per-card price entry. Stable `Map.get` reference → cheap S3 subscription. */

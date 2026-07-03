@@ -162,6 +162,7 @@ export function makeProfile(overrides: Partial<Profile> = {}): Profile {
 		favoriteSetId: null,
 		displayLanguage: "en",
 		displayCurrency: "USD",
+		hideValue: false,
 		createdAt: now,
 		updatedAt: now,
 		deletedAt: null,

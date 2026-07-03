@@ -223,6 +223,7 @@ export function createIdbProfileRepo(
 							favoriteSetId: patch.favoriteSetId ?? null,
 							displayLanguage: patch.displayLanguage ?? "en",
 							displayCurrency: patch.displayCurrency ?? "USD",
+							hideValue: patch.hideValue ?? false,
 							createdAt: now,
 							updatedAt: now,
 							deletedAt: null,
