@@ -249,6 +249,7 @@ test("backup round-trips the profile via replace import", async () => {
 			favoriteSetId: "base1",
 			displayLanguage: "en",
 			displayCurrency: "USD",
+			hideValue: false,
 			createdAt: 1,
 			updatedAt: 2,
 			deletedAt: null,
@@ -379,6 +380,17 @@ test("profile save() persists displayCurrency and defaults it to USD", async () 
 	const otherRepo = freshProfileRepo();
 	const defaulted = await otherRepo.save({ displayName: "Y" });
 	expect(defaulted.displayCurrency).toBe("USD");
+});
+
+test("profile save() persists hideValue and defaults it to false", async () => {
+	const repo = freshProfileRepo();
+	const created = await repo.save({ displayName: "X", hideValue: true });
+	expect(created.hideValue).toBe(true);
+	expect((await repo.get())?.hideValue).toBe(true);
+
+	const otherRepo = freshProfileRepo();
+	const defaulted = await otherRepo.save({ displayName: "Y" });
+	expect(defaulted.hideValue).toBe(false);
 });
 
 test("profile save() serializes overlapping saves (no lost update)", async () => {

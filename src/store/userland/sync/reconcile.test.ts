@@ -45,6 +45,7 @@ function makeProfile(id: string, overrides: Partial<Profile> = {}): Profile {
 		favoriteSetId: null,
 		displayLanguage: "en",
 		displayCurrency: "USD",
+		hideValue: false,
 		createdAt: 1000,
 		updatedAt: 2000,
 		deletedAt: null,

@@ -343,6 +343,7 @@ function createProfileRepo(client: SupabaseClient): ProfileRepo {
 								patch.displayLanguage ?? existingProfile.displayLanguage,
 							displayCurrency:
 								patch.displayCurrency ?? existingProfile.displayCurrency,
+							hideValue: patch.hideValue ?? existingProfile.hideValue,
 						},
 						updatedAt: now,
 					}
@@ -354,6 +355,7 @@ function createProfileRepo(client: SupabaseClient): ProfileRepo {
 						favoriteSetId: patch.favoriteSetId ?? null,
 						displayLanguage: patch.displayLanguage ?? "en",
 						displayCurrency: patch.displayCurrency ?? "USD",
+						hideValue: patch.hideValue ?? false,
 						createdAt: now,
 						updatedAt: now,
 						deletedAt: null,

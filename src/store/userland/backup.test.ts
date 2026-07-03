@@ -228,6 +228,7 @@ test("parseSnapshot backfills a partial v3 profile (no undefined fields)", () =>
 		favoriteSetId: null,
 		displayLanguage: "en",
 		displayCurrency: "USD",
+		hideValue: false,
 		createdAt: 0,
 		updatedAt: 0,
 		deletedAt: null,
@@ -287,6 +288,29 @@ test("parseSnapshot backfills profile.displayCurrency to 'USD' when absent", () 
 	};
 	const snap = parseSnapshot(JSON.stringify(withProfile));
 	expect(snap.profile?.displayCurrency).toBe("USD");
+});
+
+test("upgrade backfills hideValue to false when absent", () => {
+	const raw = {
+		schemaVersion: 6,
+		exportedAt: 1,
+		collection: [],
+		binders: [],
+		profile: {
+			id: "me",
+			displayName: "X",
+			bio: null,
+			avatarPreset: "a",
+			favoriteSetId: null,
+			displayLanguage: "en",
+			displayCurrency: "USD",
+			createdAt: 1,
+			updatedAt: 1,
+			deletedAt: null,
+		},
+	};
+	const up = upgrade(raw as never);
+	expect(up.profile?.hideValue).toBe(false);
 });
 
 test("snapshotFilename formats the date", () => {

@@ -410,6 +410,7 @@ describe("backup.importAll", () => {
 				favoriteSetId: null,
 				displayLanguage: "en",
 				displayCurrency: "USD",
+				hideValue: false,
 				createdAt: Date.now(),
 				updatedAt: Date.now(),
 				deletedAt: null as null,
