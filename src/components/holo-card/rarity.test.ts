@@ -47,4 +47,26 @@ describe("getRarityClass", () => {
 		expect(getRarityClass("common")).toBe("no-foil");
 		expect(warnSpy).not.toHaveBeenCalled();
 	});
+
+	test("maps Japanese/TCGdex-native rarities without warning", () => {
+		// Enumerated from the built ja corpus (~2.9k cards across these tiers were
+		// hitting the generic-holo fallback + warn spam). Representative subset:
+		expect(getRarityClass("Super Rare")).toBe("ultra");
+		expect(getRarityClass("Holo Rare")).toBe("holo-basic");
+		expect(getRarityClass("Art Rare")).toBe("trainer-gallery");
+		expect(getRarityClass("Special Art Rare")).toBe("trainer-gallery");
+		expect(getRarityClass("Character Rare")).toBe("trainer-gallery");
+		expect(getRarityClass("Secret Rare")).toBe("gold-secret");
+		expect(getRarityClass("Shiny Secret Rare")).toBe("rainbow");
+		expect(getRarityClass("Mega Hyper Rare")).toBe("rainbow");
+		expect(getRarityClass("Kagayaku")).toBe("shining");
+		expect(warnSpy).not.toHaveBeenCalled();
+	});
+
+	test("treats the 'None' rarity sentinel as no-foil, silently", () => {
+		// TCGdex emits the literal string "None" for unrarified cards (427 in the ja
+		// corpus). Distinct from undefined; must not spam the unknown-rarity warn.
+		expect(getRarityClass("None")).toBe("no-foil");
+		expect(warnSpy).not.toHaveBeenCalled();
+	});
 });

@@ -219,6 +219,8 @@ export const getCardForRouteFn = createServerFn({ method: "GET" })
 		);
 		const { getServerCorpusCard } = await import("./corpus-loader");
 		const { withCorpusImage } = await import("../lib/card-image");
+		const { corpusCardToFocus } = await import("./card-mappers");
+		const { OVERLAY_SET_IDS } = await import("../lib/corpus/overlay-sets");
 
 		const region = regionForLanguage(data.lang);
 
@@ -233,11 +235,35 @@ export const getCardForRouteFn = createServerFn({ method: "GET" })
 		// are independent once we have the id. The corpus card reconciles the image
 		// (below); a failure there must not break the card load, so tolerate
 		// undefined (keeps the live-fetched image as the fallback).
-		const [card, list, corpusCard] = await Promise.all([
-			getCardByIdCached(cardId, data.lang),
+		//
+		// Overlay cards (the tcgcsv JP fill — sets in OVERLAY_SET_IDS) exist ONLY in
+		// the corpus; TCGdex serves them with an empty cards[], so the live fetch
+		// 404s. Swallow ONLY that 404 (a genuine "no source record"), never a real
+		// fetch failure — those still surface as an error. A 404 for a NON-overlay
+		// card keeps the not-found signal (return null → notFound below).
+		const [liveCard, list, corpusCard] = await Promise.all([
+			getCardByIdCached(cardId, data.lang).catch((e) => {
+				if (e instanceof Response && e.status === 404) return null;
+				throw e;
+			}),
 			getPokemonListCached(),
 			getServerCorpusCard(cardId, region).catch(() => undefined),
 		]);
+
+		// Degrade an overlay card (no live detail record) to a corpus-synthesized
+		// detail: image + name + number + rarity + set, no battle data. Any other
+		// missing card is a genuine not-found.
+		const card =
+			liveCard ??
+			(corpusCard && OVERLAY_SET_IDS.has(set.id)
+				? corpusCardToFocus(corpusCard, {
+						name: set.name,
+						series: series.name,
+						releaseDate: set.releaseDate,
+						logo: set.logo,
+					})
+				: null);
+		if (!card) return null;
 
 		const crossLinks: RouteCrossLink[] = [];
 		for (const dex of card.nationalPokedexNumbers ?? []) {

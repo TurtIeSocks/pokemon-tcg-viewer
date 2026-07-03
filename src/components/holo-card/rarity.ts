@@ -1,7 +1,7 @@
 /**
- * pokemontcg.io rarity strings → our internal CSS class. Keep the keys
- * verbatim from the API; treat the value as a stable identifier referenced
- * in rarity-styles.css.
+ * Card rarity string → our internal CSS class. Keys are verbatim from the
+ * source (pokemontcg.io for the Western corpus, raw TCGdex for the Asian
+ * region); the value is a stable identifier referenced in rarity-styles.css.
  *
  * Plain Common / Uncommon / Rare have no foil — they map to "no-foil"
  * explicitly so they don't hit the warn-and-fallback path.
@@ -47,6 +47,30 @@ const RARITY_CLASS = {
 	Promo: "holo-basic",
 	LEGEND: "holo-basic",
 	"Classic Collection": "holo-basic",
+
+	// --- TCGdex-native (Asian region) rarities. Enumerated from the built ja
+	// corpus; foil class picked to mirror the closest Western tier. Cosmetic
+	// (foil texture only), so a sensible mapping beats the generic fallback and
+	// silences the per-card warn. "None" is TCGdex's unrarified sentinel.
+	None: "no-foil",
+	"Holo Rare": "holo-basic",
+	"Super Rare": "ultra", // JP SR — full-art
+	"Super Rare Holo": "ultra",
+	"Art Rare": "trainer-gallery", // JP AR ≈ Illustration Rare
+	"Special Art Rare": "trainer-gallery", // JP SAR ≈ Special Illustration Rare
+	"Character Rare": "trainer-gallery", // CHR — full-art character
+	"Character Super Rare": "rainbow", // CSR — premium full-art character
+	"Trainer Rare": "trainer-gallery",
+	"Triple Rare": "holo-v", // RRR — full-card sheen like Double Rare
+	"Prism Rare": "holo-basic", // Prism Star
+	"ACE Rare": "holo-basic", // ACE SPEC, cf. "Rare ACE"
+	"Secret Rare": "gold-secret", // cf. "Rare Secret"
+	"Shiny Secret Rare": "rainbow",
+	"Rare Holo LEGEND": "holo-basic", // cf. LEGEND
+	Kagayaku: "shining", // 輝く — Shining Pokémon
+	Shining: "shining",
+	"Mega Hyper Rare": "rainbow", // cf. Hyper Rare
+	"Black White Rare": "holo-basic",
 } as const;
 
 export const KNOWN_RARITIES: ReadonlySet<string> = new Set(

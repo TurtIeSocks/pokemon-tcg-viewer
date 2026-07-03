@@ -17,6 +17,7 @@ import {
 	useActiveI18n,
 	useEnsureI18n,
 } from "../../store/corpus/i18n-active-hooks";
+import { setsForRegion } from "../../store/sets-slice";
 import { CardModal } from "./card-modal";
 
 function detailHasCard(
@@ -52,7 +53,11 @@ export function CardOverlay() {
 	const router = useRouter();
 	const slugIndex = useSlugIndex();
 	const index = useCorpusRuntime((s) => s.index);
-	const sets = useStore((s) => s.sets);
+	const activeRegion = useCorpusRuntime((s) => s.activeRegion);
+	// The active-region sets, to match the active-region `index` above -- a bare
+	// west-only `s.sets` would leave an asia card overlay without its set
+	// metadata (name/series/date) and derived image.
+	const sets = useStore((s) => setsForRegion(s, activeRegion) ?? null);
 	const detailById = useDetailRuntime((s) => s.detailById);
 	useEnsureI18n();
 	const i18n = useActiveI18n();

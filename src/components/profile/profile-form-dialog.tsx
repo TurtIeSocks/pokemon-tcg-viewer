@@ -3,6 +3,7 @@
 import { useForm } from "@tanstack/react-form";
 import { useMemo } from "react";
 import { z } from "zod";
+import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -35,6 +36,7 @@ import {
 } from "@/lib/languages";
 import { cn } from "@/lib/utils";
 import { useStore } from "../../store";
+import { allLoadedSets } from "../../store/sets-slice";
 import type { Profile } from "../../store/userland/types";
 import { updateProfile } from "../../store/userland/userland-store";
 import {
@@ -67,10 +69,13 @@ export function ProfileFormDialog({
 	onOpenChange,
 	profile,
 }: ProfileFormDialogProps) {
-	const sets = useStore((s) => s.sets);
+	// Favorite set can be from any region the collector browses, so offer every
+	// loaded region's sets (not the bare west-only `sets`). allLoadedSets builds a
+	// fresh array, so useShallow keeps the subscription/ref stable across writes.
+	const sets = useStore(useShallow(allLoadedSets));
 	const setOptions = useMemo(
 		() =>
-			(sets ?? [])
+			sets
 				.map((s) => ({ id: s.id, name: s.name }))
 				.sort((a, b) => a.name.localeCompare(b.name)),
 		[sets],

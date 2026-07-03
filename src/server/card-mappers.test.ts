@@ -1,7 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { variantLabel } from "../lib/card-variants";
+import type { CorpusCard } from "../store/corpus/corpus-types";
 import type { TcgdexFocusCard } from "./card-mappers";
-import { apiCardToFocusProps, mapTcgdexFocusCard } from "./card-mappers";
+import {
+	apiCardToFocusProps,
+	corpusCardToFocus,
+	mapTcgdexFocusCard,
+} from "./card-mappers";
 
 test("mapTcgdexFocusCard coerces numeric hp and attack damage to strings", () => {
 	const f = mapTcgdexFocusCard({
@@ -143,5 +148,53 @@ describe("apiCardToFocusProps", () => {
 		});
 		expect(out.setLogo).toBe("logo.png");
 		expect(out.attacks?.[0]?.name).toBe("Star Blaze");
+	});
+});
+
+describe("corpusCardToFocus", () => {
+	const overlayCard: CorpusCard = {
+		id: "SV1a-001",
+		name: "Pikachu",
+		imageUrl: "https://tcgplayer.example/400/SV1a-001",
+		imageUrlSmall: "https://tcgplayer.example/200/SV1a-001",
+		imageBase: null,
+		rarity: "Art Rare",
+		supertype: "Pokémon",
+		types: ["Lightning"],
+		setId: "SV1a",
+		number: "001",
+	};
+
+	test("synthesizes a FocusCardData from a corpus-only overlay card + set", () => {
+		const f = corpusCardToFocus(overlayCard, {
+			name: "Triplet Beat",
+			series: "Scarlet & Violet",
+			releaseDate: "2023-03-17",
+			logo: "logo.png",
+		});
+		expect(f.id).toBe("SV1a-001");
+		expect(f.name).toBe("Pikachu");
+		expect(f.imageUrl).toBe("https://tcgplayer.example/400/SV1a-001");
+		expect(f.imageBase).toBeNull();
+		expect(f.rarity).toBe("Art Rare");
+		expect(f.supertype).toBe("Pokémon");
+		expect(f.setId).toBe("SV1a");
+		expect(f.setName).toBe("Triplet Beat");
+		expect(f.setSeries).toBe("Scarlet & Violet");
+		expect(f.setReleaseDate).toBe("2023-03-17");
+		expect(f.setLogo).toBe("logo.png");
+		expect(f.cardNumber).toBe("001");
+	});
+
+	test("leaves battle fields undefined (overlay source carries none)", () => {
+		const f = corpusCardToFocus(overlayCard, {
+			name: "Triplet Beat",
+			series: "Scarlet & Violet",
+		});
+		expect(f.attacks).toBeUndefined();
+		expect(f.abilities).toBeUndefined();
+		expect(f.hp).toBeUndefined();
+		expect(f.weaknesses).toBeUndefined();
+		expect(f.flavorText).toBeUndefined();
 	});
 });

@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Boxes, History, Search } from "lucide-react";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import {
 	CommandDialog,
 	CommandEmpty,
@@ -31,6 +32,7 @@ import {
 } from "../../store/corpus/i18n-active-hooks";
 import { useStore } from "../../store/index";
 import { useRecentsStore } from "../../store/recents";
+import { allLoadedSets } from "../../store/sets-slice";
 import { cardThumbSrc, type HoloCardData } from "../holo-card";
 import { NAV_DESTINATIONS } from "./command-palette-data";
 
@@ -60,7 +62,10 @@ export function CommandPalette({ tree }: { tree: NavTree }) {
 	const trimmed = deferred.trim();
 
 	const index = useCorpusRuntime((s) => s.index);
-	const sets = useStore((s) => s.sets);
+	// ⌘K searches every loaded region's sets (not the bare west-only `sets`), so an
+	// Asian set resolves + is navigable. allLoadedSets builds a fresh array, so
+	// useShallow keeps the subscription/ref stable across unrelated store writes.
+	const sets = useStore(useShallow(allLoadedSets));
 	const slugIndex = useSlugIndex();
 	const recentSearches = useRecentsStore((s) => s.recentSearches);
 	const recentlyViewed = useRecentsStore((s) => s.recentlyViewed);
@@ -87,7 +92,7 @@ export function CommandPalette({ tree }: { tree: NavTree }) {
 	useEnsureI18n();
 	const i18n = useActiveI18n();
 	const cardResults = useMemo(() => {
-		if (!trimmed || !index || !sets) return [];
+		if (!trimmed || !index || !sets.length) return [];
 		return queryTopCards(trimmed, index, sets, i18n);
 	}, [trimmed, index, sets, i18n]);
 

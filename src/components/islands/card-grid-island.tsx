@@ -23,6 +23,7 @@ import {
 	useDisplayLanguage,
 	useEnsureI18n,
 } from "../../store/corpus/i18n-active-hooks";
+import { setsForRegion } from "../../store/sets-slice";
 import { useOwnedCardIdSet } from "../../store/userland/selectors";
 import { CollectionToggle } from "../collection-toggle";
 import { cardThumbSrc, type HoloCardData, holoCardProps } from "../holo-card";
@@ -55,12 +56,17 @@ export function CardGridIsland({
 	cardHref,
 }: CardGridIslandProps) {
 	const corpusReady = useCorpusRuntime((s) => s.index !== null);
-	// Gate on sets too: the corpus hydrates cards from useStore.sets, and the
+	const activeRegion = useCorpusRuntime((s) => s.activeRegion);
+	// Gate on sets too: the corpus hydrates cards from the sets list, and the
 	// per-query cache is keyed only by the corpus index — querying before sets
 	// arrive would cache cards with raw set IDs and no date sort until the next
-	// corpus reload. Both load on mount; sets is the smaller fetch so this rarely
-	// blocks. If sets fails, the grid stays on the correct SSR seed.
-	const setsReady = useStore((s) => s.sets !== null);
+	// corpus reload. Gate on the ACTIVE region's sets (not the bare west-only
+	// `sets` field) so an asia grid waits for the asia sets, not the western
+	// ones. Both load on mount; sets is the smaller fetch so this rarely blocks.
+	// If sets fails, the grid stays on the correct SSR seed.
+	const setsReady = useStore(
+		(s) => setsForRegion(s, activeRegion) !== undefined,
+	);
 	const ready = corpusReady && setsReady;
 	const [cards, setCards] = useState<HoloCardData[]>(seedCards);
 	const [total, setTotal] = useState(seedTotal);

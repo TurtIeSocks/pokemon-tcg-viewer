@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { useStore } from "../../store";
 import {
@@ -6,6 +7,7 @@ import {
 	setsById,
 } from "../../store/corpus/corpus-engine";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
+import { allLoadedSets } from "../../store/sets-slice";
 import { downloadSnapshot } from "../../store/userland/backup";
 import {
 	type CsvMode,
@@ -29,11 +31,11 @@ export function VaultBackupControls() {
 	const [importOpen, setImportOpen] = useState(false);
 	const items = useUserland((s) => s.items);
 	// Resolve owned cards across ALL loaded regions (ids are globally unique), so
-	// an owned Asian card exports with real name/number rather than blank — the
-	// same cross-region fix the render path uses. setName still joins the western
-	// sets list (best-effort); an Asian set falls back to its id.
+	// an owned Asian card exports with real name/number rather than blank. setName
+	// joins every loaded region's sets too (allLoadedSets, deduped by id), so an
+	// Asian set exports its real name instead of falling back to its id.
 	const indices = useCorpusRuntime((s) => s.indices);
-	const sets = useStore((s) => s.sets);
+	const sets = useStore(useShallow(allLoadedSets));
 
 	function exportCsv(mode: CsvMode) {
 		const byId = sets ? setsById(sets) : null;

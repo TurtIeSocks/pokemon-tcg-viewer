@@ -4,6 +4,7 @@ import {
 	subtypesFromTcgdex,
 	supertypeFromCategory,
 } from "../lib/corpus/tcgdex-card-fields";
+import type { CorpusCard } from "../store/corpus/corpus-types";
 
 /** A card ability (focus view). */
 export interface CardAbility {
@@ -253,5 +254,38 @@ export function mapTcgdexFocusCard(card: TcgdexFocusCard): FocusCardData {
 				? Array.from({ length: card.retreat }, () => "Colorless")
 				: undefined,
 		// TCGdex's card detail carries no rule-box text (`rules`), so it stays undefined.
+	};
+}
+
+/**
+ * Synthesize a minimal {@link FocusCardData} from a corpus card + its set, for
+ * cards that live ONLY in the corpus — the tcgcsv Japanese overlay fill, whose
+ * sets TCGdex serves with an empty `cards[]` (see {@link OVERLAY_SET_IDS}). Those
+ * ids have no live TCGdex detail record, so the detail route's live fetch 404s;
+ * this lets `getCardForRouteFn` degrade the focus view to image + name + number +
+ * rarity + set instead of dead-ending. Battle data (attacks/abilities/hp) is
+ * absent because tcgcsv products carry none — the detail view already tolerates
+ * sparse cards.
+ */
+export function corpusCardToFocus(
+	card: CorpusCard,
+	set: { name: string; series: string; releaseDate?: string; logo?: string },
+): FocusCardData {
+	return {
+		id: card.id,
+		imageUrl: card.imageUrl,
+		imageBase: card.imageBase ?? null,
+		name: card.name,
+		rarity: card.rarity,
+		subtypes: card.subtypes,
+		types: card.types,
+		supertype: card.supertype,
+		setId: card.setId,
+		setName: set.name,
+		setSeries: set.series,
+		setReleaseDate: set.releaseDate,
+		setLogo: set.logo,
+		cardNumber: card.number,
+		nationalPokedexNumbers: card.nationalPokedexNumbers,
 	};
 }

@@ -1,5 +1,6 @@
 // src/store/userland/selectors.ts
 import { useEffect, useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 import type { HoloCardData } from "../../components/holo-card";
 import type { Region } from "../../lib/languages";
 import type { PokemonSet } from "../../server/card-mappers";
@@ -16,6 +17,7 @@ import {
 } from "../corpus/corpus-runtime";
 import { useActiveI18n } from "../corpus/i18n-active-hooks";
 import { useStore } from "../index";
+import { allLoadedSets } from "../sets-slice";
 import {
 	type BinderProgress,
 	binderMembers,
@@ -116,7 +118,11 @@ function useCorpusJoinInputs() {
 	useEnsureUserland();
 	const index = useCorpusRuntime((s) => s.index);
 	const indices = useCorpusRuntime((s) => s.indices);
-	const sets = useStore((s) => s.sets);
+	// Owned cards can belong to ANY loaded region (ids are globally unique), so
+	// join against every loaded region's sets, not the bare west-only `sets` --
+	// otherwise an owned Asian card renders with a raw set-id name. allLoadedSets
+	// builds a fresh array, so useShallow keeps the ref stable across writes.
+	const sets = useStore(useShallow(allLoadedSets));
 	return { index, indices, sets };
 }
 
