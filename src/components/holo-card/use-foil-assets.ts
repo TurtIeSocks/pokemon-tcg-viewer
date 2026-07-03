@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { buildFoilUrls, getCssRarity, isReverseRarity } from "./foil-assets";
+import { buildFoilUrls, getCssRarity } from "./foil-assets";
 
 export interface FoilAssets {
 	/** Append `masked` to the card className once the per-card mask has loaded. */
@@ -55,12 +55,15 @@ export function useFoilAssets(
 	const vars = useMemo<React.CSSProperties>(() => {
 		if (!maskLoaded || !maskUrl) return {};
 		const v: Record<string, string> = { "--mask": `url('${maskUrl}')` };
-		// Reverse holo uses the mask only (no foil texture) — matches the reference.
-		if (foilUrls?.foilUrl && !isReverseRarity(cssRarity)) {
+		// --foil rides along whenever the mask loads — simey's Card.svelte sets
+		// both unconditionally. Reverse holo NEEDS it: the CDN reverse foil scan
+		// carries the energy-symbol etch pattern the masked reverse recipe paints
+		// (reverse-holo.css nulls --foil itself on the :not(.masked) path).
+		if (foilUrls?.foilUrl) {
 			v["--foil"] = `url('${foilUrls.foilUrl}')`;
 		}
 		return v as React.CSSProperties;
-	}, [maskLoaded, maskUrl, foilUrls, cssRarity]);
+	}, [maskLoaded, maskUrl, foilUrls]);
 
 	return { masked: maskLoaded && !!maskUrl, vars };
 }

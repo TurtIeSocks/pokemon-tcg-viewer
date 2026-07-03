@@ -1,30 +1,31 @@
 /*
- * Per-rarity foil layers — ported from simeydotme/pokemon-cards-css.
+ * Per-rarity foil recipes — VERBATIM port of simeydotme/pokemon-cards-css.
  *
- * DOM structure we work with:
- *   .holo-card (position:relative, overflow:hidden)
- *     .holo-card-image   (z-index 1)
- *     ::before           (foil/shine layer, z-index 2)
- *     ::after            (glare layer, z-index 2)
- *     .holo-card-overlay (z-index 3)
+ * DOM structure (holo-card.tsx / holo-card.css):
+ *   .holo-card (data-rarity / data-subtypes / data-supertype / data-set /
+ *               data-number / data-trainer-gallery; type + .masked classes)
+ *     .holo-card-image     (z 1–2)
+ *     .holo-card-shine     (z 3)  = simey .card__shine   (+ :before/:after)
+ *     .holo-card-glare     (z 4)  = simey .card__glare   (+ :after)
+ *     .holo-card-overlay   (z 5)
  *
- * Translation notes:
- *   • simey's .card__shine  → .holo-card::before
- *   • simey's .card__glare  → .holo-card::after
- *   • simey's .card__shine::before / ::after sub-layers are merged into
- *     the ::before or dropped (Option A simplification) since CSS does not
- *     allow pseudo-element chaining (::before::before).
- *   • Texture URLs use /holo-textures/ prefix (Task 8 populates them).
- *   • CSS custom properties (--pointer-x, --pointer-y, etc.) are written by
- *     useHoloEffect and match simey's variable names exactly.
- *   • no-foil class needs no rule — cards inherit base styles only.
+ * Translation rules (mechanical — sed, no hand edits):
+ *   .card__shine → .holo-card-shine     .card__glare → .holo-card-glare
+ *   .card        → .holo-card           url(/img/…)  → url(/holo-textures/…)
+ * Everything else (selectors, gradients, blend modes, filters, media queries,
+ * upstream quirks) is byte-identical to the source files, concatenated in the
+ * same order simey's index.html loads them. data-rarity carries the effective
+ * simey rarity computed by holoPresentation() (holo-style.ts).
+ *
+ * Base shine/glare layers + masking + glare clip windows: holo-card.css.
+ * Our only additions live in the clearly-marked sections at the bottom
+ * (procedural fallbacks for cards simey's CDN never covered, and the custom
+ * "rare shining" recipe for Neo-era Shining Pokémon).
  *
  * Reference: https://github.com/simeydotme/pokemon-cards-css
  */
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Shared variables used across multiple rarity blocks
-───────────────────────────────────────────────────────────────────────────── */
+/* ─── Shared variables — simey cards.css + base.css :root ─────────────────── */
 
 .holo-card {
 	--grain: url("/holo-textures/grain.webp");
@@ -41,30 +42,6 @@
 	--blue: #0dbde9;
 	--violet: #c929f1;
 
-	--sunpillar-1: hsl(2, 100%, 73%);
-	--sunpillar-2: hsl(53, 100%, 69%);
-	--sunpillar-3: hsl(93, 100%, 69%);
-	--sunpillar-4: hsl(176, 100%, 76%);
-	--sunpillar-5: hsl(228, 100%, 74%);
-	--sunpillar-6: hsl(283, 100%, 73%);
-
-	--sunpillar-clr-1: var(--sunpillar-1);
-	--sunpillar-clr-2: var(--sunpillar-2);
-	--sunpillar-clr-3: var(--sunpillar-3);
-	--sunpillar-clr-4: var(--sunpillar-4);
-	--sunpillar-clr-5: var(--sunpillar-5);
-	--sunpillar-clr-6: var(--sunpillar-6);
-
-	/* Foil-confinement clip-paths — ported 1:1 from simey/pokemon-cards-css
-	   public/css/cards.css. These restrict the shine to a card's real holo
-	   region so the foil sits on the *correct part* of the card instead of
-	   washing over the whole face (border, name bar, text included):
-	     • --clip          artwork window only        (classic Rare Holo)
-	     • --clip-invert    everything BUT the window  (Reverse Holo)
-	     • --clip-stage     smaller window for Stage 1/2 layouts
-	     • --clip-trainer   trainer/supporter/item window
-	   Percentages are aspect-relative, so they map directly to our identical
-	   245/342 card box. */
 	--clip: inset(9.85% 8% 52.85% 8%);
 	--clip-invert: polygon(
 		0% 0%,
@@ -107,180 +84,165 @@
 		0 50%
 	);
 	--clip-trainer: inset(14.5% 8.5% 48.2% 8.5%);
+	--clip-borders: inset(2.8% 4% round 2.55% / 1.5%);
+
+	--sunpillar-1: hsl(2, 100%, 73%);
+	--sunpillar-2: hsl(53, 100%, 69%);
+	--sunpillar-3: hsl(93, 100%, 69%);
+	--sunpillar-4: hsl(176, 100%, 76%);
+	--sunpillar-5: hsl(228, 100%, 74%);
+	--sunpillar-6: hsl(283, 100%, 73%);
+
+	--sunpillar-clr-1: var(--sunpillar-1);
+	--sunpillar-clr-2: var(--sunpillar-2);
+	--sunpillar-clr-3: var(--sunpillar-3);
+	--sunpillar-clr-4: var(--sunpillar-4);
+	--sunpillar-clr-5: var(--sunpillar-5);
+	--sunpillar-clr-6: var(--sunpillar-6);
+}
+/*
+
+  REVERSE HOLO
+
+*/
+
+/*
+
+  SHINE LAYERS
+
+*/
+.holo-card {
+	--foil-brightness: 0.55;
 }
 
-/* Shared ::before / ::after setup for all foil rarities */
-.holo-card::before,
-.holo-card::after {
-	content: "";
-	position: absolute;
-	inset: 0;
-	z-index: 2;
-	border-radius: inherit;
-	pointer-events: none;
-}
+.holo-card[data-rarity$="reverse holo"] .holo-card-shine {
+	background-image:
+		radial-gradient(
+			circle at var(--pointer-x) var(--pointer-y),
+			#fff 5%,
+			#000 50%,
+			#fff 80%
+		),
+		linear-gradient(-45deg, #000 15%, #fff, #000 85%), var(--foil);
 
-/* Base shine blend — simey sets color-dodge on EVERY .card__shine (base.css), so
-   dark recipe layers (#0e152e etc.) lift the art instead of painting over it.
-   We'd missed this on holo-v / holo-vmax / holo-vstar / ultra / amazing, which
-   rendered source-over and DARKENED the card (blackened Mew's eyes on masked V).
-   Per-rarity ::before may still override (none currently do). */
-.holo-card::before {
+	background-blend-mode: soft-light, difference;
+	background-size:
+		120% 120%,
+		200% 200%,
+		cover;
+	background-position:
+		center center,
+		calc((100% * var(--pointer-from-left)))
+		calc((100% * var(--pointer-from-top))),
+		center center;
+
+	filter: brightness(var(--foil-brightness)) contrast(1.5) saturate(1);
 	mix-blend-mode: color-dodge;
+
+	opacity: calc((1.5 * var(--card-opacity)) - var(--pointer-from-center));
 }
 
-.holo-card:not(.no-foil)::before,
-.holo-card:not(.no-foil)::after {
-	will-change: opacity, transform;
+.holo-card.lightning {
+	--foil-brightness: 0.7;
+}
+.holo-card.darkness {
+	--foil-brightness: 0.8;
+}
+.holo-card.metal {
+	--foil-brightness: 0.6;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Foil placement — confine the shine (::before) to the holo region
-   ─────────────────────────────────────────────────────────────────────────────
-   simey clips the shine itself (regular-holo.css:39 / reverse-holo.css:118), not
-   just via the per-card mask. We replicate that no-mask path so the rainbow lands
-   on the artwork window (classic holo) or the border/text frame (reverse holo)
-   rather than the entire card face.
+/*
 
-   Keyed on data-rarity, NOT the broad .holo-basic class: members of holo-basic
-   that are full-bleed art (Double Rare ex, Promo ex, LEGEND, Classic Collection)
-   must keep their whole-card foil, so only genuine classic-layout rarities clip.
-   Stage/trainer subtype selectors mirror simey's regular-holo.css 1:1. */
+  GLARE LAYERS
 
-.holo-card:not(.masked)[data-rarity="rare holo"]::before,
-.holo-card:not(.masked)[data-rarity="rare holo ex"]::before {
-	clip-path: var(--clip);
+*/
+
+.holo-card[data-rarity$="reverse holo"] .holo-card-glare {
+	opacity: var(--card-opacity);
+
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsla(0, 0%, 100%, 0.8) 10%,
+		hsla(0, 0%, 100%, 0.5) 20%,
+		hsla(0, 0%, 0%, 0.75) 90%
+	);
+
+	filter: brightness(0.7) contrast(1.5);
 }
 
-.holo-card:not(
-	.masked
-)[data-rarity="rare holo"][data-subtypes^="stage"]::before {
-	clip-path: var(--clip-stage);
+.holo-card[data-rarity$="reverse holo"] .holo-card-glare:after {
+	content: "";
+	opacity: var(--card-opacity);
+
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsl(0, 0%, 100%) 10%,
+		hsla(0, 0%, 100%, 0.5) 20%,
+		hsla(0, 0%, 0%, 0.5) 120%
+	);
+
+	filter: brightness(1) contrast(1.5);
 }
 
-.holo-card:not(
-	.masked
-)[data-rarity="rare holo"][data-supertype="trainer"]::before,
-.holo-card:not(
-	.masked
-)[data-rarity="rare holo"][data-subtypes^="supporter"]::before,
-.holo-card:not(
-	.masked
-)[data-rarity="rare holo"][data-subtypes^="item"]::before {
-	clip-path: var(--clip-trainer);
-}
+/*
 
-.holo-card:not(.masked)[data-rarity$="reverse holo"]::before {
+  NO MASK
+
+*/
+
+.holo-card:not(.masked)[data-rarity$="reverse holo"] .holo-card-shine {
+	--foil: none;
 	clip-path: var(--clip-invert);
 }
 
-.holo-card:not(
-	.masked
-)[data-rarity$="reverse holo"][data-subtypes^="stage"]::before {
+.holo-card:not(.masked)[data-rarity$="reverse holo"][data-subtypes^="stage"]
+	.holo-card-glare:after {
 	clip-path: var(--clip-stage-invert);
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Masked path — real per-card foil placement (modern CDN sets)
-   ─────────────────────────────────────────────────────────────────────────────
-   When useFoilAssets loads a card's actual scanned mask, .masked is added and
-   --mask/--foil are set inline. The mask IS the exact holographic region of that
-   specific card, so it supersedes the approximate clip-path windows above
-   (those are gated to :not(.masked)). simey base.css:321. */
-
-.holo-card.masked::before {
-	-webkit-mask-image: var(--mask);
-	mask-image: var(--mask);
-	-webkit-mask-size: cover;
-	mask-size: cover;
-	-webkit-mask-position: center center;
-	mask-position: center center;
-	-webkit-mask-repeat: no-repeat;
-	mask-repeat: no-repeat;
+.holo-card:not(.masked)[data-rarity$="reverse holo"][data-supertype="trainer"]
+	.holo-card-glare:after {
+	clip-path: var(--clip-trainer-invert);
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Rarity: holo-cosmos  (vintage galaxy holofoil — Base..pre-SWSH classic holos)
-   Source: cosmos-holo.css. The iconic starfield/galaxy sheen, NOT the rainbow
-   scanline. Routed by era via holo-style.ts (COSMOS_SERIES). Confined to the
-   artwork window with --clip. The 3-layer parallax of the original is flattened
-   to one galaxy layer + spectral sweep for our two-pseudo model.
-───────────────────────────────────────────────────────────────────────────── */
+/*
 
-.holo-card.holo-cosmos::before {
-	--space: 4%;
-	clip-path: var(--clip);
+  REGULAR HOLO
 
-	background-image:
-		url("/holo-textures/cosmos-bottom.png"),
-		repeating-linear-gradient(
-			82deg,
-			hsl(53, 65%, 60%) calc(var(--space) * 1),
-			hsl(93, 56%, 50%) calc(var(--space) * 2),
-			hsl(176, 54%, 49%) calc(var(--space) * 3),
-			hsl(228, 59%, 55%) calc(var(--space) * 4),
-			hsl(283, 60%, 55%) calc(var(--space) * 5),
-			hsl(326, 59%, 51%) calc(var(--space) * 6),
-			hsl(326, 59%, 51%) calc(var(--space) * 7),
-			hsl(283, 60%, 55%) calc(var(--space) * 8),
-			hsl(228, 59%, 55%) calc(var(--space) * 9),
-			hsl(176, 54%, 49%) calc(var(--space) * 10),
-			hsl(93, 56%, 50%) calc(var(--space) * 11),
-			hsl(53, 65%, 60%) calc(var(--space) * 12)
-		),
-		radial-gradient(
-			farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
-			hsla(180, 100%, 89%, 0.5) 5%,
-			hsla(180, 14%, 57%, 0.3) 40%,
-			hsl(0, 0%, 0%) 130%
-		);
+*/
 
-	background-blend-mode: color-burn, multiply;
-	background-position:
-		var(--cosmosbg, center center),
-		calc(10% + (var(--pointer-from-left, 0.5) * 80%))
-		calc(10% + (var(--pointer-from-top, 0.5) * 80%)),
-		center center;
-	background-size:
-		cover,
-		400% 900%,
-		cover;
-
-	filter: brightness(1) contrast(1) saturate(0.8);
-	mix-blend-mode: color-dodge;
-	opacity: var(--card-opacity, 0);
+.holo-card[data-rarity="rare holo"][data-subtypes^="stage"] .holo-card-shine,
+.holo-card[data-rarity="rare holo"][data-subtypes^="stage"]
+	.holo-card-glare:after {
+	clip-path: var(--clip-stage);
+}
+.holo-card[data-rarity="rare holo"][data-subtypes^="supporter"]
+	.holo-card-shine,
+.holo-card[data-rarity="rare holo"][data-subtypes^="supporter"]
+	.holo-card-glare:after,
+.holo-card[data-rarity="rare holo"][data-subtypes^="item"] .holo-card-shine,
+.holo-card[data-rarity="rare holo"][data-subtypes^="item"]
+	.holo-card-glare:after {
+	clip-path: var(--clip-trainer);
 }
 
-.holo-card.holo-cosmos::after {
-	background-image: radial-gradient(
-		farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
-		hsla(204, 100%, 95%, 0.8) 5%,
-		hsla(250, 15%, 20%, 1) 150%
-	);
+/*
 
-	filter: brightness(0.75) contrast(2) saturate(2);
-	mix-blend-mode: overlay;
-	opacity: calc(
-		var(--card-opacity, 0) *
-		(0.25 + var(--pointer-from-center, 0))
-	);
-}
+  SHINE LAYERS
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Rarity: holo-basic  (Rare Holo, Rare Holo EX, Rare Holo GX, Rare BREAK, etc.)
-   Source: regular-holo.css — data-rarity="rare holo"
-   Layers used: shine (::before), glare (::after)
-   Merge note: .card__shine:before (bar overlay) merged into ::before via
-     an extra background layer. .card__shine:after (luminosity gradient) dropped
-     as it's the least essential visual element.
-───────────────────────────────────────────────────────────────────────────── */
+*/
 
-.holo-card.holo-basic::before {
+.holo-card[data-rarity="rare holo"] .holo-card-shine {
 	--scanlines-space: 1px;
 	--scanlines-light: #666;
 	--scanlines-dark: black;
 
 	--bars: 3%;
+	--bar-color: hsla(0, 0%, 70%, 1);
+	--bar-bg: hsla(0, 0%, 0%, 1);
+
+	clip-path: var(--clip);
 
 	background-image:
 		repeating-linear-gradient(
@@ -310,8 +272,8 @@
 		);
 
 	background-position:
-		calc(((50% - var(--background-x, 50%)) * 2.6) + 50%)
-		calc(((50% - var(--background-y, 50%)) * 3.5) + 50%),
+		calc(((50% - var(--background-x)) * 2.6) + 50%)
+		calc(((50% - var(--background-y)) * 3.5) + 50%),
 		center center;
 
 	background-size:
@@ -321,348 +283,304 @@
 	background-blend-mode: overlay;
 	filter: brightness(1.1) contrast(1.1) saturate(1.2);
 	mix-blend-mode: color-dodge;
-	opacity: var(--card-opacity, 0);
 }
 
-.holo-card.holo-basic::after {
+.holo-card[data-rarity="rare holo"] .holo-card-shine:before {
+	content: "";
+
+	background-image:
+		repeating-linear-gradient(
+			90deg,
+			var(--bar-bg) calc(var(--bars) * 2),
+			var(--bar-color) calc(var(--bars) * 3),
+			var(--bar-bg) calc(var(--bars) * 3.5),
+			var(--bar-color) calc(var(--bars) * 4),
+			var(--bar-bg) calc(var(--bars) * 5),
+			var(--bar-bg) calc(var(--bars) * 14)
+		),
+		repeating-linear-gradient(
+			90deg,
+			var(--bar-bg) calc(var(--bars) * 2),
+			var(--bar-color) calc(var(--bars) * 3),
+			var(--bar-bg) calc(var(--bars) * 3.5),
+			var(--bar-color) calc(var(--bars) * 4),
+			var(--bar-bg) calc(var(--bars) * 5),
+			var(--bar-bg) calc(var(--bars) * 10)
+		);
+
+	background-position:
+		calc(
+			(((50% - var(--background-x)) * 1.65) + 50%) +
+			(var(--background-y) * 0.5)
+		)
+		var(--background-x),
+		calc(
+			(((50% - var(--background-x)) * -0.9) + 50%) -
+			(var(--background-y) * 0.75)
+		)
+		var(--background-y);
+
+	background-size:
+		200% 200%,
+		200% 200%;
+
+	background-blend-mode: screen;
+	filter: brightness(1.15) contrast(1.1);
+	mix-blend-mode: hard-light;
+}
+
+.holo-card[data-rarity="rare holo"] .holo-card-shine:after {
+	content: "";
+
 	background-image: radial-gradient(
-		farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsla(0, 0%, 90%, 0.8) 0%,
+		hsla(0, 0%, 78%, 0.1) 25%,
+		hsl(0, 0%, 0%) 90%
+	);
+
+	background-position: center center;
+
+	background-size: cover;
+
+	mix-blend-mode: luminosity;
+	filter: brightness(0.6) contrast(4);
+}
+
+@media screen and (max-width: 900px) {
+	.holo-card[data-rarity="rare holo"] .holo-card-shine {
+		--scanlines-space: 0.5px;
+	}
+}
+
+/*
+
+  GLARE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare holo"] .holo-card-glare {
+	opacity: calc(var(--card-opacity) * 0.8);
+	filter: brightness(0.8) contrast(1.5);
+	mix-blend-mode: overlay;
+}
+
+.holo-card[data-rarity="rare holo"] .holo-card-glare:after {
+	content: "";
+
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
 		hsl(180, 100%, 95%) 5%,
 		hsla(0, 0%, 39%, 0.25) 55%,
 		hsla(0, 0%, 0%, 0.36) 110%
 	);
 
-	opacity: calc(var(--card-opacity, 0) * 0.8);
 	mix-blend-mode: overlay;
 	filter: brightness(0.6) contrast(3);
 }
 
-@media screen and (max-width: 900px) {
-	.holo-card.holo-basic::before,
-	.holo-card.shining::before {
-		--scanlines-space: 0.5px;
-	}
+/*
+
+  NO MASK
+
+*/
+
+/*
+
+  COSMOS HOLO
+
+*/
+
+.holo-card[data-rarity="rare holo cosmos"][data-subtypes^="stage"]
+.holo-card-shine,
+.holo-card[data-rarity="rare holo cosmos"][data-subtypes^="stage"]
+	.holo-card-glare:after {
+	clip-path: var(--clip-stage);
+}
+.holo-card[data-rarity="rare holo cosmos"][data-subtypes^="supporter"]
+	.holo-card-shine,
+.holo-card[data-rarity="rare holo cosmos"][data-subtypes^="supporter"]
+	.holo-card-glare:after {
+	clip-path: var(--clip-trainer);
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Rarity: holo-v  (Rare Holo V, Rare Holo GX treated as V-style)
-   Source: v-regular.css — data-rarity="rare holo v"
-   Merge note: .card__shine:after merged into ::before as second background
-     group. .card__glare → ::after.
-───────────────────────────────────────────────────────────────────────────── */
+/*
 
-.holo-card.holo-v::before {
-	--space: 5%;
-	--angle: 133deg;
-	--imgsize: 500px;
+  SHINE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare holo cosmos"] .holo-card-shine {
+	--space: 4%;
+
+	clip-path: var(--clip);
 
 	background-image:
-		var(--grain),
+		url("/holo-textures/cosmos-bottom.png"),
 		repeating-linear-gradient(
-			0deg,
-			var(--sunpillar-clr-1) calc(var(--space) * 1),
-			var(--sunpillar-clr-2) calc(var(--space) * 2),
-			var(--sunpillar-clr-3) calc(var(--space) * 3),
-			var(--sunpillar-clr-4) calc(var(--space) * 4),
-			var(--sunpillar-clr-5) calc(var(--space) * 5),
-			var(--sunpillar-clr-6) calc(var(--space) * 6),
-			var(--sunpillar-clr-1) calc(var(--space) * 7)
-		),
-		repeating-linear-gradient(
-			var(--angle),
-			#0e152e 0%,
-			hsl(180, 10%, 60%) 3.8%,
-			hsl(180, 29%, 66%) 4.5%,
-			hsl(180, 10%, 60%) 5.2%,
-			#0e152e 10%,
-			#0e152e 12%
+			82deg,
+			hsl(53, 65%, 60%) calc(var(--space) * 1),
+			hsl(93, 56%, 50%) calc(var(--space) * 2),
+			hsl(176, 54%, 49%) calc(var(--space) * 3),
+			hsl(228, 59%, 55%) calc(var(--space) * 4),
+			hsl(283, 60%, 55%) calc(var(--space) * 5),
+			hsl(326, 59%, 51%) calc(var(--space) * 6),
+			hsl(326, 59%, 51%) calc(var(--space) * 7),
+			hsl(283, 60%, 55%) calc(var(--space) * 8),
+			hsl(228, 59%, 55%) calc(var(--space) * 9),
+			hsl(176, 54%, 49%) calc(var(--space) * 10),
+			hsl(93, 56%, 50%) calc(var(--space) * 11),
+			hsl(53, 65%, 60%) calc(var(--space) * 12)
 		),
 		radial-gradient(
-			farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
-			hsla(0, 0%, 0%, 0.1) 12%,
-			hsla(0, 0%, 0%, 0.15) 20%,
-			hsla(0, 0%, 0%, 0.25) 120%
+			farthest-corner circle at var(--pointer-x) var(--pointer-y),
+			hsla(180, 100%, 89%, 0.5) 5%,
+			hsla(180, 14%, 57%, 0.3) 40%,
+			hsl(0, 0%, 0%) 130%
 		);
 
-	background-blend-mode: screen, hue, hard-light;
-	background-size:
-		var(--imgsize) 100%,
-		200% 700%,
-		300% 100%,
-		200% 100%;
+	background-blend-mode: color-burn, multiply;
+
 	background-position:
-		center,
-		0% var(--background-y, 50%),
-		var(--background-x, 50%) var(--background-y, 50%),
-		var(--background-x, 50%) var(--background-y, 50%);
-
-	/* simey v-regular .card__shine values verbatim — low saturate is key to the
-	   subtle look (was over-brightened). */
-	filter: brightness(0.8) contrast(2.95) saturate(0.65);
-	opacity: var(--card-opacity, 0);
-}
-
-.holo-card.holo-v::after {
-	background-image: radial-gradient(
-		farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
-		hsl(0, 0%, 100%) 0%,
-		hsla(210, 3%, 54%, 0.33) 45%,
-		hsla(0, 0%, 20%, 0.9) 130%
-	);
-
-	opacity: calc(var(--card-opacity, 0) * 0.5);
-	mix-blend-mode: hard-light;
-	filter: brightness(0.9) contrast(1.75);
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   Rarity: holo-vmax  (Rare Holo VMAX)
-   Source: v-max.css — data-rarity="rare holo vmax"
-   Merge note: .card__shine base → ::before, .card__shine:after merged as
-     additional background layer in ::before. .card__glare → ::after.
-     vmaxbg texture url updated to our path.
-───────────────────────────────────────────────────────────────────────────── */
-
-.holo-card.holo-vmax::before {
-	--space: 6%;
-	--angle: 133deg;
-	--foil: url("/holo-textures/vmaxbg.jpg");
-	--imgsize: 60% 30%;
-
-	background-image:
-		var(--foil),
-		repeating-linear-gradient(
-			-33deg,
-			hsl(2, 70%, 47%) calc(var(--space) * 1),
-			hsl(228, 60%, 64%) calc(var(--space) * 2),
-			hsl(176, 55%, 39%) calc(var(--space) * 3),
-			hsl(123, 68%, 35%) calc(var(--space) * 4),
-			hsl(283, 75%, 57%) calc(var(--space) * 5),
-			hsl(2, 70%, 47%) calc(var(--space) * 6)
-		),
-		repeating-linear-gradient(
-			var(--angle),
-			hsla(227, 53%, 12%, 0.5) 0%,
-			hsl(180, 10%, 50%) 2.5%,
-			hsl(83, 50%, 35%) 5%,
-			hsl(180, 10%, 50%) 7.5%,
-			hsla(227, 53%, 12%, 0.5) 10%,
-			hsla(227, 53%, 12%, 0.5) 15%
-		),
-		radial-gradient(
-			farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
-			hsla(189, 76%, 77%, 0.6) 0%,
-			hsla(147, 59%, 77%, 0.6) 25%,
-			hsla(271, 55%, 69%, 0.6) 50%,
-			hsla(355, 56%, 72%, 0.6) 75%
-		);
-
-	background-blend-mode: difference, luminosity, soft-light;
-	background-size:
-		var(--imgsize),
-		1100% 1100%,
-		600% 600%,
-		200% 200%;
-	background-position:
-		center,
-		var(--background-x, 50%) var(--background-y, 50%),
-		var(--background-x, 50%) var(--background-y, 50%),
-		var(--background-x, 50%) var(--background-y, 50%);
-
-	filter: brightness(calc((var(--pointer-from-center, 0) * 0.4) + 0.4))
-		contrast(2) saturate(1);
-	opacity: var(--card-opacity, 0);
-}
-
-.holo-card.holo-vmax::after {
-	background-image: radial-gradient(
-		farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
-		hsla(0, 0%, 100%, 0.75) 0%,
-		hsl(0, 0%, 0%) 120%
-	);
-
-	mix-blend-mode: hard-light;
-	opacity: calc(
-		(0.2 * var(--card-opacity, 0)) +
-		var(--card-opacity, 0) *
-		var(--pointer-from-center, 0) *
-		0.8
-	);
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   Rarity: holo-vstar  (Rare Holo VSTAR)
-   Source: v-star.css — data-rarity="rare holo vstar"
-   Merge note: .card__shine base → ::before with ancient.png texture (no-mask path).
-     .card__shine::before (hard-light gradient) merged into ::before via extra layer.
-     .card__shine::after → ::after for exclusion blend. .card__glare dropped.
-───────────────────────────────────────────────────────────────────────────── */
-
-.holo-card.holo-vstar {
-	--foil: url("/holo-textures/ancient.png");
-	--imgsize: 18% 15%;
-}
-
-.holo-card.holo-vstar::before {
-	--space: 5%;
-	--angle: 133deg;
-
-	background-image:
-		var(--foil),
-		repeating-linear-gradient(
-			0deg,
-			var(--sunpillar-clr-1) calc(var(--space) * 1),
-			var(--sunpillar-clr-2) calc(var(--space) * 2),
-			var(--sunpillar-clr-3) calc(var(--space) * 3),
-			var(--sunpillar-clr-4) calc(var(--space) * 4),
-			var(--sunpillar-clr-5) calc(var(--space) * 5),
-			var(--sunpillar-clr-6) calc(var(--space) * 6),
-			var(--sunpillar-clr-1) calc(var(--space) * 7)
-		),
-		repeating-linear-gradient(
-			var(--angle),
-			#0e152e 0%,
-			hsl(180, 10%, 60%) 3.8%,
-			hsl(180, 29%, 66%) 4.5%,
-			hsl(180, 10%, 60%) 5.2%,
-			#0e152e 10%,
-			#0e152e 12%
-		),
-		radial-gradient(
-			farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
-			hsla(0, 0%, 0%, 0.1) 12%,
-			hsla(0, 0%, 0%, 0.15) 20%,
-			hsla(0, 0%, 0%, 0.25) 120%
-		);
-
-	background-blend-mode: exclusion, hue, hard-light;
-	background-size:
-		var(--imgsize),
-		200% 700%,
-		300% 100%,
-		200% 100%;
-	background-position:
-		center center,
-		0% var(--background-y, 50%),
-		var(--background-x, 50%) var(--background-y, 50%),
-		var(--background-x, 50%) var(--background-y, 50%);
-
-	filter: brightness(calc((var(--pointer-from-center, 0) * 0.25) + 0.35))
-		contrast(1.8) saturate(1.75);
-	opacity: var(--card-opacity, 0);
-}
-
-.holo-card.holo-vstar::after {
-	/* .card__shine::after (exclusion blend — second shine layer) */
-	background-image:
-		var(--foil),
-		repeating-linear-gradient(
-			0deg,
-			var(--sunpillar-clr-1) calc(var(--space) * 1),
-			var(--sunpillar-clr-2) calc(var(--space) * 2),
-			var(--sunpillar-clr-3) calc(var(--space) * 3),
-			var(--sunpillar-clr-4) calc(var(--space) * 4),
-			var(--sunpillar-clr-5) calc(var(--space) * 5),
-			var(--sunpillar-clr-6) calc(var(--space) * 6),
-			var(--sunpillar-clr-1) calc(var(--space) * 7)
-		),
-		repeating-linear-gradient(
-			var(--angle),
-			#0e152e 0%,
-			hsl(180, 10%, 60%) 3.8%,
-			hsl(180, 29%, 66%) 4.5%,
-			hsl(180, 10%, 60%) 5.2%,
-			#0e152e 10%,
-			#0e152e 12%
-		),
-		radial-gradient(
-			farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
-			hsla(0, 0%, 0%, 0.1) 12%,
-			hsla(0, 0%, 0%, 0.15) 20%,
-			hsla(0, 0%, 0%, 0.25) 120%
-		);
-
-	background-size:
-		var(--imgsize),
-		200% 400%,
-		195% 100%,
-		200% 100%;
-	background-position:
-		center center,
-		0% var(--background-y, 50%),
-		calc(var(--background-x, 50%) * -1) calc(var(--background-y, 50%) * -1),
-		var(--background-x, 50%) var(--background-y, 50%);
-
-	filter: brightness(calc((var(--pointer-from-center, 0) * 0.75) + 0.5))
-		contrast(1.5) saturate(1.5);
-	mix-blend-mode: exclusion;
-	opacity: var(--card-opacity, 0);
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   Rarity: reverse-holo  (Reverse Holo)
-   Source: reverse-holo.css — data-rarity$="reverse holo"
-   Merge note: .card__shine → ::before. .card__glare → ::after.
-     clip-path (for no-mask full-art area) dropped — our cards are always
-     full-face images, so the inverse-clip would obscure the art.
-───────────────────────────────────────────────────────────────────────────── */
-
-.holo-card.reverse-holo {
-	--foil-brightness: 0.55;
-}
-
-.holo-card.reverse-holo::before {
-	background-image:
-		radial-gradient(
-			circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
-			#fff 5%,
-			#000 50%,
-			#fff 80%
-		),
-		linear-gradient(-45deg, #000 15%, #fff, #000 85%), var(--foil, none);
-
-	background-blend-mode: soft-light, difference;
-	background-size:
-		120% 120%,
-		200% 200%,
-		cover;
-	background-position:
-		center center,
-		calc(100% * var(--pointer-from-left, 0.5))
-		calc(100% * var(--pointer-from-top, 0.5)),
+		var(--cosmosbg, center center),
+		calc(10% + (var(--pointer-from-left) * 80%))
+		calc(10% + (var(--pointer-from-top) * 80%)),
 		center center;
 
-	filter: brightness(var(--foil-brightness)) contrast(1.5);
+	background-size:
+		cover,
+		400% 900%,
+		cover;
+
+	filter: brightness(1) contrast(1) saturate(0.8);
 	mix-blend-mode: color-dodge;
-	opacity: calc((1.5 * var(--card-opacity, 0)) - var(--pointer-from-center, 0));
 }
 
-.holo-card.reverse-holo::after {
+.holo-card[data-rarity="rare holo cosmos"] .holo-card-shine:before {
+	content: "";
+	z-index: 2;
+
+	background-image:
+		url("/holo-textures/cosmos-middle-trans.png"),
+		repeating-linear-gradient(
+			82deg,
+			hsl(53, 65%, 60%) calc(var(--space) * 1),
+			hsl(93, 56%, 50%) calc(var(--space) * 2),
+			hsl(176, 54%, 49%) calc(var(--space) * 3),
+			hsl(228, 59%, 55%) calc(var(--space) * 4),
+			hsl(283, 60%, 55%) calc(var(--space) * 5),
+			hsl(326, 59%, 51%) calc(var(--space) * 6),
+			hsl(326, 59%, 51%) calc(var(--space) * 7),
+			hsl(283, 60%, 55%) calc(var(--space) * 8),
+			hsl(228, 59%, 55%) calc(var(--space) * 9),
+			hsl(176, 54%, 49%) calc(var(--space) * 10),
+			hsl(93, 56%, 50%) calc(var(--space) * 11),
+			hsl(53, 65%, 60%) calc(var(--space) * 12)
+		);
+
+	background-blend-mode: lighten, multiply;
+
+	background-position:
+		var(--cosmosbg, center center),
+		calc(15% + (var(--pointer-from-left) * 70%))
+		calc(15% + (var(--pointer-from-top) * 70%)),
+		center center;
+
+	background-size:
+		cover,
+		400% 900%,
+		cover;
+
+	filter: brightness(1.25) contrast(1.75) saturate(0.8);
+	mix-blend-mode: overlay;
+}
+
+.holo-card[data-rarity="rare holo cosmos"] .holo-card-shine:after {
+	content: "";
+	z-index: 3;
+
+	background-image:
+		url("/holo-textures/cosmos-top-trans.png"),
+		repeating-linear-gradient(
+			82deg,
+			hsl(53, 65%, 60%) calc(var(--space) * 1),
+			hsl(93, 56%, 50%) calc(var(--space) * 2),
+			hsl(176, 54%, 49%) calc(var(--space) * 3),
+			hsl(228, 59%, 55%) calc(var(--space) * 4),
+			hsl(283, 60%, 55%) calc(var(--space) * 5),
+			hsl(326, 59%, 51%) calc(var(--space) * 6),
+			hsl(326, 59%, 51%) calc(var(--space) * 7),
+			hsl(283, 60%, 55%) calc(var(--space) * 8),
+			hsl(228, 59%, 55%) calc(var(--space) * 9),
+			hsl(176, 54%, 49%) calc(var(--space) * 10),
+			hsl(93, 56%, 50%) calc(var(--space) * 11),
+			hsl(53, 65%, 60%) calc(var(--space) * 12)
+		);
+
+	background-blend-mode: multiply, multiply;
+
+	background-position:
+		var(--cosmosbg, center center),
+		calc(20% + (var(--pointer-from-left) * 60%))
+		calc(20% + (var(--pointer-from-top) * 60%)),
+		center center;
+
+	background-size:
+		cover,
+		400% 900%,
+		cover;
+
+	filter: brightness(1.25) contrast(1.75) saturate(0.8);
+	mix-blend-mode: multiply;
+}
+
+/*
+
+  GLARE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare holo cosmos"] .holo-card-glare {
 	background-image: radial-gradient(
-		farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
-		hsla(0, 0%, 100%, 0.8) 10%,
-		hsla(0, 0%, 100%, 0.5) 20%,
-		hsla(0, 0%, 0%, 0.75) 90%
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsla(204, 100%, 95%, 0.8) 5%,
+		hsla(250, 15%, 20%, 1) 150%
+	);
+	filter: brightness(0.75) contrast(2) saturate(2);
+	mix-blend-mode: overlay;
+	opacity: calc(var(--card-opacity) * (0.25 + var(--pointer-from-center)));
+}
+
+.holo-card[data-rarity="rare holo cosmos"] .holo-card-glare:after {
+	content: "";
+
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsl(280, 100%, 96%) 5%,
+		hsl(0, 0%, 10%) 60%
 	);
 
-	opacity: var(--card-opacity, 0);
-	filter: brightness(0.7) contrast(1.5);
+	filter: brightness(0.75) contrast(2.5) saturate(2);
+	mix-blend-mode: soft-light;
+	opacity: calc(1 - var(--pointer-from-top) * 0.75);
 }
+/*
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Rarity: amazing  (Amazing Rare)
-   Source: amazing-rare.css — data-rarity="amazing rare"
-   Merge note: .card__shine base → ::before.
-     .card__shine::before (foil overlay, opacity 0.5) merged as first layer in ::before.
-     .card__shine::after (sunpillar saturation layer) → ::after.
-     .card__glare (no-mask path) → folded into ::after.
-───────────────────────────────────────────────────────────────────────────── */
+  AMAZING RARE
 
-.holo-card.amazing::before {
+*/
+
+/*
+
+  SHINE LAYERS
+
+*/
+
+.holo-card[data-rarity="amazing rare"] .holo-card-shine {
 	background-image:
 		var(--glitter), var(--glitter),
 		radial-gradient(
-			farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+			farthest-corner circle at var(--pointer-x) var(--pointer-y),
 			hsla(150, 20%, 10%, 1) 10%,
 			hsla(177, 22%, 80%, 0.1) 50%,
 			hsla(0, 0%, 95%, 0.98) 90%
@@ -677,12 +595,39 @@
 		55% 55%,
 		center center;
 	background-blend-mode: soft-light, color-burn;
-	filter: saturate(0.9);
-	opacity: var(--card-opacity, 0);
+	filter: brightness(1) contrast(1) saturate(0.9);
 }
 
-.holo-card.amazing::after {
-	/* .card__shine::after — sunpillar saturation layer */
+.holo-card[data-rarity="amazing rare"] .holo-card-shine:before {
+	content: "";
+	-webkit-mask-image: none !important;
+	mask-image: none !important;
+
+	background-image:
+		var(--foil),
+		radial-gradient(
+			farthest-corner circle at var(--pointer-x) var(--pointer-y),
+			hsla(50, 20%, 90%, 0.95) 10%,
+			rgba(181, 139, 164, 0.5) 50%,
+			hsl(0, 0%, 0%) 60%
+		);
+
+	background-size: cover, cover;
+	background-position:
+		center center,
+		center center;
+	background-blend-mode: color-burn;
+
+	mix-blend-mode: lighten;
+	filter: brightness(1) contrast(1) saturate(1);
+	opacity: 0.5;
+}
+
+.holo-card[data-rarity="amazing rare"] .holo-card-shine:after {
+	content: "";
+	-webkit-mask-image: none !important;
+	mask-image: none !important;
+
 	background-image: repeating-linear-gradient(
 		calc(var(--angle)),
 		var(--sunpillar-clr-1) calc(var(--space) * 1),
@@ -695,39 +640,104 @@
 	);
 
 	background-size: 400% 800%;
-	background-position: calc(50% + (50% - var(--background-x, 50%)) * 3)
-		calc(50% + (50% - var(--background-y, 50%)) * 3);
-
-	filter: brightness(calc(0.75 - (var(--pointer-from-center, 0) * 0.5)))
+	background-position: calc(50% + (50% - (var(--background-x))) * 3)
+		calc(50% + (50% - (var(--background-y))) * 3);
+	filter: brightness(calc(0.75 - (var(--pointer-from-center) * 0.5)))
 		contrast(1) saturate(1);
 	mix-blend-mode: saturation;
-	opacity: var(--card-opacity, 0);
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Rarity: radiant  (Radiant Rare)
-   Source: radiant-holo.css — data-rarity="radiant rare"
-   Merge note: .card__shine base (crosshatch bars) → ::before.
-     .card__shine::after (colour foil + trainerbg texture) → ::after.
-     .card__shine::before (glitter overlay) dropped — least essential layer.
-     .card__glare → folded into ::after as an additional gradient layer.
-───────────────────────────────────────────────────────────────────────────── */
+/*
 
-.holo-card.radiant::before {
+  GLARE LAYERS
+
+*/
+
+.holo-card.masked[data-rarity="amazing rare"] .holo-card-glare {
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsla(50, 20%, 90%, 0.45) 0%,
+		hsla(150, 20%, 30%, 0.45) 45%,
+		hsla(0, 0%, 0%, 0.9) 120%
+	);
+
+	filter: brightness(0.9) contrast(2);
+}
+
+.holo-card.masked[data-rarity="amazing rare"] .holo-card-glare:after {
+	content: "";
+	-webkit-mask-image: var(--mask);
+	mask-image: var(--mask);
+	-webkit-mask-size: cover;
+	mask-size: cover;
+
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsla(50, 20%, 90%, 0.75) 0%,
+		hsla(150, 20%, 30%, 0.65) 45%,
+		hsla(0, 0%, 0%, 1) 90%
+	);
+
+	filter: brightness(1) contrast(1.5);
+	mix-blend-mode: overlay;
+	opacity: 1;
+}
+
+/*
+
+  NO MASK
+
+*/
+
+.holo-card:not(.masked)[data-rarity="amazing rare"] .holo-card-shine {
+	clip-path: var(--clip);
+}
+
+.holo-card:not(.masked)[data-rarity="amazing rare"] .holo-card-glare {
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsla(0, 0%, 100%, 1) 10%,
+		hsla(0, 0%, 100%, 0.85) 20%,
+		hsla(0, 0%, 0%, 0.35) 90%
+	);
+	mix-blend-mode: multiply;
+} /*
+
+  RADIANT HOLO
+
+*/
+
+.holo-card[data-rarity="radiant rare"] .holo-card-shine {
+	clip-path: var(--clip-borders);
+}
+
+.holo-card[data-rarity="radiant rare"] .holo-card-shine:after {
+	clip-path: var(--clip);
+}
+
+/*
+
+  SHINE LAYERS
+
+*/
+
+.holo-card[data-rarity="radiant rare"] .holo-card-shine {
 	--barwidth: 1.2%;
-	--foil: url("/holo-textures/trainerbg.png");
-	--imgsize: 25% auto;
+	--space: 200px;
+	--hue: 50;
+	--imgsize: cover;
 
 	background-image:
 		radial-gradient(
-			farthest-corner ellipse at calc((var(--pointer-x, 50%) * 0.5) + 25%)
-				calc((var(--pointer-y, 50%) * 0.5) + 25%),
+			farthest-corner ellipse at calc(((var(--pointer-x)) * 0.5) + 25%)
+				calc(((var(--pointer-y)) * 0.5) + 25%),
 			hsl(0, 0%, 95%) 20%,
-			var(--card-glow, hsl(175, 100%, 90%)) 130%
+			var(--card-glow) 130%
 		),
 		repeating-linear-gradient(
 			45deg,
 			hsl(0, 0%, 10%) 0%,
+			hsl(0, 0%, 10%) 1%,
 			hsl(0, 0%, 10%) var(--barwidth),
 			hsl(0, 0%, 20%) calc(var(--barwidth) + 0.01%),
 			hsl(0, 0%, 20%) calc(var(--barwidth) * 2),
@@ -751,6 +761,7 @@
 		repeating-linear-gradient(
 			-45deg,
 			hsl(0, 0%, 10%) 0%,
+			hsl(0, 0%, 10%) 1%,
 			hsl(0, 0%, 10%) var(--barwidth),
 			hsl(0, 0%, 20%) calc(var(--barwidth) + 0.01%),
 			hsl(0, 0%, 20%) calc(var(--barwidth) * 2),
@@ -778,22 +789,19 @@
 		210% 210%;
 	background-position:
 		center,
-		calc(((var(--background-x, 50%) - 50%) * 1.5) + 50%)
-		calc(((var(--background-y, 50%) - 50%) * 1.5) + 50%),
-		calc(((var(--background-x, 50%) - 50%) * 1.5) + 50%)
-		calc(((var(--background-y, 50%) - 50%) * 1.5) + 50%);
+		calc(((var(--background-x) - 50%) * 1.5) + 50%)
+		calc(((var(--background-y) - 50%) * 1.5) + 50%),
+		calc(((var(--background-x) - 50%) * 1.5) + 50%)
+		calc(((var(--background-y) - 50%) * 1.5) + 50%);
 
 	background-blend-mode: exclusion, darken, color-dodge;
+
 	filter: brightness(0.5) contrast(2) saturate(1.75);
 	mix-blend-mode: color-dodge;
-	opacity: var(--card-opacity, 0);
 }
 
-.holo-card.radiant::after {
-	/* .card__shine::after — colour foil rainbow layer */
-	--space: 200px;
-	--foil: url("/holo-textures/trainerbg.png");
-	--imgsize: 25% auto;
+.holo-card[data-rarity="radiant rare"] .holo-card-shine:after {
+	content: "";
 
 	background-image:
 		var(--foil),
@@ -813,81 +821,756 @@
 		400% 100%;
 	background-position:
 		center,
-		calc(((var(--background-x, 50%) - 50%) * -2.5) + 50%)
-		calc(((var(--background-y, 50%) - 50%) * -2.5) + 50%);
+		calc(((var(--background-x) - 50%) * -2.5) + 50%)
+		calc(((var(--background-y) - 50%) * -2.5) + 50%);
 
-	background-blend-mode: difference;
 	filter: brightness(0.6) contrast(3) saturate(2);
 	mix-blend-mode: color-dodge;
-	opacity: var(--card-opacity, 0);
+
+	background-blend-mode: hard-light;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Rarity: trainer-gallery  (Trainer Gallery Rare Holo, Illustration Rare,
-                             Special Illustration Rare)
-   Source: trainer-gallery-holo.css — data-rarity="trainer gallery rare holo"
-   Merge note: .card__shine → ::before (clip-path applied to full card face —
-     we drop clip-path since our image fills entire card). .card__shine::after
-     → merged into ::before as additional background layer.
-     .card__glare → ::after. .card__shine::before explicitly set to none in
-     simey, so nothing to merge.
-───────────────────────────────────────────────────────────────────────────── */
+.holo-card[data-rarity="radiant rare"] .holo-card-shine:before {
+	content: "";
+	z-index: 2;
+	grid-area: 1 / 1;
 
-.holo-card.trainer-gallery::before {
-	--space: 5%;
-	--angle: -22deg;
-	--imgsize: 300% 400%;
+	background-image:
+		var(--glitter),
+		radial-gradient(
+			farthest-corner ellipse at calc(((var(--pointer-x)) * 0.5) + 25%)
+				calc(((var(--pointer-y)) * 0.5) + 25%),
+			hsla(0, 0%, 58%, 0.8) 10%,
+			hsla(0, 0%, 20%, 0.9) 20%,
+			hsla(0, 0%, 20%, 0.5) 50%
+		);
 
-	background-image: repeating-linear-gradient(
-		var(--angle),
-		hsla(283, 49%, 60%, 0.75) calc(var(--space) * 1),
-		hsla(2, 74%, 59%, 0.75) calc(var(--space) * 2),
-		hsla(53, 67%, 53%, 0.75) calc(var(--space) * 3),
-		hsla(93, 56%, 52%, 0.75) calc(var(--space) * 4),
-		hsla(176, 38%, 50%, 0.75) calc(var(--space) * 5),
-		hsla(228, 100%, 77%, 0.75) calc(var(--space) * 6),
-		hsla(283, 49%, 61%, 0.75) calc(var(--space) * 7)
-	);
-
+	background-position: center;
+	background-size:
+		15% 15%,
+		350% 350%;
 	background-blend-mode: color-dodge;
-	background-size: var(--imgsize);
-	background-position: 0% calc(var(--background-y, 50%) * 1);
 
-	filter: brightness(calc((var(--pointer-from-center, 0) * 0.3) + 0.5))
-		contrast(2.3) saturate(1);
-	mix-blend-mode: color-dodge;
-	opacity: var(--card-opacity, 0);
+	mix-blend-mode: overlay;
+	filter: brightness(0.66) contrast(2) saturate(0.5);
 }
 
-.holo-card.trainer-gallery::after {
+/*
+
+  GLARE LAYERS
+
+*/
+
+.holo-card[data-rarity="radiant rare"] .holo-card-glare {
 	background-image: radial-gradient(
-		farthest-corner ellipse at calc((var(--pointer-x, 50%) * 0.5) + 25%)
-			calc((var(--pointer-y, 50%) * 0.5) + 25%),
-		hsl(0, 0%, 100%) 5%,
-		hsla(300, 100%, 11%, 0.6) 40%,
-		hsl(0, 0%, 22%) 120%
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsla(0, 0%, 100%, 0.33) 0%,
+		hsl(0, 0%, 25%) 110%
 	);
 
-	background-position: center center;
-	background-size: 400% 500%;
-	filter: brightness(calc((var(--pointer-from-center, 0) * 0.2) + 0.4))
-		contrast(0.85) saturate(1.1);
+	filter: brightness(1) contrast(1.5);
 	mix-blend-mode: hard-light;
-	opacity: var(--card-opacity, 0);
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Rarity: rainbow  (Rare Rainbow, Hyper Rare)
-   Source: rainbow-holo.css — data-rarity="rare rainbow"
-   Merge note: .card__shine base → ::before.
-     .card__shine::before (foil-image overlay at low opacity) → merged as
-     additional background layer in ::before (dropped — illusion-mask is a
-     per-card foil image we don't carry).
-     .card__shine::after → ::after (second glitter/rainbow layer).
-     .card__glare → wrapped into ::after as additional gradient.
-───────────────────────────────────────────────────────────────────────────── */
+/*
 
-.holo-card.rainbow::before {
+  NO MASK
+
+*/
+
+.holo-card:not(.masked)[data-rarity="radiant rare"] .holo-card-shine,
+.holo-card:not(.masked)[data-rarity="radiant rare"] .holo-card-shine:after {
+	--mask: none;
+	--foil: url("/holo-textures/trainerbg.png");
+	--imgsize: 25% auto;
+}
+
+.holo-card:not(.masked)[data-rarity="radiant rare"] .holo-card-shine:after {
+	background-blend-mode: difference;
+}
+
+/*
+
+  V REGULAR
+
+*/
+
+/*
+
+  SHINE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare holo v"]:not(.masked) .holo-card-shine,
+.holo-card[data-subtypes="v-union"]:not(.masked) .holo-card-shine {
+	filter: brightness(0.7) contrast(2) saturate(0.5);
+}
+
+.holo-card[data-rarity="rare holo v"] .holo-card-shine,
+.holo-card[data-rarity="rare holo v"] .holo-card-shine:after,
+.holo-card[data-subtypes="v-union"] .holo-card-shine,
+.holo-card[data-subtypes="v-union"] .holo-card-shine:after {
+	--space: 5%;
+	--angle: 133deg;
+	--imgsize: 500px;
+
+	background-image:
+		var(--grain),
+		repeating-linear-gradient(
+			0deg,
+			var(--sunpillar-clr-1) calc(var(--space) * 1),
+			var(--sunpillar-clr-2) calc(var(--space) * 2),
+			var(--sunpillar-clr-3) calc(var(--space) * 3),
+			var(--sunpillar-clr-4) calc(var(--space) * 4),
+			var(--sunpillar-clr-5) calc(var(--space) * 5),
+			var(--sunpillar-clr-6) calc(var(--space) * 6),
+			var(--sunpillar-clr-1) calc(var(--space) * 7)
+		),
+		repeating-linear-gradient(
+			var(--angle),
+			#0e152e 0%,
+			hsl(180, 10%, 60%) 3.8%,
+			hsl(180, 29%, 66%) 4.5%,
+			hsl(180, 10%, 60%) 5.2%,
+			#0e152e 10%,
+			#0e152e 12%
+		),
+		radial-gradient(
+			farthest-corner circle at var(--pointer-x) var(--pointer-y),
+			hsla(0, 0%, 0%, 0.1) 12%,
+			hsla(0, 0%, 0%, 0.15) 20%,
+			hsla(0, 0%, 0%, 0.25) 120%
+		);
+
+	background-blend-mode: screen, hue, hard-light;
+	background-size:
+		var(--imgsize) 100%,
+		200% 700%,
+		300% 100%,
+		200% 100%;
+	background-position:
+		center,
+		0% var(--background-y),
+		var(--background-x) var(--background-y),
+		var(--background-x) var(--background-y);
+
+	filter: brightness(0.8) contrast(2.95) saturate(0.65);
+}
+
+.holo-card[data-rarity="rare holo v"] .holo-card-shine:after,
+.holo-card[data-subtypes="v-union"] .holo-card-shine:after {
+	content: "";
+
+	background-position:
+		center,
+		0% var(--background-y),
+		calc(var(--background-x) * -1) calc(var(--background-y) * -1),
+		var(--background-x) var(--background-y);
+	background-size:
+		var(--imgsize) 100%,
+		200% 400%,
+		195% 100%,
+		200% 100%;
+
+	filter: brightness(1) contrast(2.5) saturate(1.75);
+	mix-blend-mode: soft-light;
+}
+
+/*
+
+  GLARE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare holo v"] .holo-card-glare,
+.holo-card[data-subtypes="v-union"] .holo-card-glare {
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsl(0, 0%, 100%) 0%,
+		hsla(210, 3%, 54%, 0.33) 45%,
+		hsla(0, 0%, 20%, 0.9) 130%
+	);
+
+	opacity: calc(var(--card-opacity) * 0.5);
+
+	mix-blend-mode: hard-light;
+	filter: brightness(0.9) contrast(1.75);
+} /*
+
+  V FULL ART (ULTRA RARE)
+
+*/
+
+/*
+
+  SHINE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare ultra"][data-supertype="pokémon"] .holo-card-shine,
+.holo-card[data-rarity="rare ultra"][data-supertype="pokémon"]
+	.holo-card-shine:after,
+.holo-card[data-rarity="rare ultra"][data-subtypes*="supporter"]
+	.holo-card-shine,
+.holo-card[data-rarity="rare ultra"][data-subtypes*="supporter"]
+	.holo-card-shine:after,
+.holo-card[data-rarity="rare holo v"][data-trainer-gallery="true"]
+	.holo-card-shine,
+.holo-card[data-rarity="rare holo v"][data-trainer-gallery="true"]
+	.holo-card-shine:after {
+	--space: 5%;
+	--angle: 133deg;
+	--imgsize: cover;
+
+	background-image:
+		var(--foil),
+		repeating-linear-gradient(
+			0deg,
+			var(--sunpillar-clr-1) calc(var(--space) * 1),
+			var(--sunpillar-clr-2) calc(var(--space) * 2),
+			var(--sunpillar-clr-3) calc(var(--space) * 3),
+			var(--sunpillar-clr-4) calc(var(--space) * 4),
+			var(--sunpillar-clr-5) calc(var(--space) * 5),
+			var(--sunpillar-clr-6) calc(var(--space) * 6),
+			var(--sunpillar-clr-1) calc(var(--space) * 7)
+		),
+		repeating-linear-gradient(
+			var(--angle),
+			#0e152e 0%,
+			hsl(180, 10%, 60%) 3.8%,
+			hsl(180, 29%, 66%) 4.5%,
+			hsl(180, 10%, 60%) 5.2%,
+			#0e152e 10%,
+			#0e152e 12%
+		),
+		radial-gradient(
+			farthest-corner circle at var(--pointer-x) var(--pointer-y),
+			hsla(0, 0%, 0%, 0.1) 12%,
+			hsla(0, 0%, 0%, 0.15) 20%,
+			hsla(0, 0%, 0%, 0.25) 120%
+		);
+
+	background-position:
+		center center,
+		0% var(--background-y),
+		calc(var(--background-x) + (var(--background-y) * 0.2)) var(--background-y),
+		var(--background-x) var(--background-y);
+
+	background-blend-mode: soft-light, hue, hard-light;
+	background-size:
+		var(--imgsize),
+		200% 700%,
+		300% 100%,
+		200% 100%;
+
+	filter: brightness(calc((var(--pointer-from-center) * 0.4) + 0.4))
+		contrast(1.4) saturate(2.25);
+}
+
+.holo-card[data-supertype="pokémon"][data-rarity="rare ultra"]
+	.holo-card-shine:after,
+.holo-card[data-subtypes*="supporter"][data-rarity="rare ultra"]
+	.holo-card-shine:after,
+.holo-card[data-trainer-gallery="true"][data-rarity="rare holo v"]
+	.holo-card-shine:after {
+	content: "";
+
+	background-position:
+		center center,
+		0% var(--background-y),
+		calc((var(--background-x) + (var(--background-y) * 0.2)) * -1)
+		calc(var(--background-y) * -1),
+		var(--background-x) var(--background-y);
+
+	background-size:
+		var(--imgsize),
+		200% 400%,
+		195% 100%,
+		200% 100%;
+
+	filter: brightness(calc((var(--pointer-from-center) * 0.4) + 0.8))
+		contrast(1.5) saturate(1.25);
+	mix-blend-mode: exclusion;
+}
+
+.holo-card[data-supertype="pokémon"][data-rarity="rare ultra"]
+	.holo-card-shine:before,
+.holo-card[data-subtypes*="supporter"][data-rarity="rare ultra"]
+	.holo-card-shine:before {
+	content: "";
+	-webkit-mask-image: none;
+	mask-image: none;
+
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsl(0, 0%, 100%) 0%,
+		hsla(0, 0%, 0%, 0) 40%
+	);
+	background-position: center;
+	background-size: cover;
+	mix-blend-mode: overlay;
+
+	opacity: 0.75;
+	z-index: 1;
+}
+
+/*
+
+  GLARE LAYERS
+
+*/
+
+.holo-card[data-supertype="pokémon"][data-rarity="rare ultra"] .holo-card-glare,
+.holo-card[data-subtypes*="supporter"][data-rarity="rare ultra"]
+	.holo-card-glare {
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsl(0, 0%, 75%) 5%,
+		hsl(200, 5%, 35%) 60%,
+		hsl(320, 40%, 10%) 150%
+	);
+
+	background-size: 120% 150%;
+	background-position: center center;
+
+	mix-blend-mode: hard-light;
+	filter: brightness(1) contrast(1.2) saturate(1);
+
+	opacity: calc(var(--card-opacity) * 0.75);
+}
+
+/*
+
+  NO MASK
+
+*/
+
+.holo-card:not(.masked)[data-supertype="pokémon"][data-rarity="rare ultra"]
+.holo-card-shine,
+.holo-card:not(.masked)[data-supertype="pokémon"][data-rarity="rare ultra"]
+	.holo-card-shine:after,
+.holo-card:not(.masked)[data-trainer-gallery="true"][data-rarity="rare holo v"]
+	.holo-card-shine,
+.holo-card:not(.masked)[data-trainer-gallery="true"][data-rarity="rare holo v"]
+	.holo-card-shine:after {
+	--mask: none;
+	--foil: url("/holo-textures/illusion.png");
+	--imgsize: 33%;
+
+	-webkit-mask-image: var(--mask);
+	mask-image: var(--mask);
+	-webkit-mask-size: var(--imgsize);
+	mask-size: var(--imgsize);
+
+	background-blend-mode: exclusion, hue, hard-light;
+	filter: brightness(calc((var(--pointer-from-center) * 0.3) + 0.35))
+		contrast(2) saturate(1.5);
+}
+
+.holo-card:not(.masked)[data-supertype="pokémon"][data-rarity="rare ultra"]
+	.holo-card-shine:before,
+.holo-card:not(.masked)[data-trainer-gallery="true"][data-rarity="rare holo v"]
+	.holo-card-shine:before {
+	content: none;
+	display: none;
+}
+
+.holo-card:not(.masked)[data-supertype="pokémon"][data-rarity="rare ultra"]
+	.holo-card-shine:after,
+.holo-card:not(.masked)[data-trainer-gallery="true"][data-rarity="rare holo v"]
+	.holo-card-shine:after {
+	filter: brightness(calc((var(--pointer-from-center) * 0.5) + 0.8))
+		contrast(1.6) saturate(1.4);
+}
+
+/*
+
+  V MAX
+
+*/
+
+.holo-card:not(.masked)[data-rarity="rare holo vmax"][data-supertype="pokémon"]
+.holo-card-shine,
+.holo-card:not(.masked)[data-rarity="rare holo vmax"][data-supertype="pokémon"]
+	.holo-card-shine:after {
+	--mask: none;
+	--foil: url("/holo-textures/vmaxbg.jpg");
+	--imgsize: 60% 30%;
+}
+
+/*
+
+  SHINE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare holo vmax"] .holo-card-shine {
+	--space: 6%;
+	--angle: 133deg;
+	--imgsize: cover;
+
+	background-image:
+		var(--foil),
+		repeating-linear-gradient(
+			-33deg,
+			hsl(2, 70%, 47%) calc(var(--space) * 1),
+			hsl(228, 60%, 64%) calc(var(--space) * 2),
+			hsl(176, 55%, 39%) calc(var(--space) * 3),
+			hsl(123, 68%, 35%) calc(var(--space) * 4),
+			hsl(283, 75%, 57%) calc(var(--space) * 5),
+			hsl(2, 70%, 47%) calc(var(--space) * 6)
+		),
+		repeating-linear-gradient(
+			var(--angle),
+			hsla(227, 53%, 12%, 0.5) 0%,
+			hsl(180, 10%, 50%) 2.5%,
+			hsl(83, 50%, 35%) 5%,
+			hsl(180, 10%, 50%) 7.5%,
+			hsla(227, 53%, 12%, 0.5) 10%,
+			hsla(227, 53%, 12%, 0.5) 15%
+		),
+		radial-gradient(
+			farthest-corner circle at var(--pointer-x) var(--pointer-y),
+			hsla(189, 76%, 77%, 0.6) 0%,
+			hsla(147, 59%, 77%, 0.6) 25%,
+			hsla(271, 55%, 69%, 0.6) 50%,
+			hsla(355, 56%, 72%, 0.6) 75%
+		);
+
+	background-blend-mode: difference, luminosity, soft-light;
+	background-size:
+		var(--imgsize),
+		1100% 1100%,
+		600% 600%,
+		200% 200%;
+	background-position:
+		center,
+		var(--background-x) var(--background-y),
+		var(--background-x) var(--background-y),
+		var(--background-x) var(--background-y);
+
+	filter: brightness(calc((var(--pointer-from-center) * 0.4) + 0.4)) contrast(2)
+		saturate(1);
+}
+
+.holo-card[data-rarity="rare holo vmax"] .holo-card-shine:after {
+	content: "";
+
+	background-image:
+		repeating-linear-gradient(
+			0deg,
+			var(--sunpillar-clr-1) calc(var(--space) * 1),
+			var(--sunpillar-clr-2) calc(var(--space) * 2),
+			var(--sunpillar-clr-3) calc(var(--space) * 3),
+			var(--sunpillar-clr-4) calc(var(--space) * 4),
+			var(--sunpillar-clr-5) calc(var(--space) * 5),
+			var(--sunpillar-clr-6) calc(var(--space) * 6),
+			var(--sunpillar-clr-1) calc(var(--space) * 7)
+		),
+		repeating-linear-gradient(
+			var(--angle),
+			#0e152e 0%,
+			hsl(180, 10%, 60%) 3.8%,
+			hsl(180, 29%, 66%) 4.5%,
+			hsl(180, 10%, 60%) 5.2%,
+			#0e152e 10%,
+			#0e152e 12%
+		);
+
+	background-blend-mode: hue, hard-light;
+	background-size:
+		200% 700%,
+		300% 100%,
+		200% 100%;
+	background-position:
+		0% var(--background-y),
+		var(--background-x) var(--background-y),
+		var(--background-x) var(--background-y);
+
+	mix-blend-mode: lighten;
+	opacity: calc(
+		(0.3 * var(--card-opacity)) +
+		var(--card-opacity) *
+		var(--pointer-from-center) *
+		0.5
+	);
+	filter: saturate(1.5);
+}
+
+/*
+
+  GLARE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare holo vmax"] .holo-card-glare {
+	mix-blend-mode: hard-light;
+	filter: brightness(1) contrast(1);
+
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsla(0, 0%, 100%, 0.75) 0%,
+		hsl(0, 0%, 0%) 120%
+	);
+
+	opacity: calc(
+		(0.2 * var(--card-opacity)) +
+		var(--card-opacity) *
+		var(--pointer-from-center) *
+		0.8
+	);
+}
+
+/*
+
+  NO MASK
+
+*/
+
+.holo-card:not(.masked) [data-rarity="rare holo vmax"] .holo-card-shine {
+	filter: brightness(calc((var(--pointer-from-center) * 0.4) + 0.4)) contrast(2)
+		saturate(1);
+}
+
+/*
+
+  V STAR
+
+*/
+
+.holo-card.masked[data-rarity="rare holo vstar"] .holo-card-shine,
+.holo-card.masked[data-rarity="rare holo vstar"] .holo-card-shine::before,
+.holo-card.masked[data-rarity="rare holo vstar"] .holo-card-shine::after {
+	-webkit-mask-image:
+		var(--mask),
+		radial-gradient(
+			farthest-corner circle at var(--pointer-x) var(--pointer-y),
+			hsla(0, 0%, 100%, 0) 0%,
+			hsla(0, 0%, 100%, 0.5) 120%
+		);
+
+	mask-image:
+		var(--mask),
+		radial-gradient(
+			farthest-corner circle at var(--pointer-x) var(--pointer-y),
+			hsla(0, 0%, 100%, 0) 0%,
+			hsla(0, 0%, 100%, 0.5) 120%
+		);
+}
+
+/*
+
+  SHINE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare holo vstar"] .holo-card-shine,
+.holo-card[data-rarity="rare holo vstar"] .holo-card-shine:after {
+	--space: 5%;
+	--angle: 133deg;
+	--imgsize: cover;
+
+	background-image:
+		var(--foil),
+		repeating-linear-gradient(
+			0deg,
+			var(--sunpillar-clr-1) calc(var(--space) * 1),
+			var(--sunpillar-clr-2) calc(var(--space) * 2),
+			var(--sunpillar-clr-3) calc(var(--space) * 3),
+			var(--sunpillar-clr-4) calc(var(--space) * 4),
+			var(--sunpillar-clr-5) calc(var(--space) * 5),
+			var(--sunpillar-clr-6) calc(var(--space) * 6),
+			var(--sunpillar-clr-1) calc(var(--space) * 7)
+		),
+		repeating-linear-gradient(
+			var(--angle),
+			#0e152e 0%,
+			hsl(180, 10%, 60%) 3.8%,
+			hsl(180, 29%, 66%) 4.5%,
+			hsl(180, 10%, 60%) 5.2%,
+			#0e152e 10%,
+			#0e152e 12%
+		),
+		radial-gradient(
+			farthest-corner circle at var(--pointer-x) var(--pointer-y),
+			hsla(0, 0%, 0%, 0.1) 12%,
+			hsla(0, 0%, 0%, 0.15) 20%,
+			hsla(0, 0%, 0%, 0.25) 120%
+		);
+
+	background-blend-mode: soft-light, hue, hard-light;
+	background-size:
+		var(--imgsize),
+		200% 700%,
+		300% 100%,
+		200% 100%;
+	background-position:
+		center center,
+		0% var(--background-y),
+		var(--background-x) var(--background-y),
+		var(--background-x) var(--background-y);
+
+	filter: brightness(calc((var(--pointer-from-center) * 0.75) + 0.25))
+		contrast(2) saturate(1.25);
+}
+
+.holo-card[data-rarity="rare holo vstar"] .holo-card-shine:after {
+	content: "";
+
+	background-size:
+		var(--imgsize),
+		200% 400%,
+		195% 100%,
+		200% 100%;
+	background-position:
+		center center,
+		0% var(--background-y),
+		calc(var(--background-x) * -1) calc(var(--background-y) * -1),
+		var(--background-x) var(--background-y);
+
+	filter: brightness(calc((var(--pointer-from-center) * 0.75) + 0.5))
+		contrast(1.5) saturate(1.5);
+	mix-blend-mode: exclusion;
+}
+
+.holo-card[data-rarity="rare holo vstar"] .holo-card-shine::before {
+	content: "";
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsla(190, 7%, 80%, 0.75) 0%,
+		hsla(260, 7%, 50%, 0.25) 45%,
+		hsl(310, 7%, 50%) 120%
+	);
+	mix-blend-mode: hard-light;
+	z-index: 2;
+	opacity: 0.8;
+}
+
+/*
+
+  GLARE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare holo vstar"] .holo-card-glare {
+	filter: brightness(0.7) contrast(2);
+
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsl(195, 90%, 90%) 5%,
+		hsl(300, 3%, 60%) 60%,
+		hsl(350, 0%, 15%) 150%
+	);
+
+	mix-blend-mode: hard-light;
+	opacity: calc(var(--card-opacity) * (var(--pointer-from-center) * 0.75));
+}
+
+/*
+
+  NO MASK
+
+*/
+
+.holo-card:not(.masked)[data-rarity="rare holo vstar"] .holo-card-shine,
+.holo-card:not(.masked)[data-rarity="rare holo vstar"] .holo-card-shine:after {
+	--mask: none;
+	--foil: url("/holo-textures/ancient.png");
+	--imgsize: 18% 15%;
+
+	background-blend-mode: exclusion, hue, hard-light;
+	filter: brightness(calc((var(--pointer-from-center) * 0.25) + 0.35))
+		contrast(1.8) saturate(1.75);
+}
+
+.holo-card:not(.masked)[data-rarity="rare holo vstar"] .holo-card-shine:after {
+	filter: brightness(calc((var(--pointer-from-center) * 0.75) + 0.5))
+		contrast(1.5) saturate(1.5);
+}
+
+.holo-card:not(.masked)[data-rarity="rare holo vstar"] .holo-card-glare {
+	filter: brightness(0.55) contrast(2);
+} /*
+
+  ULTRA RARE (FULL ART TRAINER)
+  some styles inherited from v-full-art.css
+
+*/
+
+/*
+
+  SHINE LAYERS
+
+*/
+
+.holo-card[data-subtypes*="supporter"][data-rarity="rare ultra"]
+.holo-card-shine {
+	filter: brightness(calc((var(--pointer-from-center) * 0.05) + 0.8))
+		contrast(1.75) saturate(1.2);
+}
+
+.holo-card[data-subtypes*="supporter"][data-rarity="rare ultra"]
+	.holo-card-shine:after {
+	filter: brightness(calc((var(--pointer-from-center) * 0.4) + 0.85))
+		contrast(2) saturate(0.5);
+}
+
+.holo-card[data-subtypes*="supporter"][data-rarity="rare ultra"]
+	.holo-card-shine:before {
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsl(0, 0%, 100%) 0%,
+		hsla(0, 0%, 0%, 0) 80%
+	);
+
+	mix-blend-mode: screen;
+	opacity: 0.5;
+}
+
+/*
+
+  GLARE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare ultra"][data-subtypes*="supporter"]
+.holo-card-glare {
+	opacity: calc(var(--card-opacity) * 0.75);
+	mix-blend-mode: multiply;
+	filter: brightness(1.5) contrast(1.4) saturate(1);
+	background-size: 170% 170%;
+}
+
+/*
+
+  NO MASK
+
+*/
+
+.holo-card:not(.masked)[data-subtypes*="supporter"][data-rarity="rare ultra"]
+.holo-card-shine,
+.holo-card:not(.masked)[data-subtypes*="supporter"][data-rarity="rare ultra"]
+	.holo-card-shine:after {
+	--mask: none;
+	--foil: url("/holo-textures/trainerbg.png");
+	--imgsize: 20%;
+
+	background-blend-mode: color-burn, hue, hard-light;
+	filter: brightness(calc((var(--pointer-from-center) * 0.05) + 0.6))
+		contrast(1.5) saturate(1.2);
+} /*
+
+  RAINBOW (SECRET) HOLO
+
+*/
+
+/*
+
+  SHINE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare rainbow"] .holo-card-shine {
 	--r-clr-1: hsl(0, 57%, 37%);
 	--r-clr-2: hsl(40, 53%, 39%);
 	--r-clr-3: hsl(90, 60%, 35%);
@@ -925,34 +1608,27 @@
 		);
 
 	background-blend-mode: luminosity, soft-light;
+
 	background-size:
 		200% 200%,
 		var(--glittersize) var(--glittersize),
 		400% 400%;
-	background-position:
-		calc(25% + (50% * var(--pointer-from-left, 0.5)))
-		calc(25% + (50% * var(--pointer-from-top, 0.5))),
-		center center,
-		calc(25% + (var(--pointer-x, 50%) / 2))
-		calc(25% + (var(--pointer-y, 50%) / 2));
 
-	filter: brightness(calc((var(--pointer-from-center, 0) * 0.25) + 0.6))
+	background-position:
+		calc(25% + (50% * var(--pointer-from-left)))
+		calc(25% + (50% * var(--pointer-from-top))),
+		center center,
+		calc(25% + (var(--pointer-x) / 2)) calc(25% + (var(--pointer-y) / 2));
+
+	filter: brightness(calc((var(--pointer-from-center) * 0.25) + 0.6))
 		contrast(2.2) saturate(0.75);
-	/* color-dodge: our ::before has no base blend (simey's .card__shine sets it
-	   globally); without it the deep rainbow opaquely covers the art. */
-	mix-blend-mode: color-dodge;
-	opacity: var(--card-opacity, 0);
 }
 
-.holo-card.rainbow::after {
-	/* .card__shine::after — second glitter + rainbow layer */
-	--r-clr-1: hsl(0, 57%, 37%);
-	--r-clr-2: hsl(40, 53%, 39%);
-	--r-clr-3: hsl(90, 60%, 35%);
-	--r-clr-4: hsl(180, 60%, 35%);
-	--r-clr-5: hsl(180, 60%, 35%);
-	--r-clr-6: hsl(210, 57%, 39%);
-	--r-clr-7: hsl(280, 55%, 31%);
+.holo-card[data-rarity="rare rainbow"] .holo-card-shine:after {
+	content: "";
+
+	-webkit-mask-image: none !important;
+	mask-image: none !important;
 
 	background-image:
 		var(--glitter),
@@ -988,43 +1664,255 @@
 		400% 400%;
 	background-position:
 		center center,
-		var(--pointer-x, 50%) var(--pointer-y, 50%);
+		var(--pointer-x) var(--pointer-y);
 
-	filter: brightness(calc((var(--pointer-from-center, 0) * 0.3) + 0.55))
+	filter: brightness(calc((var(--pointer-from-center) * 0.3) + 0.55))
 		contrast(2) saturate(1);
 	mix-blend-mode: color-dodge;
-	opacity: var(--card-opacity, 0);
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Rarity: gold-secret  (Rare Secret)
-   Source: secret-rare.css — data-rarity="rare secret"
-   Merge note: .card__shine base → ::before with geometric.png texture.
-     .card__shine::before (gold gradient overlay) merged as layers in ::before.
-     .card__shine::after (glitter overlay) → ::after.
-     .card__glare → folded into ::after as additional background layer.
-───────────────────────────────────────────────────────────────────────────── */
+.holo-card[data-rarity="rare rainbow"] .holo-card-shine:before {
+	content: "";
 
-.holo-card.gold-secret::before {
-	--shift: 1px;
-	--foil: url("/holo-textures/geometric.png");
+	background-image: var(--foil);
+	background-size: var(--imgsize);
+	background-position: center center;
+	filter: brightness(2.5) contrast(1);
+
+	opacity: calc((var(--pointer-from-center) + 0.4) * 0.6);
+	background-blend-mode: difference;
+	mix-blend-mode: darken;
+}
+
+/*
+
+  GLARE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare rainbow"] .holo-card-glare {
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsl(0, 0%, 80%),
+		hsla(187, 10%, 85%, 0.25) 30%,
+		hsl(197, 6%, 25%) 120%
+	);
+
+	filter: brightness(0.9) contrast(1.75);
+	opacity: calc(var(--pointer-from-center) * 0.9);
+	mix-blend-mode: hard-light;
+}
+
+/*
+
+  NO MASK
+
+*/
+
+.holo-card:not(.masked)[data-rarity="rare rainbow"] .holo-card-shine {
+	--foil: url("/holo-textures/illusion-mask.png");
 	--imgsize: 33%;
+} /*
+
+  RAINBOW (ALTERNATE ART) HOLO
+
+*/
+
+/*
+
+  SHINE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare rainbow alt"] .holo-card-shine,
+.holo-card[data-rarity="rare holo vmax"][data-trainer-gallery="true"]
+	.holo-card-shine {
+	--imgsize: cover;
+
+	--r-clr-1: hsl(0, 57%, 37%);
+	--r-clr-2: hsl(40, 53%, 39%);
+	--r-clr-3: hsl(90, 60%, 35%);
+	--r-clr-4: hsl(180, 60%, 35%);
+	--r-clr-5: hsl(180, 60%, 35%);
+	--r-clr-6: hsl(210, 57%, 39%);
+	--r-clr-7: hsl(280, 55%, 31%);
+
+	background-image:
+		repeating-linear-gradient(
+			var(--angle),
+			hsla(283, 49%, 60%, 0.75) calc(var(--space) * 1),
+			hsla(2, 70%, 58%, 0.75) calc(var(--space) * 2),
+			hsla(53, 67%, 53%, 0.75) calc(var(--space) * 3),
+			hsla(93, 56%, 52%, 0.75) calc(var(--space) * 4),
+			hsla(176, 38%, 50%, 0.75) calc(var(--space) * 5),
+			hsla(228, 100%, 77%, 0.75) calc(var(--space) * 6),
+			hsla(283, 49%, 61%, 0.75) calc(var(--space) * 7)
+		),
+		var(--glitter),
+		linear-gradient(
+			-30deg,
+			var(--r-clr-1),
+			var(--r-clr-2),
+			var(--r-clr-3),
+			var(--r-clr-4),
+			var(--r-clr-5),
+			var(--r-clr-6),
+			var(--r-clr-7),
+			var(--r-clr-1),
+			var(--r-clr-2),
+			var(--r-clr-3),
+			var(--r-clr-4),
+			var(--r-clr-5),
+			var(--r-clr-6),
+			var(--r-clr-7),
+			var(--r-clr-1),
+			var(--r-clr-2),
+			var(--r-clr-3),
+			var(--r-clr-4),
+			var(--r-clr-5),
+			var(--r-clr-6),
+			var(--r-clr-7),
+			var(--r-clr-1)
+		);
+
+	background-size:
+		200% 400%,
+		var(--glittersize) var(--glittersize),
+		400% 400%;
+	background-position:
+		0% calc(var(--background-y) * 1),
+		center center,
+		calc(var(--background-x) * 1.5) calc(var(--background-y) * 1.5);
+	background-blend-mode: luminosity, overlay;
+	filter: brightness(calc((var(--pointer-from-center) * 0.3) + 0.3)) contrast(3)
+		saturate(1.8);
+}
+
+.holo-card[data-rarity="rare rainbow alt"] .holo-card-shine:after,
+.holo-card[data-rarity="rare holo vmax"][data-trainer-gallery="true"]
+	.holo-card-shine:after {
+	content: "";
+	-webkit-mask-image: none !important;
+	mask-image: none !important;
+
+	background-image:
+		var(--glitter),
+		linear-gradient(
+			-60deg,
+			var(--r-clr-1),
+			var(--r-clr-2),
+			var(--r-clr-3),
+			var(--r-clr-4),
+			var(--r-clr-5),
+			var(--r-clr-6),
+			var(--r-clr-7),
+			var(--r-clr-1),
+			var(--r-clr-2),
+			var(--r-clr-3),
+			var(--r-clr-4),
+			var(--r-clr-5),
+			var(--r-clr-6),
+			var(--r-clr-7),
+			var(--r-clr-1),
+			var(--r-clr-2),
+			var(--r-clr-3),
+			var(--r-clr-4),
+			var(--r-clr-5),
+			var(--r-clr-6),
+			var(--r-clr-7),
+			var(--r-clr-1)
+		);
+	background-blend-mode: overlay;
+	background-size:
+		var(--glittersize) var(--glittersize),
+		400% 400%;
+	background-position:
+		center center,
+		calc(var(--background-x) * -1.5) calc(var(--background-y) * -1.5);
+	filter: brightness(calc((var(--pointer-from-center) * 0.5) + 0.6)) contrast(3)
+		saturate(1);
+	mix-blend-mode: color-dodge;
+
+	opacity: calc(1.2 + (var(--pointer-from-center) / 2) * -1);
+}
+
+.holo-card[data-rarity="rare rainbow alt"] .holo-card-shine:before,
+.holo-card[data-rarity="rare holo vmax"][data-trainer-gallery="true"]
+	.holo-card-shine:before {
+	content: "";
+
+	background-image: var(--foil);
+	background-size: var(--imgsize);
+	background-position: center center;
+	filter: brightness(1.5) contrast(1.5);
+	opacity: calc((var(--pointer-from-center) + 0.6) * 0.4);
+	background-blend-mode: difference;
+	mix-blend-mode: color-dodge;
+}
+
+/*
+
+  GLARE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare rainbow alt"] .holo-card-glare {
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsla(50, 20%, 90%, 0.75) 0%,
+		hsla(150, 20%, 30%, 0.65) 45%,
+		hsla(0, 0%, 0%, 1) 100%
+	);
+
+	filter: brightness(0.9) contrast(2);
+	opacity: calc(var(--card-opacity) * 0.75);
+}
+
+/*
+
+  NO MASK
+
+*/
+
+.holo-card:not(.masked)[data-rarity="rare rainbow alt"] .holo-card-shine,
+.holo-card:not(
+		.masked
+	)[data-rarity="rare holo vmax"][data-trainer-gallery="true"]
+	.holo-card-shine {
+	--mask: none;
+	--foil: none;
+	--imgsize: 25% auto;
+}
+
+/*
+
+  SECRET RARE (GOLD)
+
+*/
+
+/*
+
+  SHINE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare secret"] .holo-card-shine,
+.holo-card[data-set="swshp"][data-number="swsh145"] .holo-card-shine {
+	--shift: 1px;
+	--imgsize: cover;
 
 	background-image:
 		var(--glitter), var(--glitter),
-		/* Gold metallic sweep — a Rare Secret is a GOLD card, not a cool rainbow.
-		   (Was using sunpillar teal/blue/purple.) */
 		conic-gradient(
-			hsl(45, 100%, 72%),
-			hsl(38, 95%, 56%),
-			hsl(52, 100%, 82%),
-			hsl(33, 85%, 48%),
-			hsl(48, 100%, 75%),
-			hsl(45, 100%, 72%)
+			var(--sunpillar-clr-4),
+			var(--sunpillar-clr-5),
+			var(--sunpillar-clr-6),
+			var(--sunpillar-clr-1),
+			var(--sunpillar-clr-4)
 		),
 		radial-gradient(
-			farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
-			hsla(150, 0%, 0%, 0.98) 10%,
+			farthest-corner circle at var(--pointer-x) var(--pointer-y),
+			hsla(150, 00%, 0%, 0.98) 10%,
 			hsla(0, 0%, 95%, 0.15) 90%
 		);
 
@@ -1040,56 +1928,398 @@
 		center center;
 	background-blend-mode: soft-light, hard-light, overlay;
 	mix-blend-mode: color-dodge;
-	/* simey secret-rare .card__shine values (gold tint kept via the conic above). */
-	filter: brightness(calc(0.4 + (var(--pointer-from-center, 0) * 0.2)))
-		contrast(1) saturate(2.7);
-	opacity: var(--card-opacity, 0);
+	filter: brightness(calc(0.4 + (var(--pointer-from-center) * 0.2))) contrast(1)
+		saturate(2.7);
 }
 
-.holo-card.gold-secret::after {
-	/* .card__shine::after — glitter parallax layer */
-	--shift: 1px;
+.holo-card[data-rarity="rare secret"] .holo-card-shine:before,
+.holo-card[data-set="swshp"][data-number="swsh145"] .holo-card-shine:before {
+	content: "";
+	-webkit-mask-image: none !important;
+	mask-image: none !important;
+
+	background-image:
+		var(--foil), linear-gradient(45deg, hsl(46, 95%, 50%), hsl(52, 100%, 69%)),
+		radial-gradient(
+			farthest-corner circle at var(--pointer-x) var(--pointer-y),
+			hsla(10, 20%, 90%, 0.95) 10%,
+			hsl(0, 0%, 0%) 70%
+		);
+
+	background-size: var(--imgsize), cover, cover;
+	background-position:
+		center center,
+		center center,
+		center center;
+	background-blend-mode: hard-light, multiply;
+
+	mix-blend-mode: lighten;
+	filter: brightness(1.25) contrast(1.25) saturate(0.35);
+	opacity: 0.8;
+}
+
+.holo-card[data-rarity="rare secret"] .holo-card-shine:after,
+.holo-card[data-set="swshp"][data-number="swsh145"] .holo-card-shine:after {
+	content: "";
+
+	-webkit-mask-image: none !important;
+	mask-image: none !important;
 
 	background-image: var(--glitter);
 	background-size: var(--glittersize) var(--glittersize);
 	background-position: calc(
 			50% -
-			((var(--shift) * 2) * var(--pointer-from-left, 0.5)) +
+			((var(--shift) * 2) * var(--pointer-from-left)) +
 			var(--shift)
 		)
-		calc(
-			50% -
-			((var(--shift) * 2) * var(--pointer-from-top, 0.5)) +
-			var(--shift)
-		);
+		calc(50% - ((var(--shift) * 2) * var(--pointer-from-top)) + var(--shift));
 
-	filter: brightness(calc((var(--pointer-from-center, 0) * 0.6) + 0.6))
+	filter: brightness(calc((var(--pointer-from-center) * 0.6) + 0.6))
 		contrast(1.5);
 	mix-blend-mode: overlay;
-	opacity: var(--card-opacity, 0);
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Rarity: ultra  (Rare Ultra, Ultra Rare)
-   Source: v-full-art.css — data-rarity="rare ultra" (supertype=pokémon)
-   Merge note: .card__shine + .card__shine::before (overlay highlight) merged
-     into ::before. .card__shine::after → ::after. .card__glare → folded into
-     ::after as second gradient layer.
-───────────────────────────────────────────────────────────────────────────── */
+/*
 
-.holo-card.ultra {
-	/* No tiled illusion texture on the procedural (non-CDN) path: tiling it at 33%
-	   under an exclusion blend produced heavy moiré that swallowed the whole card.
-	   Masked cards override --foil inline with their real CDN foil, so the moiré
-	   only ever hit non-CDN ultras — drop it here and they fall back to a clean
-	   sunpillar sheen. */
-	--foil: none;
-	--imgsize: cover;
+  GLARE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare secret"] .holo-card-glare,
+.holo-card[data-set="swshp"][data-number="swsh145"] .holo-card-glare {
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsla(45, 8%, 80%, 0.3) 0%,
+		hsl(22, 15%, 12%) 180%
+	);
+
+	filter: brightness(1.3) contrast(1.5);
+	mix-blend-mode: hard-light;
 }
 
-.holo-card.ultra::before {
+/*
+
+  NO MASK
+
+*/
+
+.holo-card:not(.masked)[data-rarity="rare secret"] .holo-card-shine,
+.holo-card:not(.masked)[data-set="swshp"][data-number="swsh145"]
+	.holo-card-shine {
+	--foil: url("/holo-textures/geometric.png");
+	--imgsize: 33%;
+
+	filter: brightness(calc((var(--pointer-from-center) * 0.3) + 0.2)) contrast(2)
+		saturate(0.75);
+}
+
+/*
+
+  TRAINER GALLERY HOLO
+
+*/
+
+/*
+
+  SHINE LAYERS
+
+*/
+
+.holo-card[data-rarity="trainer gallery rare holo"] .holo-card-shine,
+.holo-card[data-rarity="rare holo"][data-trainer-gallery="true"]
+	.holo-card-shine,
+.holo-card[data-set="swshp"][data-number="swsh020"] .holo-card-shine {
+	--space: 5%;
+	--angle: -22deg;
+	--imgsize: 300% 400%;
+
+	clip-path: var(--clip-borders);
+
+	background-image: repeating-linear-gradient(
+		var(--angle),
+		hsla(283, 49%, 60%, 0.75) calc(var(--space) * 1),
+		hsla(2, 74%, 59%, 0.75) calc(var(--space) * 2),
+		hsla(53, 67%, 53%, 0.75) calc(var(--space) * 3),
+		hsla(93, 56%, 52%, 0.75) calc(var(--space) * 4),
+		hsla(176, 38%, 50%, 0.75) calc(var(--space) * 5),
+		hsla(228, 100%, 77%, 0.75) calc(var(--space) * 6),
+		hsla(283, 49%, 61%, 0.75) calc(var(--space) * 7)
+	);
+
+	background-blend-mode: color-dodge;
+	background-size: var(--imgsize);
+	background-position:
+		0% calc(var(--background-y) * 1),
+		var(--background-x) var(--background-y);
+
+	filter: brightness(calc((var(--pointer-from-center) * 0.3) + 0.5))
+		contrast(2.3) saturate(1);
+}
+
+.holo-card[data-rarity="trainer gallery rare holo"] .holo-card-shine:after,
+.holo-card[data-rarity="rare holo"][data-trainer-gallery="true"]
+	.holo-card-shine:after,
+.holo-card[data-set="swshp"][data-number="swsh020"] .holo-card-shine:after {
+	content: "";
+
+	background-image: radial-gradient(
+		farthest-corner ellipse at calc(((var(--pointer-x)) * 0.5) + 25%)
+			calc(((var(--pointer-y)) * 0.5) + 25%),
+		hsl(0, 0%, 100%) 5%,
+		hsla(300, 100%, 11%, 0.6) 40%,
+		hsl(0, 0%, 22%) 120%
+	);
+
+	background-position: center center;
+	background-size: 400% 500%;
+
+	filter: brightness(calc((var(--pointer-from-center) * 0.2) + 0.4))
+		contrast(0.85) saturate(1.1);
+	mix-blend-mode: hard-light;
+}
+
+.holo-card[data-rarity="trainer gallery rare holo"] .holo-card-shine:before,
+.holo-card[data-rarity="rare holo"][data-trainer-gallery="true"]
+	.holo-card-shine:before,
+.holo-card[data-set="swshp"][data-number="swsh020"] .holo-card-shine:before {
+	content: none;
+	display: none;
+}
+
+/*
+
+  GLARE LAYERS
+
+*/
+
+.holo-card[data-rarity="trainer gallery rare holo"] .holo-card-glare,
+.holo-card[data-rarity="rare holo"][data-trainer-gallery="true"]
+	.holo-card-glare,
+.holo-card[data-set="swshp"][data-number="swsh020"] .holo-card-glare {
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsla(0, 0%, 100%, 1) 10%,
+		hsla(0, 0%, 100%, 0.6) 35%,
+		hsla(180, 11%, 35%, 1) 60%
+	);
+
+	mix-blend-mode: soft-light;
+}
+
+.holo-card[data-rarity="trainer gallery rare holo"] .holo-card-glare:before,
+.holo-card[data-rarity="rare holo"][data-trainer-gallery="true"]
+	.holo-card-glare:before,
+.holo-card[data-rarity="trainer gallery rare holo"] .holo-card-glare:after,
+.holo-card[data-rarity="rare holo"][data-trainer-gallery="true"]
+	.holo-card-glare:after {
+	content: none;
+	display: none;
+} /*
+
+  TRAINER GALLERY (V)
+	some styles inherited from v-full-art.css
+
+*/
+
+/*
+
+  SHINE LAYERS
+
+*/
+
+/*
+
+  GLARE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare holo v"][data-trainer-gallery="true"]
+.holo-card-glare {
+	opacity: calc(var(--card-opacity) * 0.4);
+} /*
+
+  TRAINER GALLERY (V MAX)
+	some styles inherited from rainbow-alt.css
+
+*/
+
+/*
+
+  SHINE LAYERS
+
+*/
+
+/*
+
+  GLARE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare holo vmax"][data-trainer-gallery="true"]
+.holo-card-glare {
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsl(50, 30%, 90%) 0%,
+		hsl(162, 5%, 40%),
+		hsl(0, 0%, 0%) 120%
+	);
+
+	filter: brightness(1) contrast(1);
+	opacity: calc(var(--card-opacity) * var(--pointer-from-center) * 0.85);
+}
+
+/*
+
+  TRAINER GALLERY SECRET RARE (GOLD & BLACK)
+
+*/
+
+.holo-card:not(.masked)[data-rarity="rare secret"][data-trainer-gallery="true"]
+.holo-card-shine {
+	--foil: url("/holo-textures/geometric.png");
+	--imgsize: 33%;
+
+	filter: brightness(calc((var(--pointer-from-center) * 0.3) + 0.2)) contrast(2)
+		saturate(0.75);
+}
+
+.holo-card:not(.masked)[data-rarity="rare secret"][data-trainer-gallery="true"]
+	.holo-card-glare {
+	filter: brightness(0.5) contrast(1);
+}
+
+/*
+
+  SHINE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare secret"][data-trainer-gallery="true"]
+.holo-card-shine,
+.holo-card[data-rarity="rare secret"][data-trainer-gallery="true"]
+	.holo-card-shine::before,
+.holo-card[data-rarity="rare secret"][data-trainer-gallery="true"]
+	.holo-card-shine::after {
+	-webkit-mask-image: none !important;
+	mask-image: none !important;
+}
+
+.holo-card[data-rarity="rare secret"][data-trainer-gallery="true"]
+	.holo-card-shine {
+	background-image:
+		var(--glitter), var(--glitter),
+		radial-gradient(
+			farthest-corner circle at var(--pointer-x) var(--pointer-y),
+			hsl(152.7, 21.6%, 10%) 10%,
+			hsla(177, 22%, 80%, 0.1) 50%,
+			hsla(0, 0%, 95%, 0.98) 90%
+		),
+		linear-gradient(45deg, hsl(46, 95%, 50%), hsl(52, 100%, 69%));
+
+	background-size:
+		var(--glittersize) var(--glittersize),
+		var(--glittersize) var(--glittersize),
+		cover,
+		cover;
+
+	background-position:
+		40% 45%,
+		55% 55%,
+		center center,
+		center center;
+
+	background-blend-mode: soft-light, darken, color;
+	filter: brightness(1) contrast(1) saturate(1);
+	mix-blend-mode: color-dodge;
+}
+
+.holo-card[data-rarity="rare secret"][data-trainer-gallery="true"]
+	.holo-card-shine::before {
+	content: "";
+
+	background-image:
+		var(--foil),
+		radial-gradient(
+			farthest-corner circle at var(--pointer-x) var(--pointer-y),
+			hsla(50, 20%, 90%, 0.95) 10%,
+			hsla(324, 22%, 63%, 0.5) 50%,
+			hsl(0, 0%, 0%) 90%
+		);
+	background-size: var(--imgsize), cover;
+	background-position:
+		center center,
+		center center;
+	background-blend-mode: color-burn;
+
+	mix-blend-mode: exclusion;
+	filter: brightness(1) contrast(1) saturate(1);
+	opacity: 1;
+}
+
+.holo-card[data-rarity="rare secret"][data-trainer-gallery="true"]
+	.holo-card-shine::after {
+	content: "";
+
+	background-image:
+		var(--glitter),
+		conic-gradient(
+			var(--sunpillar-clr-4),
+			var(--sunpillar-clr-5),
+			var(--sunpillar-clr-6),
+			var(--sunpillar-clr-1),
+			var(--sunpillar-clr-2),
+			var(--sunpillar-clr-3),
+			var(--sunpillar-clr-4)
+		);
+	background-size:
+		var(--glittersize) var(--glittersize),
+		cover;
+	background-blend-mode: luminosity;
+
+	filter: brightness(calc((var(--pointer-from-center) * 0.5) + 0.6)) contrast(2)
+		saturate(3);
+	mix-blend-mode: soft-light;
+}
+
+/*
+
+  GLARE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare secret"][data-trainer-gallery="true"]
+.holo-card-glare {
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsla(40, 100%, 95%, 0.2) 10%,
+		hsla(40, 20%, 5%, 1) 180%
+	);
+	filter: brightness(1) contrast(1);
+	mix-blend-mode: hard-light;
+} /*
+
+  SHINY RARE (HOLO)
+
+*/
+
+/*
+
+  SHINE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare shiny"] .holo-card-shine {
+	clip-path: var(--clip);
+}
+.holo-card[data-rarity="rare shiny"][data-subtypes^="stage"] .holo-card-shine {
+	clip-path: var(--clip-stage);
+}
+
+.holo-card[data-rarity="rare shiny"] .holo-card-shine,
+.holo-card[data-rarity="rare shiny"] .holo-card-shine:after {
 	--space: 5%;
 	--angle: 133deg;
+	--imgsize: cover;
 
 	background-image:
 		var(--foil),
@@ -1113,7 +2343,7 @@
 			#0e152e 12%
 		),
 		radial-gradient(
-			farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+			farthest-corner circle at var(--pointer-x) var(--pointer-y),
 			hsla(0, 0%, 0%, 0.1) 12%,
 			hsla(0, 0%, 0%, 0.15) 20%,
 			hsla(0, 0%, 0%, 0.25) 120%
@@ -1121,60 +2351,30 @@
 
 	background-position:
 		center center,
-		0% var(--background-y, 50%),
-		calc(var(--background-x, 50%) + (var(--background-y, 50%) * 0.2))
-		var(--background-y, 50%),
-		var(--background-x, 50%) var(--background-y, 50%);
+		0% var(--background-y),
+		calc(var(--background-x) + (var(--background-y) * 0.2)) var(--background-y),
+		var(--background-x) var(--background-y);
 
-	background-blend-mode: exclusion, hue, hard-light;
+	background-blend-mode: soft-light, hue, hard-light;
 	background-size:
 		var(--imgsize),
 		200% 700%,
 		300% 100%,
 		200% 100%;
 
-	/* simey v-full-art .card__shine values. */
-	filter: brightness(calc((var(--pointer-from-center, 0) * 0.4) + 0.4))
+	filter: brightness(calc((var(--pointer-from-center) * 0.4) + 0.4))
 		contrast(1.4) saturate(2.25);
-	opacity: var(--card-opacity, 0);
 }
 
-.holo-card.ultra::after {
-	/* .card__shine::after — exclusion blend second layer */
-	background-image:
-		var(--foil),
-		repeating-linear-gradient(
-			0deg,
-			var(--sunpillar-clr-1) calc(var(--space) * 1),
-			var(--sunpillar-clr-2) calc(var(--space) * 2),
-			var(--sunpillar-clr-3) calc(var(--space) * 3),
-			var(--sunpillar-clr-4) calc(var(--space) * 4),
-			var(--sunpillar-clr-5) calc(var(--space) * 5),
-			var(--sunpillar-clr-6) calc(var(--space) * 6),
-			var(--sunpillar-clr-1) calc(var(--space) * 7)
-		),
-		repeating-linear-gradient(
-			var(--angle),
-			#0e152e 0%,
-			hsl(180, 10%, 60%) 3.8%,
-			hsl(180, 29%, 66%) 4.5%,
-			hsl(180, 10%, 60%) 5.2%,
-			#0e152e 10%,
-			#0e152e 12%
-		),
-		radial-gradient(
-			farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
-			hsla(0, 0%, 0%, 0.1) 12%,
-			hsla(0, 0%, 0%, 0.15) 20%,
-			hsla(0, 0%, 0%, 0.25) 120%
-		);
+.holo-card[data-rarity="rare shiny"] .holo-card-shine:after {
+	content: "";
 
 	background-position:
 		center center,
-		0% var(--background-y, 50%),
-		calc((var(--background-x, 50%) + (var(--background-y, 50%) * 0.2)) * -1)
-		calc(var(--background-y, 50%) * -1),
-		var(--background-x, 50%) var(--background-y, 50%);
+		0% var(--background-y),
+		calc((var(--background-x) + (var(--background-y) * 0.2)) * -1)
+		calc(var(--background-y) * -1),
+		var(--background-x) var(--background-y);
 
 	background-size:
 		var(--imgsize),
@@ -1182,23 +2382,566 @@
 		195% 100%,
 		200% 100%;
 
-	filter: brightness(calc((var(--pointer-from-center, 0) * 0.5) + 0.8))
-		contrast(1.6) saturate(1.4);
+	filter: brightness(calc((var(--pointer-from-center) * 0.4) + 0.8))
+		contrast(1.5) saturate(1.25);
 	mix-blend-mode: exclusion;
-	opacity: var(--card-opacity, 0);
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Rarity: shining  (Rare Shining)
-   Source: no direct simey equivalent — uses holo-basic as fallback.
-   Note: "Rare Shining" is a very old set rarity (Neo Destiny era).
-   Using regular holo style as placeholder with slightly adjusted colours.
+.holo-card[data-rarity="rare shiny"] .holo-card-shine:before {
+	content: "";
+	-webkit-mask-image: none;
+	mask-image: none;
+
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsl(0, 0%, 100%) 0%,
+		hsla(0, 0%, 0%, 0) 40%
+	);
+	background-position: center;
+	background-size: cover;
+	mix-blend-mode: overlay;
+
+	opacity: 0.75;
+	z-index: 1;
+}
+
+/*
+
+  GLARE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare shiny"] .holo-card-glare {
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsl(0, 0%, 100%) 0%,
+		hsl(320, 5%, 15%) 150%
+	);
+
+	background-size: cover;
+	background-position: center center;
+
+	mix-blend-mode: multiply;
+	filter: brightness(1.2) contrast(1) saturate(0.7);
+
+	opacity: calc(var(--card-opacity) * var(--pointer-from-center));
+}
+
+/*
+
+  NO MASK
+
+*/
+
+.holo-card:not(.masked).holo-card[data-rarity="rare shiny"] .holo-card-shine,
+.holo-card:not(.masked).holo-card[data-rarity="rare shiny"]
+	.holo-card-shine:after {
+	--mask: none;
+	--foil: url("/holo-textures/illusion.png");
+	--imgsize: 33%;
+
+	-webkit-mask-image: var(--mask);
+	mask-image: var(--mask);
+	-webkit-mask-size: var(--imgsize);
+	mask-size: var(--imgsize);
+
+	background-blend-mode: exclusion, hue, hard-light;
+	filter: brightness(calc((var(--pointer-from-center) * 0.3) + 0.35))
+		contrast(2) saturate(1.5);
+}
+
+.holo-card:not(.masked).holo-card[data-rarity*="rare shiny"]
+	.holo-card-shine:after {
+	filter: brightness(calc((var(--pointer-from-center) * 0.4) + 0.5))
+		contrast(1.4) saturate(1.2);
+	mix-blend-mode: difference;
+}
+
+/*
+
+  SHINY V (ULTRA RARE)
+
+*/
+
+/*
+
+  SHINE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare shiny v"] .holo-card-shine,
+.holo-card[data-rarity="rare shiny v"] .holo-card-shine:after {
+	--space: 5%;
+	--angle: 133deg;
+	--imgsize: cover;
+
+	background-image:
+		var(--foil),
+		repeating-linear-gradient(
+			0deg,
+			var(--sunpillar-clr-1) calc(var(--space) * 1),
+			var(--sunpillar-clr-2) calc(var(--space) * 2),
+			var(--sunpillar-clr-3) calc(var(--space) * 3),
+			var(--sunpillar-clr-4) calc(var(--space) * 4),
+			var(--sunpillar-clr-5) calc(var(--space) * 5),
+			var(--sunpillar-clr-6) calc(var(--space) * 6),
+			var(--sunpillar-clr-1) calc(var(--space) * 7)
+		),
+		repeating-linear-gradient(
+			var(--angle),
+			#0e152e 0%,
+			hsl(180, 10%, 60%) 3.8%,
+			hsl(180, 29%, 66%) 4.5%,
+			hsl(180, 10%, 60%) 5.2%,
+			#0e152e 10%,
+			#0e152e 12%
+		),
+		radial-gradient(
+			farthest-corner circle at var(--pointer-x) var(--pointer-y),
+			hsla(0, 0%, 0%, 0.1) 12%,
+			hsla(0, 0%, 0%, 0.15) 20%,
+			hsla(0, 0%, 0%, 0.25) 120%
+		);
+
+	background-position:
+		center center,
+		0% var(--background-y),
+		calc(var(--background-x) + (var(--background-y) * 0.2)) var(--background-y),
+		var(--background-x) var(--background-y);
+
+	background-blend-mode: soft-light, hue, hard-light;
+	background-size:
+		var(--imgsize),
+		200% 700%,
+		300% 100%,
+		200% 100%;
+
+	filter: brightness(calc((var(--pointer-from-center) * 0.4) + 0.4))
+		contrast(1.4) saturate(2.25);
+}
+
+.holo-card[data-rarity="rare shiny v"] .holo-card-shine:after {
+	content: "";
+
+	background-position:
+		center center,
+		0% var(--background-y),
+		calc((var(--background-x) + (var(--background-y) * 0.2)) * -1)
+		calc(var(--background-y) * -1),
+		var(--background-x) var(--background-y);
+
+	background-size:
+		var(--imgsize),
+		200% 400%,
+		195% 100%,
+		200% 100%;
+
+	filter: brightness(calc((var(--pointer-from-center) * 0.4) + 0.8))
+		contrast(1.5) saturate(1.25);
+	mix-blend-mode: exclusion;
+}
+
+.holo-card[data-rarity="rare shiny v"] .holo-card-shine:before {
+	content: "";
+	-webkit-mask-image: none;
+	mask-image: none;
+
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsl(0, 0%, 100%) 0%,
+		hsla(0, 0%, 0%, 0) 40%
+	);
+	background-position: center;
+	background-size: cover;
+	mix-blend-mode: overlay;
+
+	opacity: 0.75;
+	z-index: 1;
+}
+
+/*
+
+  GLARE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare shiny v"] .holo-card-glare {
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsl(0, 0%, 90%) 5%,
+		hsl(200, 5%, 45%) 80%,
+		hsl(320, 40%, 10%) 150%
+	);
+
+	background-size: 120% 140%;
+	background-position: center center;
+
+	mix-blend-mode: darken;
+	filter: brightness(0.88) contrast(2.25) saturate(0.7);
+
+	opacity: calc(var(--card-opacity) * var(--pointer-from-center) * 0.75);
+}
+
+/*
+
+  NO MASK
+
+*/
+
+.holo-card:not(.masked)[data-rarity="rare shiny v"] .holo-card-shine,
+.holo-card:not(.masked)[data-rarity="rare shiny v"] .holo-card-shine:after {
+	--mask: none;
+	--foil: url("/holo-textures/illusion.png");
+	--imgsize: 33%;
+
+	-webkit-mask-image: var(--mask);
+	mask-image: var(--mask);
+	-webkit-mask-size: var(--imgsize);
+	mask-size: var(--imgsize);
+
+	background-blend-mode: exclusion, hue, hard-light;
+	filter: brightness(calc((var(--pointer-from-center) * 0.3) + 0.35))
+		contrast(2) saturate(1.5);
+}
+
+.holo-card:not(.masked)[data-rarity="rare shiny v"] .holo-card-shine:before {
+	content: none;
+	display: none;
+}
+
+.holo-card:not(.masked)[data-rarity="rare shiny v"] .holo-card-shine:after {
+	filter: brightness(calc((var(--pointer-from-center) * 0.5) + 0.8))
+		contrast(1.6) saturate(1.4);
+}
+
+/*
+
+  SHINY RARE (VMAX)
+
+*/
+
+/*
+
+  SHINE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare shiny vmax"] .holo-card-shine {
+	--imgsize: cover;
+	--angle: -30deg;
+
+	--r-clr-1: hsl(0, 57%, 37%);
+	--r-clr-2: hsl(40, 53%, 39%);
+	--r-clr-3: hsl(90, 60%, 35%);
+	--r-clr-4: hsl(180, 60%, 35%);
+	--r-clr-5: hsl(180, 60%, 35%);
+	--r-clr-6: hsl(210, 57%, 39%);
+	--r-clr-7: hsl(280, 55%, 31%);
+
+	background-image:
+		var(--glitter), var(--glitter),
+		linear-gradient(
+			var(--angle),
+			var(--r-clr-1),
+			var(--r-clr-2),
+			var(--r-clr-3),
+			var(--r-clr-4),
+			var(--r-clr-5),
+			var(--r-clr-6),
+			var(--r-clr-7),
+			var(--r-clr-1),
+			var(--r-clr-2),
+			var(--r-clr-3),
+			var(--r-clr-4),
+			var(--r-clr-5),
+			var(--r-clr-6),
+			var(--r-clr-7),
+			var(--r-clr-1),
+			var(--r-clr-2),
+			var(--r-clr-3),
+			var(--r-clr-4),
+			var(--r-clr-5),
+			var(--r-clr-6),
+			var(--r-clr-7),
+			var(--r-clr-1)
+		),
+		radial-gradient(
+			farthest-corner circle at var(--pointer-x) var(--pointer-y),
+			hsla(248, 5%, 10%, 1) 10%,
+			hsla(206, 5%, 80%, 0.1) 50%,
+			hsla(0, 0%, 95%, 0.98) 90%
+		);
+
+	background-size:
+		var(--glittersize) var(--glittersize),
+		var(--glittersize) var(--glittersize),
+		400% 400%,
+		cover;
+	background-position:
+		40% 45%,
+		55% 55%,
+		calc(var(--background-x) * 1.5) calc(var(--background-y) * 1.5),
+		center center;
+	background-blend-mode: soft-light, overlay, color-burn;
+	filter: brightness(1) contrast(1) saturate(0.85);
+}
+
+.holo-card[data-rarity="rare shiny vmax"] .holo-card-shine:before {
+	content: "";
+	-webkit-mask-image: none !important;
+	mask-image: none !important;
+
+	background-image:
+		var(--foil),
+		radial-gradient(
+			farthest-corner circle at var(--pointer-x) var(--pointer-y),
+			hsla(248, 5%, 91%, 0.95) 10%,
+			hsla(206, 5%, 68%, 0.5) 50%,
+			hsl(0, 0%, 0%) 120%
+		);
+
+	background-size: var(--imgsize), cover;
+	background-position:
+		center center,
+		center center;
+	background-blend-mode: color-burn;
+
+	mix-blend-mode: lighten;
+	filter: brightness(1) contrast(1) saturate(0.4);
+	opacity: 0.35;
+}
+
+.holo-card[data-rarity="rare shiny vmax"] .holo-card-shine:after {
+	content: "";
+	-webkit-mask-image: none !important;
+	mask-image: none !important;
+
+	background-image: repeating-linear-gradient(
+		calc(var(--angle)),
+		var(--sunpillar-clr-1) calc(var(--space) * 1),
+		var(--sunpillar-clr-2) calc(var(--space) * 2),
+		var(--sunpillar-clr-3) calc(var(--space) * 3),
+		var(--sunpillar-clr-4) calc(var(--space) * 4),
+		var(--sunpillar-clr-5) calc(var(--space) * 5),
+		var(--sunpillar-clr-6) calc(var(--space) * 6),
+		var(--sunpillar-clr-1) calc(var(--space) * 7)
+	);
+
+	background-size: 400% 800%;
+	background-position: calc(50% + (50% - (var(--background-x))) * 3)
+		calc(50% + (50% - (var(--background-y))) * 3);
+	filter: brightness(calc(0.75 - (var(--pointer-from-center) * 0.5)))
+		contrast(1) saturate(1);
+	mix-blend-mode: hue;
+}
+
+/*
+
+  GLARE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare shiny vmax"] .holo-card-glare {
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsla(248, 5%, 90%, 0.45) 0%,
+		hsla(206, 5%, 30%, 0.45) 45%,
+		hsla(0, 0%, 0%, 0.33) 120%
+	);
+
+	filter: brightness(1) contrast(1.25);
+}
+
+.holo-card[data-rarity="rare shiny vmax"] .holo-card-glare:after {
+	content: "";
+	-webkit-mask-image: var(--mask);
+	mask-image: var(--mask);
+	-webkit-mask-size: cover;
+	mask-size: cover;
+
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsla(248, 5%, 90%, 0.75) 0%,
+		hsla(206, 5%, 30%, 0.65) 45%,
+		hsla(0, 0%, 0%, 0.75) 100%
+	);
+
+	filter: brightness(1) contrast(1.25);
+	mix-blend-mode: overlay;
+	opacity: 1;
+}
+
+/*
+
+  RAINBOW (SECRET) HOLO
+
+*/
+
+/*
+
+  SHINE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare secret"][data-set="swsh12pt5"][data-number="160"]
+.holo-card-shine {
+	--r-clr-1: hsl(0, 57%, 37%);
+	--r-clr-2: hsl(40, 53%, 39%);
+	--r-clr-3: hsl(90, 60%, 35%);
+	--r-clr-4: hsl(180, 60%, 35%);
+	--r-clr-5: hsl(180, 60%, 35%);
+	--r-clr-6: hsl(210, 57%, 39%);
+	--r-clr-7: hsl(280, 55%, 31%);
+
+	background-image:
+		linear-gradient(-45deg, var(--r-clr-1), var(--r-clr-5)), var(--glitter),
+		linear-gradient(
+			-30deg,
+			var(--r-clr-1),
+			var(--r-clr-2),
+			var(--r-clr-3),
+			var(--r-clr-4),
+			var(--r-clr-5),
+			var(--r-clr-6),
+			var(--r-clr-7),
+			var(--r-clr-1),
+			var(--r-clr-2),
+			var(--r-clr-3),
+			var(--r-clr-4),
+			var(--r-clr-5),
+			var(--r-clr-6),
+			var(--r-clr-7),
+			var(--r-clr-1),
+			var(--r-clr-2),
+			var(--r-clr-3),
+			var(--r-clr-4),
+			var(--r-clr-5),
+			var(--r-clr-6),
+			var(--r-clr-7),
+			var(--r-clr-1)
+		);
+
+	background-blend-mode: luminosity, soft-light;
+
+	background-size:
+		200% 200%,
+		var(--glittersize) var(--glittersize),
+		400% 400%;
+
+	background-position:
+		calc(25% + (50% * var(--pointer-from-left)))
+		calc(25% + (50% * var(--pointer-from-top))),
+		calc(50% - ((var(--shift) * 2) * var(--pointer-from-left)) + var(--shift))
+		calc(50% - ((var(--shift) * 2) * var(--pointer-from-top)) + var(--shift)),
+		calc(25% + (var(--pointer-x) / 2)) calc(25% + (var(--pointer-y) / 2));
+
+	filter: brightness(calc((var(--pointer-from-center) * 0.5) + 0.75))
+		contrast(2) saturate(1);
+}
+
+.holo-card[data-rarity="rare secret"][data-set="swsh12pt5"][data-number="160"]
+	.holo-card-shine:after {
+	content: "";
+
+	-webkit-mask-image: none !important;
+	mask-image: none !important;
+
+	background-image:
+		var(--glitter),
+		linear-gradient(
+			-60deg,
+			var(--r-clr-1),
+			var(--r-clr-2),
+			var(--r-clr-3),
+			var(--r-clr-4),
+			var(--r-clr-5),
+			var(--r-clr-6),
+			var(--r-clr-7),
+			var(--r-clr-1),
+			var(--r-clr-2),
+			var(--r-clr-3),
+			var(--r-clr-4),
+			var(--r-clr-5),
+			var(--r-clr-6),
+			var(--r-clr-7),
+			var(--r-clr-1),
+			var(--r-clr-2),
+			var(--r-clr-3),
+			var(--r-clr-4),
+			var(--r-clr-5),
+			var(--r-clr-6),
+			var(--r-clr-7),
+			var(--r-clr-1)
+		);
+
+	background-blend-mode: soft-light;
+
+	background-size:
+		var(--glittersize) var(--glittersize),
+		400% 400%;
+
+	background-position:
+		calc(50% - ((var(--shift) * 2) * var(--pointer-from-left)) - var(--shift))
+		calc(50% - ((var(--shift) * 2) * var(--pointer-from-top)) - var(--shift)),
+		var(--pointer-x) var(--pointer-y);
+
+	filter: brightness(calc((var(--pointer-from-center) * 0.35) + 0.35))
+		contrast(2) saturate(1);
+	mix-blend-mode: exclusion;
+}
+
+.holo-card[data-rarity="rare secret"][data-set="swsh12pt5"][data-number="160"]
+	.holo-card-shine:before {
+	content: "";
+
+	background-image: var(--foil);
+	background-size: var(--imgsize);
+	background-position: center center;
+	filter: brightness(2.5) contrast(1);
+
+	opacity: calc((var(--pointer-from-center) + 0.4) * 0.6);
+	mix-blend-mode: multiply;
+}
+
+/*
+
+  GLARE LAYERS
+
+*/
+
+.holo-card[data-rarity="rare secret"][data-set="swsh12pt5"][data-number="160"]
+.holo-card-glare {
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsl(0, 0%, 80%),
+		hsla(0, 0%, 74.9%, 0.25) 30%,
+		hsl(0, 0%, 21.6%) 130%
+	);
+
+	filter: brightness(0.9) contrast(2);
+	opacity: calc(var(--pointer-from-center) * 0.9);
+	mix-blend-mode: hard-light;
+}
+
+/*
+
+  NO MASK
+
+*/
+
+.holo-card:not(
+	.masked
+)[data-rarity="rare secret"][data-set="swsh12pt5"][data-number="160"]
+.holo-card-shine {
+	--foil: url("/holo-textures/illusion-mask.png");
+	--imgsize: 33%;
+} /* ─────────────────────────────────────────────────────────────────────────────
+   OUR EXTENSION — Rarity: rare shining (Neo Destiny Shining Pokémon)
+   No simey source exists (his site is SWSH-only). Sparkly crystalline shine:
+   glitter sparkle + a smooth spectral sheen that drifts with the pointer.
 ───────────────────────────────────────────────────────────────────────────── */
 
-.holo-card.shining::before {
-	/* Shining Pokémon read as a sparkly crystalline shine, not the regular-holo
-	   scanline placeholder — glitter sparkle + a smooth spectral sheen that
-	   drifts with the pointer. */
+.holo-card[data-rarity="rare shining"] .holo-card-shine {
 	background-image:
 		var(--glitter),
 		linear-gradient(
@@ -1217,46 +2960,266 @@
 		300% 300%;
 	background-position:
 		center center,
-		calc(((50% - var(--background-x, 50%)) * 2.5) + 50%)
-		calc(((50% - var(--background-y, 50%)) * 2.5) + 50%);
+		calc(((50% - var(--background-x)) * 2.5) + 50%)
+		calc(((50% - var(--background-y)) * 2.5) + 50%);
 
 	background-blend-mode: color-dodge;
 	filter: brightness(0.5) contrast(1.4) saturate(1.2);
 	mix-blend-mode: color-dodge;
-	opacity: var(--card-opacity, 0);
 }
 
-.holo-card.shining::after {
+.holo-card[data-rarity="rare shining"] .holo-card-glare {
 	background-image: radial-gradient(
-		farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
 		hsl(60, 100%, 95%) 5%,
 		hsla(0, 0%, 39%, 0.25) 55%,
 		hsla(0, 0%, 0%, 0.36) 110%
 	);
 
-	opacity: calc(var(--card-opacity, 0) * 0.9);
+	opacity: calc(var(--card-opacity) * 0.9);
 	mix-blend-mode: overlay;
 	filter: brightness(0.7) contrast(3);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Masked render — show the card's REAL scanned foil (the ground truth)
+   OUR EXTENSION — procedural fallback for non-CDN "rare shiny vmax" cards.
+   simey's site always has the CDN foil for this family, so shiny-vmax.css is
+   the only file without a :not(.masked) --foil default; without one the whole
+   background-image list is invalid and the layer vanishes. Mirror the
+   illusion.png default his sibling shiny files use.
+───────────────────────────────────────────────────────────────────────────── */
+
+.holo-card:not(.masked)[data-rarity="rare shiny vmax"] {
+	--foil: url("/holo-textures/illusion.png");
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   OUR EXTENSION — vintage (WotC) frame clip windows
    ─────────────────────────────────────────────────────────────────────────────
-   A masked card has its actual high-res foil scan (--foil, set inline by
-   useFoilAssets). That scan IS the authentic texture/shiny/galaxy/hue of the
-   exact card. Our per-rarity procedural recipes paint smooth gradients instead,
-   which read as "missing texture" / loud rainbow stripes / wrong colour. So for
-   masked cards we drop the procedural shine and paint the real foil, blended with
-   color-dodge (the scans are dark by design — color-dodge lifts only the bright
-   holo). Last in the file → wins on source order; mask-image applied above.
-   NOT a sunpillar sheen on top (that was the over-the-top version). */
-.holo-card.masked::before {
-	background-image: var(--foil, none);
-	background-size: cover;
-	background-position: center center;
-	background-repeat: no-repeat;
-	background-blend-mode: normal;
-	mix-blend-mode: color-dodge;
-	filter: brightness(1) contrast(1.05) saturate(1.08);
-	opacity: var(--card-opacity, 0);
+   simey's clip variables assume the modern card layout (smaller window, SWSH
+   stage-badge notch shape). Classic WotC frames (Base→e-Card + old Black Star
+   Promos) have a bigger plain-rectangle window with the evolution badge
+   overlapping its top-left corner. data-frame="vintage" is set from
+   VINTAGE_FRAME_SERIES (holo-style.ts). Only the PROCEDURAL path cares —
+   masked cards' real CDN masks supersede clip windows.
+
+   ══ TUNING GUIDE ═════════════════════════════════════════════════════════════
+   Edit ONLY the six --vintage-* knobs below — every clip shape (foil window,
+   stage-badge notch, reverse-holo inverse) is derived from them. All values
+   are % measured from the card's TOP-LEFT corner:
+
+        0%                                 100%
+     0% ┌───────────────────────────────────┐
+        │ STAGE 2      Blastoise    100 HP  │
+        │ ┌──────┬──────────────────────┐ ◄── --vintage-window-top
+        │ │badge ├──◄ --vintage-badge-  │   │      (smaller = foil starts higher)
+        │ ├──────┘       bottom/right   │   │
+        │ │                             │   │
+        │ │      ART WINDOW = FOIL      │   │
+        │ │   (reverse holo = foil on   │   │
+        │ │    everything BUT this)     │   │
+        │ └─────────────────────────────┘ ◄── --vintage-window-bottom
+        │ ▲ Shellfish Pokémon. Length…  ▲   │      (bigger = foil reaches lower)
+        │ │ attacks / body text         │   │
+        └─┼─────────────────────────────┼───┘
+          --vintage-window-left         --vintage-window-right
+          (smaller = wider left)        (bigger = wider right; NOTE: measured
+                                         from the LEFT edge, not an inset)
+
+   The badge notch only applies to Stage 1/2 cards ([data-subtypes^="stage"]);
+   Basics and Trainers get the clean rectangle. Live-tune in devtools: select
+   the .holo-card element, override a knob, and set --card-opacity: 1 to hold
+   the foil lit while you adjust.
+
+   Current values measured off the base1 hi-res scan. If a whole ERA sits
+   wrong (not just these numbers), the other lever is VINTAGE_FRAME_SERIES in
+   holo-style.ts (which series get this block at all).
+   ═════════════════════════════════════════════════════════════════════════ */
+
+.holo-card[data-frame="vintage"] {
+	/* ── THE SIX KNOBS ─────────────────────────────────────────────────── */
+	--vintage-window-top: 11%; /* foil TOP edge (just under the name bar) */
+	--vintage-window-bottom: 52%; /* foil BOTTOM edge (just above species bar) */
+	--vintage-window-left: 8%; /* foil LEFT edge (inner gold frame) */
+	--vintage-window-right: 91%; /* foil RIGHT edge (from card LEFT!) */
+	--vintage-badge-right: 22%; /* stage-badge notch: reaches this far right */
+	--vintage-badge-bottom: 16%; /* stage-badge notch: reaches this far down */
+
+	/* ── TRAINER KNOBS ─────────────────────────────────────────────────────
+	   Vintage HOLO TRAINERS (Gym leader portraits etc.) foil ONLY the
+	   artwork box, which sits much lower than the Pokémon window — the
+	   TRAINER banner and name plate above it are not foil:
+
+	     0%                                100%
+	  0% ┌──────────────────────────────────┐
+	     │            TRAINER               │
+	     │  ┌ Misty ┐                       │
+	     │  ┌────────────────────────────┐ ◄── --vintage-trainer-top
+	     │  │                            │  │     (smaller = foil starts higher)
+	     │  │    PORTRAIT ART = FOIL     │  │
+	     │  └────────────────────────────┘ ◄── --vintage-trainer-bottom
+	     │  ▲  card text box…            ▲  │     (bigger = reaches lower)
+	     └──┼────────────────────────────┼──┘
+	        --vintage-trainer-left       --vintage-trainer-right
+	        (smaller = wider left)       (bigger = wider right; from card LEFT)
+
+	   Measured off the gym1-18 Misty hi-res scan. Same devtools live-tuning
+	   trick applies (--card-opacity: 1). */
+	--vintage-trainer-top: 23.5%; /* foil TOP edge (under the name plate) */
+	--vintage-trainer-bottom: 55.5%; /* foil BOTTOM edge (above the text box) */
+	--vintage-trainer-left: 8%; /* foil LEFT edge */
+	--vintage-trainer-right: 92.5%; /* foil RIGHT edge (from card LEFT!) */
+
+	/* ── DERIVED SHAPES (no need to touch) ─────────────────────────────── */
+	/* Plain window: Basic Pokémon (badge sits outside the art). */
+	--clip: inset(
+		var(--vintage-window-top) calc(100% - var(--vintage-window-right))
+			calc(100% - var(--vintage-window-bottom)) var(--vintage-window-left)
+	);
+	/* Trainer window: the portrait art box (derived from TRAINER KNOBS). */
+	--clip-trainer: inset(
+		var(--vintage-trainer-top) calc(100% - var(--vintage-trainer-right))
+			calc(100% - var(--vintage-trainer-bottom)) var(--vintage-trainer-left)
+	);
+	/* Reverse-holo trainer: everything EXCEPT the portrait box. (Upstream
+	   simey references --clip-trainer-invert without defining it — a no-op
+	   there; on vintage frames we can define it correctly.) */
+	--clip-trainer-invert: polygon(
+		0% 0%,
+		100% 0%,
+		100% 100%,
+		0% 100%,
+		0% var(--vintage-trainer-bottom),
+		var(--vintage-trainer-right) var(--vintage-trainer-bottom),
+		var(--vintage-trainer-right) var(--vintage-trainer-top),
+		var(--vintage-trainer-left) var(--vintage-trainer-top),
+		var(--vintage-trainer-left) var(--vintage-trainer-bottom),
+		0% var(--vintage-trainer-bottom)
+	);
+	/* Stage 1/2 window: same rectangle minus the badge's top-left corner. */
+	--clip-stage: polygon(
+		var(--vintage-window-right) var(--vintage-window-top),
+		var(--vintage-window-right) var(--vintage-window-bottom),
+		var(--vintage-window-left) var(--vintage-window-bottom),
+		var(--vintage-window-left) var(--vintage-badge-bottom),
+		var(--vintage-badge-right) var(--vintage-badge-bottom),
+		var(--vintage-badge-right) var(--vintage-window-top)
+	);
+	/* Reverse holo: whole card face EXCEPT the plain window. */
+	--clip-invert: polygon(
+		0% 0%,
+		100% 0%,
+		100% 100%,
+		0% 100%,
+		0% var(--vintage-window-bottom),
+		var(--vintage-window-right) var(--vintage-window-bottom),
+		var(--vintage-window-right) var(--vintage-window-top),
+		var(--vintage-window-left) var(--vintage-window-top),
+		var(--vintage-window-left) var(--vintage-window-bottom),
+		0% var(--vintage-window-bottom)
+	);
+	/* Reverse holo, Stage 1/2: everything except the notched window (the
+	   badge area is part of the frame, so it stays foiled). */
+	--clip-stage-invert: polygon(
+		0% 0%,
+		100% 0%,
+		100% 100%,
+		0% 100%,
+		0% var(--vintage-window-bottom),
+		var(--vintage-window-right) var(--vintage-window-bottom),
+		var(--vintage-window-right) var(--vintage-window-top),
+		var(--vintage-badge-right) var(--vintage-window-top),
+		var(--vintage-badge-right) var(--vintage-badge-bottom),
+		var(--vintage-window-left) var(--vintage-badge-bottom),
+		var(--vintage-window-left) var(--vintage-window-bottom),
+		0% var(--vintage-window-bottom)
+	);
+}
+
+/* WotC trainers carry no subtypes, so simey's shine rules (keyed on
+   [data-subtypes^="supporter"|"item"]) never route them to the trainer
+   window — only the glare picks it up via the base [data-supertype] rules.
+   Route the SHINE explicitly on vintage frames. */
+.holo-card:not(.masked)[data-frame="vintage"][data-supertype="trainer"]
+.holo-card-shine {
+	clip-path: var(--clip-trainer);
+}
+
+.holo-card:not(
+		.masked
+	)[data-frame="vintage"][data-rarity$="reverse holo"][data-supertype="trainer"]
+	.holo-card-shine {
+	clip-path: var(--clip-trainer-invert);
+}
+
+/* ── ENERGY KNOBS ─────────────────────────────────────────────────────────────
+   Vintage HOLO ENERGIES (Team Rocket Rainbow Energy etc.): the foil fills
+   the ENTIRE dark zone — from just under the ENERGY banner all the way down
+   to the name bar, nearly edge to edge. Much bigger than the Pokémon or
+   trainer windows:
+
+     0%                                100%
+  0% ┌──────────────────────────────────┐
+     │         ⚡ E N E R G Y            │
+     │ ┌──────────────────────────────┐ ◄── --vintage-energy-top
+     │ │                              │  │     (smaller = foil starts higher)
+     │ │       WHOLE ART ZONE         │  │
+     │ │          = FOIL              │  │
+     │ │                              │  │
+     │ └──────────────────────────────┘ ◄── --vintage-energy-bottom
+     │ ▲ Rainbow Energy · card text…  ▲  │     (bigger = reaches lower)
+     └─┼──────────────────────────────┼──┘
+       --vintage-energy-left          --vintage-energy-right
+       (smaller = wider left)         (bigger = wider right; from card LEFT)
+
+   Measured off the base5-17 Rainbow Energy hi-res scan. Same devtools
+   live-tuning trick (--card-opacity: 1). */
+.holo-card[data-frame="vintage"] {
+	--vintage-energy-top: 13.5%; /* foil TOP edge (under the ENERGY banner) */
+	--vintage-energy-bottom: 72%; /* foil BOTTOM edge (above the name bar) */
+	--vintage-energy-left: 3%; /* foil LEFT edge */
+	--vintage-energy-right: 96%; /* foil RIGHT edge (from card LEFT!) */
+
+	/* Derived (no need to touch). */
+	--clip-energy: inset(
+		var(--vintage-energy-top) calc(100% - var(--vintage-energy-right))
+			calc(100% - var(--vintage-energy-bottom)) var(--vintage-energy-left)
+	);
+	--clip-energy-invert: polygon(
+		0% 0%,
+		100% 0%,
+		100% 100%,
+		0% 100%,
+		0% var(--vintage-energy-bottom),
+		var(--vintage-energy-right) var(--vintage-energy-bottom),
+		var(--vintage-energy-right) var(--vintage-energy-top),
+		var(--vintage-energy-left) var(--vintage-energy-top),
+		var(--vintage-energy-left) var(--vintage-energy-bottom),
+		0% var(--vintage-energy-bottom)
+	);
+}
+
+/* simey's CSS has no energy handling at all (his site is SWSH Pokémon +
+   trainers), so both the shine AND the glare hotspot need explicit routing
+   on vintage frames. */
+.holo-card:not(.masked)[data-frame="vintage"][data-supertype="energy"]
+.holo-card-shine {
+	clip-path: var(--clip-energy);
+}
+
+.holo-card[data-frame="vintage"][data-supertype="energy"]
+	.holo-card-glare:after {
+	clip-path: var(--clip-energy);
+}
+
+.holo-card:not(
+		.masked
+	)[data-frame="vintage"][data-rarity$="reverse holo"][data-supertype="energy"]
+	.holo-card-shine {
+	clip-path: var(--clip-energy-invert);
+}
+
+.holo-card[data-frame="vintage"][data-rarity$="reverse holo"][data-supertype="energy"]
+	.holo-card-glare:after {
+	clip-path: var(--clip-energy-invert);
 }

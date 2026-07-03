@@ -1,7 +1,8 @@
 /*
  * Base styles for <HoloCard />. Defines the 3D frame, pointer-driven
- * custom properties (with safe defaults), and size variants. Per-rarity
- * foil decoration lives in rarity-styles.css.
+ * custom properties (with safe defaults), the shine/glare layer stack
+ * (ported from simey/pokemon-cards-css base.css + cards.css), and size
+ * variants. Per-rarity foil decoration lives in rarity-styles.css.
  */
 
 .holo-card {
@@ -9,16 +10,31 @@
 	   pre-effect-mount) state still looks reasonable. Overwritten by
 	   useHoloEffect on mount. --pointer-x/y MUST carry % units — they are
 	   consumed as <position> inside the foil gradients; a unitless value is
-	   invalid-at-computed-value-time and drops the whole background layer. */
+	   invalid-at-computed-value-time and drops the whole background layer.
+	   Defaults mirror simey's Card.svelte :root block. */
 	--pointer-x: 50%;
 	--pointer-y: 50%;
 	--pointer-from-center: 0;
+	--pointer-from-top: var(--pointer-from-center);
+	--pointer-from-left: var(--pointer-from-center);
 	--rotate-x: 0deg;
 	--rotate-y: 0deg;
+	--background-x: var(--pointer-x);
+	--background-y: var(--pointer-y);
 	--card-opacity: 0;
 
+	/* Content-derived glow color, overridden per energy type below
+	   (simey base.css .card.water etc.). Consumed by radiant-holo. */
+	--card-glow: hsl(175, 100%, 90%);
+
 	position: relative;
-	display: block;
+	/* simey .card__rotator: the image + shine + glare stack as IN-FLOW grid
+	   items in cell 1/1, NOT absolutely-positioned z-indexed layers. This is
+	   load-bearing for the foil: Chrome resolves the mix-blend chain of
+	   positioned+z-indexed layers with clamped intermediates, which zeroes
+	   color-dodge sparkle over black (glitter speckle on gold/TG-secret cards
+	   vanishes). Verified by DOM-morph repro against poke-holo.simey.me. */
+	display: grid;
 	width: 100%;
 	/* Establish a size container so the empty-state text can scale to the card's
 	   own width via cqw units (grid thumbnails vs focus differ ~2x). */
@@ -28,12 +44,185 @@
 	background: #111;
 	overflow: hidden;
 	transform-style: preserve-3d;
-	transform: perspective(800px) rotateX(var(--rotate-x))
+	/* simey: .card__translater { perspective: 600px }. No transform transition —
+	   the spring in useHoloEffect animates the rotation; a CSS transition on top
+	   would double-smooth and lag the foil behind the tilt. */
+	transform: perspective(600px) rotateX(var(--rotate-x))
 		rotateY(var(--rotate-y));
-	transition: transform 0.15s ease-out;
 	cursor: pointer;
 	user-select: none;
 	-webkit-tap-highlight-color: transparent;
+}
+
+/* Energy-type glow colors — simey base.css. Type names arrive as classes. */
+.holo-card.water {
+	--card-glow: hsl(192, 97%, 60%);
+}
+.holo-card.fire {
+	--card-glow: hsl(9, 81%, 59%);
+}
+.holo-card.grass {
+	--card-glow: hsl(96, 81%, 65%);
+}
+.holo-card.lightning {
+	--card-glow: hsl(54, 87%, 63%);
+}
+.holo-card.psychic {
+	--card-glow: hsl(281, 62%, 58%);
+}
+.holo-card.fighting {
+	--card-glow: rgb(145, 90, 39);
+}
+.holo-card.darkness {
+	--card-glow: hsl(189, 77%, 27%);
+}
+.holo-card.metal {
+	--card-glow: hsl(184, 20%, 70%);
+}
+.holo-card.dragon {
+	--card-glow: hsl(51, 60%, 35%);
+}
+.holo-card.fairy {
+	--card-glow: hsl(323, 100%, 89%);
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Shine & glare layer stack — simey base.css ported 1:1.
+   DOM: .holo-card > img (z1/2) > .holo-card-shine (z3) > .holo-card-glare (z4)
+   > overlay/badges (z5). simey stacks with translateZ inside preserve-3d; we
+   stack with z-index — same paint order, no extra 3D contexts.
+   The shine div carries ::before/::after sub-layers (rotated sunpillar
+   palettes); the glare div carries ::after. All five are real compositing
+   layers — the per-rarity recipes need each one.
+──────────────────────────────────────────────────────────────────────────── */
+
+.holo-card-shine,
+.holo-card-glare {
+	grid-area: 1 / 1;
+	border-radius: inherit;
+	pointer-events: none;
+	overflow: hidden;
+	/* simey base.css .card__rotator *: each layer is a grid whose pseudo
+	   sub-layers stack in cell 1/1 on their own translateZ plane. NOT
+	   equivalent to plain z-index stacking — the transform promotes each
+	   sub-layer into its own compositing unit, which changes how the
+	   blend-mode chain resolves (verified pixel-level on radiant's etch).
+	   In-flow grid items — never position:absolute (that re-groups the
+	   blend chain and kills dodge sparkle over black). */
+	display: grid;
+	transform-style: preserve-3d;
+	/* simey base.css .card__front * — the GPU-promotion pair every foil
+	   layer carries. */
+	backface-visibility: hidden;
+	/* simey base.css `.card *`: anti-alias trick. */
+	outline: 1px solid transparent;
+	/* simey cards.css */
+	will-change:
+		transform, opacity, background-image, background-size, background-position,
+		background-blend-mode, filter;
+}
+
+.holo-card-shine {
+	transform: translateZ(1px);
+	/* simey base.css: the shine is a GRID ITEM, so z-index applies — it paints
+	   ABOVE the glare (z auto). Load-bearing: the hard-light glare lifts dark
+	   scan pixels first, and the shine's color-dodge then amplifies glitter
+	   over them into the gold-card sparkle. Glare-on-top mutes it entirely. */
+	z-index: 3;
+	background: transparent;
+	background-size: cover;
+	background-position: center;
+	filter: brightness(0.85) contrast(2.75) saturate(0.65);
+	mix-blend-mode: color-dodge;
+	opacity: var(--card-opacity);
+}
+
+.holo-card-shine:before,
+.holo-card-shine:after {
+	--sunpillar-clr-1: var(--sunpillar-5);
+	--sunpillar-clr-2: var(--sunpillar-6);
+	--sunpillar-clr-3: var(--sunpillar-1);
+	--sunpillar-clr-4: var(--sunpillar-2);
+	--sunpillar-clr-5: var(--sunpillar-3);
+	--sunpillar-clr-6: var(--sunpillar-4);
+
+	content: "";
+	grid-area: 1 / 1;
+	transform: translateZ(1px);
+	border-radius: inherit;
+	pointer-events: none;
+	backface-visibility: hidden;
+	outline: 1px solid transparent;
+}
+
+.holo-card-shine:after {
+	--sunpillar-clr-1: var(--sunpillar-6);
+	--sunpillar-clr-2: var(--sunpillar-1);
+	--sunpillar-clr-3: var(--sunpillar-2);
+	--sunpillar-clr-4: var(--sunpillar-3);
+	--sunpillar-clr-5: var(--sunpillar-4);
+	--sunpillar-clr-6: var(--sunpillar-5);
+
+	transform: translateZ(1.2px);
+}
+
+.holo-card-glare {
+	transform: translateZ(1.41px);
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsla(0, 0%, 100%, 0.8) 10%,
+		hsla(0, 0%, 100%, 0.65) 20%,
+		hsla(0, 0%, 0%, 0.5) 90%
+	);
+	opacity: var(--card-opacity);
+	mix-blend-mode: overlay;
+}
+
+.holo-card-glare:after {
+	content: "";
+	grid-area: 1 / 1;
+	border-radius: inherit;
+	pointer-events: none;
+	backface-visibility: hidden;
+	outline: 1px solid transparent;
+}
+
+/* Masking — simey base.css: a loaded per-card mask confines the shine (and
+   its sub-layers) to the card's true holographic region. */
+.holo-card.masked .holo-card-shine,
+.holo-card.masked .holo-card-shine:before,
+.holo-card.masked .holo-card-shine:after {
+	-webkit-mask-image: var(--mask);
+	mask-image: var(--mask);
+	-webkit-mask-size: cover;
+	mask-size: cover;
+	-webkit-mask-position: center center;
+	mask-position: center center;
+}
+
+/* Glare clip windows for classic layouts — simey base.css. */
+.holo-card[data-rarity="rare holo"] .holo-card-glare:after,
+.holo-card[data-rarity="rare holo cosmos"] .holo-card-glare:after,
+.holo-card[data-rarity$="reverse holo"] .holo-card-glare:after {
+	clip-path: var(--clip);
+}
+
+.holo-card[data-rarity="rare holo"][data-subtypes^="stage"]
+	.holo-card-glare:after,
+.holo-card[data-rarity="rare holo cosmos"][data-subtypes^="stage"]
+	.holo-card-glare:after,
+.holo-card[data-rarity$="reverse holo"][data-subtypes^="stage"]
+	.holo-card-glare:after {
+	clip-path: var(--clip-stage);
+}
+
+.holo-card[data-rarity="rare holo"][data-supertype="trainer"]
+	.holo-card-glare:after,
+.holo-card[data-rarity="rare holo cosmos"][data-supertype="trainer"]
+	.holo-card-glare:after,
+.holo-card[data-rarity$="reverse holo"][data-supertype="trainer"]
+	.holo-card-glare:after {
+	clip-path: var(--clip-trainer);
 }
 
 .holo-card.size-grid {
@@ -44,20 +233,23 @@
 	max-width: 600px;
 }
 
+/* The <picture> wrapper is layout-transparent so every card image is a
+   direct grid item in cell 1/1 (in-flow — see the .holo-card grid note). */
+.holo-card picture {
+	display: contents;
+}
+
 .holo-card-image {
-	position: absolute;
-	inset: 0;
+	grid-area: 1 / 1;
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
 	display: block;
 	pointer-events: none;
-	z-index: 1;
 }
 
 /* Focus: the full-res image fades in over a cached thumbnail (blur-up). */
 .holo-card-image--placeholder {
-	z-index: 1;
 	filter: blur(10px) saturate(1.1);
 	transform: scale(1.04);
 	transition:
@@ -69,7 +261,6 @@
 	transform: none;
 }
 .holo-card-image--full {
-	z-index: 2;
 	opacity: 0;
 	transition: opacity 0.4s var(--ease);
 }
@@ -82,7 +273,7 @@
 	position: absolute;
 	left: 0.5rem;
 	bottom: 0.5rem;
-	z-index: 3;
+	z-index: 5;
 	padding: 0.2rem 0.5rem;
 	border-radius: 999px;
 	font-family: var(--font-mono, monospace);
@@ -174,7 +365,7 @@
 .holo-card-overlay {
 	position: absolute;
 	inset: 0;
-	z-index: 3;
+	z-index: 5;
 	pointer-events: none;
 	opacity: 0;
 	transition: opacity 0.15s ease-out;
@@ -207,7 +398,7 @@
 	position: absolute;
 	top: 0.4rem;
 	left: 0.4rem;
-	z-index: 3;
+	z-index: 5;
 	pointer-events: none;
 	border: 1px solid rgba(255, 255, 255, 0.1);
 	border-radius: var(--r-pill, 999px);
@@ -226,7 +417,7 @@
 	position: absolute;
 	top: 0.4rem;
 	right: 0.4rem;
-	z-index: 3;
+	z-index: 5;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;

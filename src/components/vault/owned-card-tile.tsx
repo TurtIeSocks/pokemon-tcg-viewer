@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { cardManageLinkPropsFor } from "../../lib/card-route";
+import { isReversePrinting } from "../../lib/card-variants";
 import { faceLanguageFor } from "../../lib/languages";
 import { useCardRouteParamsForRegion } from "../../store/corpus/corpus-runtime";
 import { useDisplayLanguage } from "../../store/corpus/i18n-active-hooks";
@@ -32,7 +33,12 @@ export function OwnedCardTile({ row }: OwnedCardTileProps) {
 
 	const inner = (
 		<>
-			<HoloCardIsland {...holoCardProps(row.card)} />
+			{/* The tile shows the PRIMARY stack's printing — a collection of
+			    reverse holos renders as the reverse holos you actually own. */}
+			<HoloCardIsland
+				{...holoCardProps(row.card)}
+				reverse={isReversePrinting(row.primary)}
+			/>
 			{row.count > 1 && (
 				<span className="absolute bottom-1 right-1 flex h-6 min-w-6 items-center justify-center rounded-[var(--r-pill)] bg-[var(--success)] px-1.5 text-xs font-bold text-[var(--primary-ink)]">
 					×{row.count}

@@ -54,10 +54,12 @@ describe("getRarityClass", () => {
 		expect(getRarityClass("Super Rare")).toBe("ultra");
 		expect(getRarityClass("Holo Rare")).toBe("holo-basic");
 		expect(getRarityClass("Art Rare")).toBe("trainer-gallery");
-		expect(getRarityClass("Special Art Rare")).toBe("trainer-gallery");
+		// SAR ≈ Special Illustration Rare ≈ simey's rainbow-alt (alt-art secret).
+		expect(getRarityClass("Special Art Rare")).toBe("rainbow-alt");
 		expect(getRarityClass("Character Rare")).toBe("trainer-gallery");
 		expect(getRarityClass("Secret Rare")).toBe("gold-secret");
-		expect(getRarityClass("Shiny Secret Rare")).toBe("rainbow");
+		// Shiny secrets carry the gold-glitter shiny-vmax foil, not plain rainbow.
+		expect(getRarityClass("Shiny Secret Rare")).toBe("shiny-vmax");
 		expect(getRarityClass("Mega Hyper Rare")).toBe("rainbow");
 		expect(getRarityClass("Kagayaku")).toBe("shining");
 		expect(warnSpy).not.toHaveBeenCalled();

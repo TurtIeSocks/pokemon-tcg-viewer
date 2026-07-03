@@ -85,6 +85,87 @@ describe("<HoloCard />", () => {
 		expect(root.getAttribute("data-supertype")).toBe("pokémon");
 	});
 
+	test("renders the shine + glare layer divs (simey 5-layer stack)", () => {
+		const { container } = render(
+			<HoloCard {...baseProps} rarity="Rare Holo" />,
+		);
+		expect(container.querySelector(".holo-card-shine")).not.toBeNull();
+		expect(container.querySelector(".holo-card-glare")).not.toBeNull();
+	});
+
+	test("emits effective rarity + card identity data attrs (CardProxy pipeline)", () => {
+		const { container } = render(
+			<HoloCard
+				{...baseProps}
+				setId="swsh12tg"
+				cardNumber="TG05"
+				rarity="Trainer Gallery Rare Holo"
+				supertype="Pokémon"
+				subtypes={["Basic"]}
+				types={["Water"]}
+			/>,
+		);
+		const root = container.querySelector(".holo-card") as HTMLElement;
+		// TG prefix stripped to the base family; gallery flagged for the TG CSS.
+		expect(root.getAttribute("data-rarity")).toBe("rare holo");
+		expect(root.getAttribute("data-trainer-gallery")).toBe("true");
+		// data-set is normalized to the simey/CDN vocabulary (tg suffix stripped).
+		expect(root.getAttribute("data-set")).toBe("swsh12");
+		expect(root.getAttribute("data-number")).toBe("tg05");
+		// Energy type flows in as a class for --card-glow / --foil-brightness.
+		expect(root.classList.contains("water")).toBe(true);
+	});
+
+	test("reverse prop renders the reverse-holo printing", () => {
+		const { container } = render(
+			<HoloCard {...baseProps} rarity="Common" reverse />,
+		);
+		const root = container.querySelector(".holo-card") as HTMLElement;
+		expect(root.getAttribute("data-rarity")).toBe("common reverse holo");
+		expect(root.classList.contains("reverse-holo")).toBe(true);
+	});
+
+	test("Japanese vintage series get data-frame=vintage too", () => {
+		const { container } = render(
+			<HoloCard
+				{...baseProps}
+				rarity="Holo Rare"
+				series="ポケットモンスターカードゲーム"
+			/>,
+		);
+		expect(
+			(container.querySelector(".holo-card") as HTMLElement).getAttribute(
+				"data-frame",
+			),
+		).toBe("vintage");
+	});
+
+	test("WotC-era series get data-frame=vintage; modern series don't", () => {
+		const { container } = render(
+			<HoloCard {...baseProps} rarity="Rare Holo" series="Base" />,
+		);
+		expect(
+			(container.querySelector(".holo-card") as HTMLElement).getAttribute(
+				"data-frame",
+			),
+		).toBe("vintage");
+		const modern = render(
+			<HoloCard {...baseProps} rarity="Rare Holo" series="Sword & Shield" />,
+		);
+		expect(
+			(
+				modern.container.querySelector(".holo-card") as HTMLElement
+			).getAttribute("data-frame"),
+		).toBeNull();
+	});
+
+	test("glare-only cards omit data-rarity entirely", () => {
+		const { container } = render(<HoloCard {...baseProps} rarity="Common" />);
+		const root = container.querySelector(".holo-card") as HTMLElement;
+		expect(root.getAttribute("data-rarity")).toBeNull();
+		expect(root.getAttribute("data-trainer-gallery")).toBeNull();
+	});
+
 	test("applies size variant class", () => {
 		const { container } = render(<HoloCard {...baseProps} size="focus" />);
 		const root = container.querySelector(".holo-card") as HTMLElement;

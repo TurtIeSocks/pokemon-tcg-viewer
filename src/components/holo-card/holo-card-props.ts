@@ -19,6 +19,7 @@ export function holoCardProps(
 	| "rarity"
 	| "subtypes"
 	| "supertype"
+	| "types"
 	| "setId"
 	| "series"
 	| "variants"
@@ -33,6 +34,7 @@ export function holoCardProps(
 		rarity: card.rarity,
 		subtypes: card.subtypes,
 		supertype: card.supertype,
+		types: card.types,
 		setId: card.setId,
 		series: card.setSeries,
 		variants: card.variants,

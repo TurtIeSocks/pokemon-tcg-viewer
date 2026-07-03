@@ -15,6 +15,26 @@ export interface CardVariant {
 export type CardPrinting = CardVariant;
 
 /**
+ * True when a card's printing list includes a reverse holo ("reverse" TCGdex
+ * key; "reverseHolofoil" in legacy TCGplayer-seeded data).
+ */
+export function hasReverseVariant(variants?: string[] | null): boolean {
+	return !!variants?.some((v) => v.toLowerCase().startsWith("reverse"));
+}
+
+/**
+ * True when a stack's recorded printing is the reverse holo one. Prefers the
+ * exact TCGdex printing; falls back to the coarse legacy `variant` key.
+ */
+export function isReversePrinting(stack: {
+	printing?: CardPrinting | null;
+	variant?: string | null;
+}): boolean {
+	const t = stack.printing?.type ?? stack.variant;
+	return !!t && t.toLowerCase().startsWith("reverse");
+}
+
+/**
  * Humanize a kebab token: "1st-edition" -> "1st Edition", "shadowless" ->
  * "Shadowless". A hyphen BETWEEN two digits is kept (year ranges like
  * "1999-2000-copyright" -> "1999-2000 Copyright"); every other hyphen is a

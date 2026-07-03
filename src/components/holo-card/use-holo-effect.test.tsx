@@ -102,8 +102,20 @@ test("pointerleave eases back to the centered, hidden state", () => {
 
 	movePointer(el, 90, 90);
 	flush();
-	el.dispatchEvent(new PointerEvent("pointerleave", { bubbles: true }));
-	flush();
+	// The release is deferred 500ms (simey keeps the foil lit for a beat after
+	// the pointer leaves). Run the deferral synchronously so the test can drain
+	// the spring without a real clock.
+	const realSetTimeout = globalThis.setTimeout;
+	globalThis.setTimeout = ((cb: () => void) => {
+		cb();
+		return 0;
+	}) as never;
+	try {
+		el.dispatchEvent(new PointerEvent("pointerleave", { bubbles: true }));
+	} finally {
+		globalThis.setTimeout = realSetTimeout;
+	}
+	flush(20000);
 
 	expect(el.style.getPropertyValue("--pointer-x")).toBe("50%");
 	expect(el.style.getPropertyValue("--pointer-y")).toBe("50%");
