@@ -8,7 +8,12 @@ import {
 import { act, render, renderHook } from "@testing-library/react";
 import * as cardData from "../../server/card-data";
 import { useStore } from "../index";
-import { useUserland } from "../userland/userland-store";
+import { createIdbRepos } from "../userland/idb-repo";
+import {
+	resetUserlandForTests,
+	setUserlandRepos,
+	useUserland,
+} from "../userland/userland-store";
 import { buildIndex } from "./corpus-engine";
 import { useCorpusRuntime } from "./corpus-runtime-store";
 import type { CorpusCard } from "./corpus-types";
@@ -160,6 +165,12 @@ beforeEach(async () => {
 	seedBothRegions();
 	useStore.setState({ setsByRegion: {}, setsByRegionLoading: {} });
 	getSetsFnSpy = spyOn(cardData, "getSetsFn").mockResolvedValue([]);
+	// Pre-mark the store hydrated so each mountEnsureI18n's loadUserland() call
+	// (added for the refresh-persistence fix) no-ops here — these tests drive the
+	// profile directly via setProfileLanguage, and a real async hydration against
+	// the empty default IDB would otherwise clobber that poked profile back to
+	// null. The regression test below opts out with resetUserlandForTests().
+	useUserland.setState({ hydrated: true });
 });
 
 afterEach(async () => {
@@ -280,6 +291,31 @@ test("useEnsureI18n activates the asia region from an Asian PROFILE language (no
 		await waitForI18n("ko");
 	});
 	expect(useCorpusRuntime.getState().activeRegion).toBe("asia");
+});
+
+test("useEnsureI18n hydrates the persisted profile language on boot (regression: language lost on refresh)", async () => {
+	// Simulate a page reload: the viewer picked French in a prior session (saved
+	// to the repo), but the in-memory store starts UNHYDRATED (profile null), as
+	// on any non-vault catalog page — nothing else triggers loadUserland there.
+	// Mounting a catalog page's useEnsureI18n must pull the profile back so the
+	// saved language applies; without its loadUserland() trigger the page stayed
+	// stuck on "en" every refresh.
+	const repos = createIdbRepos();
+	await repos.profile.save({ displayLanguage: "fr" });
+	setUserlandRepos(repos);
+	resetUserlandForTests(); // store back to the unhydrated, profile-null cold-boot state
+	expect(useUserland.getState().profile).toBeNull();
+
+	mountEnsureI18n("/"); // no ?lang override → the persisted profile must drive it
+	await act(async () => {
+		await waitForI18n("fr");
+	});
+	expect(useUserland.getState().profile?.displayLanguage).toBe("fr");
+	expect(useI18nRuntime.getState().lang).toBe("fr");
+
+	await repos.profile.clear(); // wipe the "fr" row from the shared default IDB
+	setUserlandRepos(null); // don't leak the injected repo into later tests
+	resetUserlandForTests();
 });
 
 test("useEnsureI18n also loads that region's SETS (not just its corpus index)", async () => {

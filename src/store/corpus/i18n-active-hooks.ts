@@ -7,7 +7,7 @@ import {
 	toSupportedLanguage,
 } from "../../lib/languages";
 import { useStore } from "../index";
-import { useUserland } from "../userland/userland-store";
+import { loadUserland, useUserland } from "../userland/userland-store";
 import type { I18nOverlay } from "./corpus-engine";
 import { loadCorpus } from "./corpus-runtime";
 import { useCorpusRuntime } from "./corpus-runtime-store";
@@ -100,6 +100,15 @@ export function useEnsureI18n(): void {
 		typeof urlLang === "string" && isSupportedLanguage(urlLang)
 			? urlLang
 			: profileLang;
+	// Hydrate the profile so the persisted displayLanguage drives this hook on
+	// boot. On a non-vault catalog page nothing else triggers loadUserland, so
+	// without this the profile stays null → useDisplayLanguage falls back to "en"
+	// and the saved language is lost on every refresh. loadUserland is idempotent
+	// (hydrated-guard + in-flight dedupe), so calling it from every card-rendering
+	// mount is safe.
+	useEffect(() => {
+		void loadUserland();
+	}, []);
 	useEffect(() => {
 		void loadI18n(lang);
 		// Activate the base corpus region the language belongs to. loadCorpus and
