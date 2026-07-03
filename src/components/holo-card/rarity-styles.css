@@ -3045,13 +3045,57 @@
 	--vintage-badge-right: 22%; /* stage-badge notch: reaches this far right */
 	--vintage-badge-bottom: 16%; /* stage-badge notch: reaches this far down */
 
+	/* ── TRAINER KNOBS ─────────────────────────────────────────────────────
+	   Vintage HOLO TRAINERS (Gym leader portraits etc.) foil ONLY the
+	   artwork box, which sits much lower than the Pokémon window — the
+	   TRAINER banner and name plate above it are not foil:
+
+	     0%                                100%
+	  0% ┌──────────────────────────────────┐
+	     │            TRAINER               │
+	     │  ┌ Misty ┐                       │
+	     │  ┌────────────────────────────┐ ◄── --vintage-trainer-top
+	     │  │                            │  │     (smaller = foil starts higher)
+	     │  │    PORTRAIT ART = FOIL     │  │
+	     │  └────────────────────────────┘ ◄── --vintage-trainer-bottom
+	     │  ▲  card text box…            ▲  │     (bigger = reaches lower)
+	     └──┼────────────────────────────┼──┘
+	        --vintage-trainer-left       --vintage-trainer-right
+	        (smaller = wider left)       (bigger = wider right; from card LEFT)
+
+	   Measured off the gym1-18 Misty hi-res scan. Same devtools live-tuning
+	   trick applies (--card-opacity: 1). */
+	--vintage-trainer-top: 23.5%; /* foil TOP edge (under the name plate) */
+	--vintage-trainer-bottom: 55.5%; /* foil BOTTOM edge (above the text box) */
+	--vintage-trainer-left: 8%; /* foil LEFT edge */
+	--vintage-trainer-right: 92.5%; /* foil RIGHT edge (from card LEFT!) */
+
 	/* ── DERIVED SHAPES (no need to touch) ─────────────────────────────── */
-	/* Plain window: Basic Pokémon + Trainers (badge sits outside the art). */
+	/* Plain window: Basic Pokémon (badge sits outside the art). */
 	--clip: inset(
 		var(--vintage-window-top) calc(100% - var(--vintage-window-right))
 			calc(100% - var(--vintage-window-bottom)) var(--vintage-window-left)
 	);
-	--clip-trainer: var(--clip);
+	/* Trainer window: the portrait art box (derived from TRAINER KNOBS). */
+	--clip-trainer: inset(
+		var(--vintage-trainer-top) calc(100% - var(--vintage-trainer-right))
+			calc(100% - var(--vintage-trainer-bottom)) var(--vintage-trainer-left)
+	);
+	/* Reverse-holo trainer: everything EXCEPT the portrait box. (Upstream
+	   simey references --clip-trainer-invert without defining it — a no-op
+	   there; on vintage frames we can define it correctly.) */
+	--clip-trainer-invert: polygon(
+		0% 0%,
+		100% 0%,
+		100% 100%,
+		0% 100%,
+		0% var(--vintage-trainer-bottom),
+		var(--vintage-trainer-right) var(--vintage-trainer-bottom),
+		var(--vintage-trainer-right) var(--vintage-trainer-top),
+		var(--vintage-trainer-left) var(--vintage-trainer-top),
+		var(--vintage-trainer-left) var(--vintage-trainer-bottom),
+		0% var(--vintage-trainer-bottom)
+	);
 	/* Stage 1/2 window: same rectangle minus the badge's top-left corner. */
 	--clip-stage: polygon(
 		var(--vintage-window-right) var(--vintage-window-top),
@@ -3090,4 +3134,20 @@
 		var(--vintage-window-left) var(--vintage-window-bottom),
 		0% var(--vintage-window-bottom)
 	);
+}
+
+/* WotC trainers carry no subtypes, so simey's shine rules (keyed on
+   [data-subtypes^="supporter"|"item"]) never route them to the trainer
+   window — only the glare picks it up via the base [data-supertype] rules.
+   Route the SHINE explicitly on vintage frames. */
+.holo-card:not(.masked)[data-frame="vintage"][data-supertype="trainer"]
+.holo-card-shine {
+	clip-path: var(--clip-trainer);
+}
+
+.holo-card:not(
+		.masked
+	)[data-frame="vintage"][data-rarity$="reverse holo"][data-supertype="trainer"]
+	.holo-card-shine {
+	clip-path: var(--clip-trainer-invert);
 }
