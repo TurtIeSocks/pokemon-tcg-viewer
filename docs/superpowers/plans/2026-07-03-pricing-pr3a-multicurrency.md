@@ -425,7 +425,8 @@ git commit -m "feat(pricing): exponent-aware money formatting (JPY/KRW 0-decimal
 **Files:**
 - Modify: `src/store/userland/types.ts` (`Profile` + `ProfilePatch`)
 - Modify: `src/store/userland/idb-repo.ts` (profile save default)
-- Modify: `src/store/userland/supabase-repo.ts` (profile row mapping, 2 sites)
+- Modify: `src/store/userland/supabase-repo.ts` (profile save merge, 2 sites: ~342, ~353)
+- Modify: `src/store/userland/supabase-row.ts` (`ProfileRow` type + `profileToRow` + `rowToProfile`)
 - Modify: `src/store/userland/backup.ts` (backfill)
 - Create: `supabase/migrations/20260703090000_profile_display_currency.sql`
 - Test: extend `src/store/userland/backup.test.ts` + `src/store/userland/idb-repo.test.ts`
@@ -515,20 +516,35 @@ export type ProfilePatch = Partial<
 
 (match the surrounding object's exact indentation/context — it's in the profile save/merge).
 
-3c. `src/store/userland/supabase-repo.ts` — at BOTH profile-mapping sites (the update-merge ~342 and the default ~353), mirror `displayLanguage`:
+3c. `src/store/userland/supabase-repo.ts` — the profile `save()` merge builds a `Profile` object at two branches. In the existing-profile branch (~342, beside `displayLanguage: patch.displayLanguage ?? existingProfile.displayLanguage`) add:
 
 ```ts
 							displayCurrency:
 								patch.displayCurrency ?? existingProfile.displayCurrency,
 ```
-and
+
+In the new-profile branch (~353, beside `displayLanguage: patch.displayLanguage ?? "en"`) add:
+
 ```ts
 						displayCurrency: patch.displayCurrency ?? "USD",
 ```
 
-Also map the DB column ↔ field wherever the supabase row is read/written (find how `display_language` is selected/inserted in this file and add `display_currency` the same way — snake_case column, camelCase field).
+3d. `src/store/userland/supabase-row.ts` — the DB row ↔ domain mappers. Three edits mirroring `display_language`:
+- `ProfileRow` interface (after `display_language: string;` ~line 72):
+  ```ts
+  	display_currency: string; // ISO 4217 display/portfolio currency (default "USD")
+  ```
+- `profileToRow` (after `display_language: profile.displayLanguage,` ~line 202):
+  ```ts
+  		display_currency: profile.displayCurrency,
+  ```
+- `rowToProfile` (after the `displayLanguage:` backfill ~line 218-219):
+  ```ts
+  		displayCurrency:
+  			typeof row.display_currency === "string" ? row.display_currency : "USD",
+  ```
 
-3d. `src/store/userland/backup.ts` — beside the `displayLanguage` backfill (~60-63):
+3e. `src/store/userland/backup.ts` — beside the `displayLanguage` backfill (~60-63):
 
 ```ts
 		// Additive field (no schema bump): snapshots saved before displayCurrency
@@ -537,16 +553,15 @@ Also map the DB column ↔ field wherever the supabase row is read/written (find
 			typeof raw.displayCurrency === "string" ? raw.displayCurrency : "USD",
 ```
 
-3e. Create `supabase/migrations/20260703090000_profile_display_currency.sql`:
+3f. Create `supabase/migrations/20260703090000_profile_display_currency.sql` (mirror `20260629000000_profile_display_language.sql` exactly — same `alter table public.profiles add column ... not null default ...` shape, no `if not exists`):
 
 ```sql
--- Additive: portfolio/display currency on the profile (mirrors display_language).
--- Dormant in prod until cloud sync is enabled; local IDB stores it natively.
+-- PR3a — multi-currency: per-user display/portfolio currency.
+-- Additive column on profiles; ISO 4217, defaults to USD so existing rows read
+-- back as 'USD' (matches rowToProfile's backfill in supabase-row.ts).
 alter table public.profiles
-	add column if not exists display_currency text not null default 'USD';
+  add column display_currency text not null default 'USD';
 ```
-
-(Confirm the table name matches the existing `display_language` migration — use the same table/schema.)
 
 - [ ] **Step 4: Run tests + the supabase/sync suite**
 
@@ -558,8 +573,8 @@ then re-run. (Prod is 100% IndexedDB — this local apply is only for the sync t
 - [ ] **Step 5: Lint + commit**
 
 ```bash
-bunx biome check --write --config-path=. src/store/userland/types.ts src/store/userland/idb-repo.ts src/store/userland/supabase-repo.ts src/store/userland/backup.ts
-git add src/store/userland/types.ts src/store/userland/idb-repo.ts src/store/userland/supabase-repo.ts src/store/userland/backup.ts supabase/migrations/20260703090000_profile_display_currency.sql src/store/userland/backup.test.ts src/store/userland/idb-repo.test.ts
+bunx biome check --write --config-path=. src/store/userland/types.ts src/store/userland/idb-repo.ts src/store/userland/supabase-repo.ts src/store/userland/supabase-row.ts src/store/userland/backup.ts
+git add src/store/userland/types.ts src/store/userland/idb-repo.ts src/store/userland/supabase-repo.ts src/store/userland/supabase-row.ts src/store/userland/backup.ts supabase/migrations/20260703090000_profile_display_currency.sql src/store/userland/backup.test.ts src/store/userland/idb-repo.test.ts
 git commit -m "feat(pricing): Profile.displayCurrency across persistence layer"
 ```
 
@@ -760,7 +775,7 @@ nohup bunx vite dev --port 6301 >/tmp/pr3a-routegen.log 2>&1 & VP=$!; sleep 8; k
 Then run in parallel (background the slow ones):
 - `bunx tsc -b`
 - `bun test`
-- `bunx biome check --config-path=. src/lib/currencies.ts src/store/userland/money.ts src/store/userland/types.ts src/store/userland/idb-repo.ts src/store/userland/supabase-repo.ts src/store/userland/backup.ts src/store/userland/csv.ts src/components/profile/profile-form-dialog.tsx src/components/collection/`
+- `bunx biome check --config-path=. src/lib/currencies.ts src/store/userland/money.ts src/store/userland/types.ts src/store/userland/idb-repo.ts src/store/userland/supabase-repo.ts src/store/userland/supabase-row.ts src/store/userland/backup.ts src/store/userland/csv.ts src/components/profile/profile-form-dialog.tsx src/components/collection/`
 
 Expected: tsc 0 errors; full suite green (baseline 1490 + the new tests); biome clean. After the run, `rm -f src/routeTree.gen.ts` (gitignored artifact).
 
