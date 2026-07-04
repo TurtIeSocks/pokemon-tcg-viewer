@@ -3,13 +3,17 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { formatPrice } from "../../store/userland/money";
+import { formatPrice, formatSignedPrice } from "../../store/userland/money";
 import type { Stack } from "../../store/userland/types";
 import {
 	removeStack,
 	setPrimaryStack,
 	splitStack,
 } from "../../store/userland/userland-store";
+import {
+	useHideValue,
+	useStackMarketValue,
+} from "../../store/userland/valuation-hooks";
 import { StackEditForm } from "./stack-edit-form";
 import { dayMsToInput } from "./stack-form-mapping";
 import { isAutoLabel, stackDisplayLabel } from "./stack-label";
@@ -42,6 +46,8 @@ export function StackRow({ item, variants }: StackRowProps) {
 	const [editOpen, setEditOpen] = useState(false);
 	const [splitOpen, setSplitOpen] = useState(false);
 	const [splitN, setSplitN] = useState(1);
+	const market = useStackMarketValue(item);
+	const hidden = useHideValue();
 
 	const gradingLabel = item.grading
 		? `${item.grading.company} ${item.grading.grade}`
@@ -111,6 +117,30 @@ export function StackRow({ item, variants }: StackRowProps) {
 					{item.pricePaid != null && (
 						<span className="font-mono text-[11px] text-[var(--ink-muted)]">
 							{formatPrice(item.pricePaid, item.currency)}
+						</span>
+					)}
+					{/* Market value + unrealized P&L — masked when the collector hides values */}
+					{market.marketValue != null && (
+						<span className="font-mono text-[11px] text-[var(--success)]">
+							{hidden ? (
+								"•••"
+							) : (
+								<>
+									{formatPrice(market.marketValue, market.currency)}
+									{market.pnl != null && (
+										<span
+											className={
+												market.pnl >= 0
+													? "text-[var(--success)]"
+													: "text-[var(--danger)]"
+											}
+										>
+											{" "}
+											{formatSignedPrice(market.pnl, market.currency)}
+										</span>
+									)}
+								</>
+							)}
 						</span>
 					)}
 				</div>
