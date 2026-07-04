@@ -19,6 +19,7 @@ import {
 	useEnsureI18n,
 } from "../../store/corpus/i18n-active-hooks";
 import { allLoadedSets } from "../../store/sets-slice";
+import { formatPrice } from "../../store/userland/money";
 import {
 	useBinderMembers,
 	useBinderProgress,
@@ -31,6 +32,10 @@ import {
 	removeRuleFromBinder,
 	toggleCardOwned,
 } from "../../store/userland/userland-store";
+import {
+	useBinderValue,
+	useHideValue,
+} from "../../store/userland/valuation-hooks";
 import { BinderFormDialog } from "./binder-form-dialog";
 import { ShareDialog } from "./share-dialog";
 
@@ -75,6 +80,8 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 	const progress = useBinderProgress(binder.id);
 	const memberIds = useBinderMembers(binder.id);
 	const ownedCardIds = useOwnedCardIdSet();
+	const { value, currency } = useBinderValue(binder.id);
+	const hidden = useHideValue();
 
 	const index = useCorpusRuntime((s) => s.index);
 	const indices = useCorpusRuntime((s) => s.indices);
@@ -219,6 +226,16 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 						total={progress.total}
 						className="h-2"
 					/>
+					{value != null ? (
+						<div className="flex justify-between text-sm">
+							<span className="text-[10.5px] uppercase tracking-[0.18em] text-[var(--faint)] font-semibold self-center">
+								Market value
+							</span>
+							<span className="font-mono tabular-nums text-[var(--success)]">
+								{hidden ? "•••" : formatPrice(value, currency)}
+							</span>
+						</div>
+					) : null}
 				</div>
 			) : null}
 

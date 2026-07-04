@@ -1,5 +1,6 @@
 import { convertMinorUnits } from "@/lib/corpus/fx";
 import { useCardPriceEntry, usePricesRuntime } from "../corpus/prices-runtime";
+import { useBinderMembers, useOwnedIndex } from "./selectors";
 import type { Stack } from "./types";
 import { useUserland } from "./userland-store";
 import { stackValueUsdCents } from "./valuation";
@@ -47,4 +48,44 @@ export function useStackMarketValue(stack: Stack): StackMarket {
 			: null;
 
 	return { marketValue, pnl, currency };
+}
+
+/** A binder's total market value, in the profile display currency. */
+export interface BinderValue {
+	/** Summed market value across the binder's owned member stacks, in the display currency's minor units. Null when membership/prices/FX aren't ready, or nothing owned is priced. */
+	value: number | null;
+	/** The profile's display currency (ISO 4217), defaulting "USD". */
+	currency: string;
+}
+
+/**
+ * Total market value of the cards a collector owns within a binder, in the
+ * display currency. Sums every owned stack (across the binder's member cards)
+ * through the pure valuation, converts once. Null when prices/FX unavailable.
+ */
+export function useBinderValue(binderId: string): BinderValue {
+	const members = useBinderMembers(binderId);
+	const owned = useOwnedIndex();
+	const byId = usePricesRuntime((s) => s.byId);
+	const fx = usePricesRuntime((s) => s.meta?.fx ?? null);
+	const currency = useUserland((s) => s.profile?.displayCurrency ?? "USD");
+
+	if (!members || !byId || !fx) return { value: null, currency };
+
+	let usd = 0;
+	let any = false;
+	for (const cardId of members) {
+		const stacks = owned.get(cardId);
+		if (!stacks) continue;
+		const entry = byId.get(cardId) ?? null;
+		for (const st of stacks) {
+			const v = stackValueUsdCents(st, entry, fx);
+			if (v != null) {
+				usd += v;
+				any = true;
+			}
+		}
+	}
+	const value = any ? convertMinorUnits(usd, "USD", currency, fx) : null;
+	return { value, currency };
 }
