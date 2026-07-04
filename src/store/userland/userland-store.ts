@@ -5,7 +5,7 @@ import { getBrowserClient, isCloudEnabled } from "../../lib/supabase/client";
 // module here — statically or dynamically — forms a chunk cycle that crashed the
 // prod bundle (TDZ "p is not a function"). The leaf carries only the store.
 import { useCorpusRuntime } from "../corpus/corpus-runtime-store";
-import { getRepos, migrateUserlandData } from "./idb-repo";
+import { getRepos, getSnapshotsRepo, migrateUserlandData } from "./idb-repo";
 import type { UserlandRepos } from "./repo";
 import { createSupabaseRepo } from "./supabase-repo";
 import { createCacheRepos } from "./sync/cache-repo";
@@ -22,10 +22,12 @@ import type {
 	BinderRule,
 	EditableStackFields,
 	NewBinder,
+	NewSnapshot,
 	NewStack,
 	Profile,
 	ProfilePatch,
 	SerializedQuery,
+	Snapshot,
 	Stack,
 	StackPatch,
 	UserDataSnapshot,
@@ -38,6 +40,8 @@ interface UserlandState {
 	items: Record<string, Stack>;
 	/** All user binders, keyed by binder id. */
 	binders: Record<string, Binder>;
+	/** Daily portfolio value snapshots, kept sorted ascending by priceDate. */
+	snapshots: Snapshot[];
 	/** The local user profile, or null until first saved. */
 	profile: Profile | null;
 	/** True once the first load from the repo has completed. */
@@ -54,6 +58,7 @@ interface UserlandState {
 const initial: UserlandState = {
 	items: {},
 	binders: {},
+	snapshots: [],
 	profile: null,
 	hydrated: false,
 	loading: false,
@@ -302,20 +307,28 @@ function resetUserland(): void {
 }
 
 // --- Hydration ---
-/** Load all items, binders, and profile from the repo and index them by id. */
+/**
+ * Load all items, binders, profile, and snapshots and index/sort them.
+ * Snapshots come from the standalone `getSnapshotsRepo()` singleton, NOT the
+ * `r: UserlandRepos` bundle passed in (snapshots aren't sync/cloud-routed yet).
+ */
 async function fetchAll(
 	r: UserlandRepos,
-): Promise<Pick<UserlandState, "items" | "binders" | "profile">> {
-	const [itemList, binderList, profile] = await Promise.all([
+): Promise<Pick<UserlandState, "items" | "binders" | "profile" | "snapshots">> {
+	const [itemList, binderList, profile, snapshotList] = await Promise.all([
 		r.collection.list(),
 		r.binders.list(),
 		r.profile.get(),
+		getSnapshotsRepo().list(),
 	]);
 	const items: Record<string, Stack> = {};
 	for (const it of itemList) items[it.id] = it;
 	const binders: Record<string, Binder> = {};
 	for (const b of binderList) binders[b.id] = b;
-	return { items, binders, profile };
+	const snapshots = [...snapshotList].sort((a, b) =>
+		a.priceDate.localeCompare(b.priceDate),
+	);
+	return { items, binders, profile, snapshots };
 }
 
 let inFlight: Promise<void> | null = null;
@@ -349,11 +362,14 @@ export function loadUserland(): Promise<void> {
 				console.error("Userland data migration failed; continuing", e);
 			}
 		}
-		const { items, binders, profile } = await fetchAll(activeRepos());
+		const { items, binders, profile, snapshots } = await fetchAll(
+			activeRepos(),
+		);
 		useUserland.setState({
 			items,
 			binders,
 			profile,
+			snapshots,
 			hydrated: true,
 			loading: false,
 		});
@@ -370,8 +386,8 @@ export function loadUserland(): Promise<void> {
  * this is a silent refresh, not the initial load.
  */
 export async function rehydrateFromCache(): Promise<void> {
-	const { items, binders, profile } = await fetchAll(activeRepos());
-	useUserland.setState({ items, binders, profile, hydrated: true });
+	const { items, binders, profile, snapshots } = await fetchAll(activeRepos());
+	useUserland.setState({ items, binders, profile, snapshots, hydrated: true });
 }
 
 /** Test helper: clear the in-flight guard, reset state, and clear any injected session. */
@@ -850,7 +866,33 @@ export async function importUserData(
 ): Promise<void> {
 	const r = activeRepos();
 	await r.backup.importAll(snapshot, mode);
-	const { items, binders, profile } = await fetchAll(r); // force-refresh (loadUserland would no-op once hydrated)
-	useUserland.setState({ items, binders, profile, hydrated: true });
+	const { items, binders, profile, snapshots } = await fetchAll(r); // force-refresh (loadUserland would no-op once hydrated)
+	useUserland.setState({ items, binders, profile, snapshots, hydrated: true });
 	notifyLocalWrite();
+}
+
+// --- Snapshot actions ---
+/**
+ * Append a daily portfolio snapshot; no-op if one already exists for this
+ * price date (one snapshot per price-blob date).
+ */
+export async function captureSnapshot(input: NewSnapshot): Promise<void> {
+	if (
+		useUserland
+			.getState()
+			.snapshots.some((s) => s.priceDate === input.priceDate)
+	) {
+		return;
+	}
+	const snap = await getSnapshotsRepo().create(input);
+	useUserland.setState((s) => ({
+		snapshots: [...s.snapshots, snap].sort((a, b) =>
+			a.priceDate.localeCompare(b.priceDate),
+		),
+	}));
+}
+
+/** The store's portfolio snapshots, ascending by priceDate (kept sorted on write). */
+export function useSnapshots(): Snapshot[] {
+	return useUserland((s) => s.snapshots);
 }
