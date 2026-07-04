@@ -210,6 +210,32 @@ export default {
 			return serveCorpus(res, request, env);
 		}
 
+		// GET /corpus-prices/history/:setId -> per-set price history blob.
+		const historyMatch = url.pathname.match(
+			/^\/corpus-prices\/history\/([^/]+)$/,
+		);
+		if (historyMatch) {
+			const setId = historyMatch[1];
+			const obj = await env.CORPUS.get(
+				`corpus/prices/history/${setId}.json.gz`,
+			);
+			if (!obj) {
+				return new Response("No history for set", {
+					status: 503,
+					headers: corsHeaders(env),
+				});
+			}
+			const res = new Response(obj.body, {
+				headers: {
+					"Content-Type": "application/octet-stream",
+					ETag: `"${obj.etag}"`,
+					"Cache-Control":
+						"public, s-maxage=3600, stale-while-revalidate=86400",
+				},
+			});
+			return serveCorpus(res, request, env);
+		}
+
 		// GET /corpus-i18n/:lang/version -> overlay meta JSON (like /corpus-detail/version).
 		const i18nVersionMatch = url.pathname.match(
 			/^\/corpus-i18n\/([^/]+)\/version$/,

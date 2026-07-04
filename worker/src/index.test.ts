@@ -81,6 +81,8 @@ const CORPUS = {
 				]).stream(),
 				etag: "pricesmetatag",
 			};
+		if (key === "corpus/prices/history/base1.json.gz")
+			return { body: "HISTORY_GZ", etag: "histtag" };
 		return null;
 	},
 };
@@ -493,6 +495,41 @@ describe("worker", () => {
 		const res = await worker.fetch(
 			new Request("https://proxy.test/corpus-prices"),
 			emptyEnv,
+			ctx,
+		);
+		expect(res.status).toBe(503);
+	});
+
+	test("/corpus-prices/history/:setId serves the history blob with ETag + SWR", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus-prices/history/base1"),
+			env,
+			ctx,
+		);
+		expect(res.status).toBe(200);
+		expect(res.headers.get("ETag")).toBe('"histtag"');
+		expect(res.headers.get("Cache-Control")).toContain("s-maxage=3600");
+		expect(res.headers.get("Cache-Control")).toContain(
+			"stale-while-revalidate=86400",
+		);
+		expect(await res.text()).toBe("HISTORY_GZ");
+	});
+
+	test("/corpus-prices/history/:setId returns 304 when If-None-Match matches", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus-prices/history/base1", {
+				headers: { "If-None-Match": '"histtag"' },
+			}),
+			env,
+			ctx,
+		);
+		expect(res.status).toBe(304);
+	});
+
+	test("/corpus-prices/history/:setId returns 503 for unbuilt set", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus-prices/history/nope"),
+			env,
 			ctx,
 		);
 		expect(res.status).toBe(503);
