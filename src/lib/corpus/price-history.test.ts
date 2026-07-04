@@ -5,7 +5,7 @@ import {
 	epochDayUtc,
 	representativeMarketUsdCents,
 } from "./price-history";
-import type { CardPriceEntry, FxTable } from "./price-types";
+import type { FxTable } from "./price-types";
 
 const fx: FxTable = { base: "EUR", date: "x", rates: { USD: 1.09 } };
 

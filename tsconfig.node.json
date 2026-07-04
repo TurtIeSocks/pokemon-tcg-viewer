@@ -14,6 +14,11 @@
 		"moduleDetection": "force",
 		"noEmit": true,
 
+		/* Path alias — parity with tsconfig.app.json. The node project compiles
+		   src modules dragged in by scripts (build-history.ts → price-history.ts
+		   → fx.ts), which use the "@/" alias, so it must resolve it too. */
+		"paths": { "@/*": ["./src/*"] },
+
 		/* Linting */
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
