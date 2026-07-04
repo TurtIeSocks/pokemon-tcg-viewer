@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import type { SetHistory } from "../src/lib/corpus/price-history";
 import type { PricesBlob } from "../src/lib/corpus/price-types";
-import { buildSetHistories } from "./build-history";
+import { buildIndexManifest, buildSetHistories } from "./build-history";
 
 const fx = { base: "EUR" as const, date: "x", rates: { USD: 1.09 } };
 const blob: PricesBlob = {
@@ -86,4 +86,22 @@ test("buildSetHistories skips cards with no setId or no market", () => {
 	// ghost-1 not in cardToSet → skipped; base1-4 present
 	expect(out.get("base1")).toEqual({ "base1-4": [[100, 72034]] });
 	expect([...out.keys()]).toEqual(["base1"]);
+});
+
+test("buildIndexManifest sorts setIds and preserves the builtAt stamp", () => {
+	const manifest = buildIndexManifest(
+		["sv1", "base1", "sv3p5"],
+		"2026-07-03T00:00:00.000Z",
+	);
+	expect(manifest).toEqual({
+		setIds: ["base1", "sv1", "sv3p5"],
+		builtAt: "2026-07-03T00:00:00.000Z",
+	});
+});
+
+test("buildIndexManifest handles an empty set list (first-ever run)", () => {
+	expect(buildIndexManifest([], "2026-07-03T00:00:00.000Z")).toEqual({
+		setIds: [],
+		builtAt: "2026-07-03T00:00:00.000Z",
+	});
 });

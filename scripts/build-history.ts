@@ -46,6 +46,22 @@ export function buildSetHistories(input: {
 	return out;
 }
 
+/**
+ * Manifest of every set rollup written today, keyed by a fixed well-known
+ * name (`history/_index.json`). wrangler's R2 CLI only supports get/put/delete
+ * of a single object — no bulk "list objects under a prefix" — so the
+ * workflow can't discover which `{setId}.json.gz` keys exist in
+ * corpus/prices/history/ on its own. It fetches this manifest first, reads
+ * the setId list back out, and fetches exactly those prior blobs into
+ * history-prior/ before this script runs again tomorrow.
+ */
+export function buildIndexManifest(
+	setIds: Iterable<string>,
+	builtAt: string,
+): { setIds: string[]; builtAt: string } {
+	return { setIds: [...setIds].sort(), builtAt };
+}
+
 // --- Entrypoint (workflow-run; not exercised by unit tests) ---
 
 interface CorpusCard {
@@ -101,13 +117,19 @@ if (import.meta.main) {
 
 	mkdirSync("history", { recursive: true });
 	let setCount = 0;
+	const setIds: string[] = [];
 	for (const [setId, hist] of built) {
 		await Bun.write(
 			`history/${setId}.json.gz`,
 			gzipSync(Buffer.from(JSON.stringify(hist))),
 		);
+		setIds.push(setId);
 		setCount++;
 	}
+	await Bun.write(
+		"history/_index.json",
+		JSON.stringify(buildIndexManifest(setIds, new Date().toISOString())),
+	);
 	console.log(
 		`history: ${setCount} set rollups written (${cardToSet.size} card→set, blob date ${blob.date})`,
 	);
