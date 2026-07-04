@@ -237,7 +237,26 @@ test("masks market value + P&L behind ••• when hideValue is set", async ()
 		condition: "NM",
 	});
 	render(<StackRow item={useUserland.getState().items[item.id]} />);
+	// both the pricePaid badge and the market value/P&L badge mask to •••
+	expect(screen.getAllByText("•••")).toHaveLength(2);
+	expect(screen.queryByText("$4.00")).toBeNull(); // pricePaid
+	expect(screen.queryByText("$20.00")).toBeNull(); // market value
+	expect(screen.queryByText("+$12.00")).toBeNull(); // P&L
+});
+
+test("masks pricePaid badge behind ••• when hideValue is set (no market price)", async () => {
+	useUserland.setState({
+		profile: makeProfile({ hideValue: true }),
+	});
+	const item = await addStack("c", { pricePaid: 500, currency: "USD" });
+	render(<StackRow item={useUserland.getState().items[item.id]} />);
+	expect(screen.queryByText("$5.00")).toBeNull();
 	expect(screen.getByText("•••")).toBeDefined();
-	expect(screen.queryByText("$20.00")).toBeNull();
-	expect(screen.queryByText("+$12.00")).toBeNull();
+});
+
+test("shows pricePaid badge normally when hideValue is not set", async () => {
+	const item = await addStack("c", { pricePaid: 500, currency: "USD" });
+	render(<StackRow item={useUserland.getState().items[item.id]} />);
+	expect(screen.getByText("$5.00")).toBeDefined();
+	expect(screen.queryByText("•••")).toBeNull();
 });

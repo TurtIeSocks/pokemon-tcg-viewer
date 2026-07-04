@@ -113,10 +113,10 @@ export function StackRow({ item, variants }: StackRowProps) {
 							{gradingLabel}
 						</Badge>
 					)}
-					{/* Price paid */}
+					{/* Price paid — masked when the collector hides values */}
 					{item.pricePaid != null && (
 						<span className="font-mono text-[11px] text-[var(--ink-muted)]">
-							{formatPrice(item.pricePaid, item.currency)}
+							{hidden ? "•••" : formatPrice(item.pricePaid, item.currency)}
 						</span>
 					)}
 					{/* Market value + unrealized P&L — masked when the collector hides values */}
