@@ -7,27 +7,20 @@ import { BezelPanel } from "@/components/ui/glass";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { Stat } from "@/components/ui/stat";
 import { ImportDialog } from "@/components/vault/import-dialog";
-import { formatPrice } from "@/store/userland/money";
+import { ValueStats } from "@/components/vault/value-stats";
+import { useEnsurePrices } from "@/store/corpus/prices-runtime";
 import { useCollectionStats } from "../../store/userland/stats";
 
-const MIXED_CURRENCY_LABEL = "—";
-const MIXED_CURRENCY_HINT =
-	"Mixed currencies — total needs conversion (coming soon)";
-
 /**
- * Double-bezel summary hero: big completion ring + 4 stats + Add/Import actions.
- * Real data only — omits est. value stat gracefully when no pricePaid entries exist.
+ * Double-bezel summary hero: big completion ring + stats + Add/Import actions.
+ * Real data only — ValueStats omits/masks money stats gracefully when
+ * prices/FX are unavailable or the collector has hidden values.
  */
 export function VaultSummaryHero() {
+	useEnsurePrices();
 	const [importOpen, setImportOpen] = useState(false);
-	const {
-		cardsOwned,
-		setsTouched,
-		completionPct,
-		estValue,
-		estValueCurrency,
-		thisWeek,
-	} = useCollectionStats();
+	const { cardsOwned, setsTouched, completionPct, thisWeek } =
+		useCollectionStats();
 	const pct = completionPct;
 
 	return (
@@ -50,17 +43,7 @@ export function VaultSummaryHero() {
 					<div className="flex flex-1 flex-wrap gap-8">
 						<Stat value={cardsOwned.toLocaleString()} label="cards owned" />
 						<Stat value={setsTouched.toLocaleString()} label="sets touched" />
-						{estValue !== null &&
-							(estValueCurrency !== null ? (
-								<Stat
-									value={formatPrice(estValue, estValueCurrency)}
-									label="est. value"
-								/>
-							) : (
-								<span title={MIXED_CURRENCY_HINT} role="note">
-									<Stat value={MIXED_CURRENCY_LABEL} label="est. value" />
-								</span>
-							))}
+						<ValueStats />
 						{thisWeek > 0 && (
 							<Stat value={`+${thisWeek}`} label="this week" tone="up" />
 						)}

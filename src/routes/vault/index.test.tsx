@@ -189,7 +189,7 @@ test("stats bezel shows cards owned count", async () => {
 	});
 });
 
-test("est. value stat visible when pricePaid entries exist", async () => {
+test("cost basis stat shows the priced total when pricePaid entries exist", async () => {
 	useUserland.setState({
 		items: {
 			c1: makeItem("c1", "base1-1", { pricePaid: 25 }),
@@ -201,13 +201,17 @@ test("est. value stat visible when pricePaid entries exist", async () => {
 	await renderOverview();
 
 	await waitFor(() => {
-		expect(screen.getByText(/est\. value/i)).toBeTruthy();
+		expect(screen.getByText(/cost basis/i)).toBeTruthy();
+		expect(screen.getByText("$0.25")).toBeTruthy();
 	});
 });
 
-test("est. value stat omitted when no pricePaid entries", async () => {
+test("cost basis stat renders a dash when no pricePaid entries", async () => {
 	await renderOverview();
-	expect(screen.queryByText(/est\. value/i)).toBeNull();
+	await waitFor(() => {
+		expect(screen.getByText(/cost basis/i)).toBeTruthy();
+	});
+	expect(screen.queryByText("$0.25")).toBeNull();
 });
 
 test("'View all sets →' link points to /vault/sets", async () => {
