@@ -31,6 +31,16 @@ test("finishForPrinting maps type/stamp to a tcgplayer finish", () => {
 	).toBe("1N");
 });
 
+test("finishForPrinting: reverse wins over 1st-edition (documented precedence)", () => {
+	// finishForPrinting checks type.startsWith("reverse") before the firstEd
+	// branch, so a reverse-holo 1st-edition printing resolves to "R", not "1H"/
+	// "1N" — tcgplayer has no reverse+1st-edition finish code, so this locks the
+	// documented fallback (reverse takes precedence) against regression.
+	expect(
+		finishForPrinting(printing({ type: "reverse", stamp: ["1st-edition"] })),
+	).toBe("R");
+});
+
 test("conditionMultiplier: raw scale; graded values at raw NM (1)", () => {
 	expect(conditionMultiplier({ condition: "NM", grading: null })).toBe(1);
 	expect(conditionMultiplier({ condition: "LP", grading: null })).toBe(0.85);

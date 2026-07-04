@@ -1,28 +1,12 @@
 import { afterEach, expect, test } from "bun:test";
-import { gzipSync } from "node:zlib";
 import { render } from "@testing-library/react";
-import type { PricesBlob } from "../../lib/corpus/price-types";
 import {
 	resetPricesRuntimeForTests,
 	setPricesFetchersForTests,
 	useEnsurePrices,
 	usePricesRuntime,
 } from "./prices-runtime";
-
-const BLOB: PricesBlob = {
-	v: 1,
-	date: "2026-07-03",
-	fx: { base: "EUR", date: "2026-07-03", rates: { USD: 1.09 } },
-	sources: { tp: "2026-07-03", cm: "2026-07-03" },
-	cards: {
-		"base1-4": { tp: { H: [72034, 53499] }, cm: [50168, 27674, 40096, 56391] },
-	},
-};
-
-function gzBlob(blob: PricesBlob): ArrayBuffer {
-	const buf = gzipSync(Buffer.from(JSON.stringify(blob)));
-	return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
-}
+import { PRICES_BLOB_FIXTURE as BLOB, gzBlob } from "./prices-test-util";
 
 afterEach(async () => {
 	await resetPricesRuntimeForTests();
