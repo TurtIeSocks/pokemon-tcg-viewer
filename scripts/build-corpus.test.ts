@@ -1,11 +1,13 @@
 import { expect, test } from "bun:test";
 import {
+	assertCrosswalkOk,
 	assetPrefixFor,
 	baseUrlFor,
 	buildCorpus,
 	collectGaps,
 	detailCard,
 	detailVersion,
+	harvestPriceIds,
 	priceIdsOf,
 	resolveFallbackImages,
 	type TcgdexCard,
@@ -485,4 +487,52 @@ test("priceIdsOf handles cardmarket-only (ja) and unpriced cards", () => {
 	expect(priceIdsOf(jaCard)).toEqual([719604, null]);
 	expect(priceIdsOf(withImage)).toBeNull(); // no pricing field at all
 	expect(priceIdsOf({ ...withImage, pricing: null } as TcgdexCard)).toBeNull();
+});
+
+test("harvestPriceIds builds the crosswalk from injected per-card fetches", async () => {
+	const byId: Record<string, TcgdexCard> = {
+		"a-1": {
+			...withImage,
+			id: "a-1",
+			pricing: {
+				cardmarket: { idProduct: 11 },
+				tcgplayer: { unit: "USD", updated: "x", holofoil: { productId: 22 } },
+			},
+		} as TcgdexCard,
+		"a-2": {
+			...withImage,
+			id: "a-2",
+			pricing: { cardmarket: { idProduct: 33 }, tcgplayer: null },
+		} as TcgdexCard,
+		"a-3": { ...withImage, id: "a-3" } as TcgdexCard, // no pricing → no entry
+	};
+	const seen: string[] = [];
+	const map = await harvestPriceIds(["a-1", "a-2", "a-3", "gone"], "en", {
+		concurrency: 2,
+		fetchCard: async (url) => {
+			const id = decodeURIComponent(url.split("/cards/")[1]);
+			seen.push(url);
+			const card = byId[id];
+			if (!card) throw new Error("404"); // a miss/error yields no entry, no abort
+			return card;
+		},
+	});
+	expect(map).toEqual({ "a-1": [11, 22], "a-2": [33, null] });
+	// Hits the official base, not the mirror; encodes the id in the path.
+	expect(seen).toContain("https://api.tcgdex.net/v2/en/cards/a-1");
+});
+
+test("assertCrosswalkOk throws on a near-empty crosswalk, passes when covered", () => {
+	// The exact regression: mirror served no pricing → 0 of 23323.
+	expect(() => assertCrosswalkOk(0, 23323, "en")).toThrow(
+		/suspiciously sparse/,
+	);
+	expect(() => assertCrosswalkOk(20000, 23323, "en")).not.toThrow();
+	// ja is lenient (cardmarket-only + partial sets) but still catches a wipeout.
+	expect(() => assertCrosswalkOk(0, 6246, "ja")).toThrow();
+	expect(() => assertCrosswalkOk(3000, 6246, "ja")).not.toThrow();
+	// Explicit floor override bypasses the env/default.
+	expect(() => assertCrosswalkOk(10, 100, "en", 0.05)).not.toThrow();
+	// Empty corpus (total 0) is treated as 0 coverage → throws for en.
+	expect(() => assertCrosswalkOk(0, 0, "en")).toThrow();
 });

@@ -21,7 +21,8 @@ jobs:
         run: |
           bunx wrangler r2 object get \
             pokemon-tcg-corpus/corpus/price-ids.json.gz \
-            --file=price-ids.json.gz --remote
+            --file=price-ids.json.gz --remote \
+            || { echo "::error::corpus/price-ids.json.gz missing — run build-corpus.yml first to harvest the marketplace-id crosswalk"; exit 1; }
           # Asia crosswalk is optional until the next asia corpus rebuild ships it.
           bunx wrangler r2 object get \
             pokemon-tcg-corpus/corpus/region/asia/price-ids.json.gz \

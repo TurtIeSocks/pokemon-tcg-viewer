@@ -17,6 +17,17 @@ const PTCG_HOST = "https://images.pokemontcg.io/";
 
 const TCGDEX_BASE = process.env.TCGDEX_BASE ?? "https://api.tcgdex.net/v2/en";
 
+// The self-hosted TCGdex mirror (TCGDEX_BASE in CI) serves the card catalog but
+// does NOT populate the live `pricing` block, so the marketplace-id crosswalk is
+// harvested separately from the OFFICIAL API, which does. Kept distinct from
+// TCGDEX_BASE precisely so the CI mirror override never points the harvest at a
+// pricing-less source. Override with TCGDEX_PRICING_BASE for local/preview.
+const TCGDEX_OFFICIAL_BASE =
+	process.env.TCGDEX_PRICING_BASE ?? "https://api.tcgdex.net/v2/en";
+const PRICE_HARVEST_CONCURRENCY = 8;
+const HARVEST_UA =
+	"cardstack-corpus-build/1.0 (+https://github.com/TurtIeSocks/pokemon-tcg-viewer)";
+
 /**
  * Derive the per-region TCGdex API base by swapping the trailing "/en" of
  * TCGDEX_BASE for "/{baseLang}" (mirrors `langBase()` in build-i18n.ts). The
@@ -187,6 +198,105 @@ export function priceIdsOf(card: TcgdexCard): PriceIdEntry | null {
 	return cm === null && tp === null ? null : [cm, tp];
 }
 
+/**
+ * Coverage floor below which the harvested crosswalk is treated as broken and
+ * the build refuses to overwrite the good one. EN pricing coverage on TCGdex is
+ * near-total (~90%+), so a strict floor catches the "mirror served no pricing →
+ * 0 ids" failure with huge margin. JA cards are largely absent from TCGplayer
+ * and only partly listed on Cardmarket, so its floor only catches a total
+ * wipeout. Override with CROSSWALK_MIN_COVERAGE (a 0..1 fraction).
+ */
+export function defaultCrosswalkFloor(baseLang: string): number {
+	const env = process.env.CROSSWALK_MIN_COVERAGE;
+	if (env !== undefined) {
+		const n = Number(env);
+		if (Number.isFinite(n)) return n;
+	}
+	return baseLang === "en" ? 0.5 : 0.02;
+}
+
+/**
+ * Guard: throw when the harvested crosswalk covers too few cards to trust.
+ * Runs before any output file is written, so a harvest failure keep-last-goods
+ * the whole run (nothing uploads) instead of silently shipping an empty
+ * crosswalk that only breaks the downstream daily price build.
+ */
+export function assertCrosswalkOk(
+	mapped: number,
+	total: number,
+	baseLang: string,
+	floor: number = defaultCrosswalkFloor(baseLang),
+): void {
+	const coverage = total > 0 ? mapped / total : 0;
+	if (coverage < floor) {
+		throw new Error(
+			`[${baseLang}] price crosswalk suspiciously sparse: ${mapped}/${total} cards carry marketplace ids (${(coverage * 100).toFixed(1)}%, floor ${(floor * 100).toFixed(0)}%). Refusing to overwrite the good crosswalk. The self-hosted mirror does not serve pricing — the harvest must hit the official api.tcgdex.net (TCGDEX_PRICING_BASE).`,
+		);
+	}
+}
+
+/**
+ * Harvest the cardId → [cardmarketId, tcgplayerId] crosswalk from the OFFICIAL
+ * TCGdex API. The self-hosted mirror the corpus crawl runs against serves no
+ * `pricing` block, so this pass hits api.tcgdex.net directly: one full-card GET
+ * per id, which is the ONLY endpoint that carries pricing (set-list briefs omit
+ * it, and there is no bulk prices endpoint). Politely throttled and
+ * UA-identified. A single unfetchable card yields no entry rather than aborting
+ * the whole harvest. `fetchCard` is injectable so tests run without network.
+ */
+export async function harvestPriceIds(
+	ids: string[],
+	baseLang: string,
+	opts: {
+		officialBase?: string;
+		concurrency?: number;
+		onRetry?: (
+			url: string,
+			attempt: number,
+			reason: string,
+			waitMs: number,
+		) => void;
+		fetchCard?: (url: string) => Promise<unknown>;
+	} = {},
+): Promise<PriceIdsMap> {
+	const base = baseUrlFor(baseLang, opts.officialBase ?? TCGDEX_OFFICIAL_BASE);
+	const concurrency = opts.concurrency ?? PRICE_HARVEST_CONCURRENCY;
+	const fetchCard =
+		opts.fetchCard ??
+		((url: string) =>
+			fetchJson(url, {
+				onRetry: opts.onRetry,
+				retries: 2,
+				headers: { "User-Agent": HARVEST_UA },
+			}));
+	console.log(
+		`Harvesting price crosswalk for ${ids.length} cards from ${base} (concurrency=${concurrency})…`,
+	);
+	let done = 0;
+	const entries = await pLimit(
+		ids.map((id) => async () => {
+			let entry: PriceIdEntry | null = null;
+			try {
+				const card = (await fetchCard(
+					`${base}/cards/${encodeURIComponent(id)}`,
+				)) as TcgdexCard;
+				entry = priceIdsOf(card);
+			} catch {
+				// A single unfetchable card must not abort a 23k-card harvest.
+			}
+			done++;
+			if (done % 500 === 0 || done === ids.length) {
+				console.log(`  …${done}/${ids.length} pricing records harvested`);
+			}
+			return [id, entry] as const;
+		}),
+		concurrency,
+	);
+	const map: PriceIdsMap = {};
+	for (const [id, entry] of entries) if (entry) map[id] = entry;
+	return map;
+}
+
 export interface GapLog {
 	images: Array<{ id: string; reason: "tcgdex-missing" | "no-fallback" }>;
 	// "tcgdex-missing": no TCGdex image (collectGaps).
@@ -265,6 +375,7 @@ export async function fetchJson(
 	opts: {
 		retries?: number;
 		baseMs?: number;
+		headers?: Record<string, string>;
 		onRetry?: (
 			url: string,
 			attempt: number,
@@ -283,7 +394,10 @@ export async function fetchJson(
 			await new Promise((r) => setTimeout(r, waitMs));
 		}
 		try {
-			const res = await fetch(url);
+			const res = await fetch(
+				url,
+				opts.headers ? { headers: opts.headers } : undefined,
+			);
 			if (res.ok) return await res.json();
 			if (!isRetryable(res.status)) {
 				throw new NonRetryableError(`${url}: HTTP ${res.status}`);
@@ -524,12 +638,22 @@ if (import.meta.main) {
 	const raw = await buildCorpus({ baseLang });
 
 	// Price crosswalk: cardId → marketplace product ids, for the daily
-	// build-prices join. Emitted before trimming (trimCard drops pricing).
-	const priceIds: PriceIdsMap = {};
-	for (const c of raw) {
-		const entry = priceIdsOf(c);
-		if (entry) priceIds[c.id] = entry;
-	}
+	// build-prices join. Harvested from the OFFICIAL api.tcgdex.net (the mirror
+	// the crawl uses serves no pricing), then guarded so a harvest failure throws
+	// here — before any output file is written — and the whole run keep-last-goods
+	// rather than shipping an empty crosswalk.
+	const onRetry = (
+		url: string,
+		attempt: number,
+		reason: string,
+		waitMs: number,
+	) => console.warn(`  ↳ ${url}: ${reason} — retry ${attempt} in ${waitMs}ms`);
+	const priceIds = await harvestPriceIds(
+		raw.map((c) => c.id),
+		baseLang,
+		{ onRetry },
+	);
+	assertCrosswalkOk(Object.keys(priceIds).length, raw.length, baseLang);
 	const priceIdsFile = isAsia ? "price-ids.asia.json.gz" : "price-ids.json.gz";
 	await Bun.write(
 		priceIdsFile,
