@@ -2,6 +2,10 @@ import { afterEach, expect, test } from "bun:test";
 import { render, screen } from "@testing-library/react";
 import type { PricesBlob } from "@/lib/corpus/price-types";
 import {
+	resetHistoryRuntimeForTests,
+	useHistoryRuntime,
+} from "@/store/corpus/history-runtime";
+import {
 	resetPricesRuntimeForTests,
 	usePricesRuntime,
 } from "@/store/corpus/prices-runtime";
@@ -24,10 +28,17 @@ function seed(cards: PricesBlob["cards"]) {
 		},
 		status: "ready",
 	});
+	// Mark the card's set as already "ready" (empty history) so <CardHistory>'s
+	// mount effect (loadSetHistory) short-circuits instead of hitting the network.
+	useHistoryRuntime.setState({
+		bySet: new Map([["base1", {}]]),
+		statusBySet: new Map([["base1", "ready"]]),
+	});
 }
 
 afterEach(async () => {
 	await resetPricesRuntimeForTests();
+	await resetHistoryRuntimeForTests();
 });
 
 test("renders the market-prices section with live price lines", () => {
@@ -39,13 +50,15 @@ test("renders the market-prices section with live price lines", () => {
 	expect(screen.getByText("$720.34")).toBeTruthy();
 });
 
-test("renders the price-history section as a coming-soon placeholder", () => {
+test("renders the price-history section with the history chart chrome", () => {
 	seed({
 		"base1-4": { tp: { H: [72034, 53499] } },
 	});
 	render(<CardPricingTab card={CARD} />);
 	expect(screen.getByText("Price history")).toBeDefined();
-	expect(screen.getByText(/Price history\. Coming soon\./i)).toBeDefined();
+	// No history seeded for this set → sparse fallback note, chart chrome present.
+	expect(screen.getByText(/Price history builds daily\./i)).toBeDefined();
+	expect(screen.getByRole("button", { name: "1Y" })).toBeDefined();
 });
 
 test("pending mode shows the price ghost instead of live prices", () => {
