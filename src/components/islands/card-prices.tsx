@@ -9,7 +9,9 @@ import {
 import type { FocusCardData } from "../../server/card-mappers";
 
 const TCGPLAYER_NOTICE =
-	"TCGplayer data — not endorsed or certified by TCGplayer.";
+	"TCGplayer data. Not endorsed or certified by TCGplayer.";
+const CARDMARKET_NOTICE =
+	"Cardmarket price data. Not affiliated with or endorsed by Cardmarket.";
 
 export function CardPrices({ card }: { card: FocusCardData }) {
 	return (
@@ -34,6 +36,7 @@ function PriceLines({ card }: { card: FocusCardData }) {
 	if (!lines.length) return null;
 
 	const hasTcgplayer = lines.some((l) => l.source === "TCGplayer");
+	const hasCardmarket = lines.some((l) => l.source === "Cardmarket");
 	return (
 		<GlassPanel className="mt-2 p-3.5">
 			<div className="flex flex-col gap-1.5">
@@ -69,6 +72,11 @@ function PriceLines({ card }: { card: FocusCardData }) {
 			{hasTcgplayer ? (
 				<p className="mt-2.5 font-mono text-[10px] leading-tight text-[var(--faint)]">
 					{TCGPLAYER_NOTICE}
+				</p>
+			) : null}
+			{hasCardmarket ? (
+				<p className="mt-2.5 font-mono text-[10px] leading-tight text-[var(--faint)]">
+					{CARDMARKET_NOTICE}
 				</p>
 			) : null}
 		</GlassPanel>

@@ -90,6 +90,29 @@ test("shows the mandated TCGplayer attribution when a tcgplayer line renders", a
 	expect(
 		screen.getByText(/not endorsed or certified by TCGplayer/i),
 	).toBeTruthy();
+	// TCGplayer-only card: no Cardmarket notice.
+	expect(screen.queryByText(/Cardmarket price data/i)).toBeNull();
+});
+
+test("shows the Cardmarket attribution when only a cardmarket line renders", async () => {
+	await seed({ "base1-4": { cm: [50168, 27674, 40096, 56391] } });
+	render(<CardPrices card={card} />);
+	expect(screen.getByText(/Cardmarket price data/i)).toBeTruthy();
+	// Cardmarket-only card: no TCGplayer notice.
+	expect(
+		screen.queryByText(/not endorsed or certified by TCGplayer/i),
+	).toBeNull();
+});
+
+test("shows both attributions when both sources render", async () => {
+	await seed({
+		"base1-4": { tp: { H: [72034, 53499] }, cm: [50168, 27674, 40096, 56391] },
+	});
+	render(<CardPrices card={card} />);
+	expect(
+		screen.getByText(/not endorsed or certified by TCGplayer/i),
+	).toBeTruthy();
+	expect(screen.getByText(/Cardmarket price data/i)).toBeTruthy();
 });
 
 test("renders nothing extra for a card absent from the blob", async () => {
