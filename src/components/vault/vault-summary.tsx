@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@tanstack/react-router";
+import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { BezelPanel } from "@/components/ui/glass";
@@ -10,6 +11,8 @@ import { ImportDialog } from "@/components/vault/import-dialog";
 import { ValueStats } from "@/components/vault/value-stats";
 import { useEnsurePrices } from "@/store/corpus/prices-runtime";
 import { useCollectionStats } from "../../store/userland/stats";
+import { updateProfile } from "../../store/userland/userland-store";
+import { useHideValue } from "../../store/userland/valuation-hooks";
 
 /**
  * Double-bezel summary hero: big completion ring + stats + Add/Import actions.
@@ -21,6 +24,7 @@ export function VaultSummaryHero() {
 	const [importOpen, setImportOpen] = useState(false);
 	const { cardsOwned, setsTouched, completionPct, thisWeek } =
 		useCollectionStats();
+	const hidden = useHideValue();
 	const pct = completionPct;
 
 	return (
@@ -60,6 +64,19 @@ export function VaultSummaryHero() {
 							onClick={() => setImportOpen(true)}
 						>
 							Import
+						</Button>
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							aria-label={hidden ? "Show values" : "Hide values"}
+							title={hidden ? "Show values" : "Hide values"}
+							onClick={() => updateProfile({ hideValue: !hidden })}
+						>
+							{hidden ? (
+								<EyeOff className="size-4" />
+							) : (
+								<Eye className="size-4" />
+							)}
 						</Button>
 					</div>
 				</div>

@@ -56,3 +56,19 @@ test("submitting persists the chosen display currency via updateProfile", async 
 		expect(useUserland.getState().profile?.displayCurrency).toBe("JPY");
 	});
 });
+
+test("submitting the toggled Hide monetary values switch persists hideValue via updateProfile", async () => {
+	render(<ProfileFormDialog open onOpenChange={() => {}} />);
+	fireEvent.change(screen.getByLabelText(/display name/i), {
+		target: { value: "Ash" },
+	});
+	const hideSwitch = screen.getByRole("switch", {
+		name: /hide monetary values/i,
+	});
+	fireEvent.click(hideSwitch);
+	// biome-ignore lint/style/noNonNullAssertion: form always present
+	fireEvent.submit(document.querySelector("form")!);
+	await waitFor(() => {
+		expect(useUserland.getState().profile?.hideValue).toBe(true);
+	});
+});

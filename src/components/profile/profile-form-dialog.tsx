@@ -26,6 +26,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
 	CURRENCY_LABELS,
@@ -59,6 +60,7 @@ const profileFormSchema = z.object({
 	favoriteSetId: z.string(),
 	displayLanguage: z.string(),
 	displayCurrency: z.string(),
+	hideValue: z.boolean(),
 });
 
 /** Props for {@link ProfileFormDialog}. */
@@ -97,6 +99,7 @@ export function ProfileFormDialog({
 			displayCurrency: (profile?.displayCurrency
 				? toSupportedCurrency(profile.displayCurrency)
 				: defaultCurrencyForLocale()) as string,
+			hideValue: profile?.hideValue ?? false,
 		},
 		validators: { onSubmit: profileFormSchema },
 		onSubmit: async ({ value }) => {
@@ -108,6 +111,7 @@ export function ProfileFormDialog({
 					value.favoriteSetId === NONE ? null : value.favoriteSetId,
 				displayLanguage: value.displayLanguage,
 				displayCurrency: value.displayCurrency,
+				hideValue: value.hideValue,
 			});
 			onOpenChange(false);
 		},
@@ -297,6 +301,24 @@ export function ProfileFormDialog({
 											))}
 										</SelectContent>
 									</Select>
+								</Field>
+							)}
+						/>
+
+						{/* Hide monetary values */}
+						<form.Field
+							name="hideValue"
+							// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
+							children={(field) => (
+								<Field orientation="horizontal">
+									<FieldLabel htmlFor={field.name}>
+										Hide monetary values
+									</FieldLabel>
+									<Switch
+										id={field.name}
+										checked={field.state.value}
+										onCheckedChange={(v) => field.handleChange(v)}
+									/>
 								</Field>
 							)}
 						/>
