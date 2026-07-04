@@ -29,8 +29,10 @@ function pctChange(trend: number | null, avg: number | null): number | null {
 
 function trendChipsFromCm(cm: CmTuple | undefined): TrendChip[] {
 	if (!cm) return [];
-	const [trend, , avg7, avg30] = cm;
+	const [trend, avg1, avg7, avg30] = cm;
 	const chips: TrendChip[] = [];
+	const d1 = pctChange(trend, avg1);
+	if (d1 !== null) chips.push({ label: "1D", pct: d1 });
 	const d7 = pctChange(trend, avg7);
 	if (d7 !== null) chips.push({ label: "7D", pct: d7 });
 	const d30 = pctChange(trend, avg30);
@@ -58,7 +60,7 @@ function TrendChipView({ chip }: { chip: TrendChip }) {
 /**
  * Card price-history chart: a range-filtered `<SparkLine>` of daily
  * representative market points, a 30d/3m/6m/1y range toggle, and
- * cardmarket-derived 7d/30d trend chips. Falls back to a "builds daily" note
+ * cardmarket-derived 1d/7d/30d trend chips. Falls back to a "builds daily" note
  * when the set has fewer than 2 plottable points yet (trend chips still show).
  */
 export function CardHistory({ card }: { card: FocusCardData }) {

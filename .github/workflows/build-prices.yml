@@ -81,7 +81,8 @@ jobs:
             for setId in $(jq -r '.setIds[]' history-index-prior.json); do
               bunx wrangler r2 object get \
                 "pokemon-tcg-corpus/corpus/prices/history/$setId.json.gz" \
-                --file="history-prior/$setId.json.gz" --remote || true
+                --file="history-prior/$setId.json.gz" --remote \
+                || echo "::warning::prior history for $setId failed to download — its rollup will reset to a single point"
             done
           fi
       - name: Build history rollups
