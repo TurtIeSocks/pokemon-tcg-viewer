@@ -8,6 +8,7 @@ import { BezelPanel } from "@/components/ui/glass";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { Stat } from "@/components/ui/stat";
 import { ImportDialog } from "@/components/vault/import-dialog";
+import { PortfolioChart } from "@/components/vault/portfolio-chart";
 import { ValueStats } from "@/components/vault/value-stats";
 import { useEnsurePrices } from "@/store/corpus/prices-runtime";
 import { useCaptureSnapshot } from "../../store/userland/snapshot-capture";
@@ -81,6 +82,10 @@ export function VaultSummaryHero() {
 							)}
 						</Button>
 					</div>
+				</div>
+
+				<div className="mt-6">
+					<PortfolioChart />
 				</div>
 			</BezelPanel>
 
