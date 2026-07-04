@@ -10,6 +10,7 @@ import { Stat } from "@/components/ui/stat";
 import { ImportDialog } from "@/components/vault/import-dialog";
 import { ValueStats } from "@/components/vault/value-stats";
 import { useEnsurePrices } from "@/store/corpus/prices-runtime";
+import { useCaptureSnapshot } from "../../store/userland/snapshot-capture";
 import { useCollectionStats } from "../../store/userland/stats";
 import { updateProfile } from "../../store/userland/userland-store";
 import { useHideValue } from "../../store/userland/valuation-hooks";
@@ -21,6 +22,7 @@ import { useHideValue } from "../../store/userland/valuation-hooks";
  */
 export function VaultSummaryHero() {
 	useEnsurePrices();
+	useCaptureSnapshot();
 	const [importOpen, setImportOpen] = useState(false);
 	const { cardsOwned, setsTouched, completionPct, thisWeek } =
 		useCollectionStats();
