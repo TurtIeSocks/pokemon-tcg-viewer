@@ -49,7 +49,7 @@ test("falls back to Collector when no profile is saved", async () => {
 	});
 });
 
-test("est. value renders in the stacks' shared currency, not hardcoded USD", async () => {
+test("cost basis renders in the stacks' shared currency, not hardcoded USD", async () => {
 	await setupUserlandTest();
 	seedCorpus([]);
 	useUserland.setState({
@@ -65,7 +65,7 @@ test("est. value renders in the stacks' shared currency, not hardcoded USD", asy
 	expect(screen.queryByText("$7")).toBeNull();
 });
 
-test("est. value renders a dash (not a wrong dollar total) when priced stacks span multiple currencies", async () => {
+test("cost basis renders a dash (not a wrong dollar total) when priced stacks span multiple currencies", async () => {
 	await setupUserlandTest();
 	seedCorpus([]);
 	useUserland.setState({

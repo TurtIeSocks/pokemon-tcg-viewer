@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { gzipSync } from "node:zlib";
 import { render, screen } from "@testing-library/react";
 import type { PricesBlob } from "@/lib/corpus/price-types";
 import {
@@ -8,6 +7,7 @@ import {
 	usePricesRuntime,
 } from "@/store/corpus/prices-runtime";
 import { writePrices } from "@/store/corpus/prices-store";
+import { gzBlob } from "@/store/corpus/prices-test-util";
 import { makeFocusCard } from "@/test-utils";
 import { CardPrices } from "./card-prices";
 
@@ -18,11 +18,6 @@ const card = makeFocusCard({
 });
 
 const SEEDED_DATE = "2026-07-03";
-
-function gzBlob(blob: PricesBlob): ArrayBuffer {
-	const buf = gzipSync(Buffer.from(JSON.stringify(blob)));
-	return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
-}
 
 async function seed(cards: PricesBlob["cards"]) {
 	usePricesRuntime.setState({

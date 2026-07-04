@@ -1,7 +1,11 @@
-import { beforeEach, expect, test } from "bun:test";
+import { afterEach, beforeEach, expect, test } from "bun:test";
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import type { PokemonSet } from "../../server/card-mappers";
 import { useStore } from "../../store";
+import {
+	resetPricesRuntimeForTests,
+	usePricesRuntime,
+} from "../../store/corpus/prices-runtime";
 import type { Binder } from "../../store/userland/types";
 import {
 	addRuleToBinder,
@@ -57,6 +61,10 @@ beforeEach(async () => {
 	seedCorpus([ownedCard, missingCard]);
 	// owned card is in the user's collection; missing card is not
 	await addStack(ownedCard.id);
+});
+
+afterEach(async () => {
+	await resetPricesRuntimeForTests();
 });
 
 // ---------------------------------------------------------------------------
@@ -375,4 +383,64 @@ test("clicking an unowned member card adds it via toggleCardOwned", async () => 
 		);
 		expect(stacks).toHaveLength(1);
 	});
+});
+
+// --- market value line ---
+
+test("shows Market value when the binder's owned members are priced", async () => {
+	usePricesRuntime.setState({
+		byId: new Map([["base1-1", { tp: { N: [1000, null] } }]]), // $10 unit
+		meta: {
+			date: "x",
+			sources: { tp: "x", cm: null },
+			fx: { base: "EUR", date: "x", rates: { USD: 1.09 } },
+		},
+		status: "ready",
+	});
+	const binder = await createBinder({ name: "Priced Binder" });
+	await addRuleToBinder(binder.id, {
+		text: null,
+		setId: "base1",
+		dexNumber: null,
+		types: [],
+		rarities: [],
+		supertypes: [],
+		subtypes: [],
+		yearMin: null,
+		yearMax: null,
+		mode: "fuzzy" as const,
+	});
+	const updated = useUserland.getState().binders[binder.id];
+
+	await renderDetail(updated);
+
+	// Bulbasaur (base1-1) is the only owned + priced member: $10 × 1 = $10.00
+	await waitFor(() => {
+		expect(screen.getByText("Market value")).toBeDefined();
+		expect(screen.getByText("$10.00")).toBeDefined();
+	});
+});
+
+test("does not show Market value when prices aren't loaded", async () => {
+	const binder = await createBinder({ name: "Unpriced Binder" });
+	await addRuleToBinder(binder.id, {
+		text: null,
+		setId: "base1",
+		dexNumber: null,
+		types: [],
+		rarities: [],
+		supertypes: [],
+		subtypes: [],
+		yearMin: null,
+		yearMax: null,
+		mode: "fuzzy" as const,
+	});
+	const updated = useUserland.getState().binders[binder.id];
+
+	await renderDetail(updated);
+
+	await waitFor(() => {
+		expect(screen.getByText(/Base Set/)).toBeDefined();
+	});
+	expect(screen.queryByText("Market value")).toBeNull();
 });

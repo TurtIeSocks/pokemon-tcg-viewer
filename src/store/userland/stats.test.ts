@@ -142,3 +142,94 @@ test("marketValue is null when the prices blob is not loaded", async () => {
 	expect(result.current.marketValue).toBeNull();
 	expect(result.current.unrealizedPnL).toBeNull();
 });
+
+test("marketValue/costBasisConverted/unrealizedPnL are null when fx can't reach the display currency", async () => {
+	await setupUserlandTest();
+	seedCorpus([]);
+	// fx table only carries a USD rate; profile displayCurrency is GBP, which
+	// convertMinorUnits can't reach — the whole trio must degrade to null
+	// instead of reporting a wrong (unconverted or partially-converted) number.
+	usePricesRuntime.setState({
+		byId: new Map([["base1-4", { tp: { N: [1000, null] } }]]),
+		meta: {
+			date: "2026-07-03",
+			sources: { tp: "2026-07-03", cm: null },
+			fx: { base: "EUR", date: "2026-07-03", rates: { USD: 1.09 } },
+		},
+		status: "ready",
+	});
+	useUserland.setState({
+		profile: makeProfile({ displayCurrency: "GBP" }),
+		items: {
+			a: makeStack({
+				id: "a",
+				cardId: "base1-4",
+				quantity: 2,
+				condition: "NM",
+				pricePaid: 400,
+				currency: "USD",
+			}),
+		},
+	});
+	const { result } = renderHook(() => useCollectionStats());
+	expect(result.current.marketValue).toBeNull();
+	expect(result.current.costBasisConverted).toBeNull();
+	expect(result.current.unrealizedPnL).toBeNull();
+	expect(result.current.valueCurrency).toBe("GBP");
+});
+
+test("costBasisConverted sums a mixed-currency (USD + JPY) collection once fx covers both", async () => {
+	await setupUserlandTest();
+	seedCorpus([]);
+	// USD stack + JPY stack, both priced; fx carries both rates so the mixed
+	// cost basis can be converted+summed into a single displayCurrency number
+	// (unlike estValue/estValueCurrency, which stay null/"—" for mixed currencies
+	// with no fx involved).
+	usePricesRuntime.setState({
+		byId: new Map([
+			["base1-4", { tp: { N: [1000, null] } }], // $10.00 unit (unused by this assertion; only cost basis is checked)
+			["base1-5", { tp: { N: [1000, null] } }],
+		]),
+		meta: {
+			date: "2026-07-03",
+			sources: { tp: "2026-07-03", cm: null },
+			fx: {
+				base: "EUR",
+				date: "2026-07-03",
+				rates: { USD: 1.09, JPY: 157.0 },
+			},
+		},
+		status: "ready",
+	});
+	useUserland.setState({
+		profile: makeProfile({ displayCurrency: "USD" }),
+		items: {
+			a: makeStack({
+				id: "a",
+				cardId: "base1-4",
+				quantity: 1,
+				condition: "NM",
+				pricePaid: 400, // $4.00 (USD cents; exponent 2)
+				currency: "USD",
+			}),
+			b: makeStack({
+				id: "b",
+				cardId: "base1-5",
+				quantity: 1,
+				condition: "NM",
+				pricePaid: 500, // ¥500 (JPY has exponent 0 — minor unit is the yen itself)
+				currency: "JPY",
+			}),
+		},
+	});
+	const { result } = renderHook(() => useCollectionStats());
+	expect(result.current.costBasisConverted).not.toBeNull();
+	expect(result.current.costBasisConverted).not.toBe("—");
+	expect(typeof result.current.costBasisConverted).toBe("number");
+	// USD 400 cents stays 400 (identity, same currency). JPY 500 yen converts to
+	// USD cents via the EUR-based table: (500 / 157.0) / 1 * 1.09 EUR, then ×10^2
+	// for USD's 2-decimal exponent (JPY's own exponent is 0, i.e. no division).
+	const expectedJpyInUsdCents = Math.round((500 / 157.0) * 1.09 * 100);
+	expect(result.current.costBasisConverted).toBe(400 + expectedJpyInUsdCents);
+	expect(result.current.valueCurrency).toBe("USD");
+});

@@ -1,12 +1,20 @@
 // stack-row.test.tsx
-import { beforeEach, expect, test } from "bun:test";
+import { afterEach, beforeEach, expect, test } from "bun:test";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	resetPricesRuntimeForTests,
+	usePricesRuntime,
+} from "../../store/corpus/prices-runtime";
 import { addStack, useUserland } from "../../store/userland/userland-store";
-import { setupUserlandTest } from "../../test-utils";
+import { makeProfile, setupUserlandTest } from "../../test-utils";
 import { StackRow } from "./stack-row";
 
 beforeEach(async () => {
 	await setupUserlandTest();
+});
+
+afterEach(async () => {
+	await resetPricesRuntimeForTests();
 });
 
 test("renders stack row with delete button", async () => {
@@ -186,4 +194,69 @@ test("split: no Split button for a single-card stack (quantity 1)", async () => 
 	const item = await addStack("c");
 	render(<StackRow item={useUserland.getState().items[item.id]} />);
 	expect(screen.queryByRole("button", { name: /split stack/i })).toBeNull();
+});
+
+test("renders market value + P&L when the card is priced", async () => {
+	usePricesRuntime.setState({
+		byId: new Map([["base1-4", { tp: { N: [1000, null] } }]]), // $10 unit
+		meta: {
+			date: "x",
+			sources: { tp: "x", cm: null },
+			fx: { base: "EUR", date: "x", rates: { USD: 1.09 } },
+		},
+		status: "ready",
+	});
+	const item = await addStack("base1-4", {
+		quantity: 2,
+		pricePaid: 400,
+		currency: "USD",
+		condition: "NM",
+	});
+	render(<StackRow item={useUserland.getState().items[item.id]} />);
+	expect(screen.getByText("$20.00")).toBeDefined(); // market value
+	expect(screen.getByText("+$12.00")).toBeDefined(); // P&L
+});
+
+test("masks market value + P&L behind ••• when hideValue is set", async () => {
+	usePricesRuntime.setState({
+		byId: new Map([["base1-4", { tp: { N: [1000, null] } }]]),
+		meta: {
+			date: "x",
+			sources: { tp: "x", cm: null },
+			fx: { base: "EUR", date: "x", rates: { USD: 1.09 } },
+		},
+		status: "ready",
+	});
+	useUserland.setState({
+		profile: makeProfile({ hideValue: true }),
+	});
+	const item = await addStack("base1-4", {
+		quantity: 2,
+		pricePaid: 400,
+		currency: "USD",
+		condition: "NM",
+	});
+	render(<StackRow item={useUserland.getState().items[item.id]} />);
+	// both the pricePaid badge and the market value/P&L badge mask to •••
+	expect(screen.getAllByText("•••")).toHaveLength(2);
+	expect(screen.queryByText("$4.00")).toBeNull(); // pricePaid
+	expect(screen.queryByText("$20.00")).toBeNull(); // market value
+	expect(screen.queryByText("+$12.00")).toBeNull(); // P&L
+});
+
+test("masks pricePaid badge behind ••• when hideValue is set (no market price)", async () => {
+	useUserland.setState({
+		profile: makeProfile({ hideValue: true }),
+	});
+	const item = await addStack("c", { pricePaid: 500, currency: "USD" });
+	render(<StackRow item={useUserland.getState().items[item.id]} />);
+	expect(screen.queryByText("$5.00")).toBeNull();
+	expect(screen.getByText("•••")).toBeDefined();
+});
+
+test("shows pricePaid badge normally when hideValue is not set", async () => {
+	const item = await addStack("c", { pricePaid: 500, currency: "USD" });
+	render(<StackRow item={useUserland.getState().items[item.id]} />);
+	expect(screen.getByText("$5.00")).toBeDefined();
+	expect(screen.queryByText("•••")).toBeNull();
 });

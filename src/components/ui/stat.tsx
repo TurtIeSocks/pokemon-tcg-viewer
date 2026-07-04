@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 interface StatProps {
 	value: string;
 	label: string;
-	tone?: "up";
+	tone?: "up" | "down";
 }
 
 export function Stat({ value, label, tone }: StatProps) {
@@ -12,7 +12,11 @@ export function Stat({ value, label, tone }: StatProps) {
 			<div
 				className={cn(
 					"font-mono text-2xl font-medium tabular-nums",
-					tone === "up" ? "text-[var(--success)]" : "text-[var(--ink)]",
+					tone === "up"
+						? "text-[var(--success)]"
+						: tone === "down"
+							? "text-[var(--danger)]"
+							: "text-[var(--ink)]",
 				)}
 			>
 				{value}

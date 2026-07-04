@@ -19,3 +19,9 @@ test("Stat with tone=up renders value with success class", () => {
 	const valueEl = container.querySelector(".tabular-nums") as HTMLElement;
 	expect(valueEl.className).toContain("text-[var(--success)]");
 });
+
+test("Stat down tone uses the danger color", () => {
+	const { container } = render(<Stat value="-$5.00" label="p&l" tone="down" />);
+	const valueEl = container.querySelector(".tabular-nums") as HTMLElement;
+	expect(valueEl.className).toContain("text-[var(--danger)]");
+});

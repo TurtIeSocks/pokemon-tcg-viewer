@@ -1,5 +1,10 @@
 import { expect, test } from "bun:test";
-import { formatPrice, inputToMinorUnits, minorUnitsToInput } from "./money";
+import {
+	formatPrice,
+	formatSignedPrice,
+	inputToMinorUnits,
+	minorUnitsToInput,
+} from "./money";
 
 test("inputToMinorUnits scales by the currency exponent", () => {
 	expect(inputToMinorUnits("3.50", "USD")).toBe(350);
@@ -27,4 +32,12 @@ test("formatPrice renders the exponent-correct amount + symbol", () => {
 	expect(formatPrice(1234, "PLN")).toBe("zł 12.34");
 	expect(formatPrice(1000, "XYZ")).toBe("10.00 XYZ"); // unknown symbol → bare code
 	expect(formatPrice(null, "USD")).toBe("");
+});
+
+test("formatSignedPrice prefixes sign and formats absolute value", () => {
+	expect(formatSignedPrice(1234, "USD")).toBe("+$12.34");
+	expect(formatSignedPrice(-500, "USD")).toBe("-$5.00");
+	expect(formatSignedPrice(0, "USD")).toBe("+$0.00");
+	expect(formatSignedPrice(-350, "JPY")).toBe("-¥350");
+	expect(formatSignedPrice(null, "USD")).toBe("");
 });

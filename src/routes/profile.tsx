@@ -9,10 +9,10 @@ import { BezelPanel, GlassPanel } from "@/components/ui/glass";
 import { Stagger } from "@/components/ui/motion";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { Stat } from "@/components/ui/stat";
+import { ValueStats } from "@/components/vault/value-stats";
 import type { NavTree } from "../lib/nav-tree";
 import { getNavTreeFn } from "../server/nav-tree";
 import { useEnsureCorpus } from "../store/corpus/use-ensure-corpus";
-import { formatPrice } from "../store/userland/money";
 import { useOwnedCountBySet } from "../store/userland/selectors";
 import { useCollectionStats } from "../store/userland/stats";
 import { useUserland } from "../store/userland/userland-store";
@@ -22,10 +22,6 @@ export const Route = createFileRoute("/profile")({
 	head: () => ({ meta: [{ title: "Your profile · Cardstack" }] }),
 	component: ProfilePage,
 });
-
-const MIXED_CURRENCY_LABEL = "—";
-const MIXED_CURRENCY_HINT =
-	"Mixed currencies — total needs conversion (coming soon)";
 
 /** Format a "collecting since" epoch as a year, or "—" when empty. */
 function sinceYear(ms: number | null): string {
@@ -97,17 +93,7 @@ export function ProfilePageInner({ tree }: { tree: NavTree }) {
 								value={stats.setsTouched.toLocaleString()}
 								label="sets touched"
 							/>
-							{stats.estValue !== null &&
-								(stats.estValueCurrency !== null ? (
-									<Stat
-										value={formatPrice(stats.estValue, stats.estValueCurrency)}
-										label="est. value"
-									/>
-								) : (
-									<span title={MIXED_CURRENCY_HINT} role="note">
-										<Stat value={MIXED_CURRENCY_LABEL} label="est. value" />
-									</span>
-								))}
+							<ValueStats stats={stats} />
 							<Stat
 								value={sinceYear(stats.collectingSince)}
 								label="collecting since"
