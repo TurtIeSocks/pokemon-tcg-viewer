@@ -3,9 +3,11 @@ import type {
 	Binder,
 	BinderPatch,
 	NewBinder,
+	NewSnapshot,
 	NewStack,
 	Profile,
 	ProfilePatch,
+	Snapshot,
 	Stack,
 	StackPatch,
 	UserDataSnapshot,
@@ -64,6 +66,17 @@ export interface ProfileRepo {
 	/** Upsert: first save fills id + createdAt; later saves merge the patch and bump updatedAt. */
 	save(patch: ProfilePatch): Promise<Profile>;
 	/** Delete the stored profile (used by backup replace + tests). */
+	clear(): Promise<void>;
+}
+
+/**
+ * Portfolio value-over-time snapshots. Append-only immutable facts — no update/
+ * remove. Deliberately separate from UserlandRepos: snapshots are local-derived
+ * and not part of the collection/binder/profile sync surface.
+ */
+export interface SnapshotsRepo {
+	list(): Promise<Snapshot[]>;
+	create(input: NewSnapshot): Promise<Snapshot>;
 	clear(): Promise<void>;
 }
 

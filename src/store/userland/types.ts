@@ -116,6 +116,25 @@ export type BinderPatch = Partial<
 	>
 >;
 
+/** A daily point of the collection's total market value. DB-ready (tombstoned), local-first. */
+export interface Snapshot {
+	id: string; // uuidv7
+	priceDate: string; // YYYY-MM-DD of the price blob captured — the dedup key (one per blob date)
+	capturedAt: number; // ms epoch the snapshot was taken
+	totalCents: number; // portfolio market value in `currency` minor units
+	currency: string; // ISO 4217 display currency at capture
+	cardCount: number; // cards owned at capture
+	createdAt: number;
+	updatedAt: number;
+	deletedAt: number | null; // ms epoch tombstone; null = live. Reserved for the sync adapter.
+}
+
+/** create() input; repo mints id/timestamps, defaults deletedAt = null. */
+export type NewSnapshot = Pick<
+	Snapshot,
+	"priceDate" | "totalCents" | "currency" | "cardCount"
+>;
+
 /** The local collector's profile. Singleton today; one row per auth user under a DB adapter. */
 export interface Profile {
 	id: string; // local: fixed "me"; DB: auth uid / PK

@@ -18,15 +18,25 @@ import type {
 	BindersRepo,
 	CollectionRepo,
 	ProfileRepo,
+	SnapshotsRepo,
 	UserlandRepos,
 } from "./repo";
-import type { Binder, NewBinder, NewStack, Profile, Stack } from "./types";
+import type {
+	Binder,
+	NewBinder,
+	NewSnapshot,
+	NewStack,
+	Profile,
+	Snapshot,
+	Stack,
+} from "./types";
 import { uuidv7 } from "./uuid";
 
 const collectionStore = createStore("ptcg-collection", "items");
 const bindersStore = createStore("ptcg-binders", "binders");
 const profileStore = createStore("ptcg-profile", "profile");
 const metaStore = createStore("ptcg-meta", "meta");
+const snapshotsStore = createStore("ptcg-snapshots", "snapshots");
 
 /** Fixed key for the single local profile; maps to the auth uid under a DB adapter. */
 export const LOCAL_PROFILE_ID = "me";
@@ -140,6 +150,62 @@ export function createIdbBindersRepo(
 			await clear(store);
 		},
 	};
+}
+
+/** Assign a v7 id + timestamps; defaults deletedAt = null. */
+function fillSnapshot(input: NewSnapshot): Snapshot {
+	const now = Date.now();
+	return {
+		id: uuidv7(),
+		priceDate: input.priceDate,
+		capturedAt: now,
+		totalCents: input.totalCents,
+		currency: input.currency,
+		cardCount: input.cardCount,
+		createdAt: now,
+		updatedAt: now,
+		deletedAt: null,
+	};
+}
+
+/**
+ * Create an IndexedDB-backed SnapshotsRepo; uses the default snapshots store
+ * unless overridden (tests). Standalone — deliberately NOT wired into
+ * UserlandRepos/getRepos (see SnapshotsRepo doc comment in repo.ts).
+ */
+export function createIdbSnapshotsRepo(
+	store: UseStore = snapshotsStore,
+): SnapshotsRepo {
+	return {
+		async list() {
+			const rows = await entries<string, Snapshot>(store);
+			return rows.map(([, v]) => v);
+		},
+		async create(input) {
+			const s = fillSnapshot(input);
+			await set(s.id, s, store);
+			return s;
+		},
+		async clear() {
+			await clear(store);
+		},
+	};
+}
+
+// The ONE swap point for snapshots (standalone, mirrors getRepos below).
+let snapshotsRepo: SnapshotsRepo | null = null;
+/** Lazily initialise and return the singleton IDB SnapshotsRepo. */
+export function getSnapshotsRepo(): SnapshotsRepo {
+	if (!snapshotsRepo) snapshotsRepo = createIdbSnapshotsRepo();
+	return snapshotsRepo;
+}
+/** Inject a fake SnapshotsRepo for tests (or null to force lazy re-creation). */
+export function setSnapshotsRepoForTests(repo: SnapshotsRepo | null): void {
+	snapshotsRepo = repo;
+}
+/** Clear the current singleton SnapshotsRepo's store; for use in test afterEach hooks. */
+export async function resetSnapshotsForTests(): Promise<void> {
+	await getSnapshotsRepo().clear();
 }
 
 /** Create a BackupRepo that delegates to the provided collection + binders + profile repos. */
