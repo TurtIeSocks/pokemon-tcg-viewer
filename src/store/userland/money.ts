@@ -54,3 +54,17 @@ export function formatPrice(minor: number | null, currency: string): string {
 	const symbol = symbolFor(currency);
 	return symbol ? `${symbol}${amount}` : `${amount} ${currency}`;
 }
+
+/**
+ * Format signed minor units for a delta (P&L): "+$12.34" / "-$5.00". null → "".
+ * Zero renders as "+" (a break-even is not a loss). Uses the currency exponent
+ * via formatPrice on the absolute value.
+ */
+export function formatSignedPrice(
+	minor: number | null,
+	currency: string,
+): string {
+	if (minor == null) return "";
+	const sign = minor < 0 ? "-" : "+";
+	return `${sign}${formatPrice(Math.abs(minor), currency)}`;
+}
