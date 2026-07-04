@@ -2,6 +2,7 @@ import { GlassPanel } from "@/components/ui/glass";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { FocusCardData } from "../../server/card-mappers";
 import { CardPrices } from "../islands/card-prices";
+import { CardHistory } from "./card-history";
 
 const SECTION =
 	"font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--faint)]";
@@ -23,8 +24,8 @@ function PriceGhost() {
 }
 
 /**
- * Pricing tab body. Shows live market prices (TCGplayer / Cardmarket) plus a
- * "coming soon" placeholder for the price-history section (PR 4).
+ * Pricing tab body. Shows live market prices (TCGplayer / Cardmarket) plus
+ * the price-history chart (range toggle + trend chips).
  */
 export function CardPricingTab({
 	card,
@@ -43,8 +44,8 @@ export function CardPricingTab({
 			</section>
 			<section aria-label="Price history">
 				<div className={SECTION}>Price history</div>
-				<GlassPanel className="mt-2 p-4 text-[13px] text-[var(--ink-muted)]">
-					Price history. Coming soon.
+				<GlassPanel className="mt-2 p-4">
+					<CardHistory card={card} />
 				</GlassPanel>
 			</section>
 		</div>

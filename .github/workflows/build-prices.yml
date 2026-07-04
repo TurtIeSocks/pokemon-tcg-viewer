@@ -49,3 +49,62 @@ jobs:
           bunx wrangler r2 object put \
             pokemon-tcg-corpus/corpus/prices/meta.json \
             --file=prices-meta.json --remote
+      - name: Fetch corpus + prior history for rollups
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          bunx wrangler r2 object get \
+            pokemon-tcg-corpus/corpus/latest.json.gz \
+            --file=corpus.json.gz --remote
+          # Asia corpus is optional until it ships card→set data for every region.
+          bunx wrangler r2 object get \
+            pokemon-tcg-corpus/corpus/region/asia/latest.json.gz \
+            --file=corpus.asia.json.gz --remote || true
+
+          # Prior rollups, via manifest (not `wrangler r2 object list` — the
+          # installed wrangler (4.107.0) only exposes get/put/delete of a
+          # single object under `r2 object`; there is no bulk "list objects
+          # under a prefix". So build-history.ts (T2) writes a fixed,
+          # well-known manifest key, corpus/prices/history/_index.json,
+          # listing every setId it wrote. This step fetches that manifest
+          # first (best-effort — absent on the very first run), then fetches
+          # exactly the prior `{setId}.json.gz` rollup for each listed set
+          # into history-prior/. Missing manifest or missing individual prior
+          # blob both degrade to "start that set fresh" — build-history.ts
+          # already treats an empty/missing history-prior/ as day one.
+          mkdir -p history-prior
+          bunx wrangler r2 object get \
+            pokemon-tcg-corpus/corpus/prices/history/_index.json \
+            --file=history-index-prior.json --remote || true
+          if [ -f history-index-prior.json ]; then
+            for setId in $(jq -r '.setIds[]' history-index-prior.json); do
+              bunx wrangler r2 object get \
+                "pokemon-tcg-corpus/corpus/prices/history/$setId.json.gz" \
+                --file="history-prior/$setId.json.gz" --remote \
+                || echo "::warning::prior history for $setId failed to download — its rollup will reset to a single point"
+            done
+          fi
+      - name: Build history rollups
+        # Appends today's representative USD market onto each set's prior
+        # rollup (history-prior/) and downsamples; writes history/{setId}.json.gz
+        # + history/_index.json (today's manifest) for upload below.
+        run: bun run scripts/build-history.ts
+      - name: Upload history rollups
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          for f in history/*.json.gz; do
+            [ -e "$f" ] || continue
+            name=$(basename "$f")
+            bunx wrangler r2 object put \
+              "pokemon-tcg-corpus/corpus/prices/history/$name" \
+              --file="$f" --remote
+          done
+          # _index.json last: only advertise today's manifest once every
+          # rollup it lists has landed, so a partial run never leaves the
+          # manifest pointing at a set blob that failed to upload.
+          bunx wrangler r2 object put \
+            pokemon-tcg-corpus/corpus/prices/history/_index.json \
+            --file=history/_index.json --remote
