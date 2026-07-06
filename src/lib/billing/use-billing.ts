@@ -73,6 +73,13 @@ export const startCheckout = (): Promise<string | null> =>
 export const openPortal = (): Promise<string | null> =>
 	postStripe("/api/stripe/portal");
 
-/** Fire-and-forget reconcile on the `?upgraded=1` return (lost/late webhook self-heal). */
-export const reconcileBilling = (): Promise<unknown> =>
-	fetch("/api/stripe/sync", { method: "POST" }).catch(() => null);
+/**
+ * Reconcile on the `?upgraded=1` return (lost/late webhook self-heal). Returns
+ * `true` on a 200 `{ ok: true }`, `false` on a 500 `{ ok: false, failed }` (the
+ * reconcile RPC failed) or a network error — the caller surfaces an error state
+ * rather than silently assuming activation succeeded.
+ */
+export const reconcileBilling = (): Promise<boolean> =>
+	fetch("/api/stripe/sync", { method: "POST" })
+		.then((res) => res.ok)
+		.catch(() => false);

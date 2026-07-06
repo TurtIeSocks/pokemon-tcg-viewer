@@ -40,13 +40,21 @@ function BillingPage() {
 	const { upgraded } = Route.useSearch();
 	const { entitlement, billingEnabled, loading, refresh } = useBilling();
 	const [busy, setBusy] = useState(false);
+	const [reconcileFailed, setReconcileFailed] = useState(false);
 
 	// Lost/late-webhook self-heal: on return from Checkout, reconcile then refresh.
+	// The endpoint returns 500 + { ok: false } when the reconcile RPC itself fails
+	// (vs. a plain network error) — surface that explicitly instead of silently
+	// proceeding as if activation succeeded.
 	useEffect(() => {
 		if (!upgraded) return;
-		void reconcileBilling().then(() => {
+		void reconcileBilling().then((ok) => {
 			refresh();
-			toast.success("You're on Plus. Your Vault now syncs everywhere.");
+			if (ok) {
+				toast.success("You're on Plus. Your Vault now syncs everywhere.");
+			} else {
+				setReconcileFailed(true);
+			}
 		});
 	}, [upgraded, refresh]);
 
@@ -77,6 +85,21 @@ function BillingPage() {
 				The whole app is free and local-first. Plus pays for the sync servers,
 				not for access to your own cards. Self-hosters get it unbilled.
 			</p>
+
+			{reconcileFailed && (
+				<GlassPanel
+					role="alert"
+					className="mb-4 border-amber-400/30 p-4 text-sm"
+				>
+					<p className="font-medium text-(--ink)">
+						Payment received, activation is retrying.
+					</p>
+					<p className="mt-1 text-(--ink-muted)">
+						Your Vault will unlock automatically in a few minutes. Contact
+						support if this persists.
+					</p>
+				</GlassPanel>
+			)}
 
 			{!isCloudEnabled() ? (
 				<GlassPanel className="p-4 text-(--ink-muted) text-sm">

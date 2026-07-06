@@ -15,7 +15,10 @@ import { SignIn } from "@/components/auth/sign-in";
 import { useAuthSession } from "@/components/auth/use-auth-session";
 import { DEFAULT_AVATAR_PRESET_ID } from "@/components/profile/avatar-presets";
 import { CollectorAvatar } from "@/components/profile/collector-avatar";
-import { useAccountStatusDisplay } from "@/components/sync/sync-status-display";
+import {
+	useAccountStatusDisplay,
+	useSyncStatus,
+} from "@/components/sync/sync-status-display";
 import {
 	Dialog,
 	DialogContent,
@@ -232,21 +235,46 @@ function AccountStatusBadge({
 	);
 }
 
-/** Dot + label shown under the display name in the trigger; always visible. */
+/**
+ * Dot + label shown under the display name in the trigger; always visible.
+ * When sync is blocked on `needs_upgrade`, the line itself becomes a link to
+ * `/billing` — the status message doubles as the CTA instead of requiring the
+ * user to find billing separately in the dropdown.
+ */
 function AccountStatusLine({ signedIn }: { signedIn: boolean }) {
+	const status = useSyncStatus();
 	const { dotClass, label } = useAccountStatusDisplay(signedIn);
+	const dot = (
+		<span
+			className={cn(
+				"size-1.5 shrink-0 rounded-full motion-reduce:animate-none",
+				dotClass,
+			)}
+		/>
+	);
+
+	if (signedIn && status === "needs_upgrade") {
+		return (
+			<Link
+				to="/billing"
+				aria-label={`Sync status: ${label}. Go to billing.`}
+				className="flex items-center gap-1.5 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary)"
+			>
+				{dot}
+				<span className="truncate font-mono text-[10px] text-(--faint) tabular-nums">
+					{label}
+				</span>
+			</Link>
+		);
+	}
+
 	return (
 		<span
 			role="status"
 			aria-label={`Sync status: ${label}`}
 			className="flex items-center gap-1.5"
 		>
-			<span
-				className={cn(
-					"size-1.5 shrink-0 rounded-full motion-reduce:animate-none",
-					dotClass,
-				)}
-			/>
+			{dot}
 			<span className="truncate font-mono text-[10px] text-(--faint) tabular-nums">
 				{label}
 			</span>
