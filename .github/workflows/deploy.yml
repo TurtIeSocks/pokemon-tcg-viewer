@@ -82,6 +82,13 @@ jobs:
       # --- Billing plugin injection (007 §D.1, §D.5) -----------------------
       # Off by default so deploys stay green before the owner provisions the
       # deploy key. Flip `vars.DEPLOY_BILLING = '1'` once ready (007 §F.2).
+      #
+      # RUNTIME env is a separate, manual prerequisite: the injected plugin
+      # (and /api/health's counts, and the server's SSR Supabase reads) pull
+      # SUPABASE_*/STRIPE_*/APP_ORIGIN/VITE_SUPABASE_* from the systemd
+      # EnvironmentFile (/etc/tcg/env) at RUNTIME — nothing in this workflow
+      # provides them. Inventory + placement: deploy/DEPLOY.md, 007 §D.2.
+      # The VITE_ vars above only bake into the client bundle at build time.
       - name: Checkout billing plugin
         if: ${{ vars.DEPLOY_BILLING == '1' }}
         uses: actions/checkout@v4
@@ -91,9 +98,13 @@ jobs:
           # `card-stack-cloud` has no `git remote` configured yet, so the real
           # slug can't be determined from the repo itself.
           repository: <OWNER>/card-stack-cloud
-          # Pin to the feature branch for now; move to `main` after the owner
-          # merges it there (007 §D.5) so the deploy ref stays stable.
-          ref: feat/stripe-billing-plugin
+          # Pin an exact commit SHA, never a branch: this job runs on the
+          # self-hosted home-box runner, and a floating ref would let anyone
+          # with push access to the (separate, less-scrutinized) plugin repo
+          # change what code executes here without a review gate in THIS
+          # repo's history. Bump the SHA deliberately when the plugin
+          # advances (007 §D.5).
+          ref: a47368d29f94a651ed213e4fdbba0b426033fcfb
           ssh-key: ${{ secrets.CLOUD_DEPLOY_KEY }}
           path: cloud-plugin
 
