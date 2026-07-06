@@ -104,7 +104,7 @@ jobs:
           # change what code executes here without a review gate in THIS
           # repo's history. Bump the SHA deliberately when the plugin
           # advances (007 §D.5).
-          ref: a47368d29f94a651ed213e4fdbba0b426033fcfb
+          ref: df3cb2af363e2734d5f24d2b995f510d518d9276
           ssh-key: ${{ secrets.CLOUD_DEPLOY_KEY }}
           path: cloud-plugin
 
