@@ -13,7 +13,7 @@ Non-interactive run: plans were selected as the top findings by leverage (user p
 | 003  | Shared `cardThumbSrc` helper + command-palette blank-image fix | P2 | S | — | DONE (1 revision round; scope extended to card-grid-island/flip-card) |
 | 004  | Async race guards (syncDetail re-enable; profile lost-update) | P3 | S | 001 | DONE (scoped-verified; full-suite gate rides on 001) |
 | 005  | Split stack-edit-form.tsx (~500-line convention) | P3 | M | 001 | DEFERRED (execute only on explicit request) |
-| 006  | Paid-service launch readiness — code side (deploy plugin wiring, health gate, billing/sync hardening, GDPR deletion, docs, smoke kit) | P1 | L | — | TODO |
+| 006  | Paid-service launch readiness — code side (deploy plugin wiring, health gate, billing/sync hardening, GDPR deletion, docs, smoke kit) | P1 | L | — | DONE 2026-07-06 (Tasks 1–11; Task 12 deferred pending 007 §E; per-task reviews + final whole-branch review w/ fix wave; main 1605/1605 + tsc clean, plugin 34/34 @ `5a005e3`) |
 | 007  | Human owner's launch checklist (accounts, tokens, dashboards, legal) | P1 | L | interlocks with 006 (see chain diagram in the plan) | TODO (human-only — not executor-runnable) |
 
 ## Dependency notes
@@ -25,6 +25,14 @@ Non-interactive run: plans were selected as the top findings by leverage (user p
 - 007 §F.1 (smoke test) consumes 006 Task 10's kit; the billing_enabled flip (§F.2) is the launch moment.
 
 ## Findings considered and rejected
+
+### Deferred follow-ups from the 006 final review (small, non-blocking)
+
+- danger-zone visibility keys on `billing_config.billing_enabled`, conflating kill-switch state with hostedness — consider `isCloudEnabled()` + plugin-presence signal instead.
+- `stripe_events` ledger has no retention policy (unbounded growth; slightly faster with status-bearing recon ids).
+- Health JSON reports both `supabase` (VITE_SUPABASE_URL) and `SUPABASE_URL` in `billingEnv` — a distinguishing comment would help operators.
+- Two near-identical amber warning panels (billing route + past-due banner); extract a shared primitive if a third appears.
+- Pre-existing pattern noted: `stripe_customers` lookups were hardened everywhere in `5a005e3`; keep the check-`existing.error` idiom for any new `maybeSingle()` site.
 
 ### From the 2026-07-06 paid-service audit
 
