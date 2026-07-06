@@ -78,12 +78,23 @@ export function useSyncStatus(override?: SyncStatus): SyncStatus {
 	return status;
 }
 
+/** {@link useAccountStatusDisplay} result: presentation plus the raw status behind it. */
+export interface AccountStatusDisplay extends SyncStatusDisplay {
+	/** The live sync status backing the display. Only meaningful when signed in. */
+	status: SyncStatus;
+}
+
 /**
  * Display data for the account status line: the live sync status when signed in,
  * otherwise the local-only placeholder. Subscribes to the sync singleton either
- * way (cheap) so the line goes live the instant a session appears.
+ * way (cheap) so the line goes live the instant a session appears. Also exposes
+ * the raw `status` so consumers can branch (e.g. the needs_upgrade affordance)
+ * without a second subscription.
  */
-export function useAccountStatusDisplay(signedIn: boolean): SyncStatusDisplay {
+export function useAccountStatusDisplay(
+	signedIn: boolean,
+): AccountStatusDisplay {
 	const status = useSyncStatus();
-	return signedIn ? SYNC_STATUS_DISPLAY[status] : LOCAL_ONLY_DISPLAY;
+	const display = signedIn ? SYNC_STATUS_DISPLAY[status] : LOCAL_ONLY_DISPLAY;
+	return { ...display, status };
 }

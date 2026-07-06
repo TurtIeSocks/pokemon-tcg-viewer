@@ -7,6 +7,7 @@ import {
 	LogIn,
 	LogOut,
 	Settings,
+	Sparkles,
 	UserRound,
 } from "lucide-react";
 import { useState } from "react";
@@ -15,10 +16,7 @@ import { SignIn } from "@/components/auth/sign-in";
 import { useAuthSession } from "@/components/auth/use-auth-session";
 import { DEFAULT_AVATAR_PRESET_ID } from "@/components/profile/avatar-presets";
 import { CollectorAvatar } from "@/components/profile/collector-avatar";
-import {
-	useAccountStatusDisplay,
-	useSyncStatus,
-} from "@/components/sync/sync-status-display";
+import { useAccountStatusDisplay } from "@/components/sync/sync-status-display";
 import {
 	Dialog,
 	DialogContent,
@@ -123,6 +121,10 @@ export function SidebarUserMenu() {
 
 							{/* Action group. */}
 							<DropdownMenuGroup>
+								<UpgradeToSyncItem
+									signedIn={signedIn}
+									onNavigate={() => setOpenMobile(false)}
+								/>
 								<DropdownMenuItem asChild>
 									<Link to="/settings" onClick={() => setOpenMobile(false)}>
 										<Settings />
@@ -237,47 +239,56 @@ function AccountStatusBadge({
 
 /**
  * Dot + label shown under the display name in the trigger; always visible.
- * When sync is blocked on `needs_upgrade`, the line itself becomes a link to
- * `/billing` — the status message doubles as the CTA instead of requiring the
- * user to find billing separately in the dropdown.
+ * Strictly non-interactive: it lives inside the DropdownMenuTrigger's button,
+ * where nested interactive elements are invalid HTML and break the trigger.
+ * The needs_upgrade affordance lives in {@link UpgradeToSyncItem} instead.
  */
 function AccountStatusLine({ signedIn }: { signedIn: boolean }) {
-	const status = useSyncStatus();
 	const { dotClass, label } = useAccountStatusDisplay(signedIn);
-	const dot = (
-		<span
-			className={cn(
-				"size-1.5 shrink-0 rounded-full motion-reduce:animate-none",
-				dotClass,
-			)}
-		/>
-	);
-
-	if (signedIn && status === "needs_upgrade") {
-		return (
-			<Link
-				to="/billing"
-				aria-label={`Sync status: ${label}. Go to billing.`}
-				className="flex items-center gap-1.5 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary)"
-			>
-				{dot}
-				<span className="truncate font-mono text-[10px] text-(--faint) tabular-nums">
-					{label}
-				</span>
-			</Link>
-		);
-	}
-
 	return (
 		<span
 			role="status"
 			aria-label={`Sync status: ${label}`}
 			className="flex items-center gap-1.5"
 		>
-			{dot}
+			<span
+				className={cn(
+					"size-1.5 shrink-0 rounded-full motion-reduce:animate-none",
+					dotClass,
+				)}
+			/>
 			<span className="truncate font-mono text-[10px] text-(--faint) tabular-nums">
 				{label}
 			</span>
 		</span>
+	);
+}
+
+/**
+ * Upgrade CTA menu item, shown only while sync is blocked on `needs_upgrade`
+ * (a cloud write was RLS-rejected for a free/lapsed account). Rendered as a
+ * proper menu item — the trigger's status line stays non-interactive. Visible
+ * text is the accessible name; no aria-label override.
+ */
+function UpgradeToSyncItem({
+	signedIn,
+	onNavigate,
+}: {
+	signedIn: boolean;
+	onNavigate: () => void;
+}) {
+	const { status } = useAccountStatusDisplay(signedIn);
+	if (!signedIn || status !== "needs_upgrade") return null;
+	return (
+		<DropdownMenuItem asChild>
+			<Link
+				to="/billing"
+				onClick={onNavigate}
+				className="text-(--primary) focus:text-(--primary) [&_svg]:text-(--primary)"
+			>
+				<Sparkles />
+				Upgrade to sync
+			</Link>
+		</DropdownMenuItem>
 	);
 }
