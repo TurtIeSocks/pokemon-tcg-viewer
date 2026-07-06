@@ -129,7 +129,11 @@ function DeleteAccountDialog({
 			// drops the cache bundle + stops background sync + re-hydrates from the
 			// signed-out IDB Vault. A full navigation (not client-side route) ensures
 			// every in-memory store starts clean on the next page.
-			await signOut();
+			// Past this point the deletion is committed server-side: even if
+			// signOut() throws (network blip against an already-deleted session),
+			// showing a retryable error would invite a pointless second attempt.
+			// Redirect regardless; the full navigation resets every store.
+			await signOut().catch(() => {});
 			window.location.assign("/");
 		} catch {
 			setError("Something went wrong. Please try again.");
