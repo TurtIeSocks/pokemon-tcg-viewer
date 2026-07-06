@@ -14,6 +14,18 @@
 #
 # One-time setup + the sudoers rule for the restart are documented in
 # deploy/DEPLOY.md.
+#
+# BILLING (private plugin injection): gated behind repo variable
+# `vars.DEPLOY_BILLING == '1'` so deploys stay green with or without the paid
+# tier wired up (007 §D.1). When enabled, the private `card-stack-cloud` repo
+# is checked out with deploy-key secret `secrets.CLOUD_DEPLOY_KEY` (007 §D.1)
+# and its build output is copied into the server's node_modules AFTER the
+# public build finishes — the public `Build (Vite + Nitro)` step above runs
+# first and unmodified, which is the standing proof that the open-core build
+# still succeeds with the plugin completely absent (see
+# docs/superpowers/specs/2026-06-19-cloud-vault-billing-design.md). Client
+# vars VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY are repo Variables (anon key
+# is public by design), set alongside VITE_API_BASE (007 §D.3).
 name: deploy
 
 on:
@@ -56,10 +68,57 @@ jobs:
         env:
           VITE_API_BASE: ${{ vars.VITE_API_BASE }}
           API_BASE: ${{ vars.VITE_API_BASE }}
+          # Cloud vault UI client config (007 §D.3). Anon key is public by
+          # design (RLS enforces access) — repo Variables, not Secrets.
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
         # build:check runs the client-bundle leak guard after the build — fails
         # the deploy if any server-only code (node:zlib, process.env, server
-        # corpus loader) leaked into .output/public.
+        # corpus loader) leaked into .output/public. This build has NO billing
+        # plugin present — the standing proof the open-core build succeeds
+        # without it. The plugin is injected AFTER this step, below.
         run: bun run build:check
+
+      # --- Billing plugin injection (007 §D.1, §D.5) -----------------------
+      # Off by default so deploys stay green before the owner provisions the
+      # deploy key. Flip `vars.DEPLOY_BILLING = '1'` once ready (007 §F.2).
+      - name: Checkout billing plugin
+        if: ${{ vars.DEPLOY_BILLING == '1' }}
+        uses: actions/checkout@v4
+        with:
+          # TODO(owner, 007 §D.1): fill in the real owner/org once known — this
+          # placeholder will fail checkout until corrected. Verified locally:
+          # `card-stack-cloud` has no `git remote` configured yet, so the real
+          # slug can't be determined from the repo itself.
+          repository: <OWNER>/card-stack-cloud
+          # Pin to the feature branch for now; move to `main` after the owner
+          # merges it there (007 §D.5) so the deploy ref stays stable.
+          ref: feat/stripe-billing-plugin
+          ssh-key: ${{ secrets.CLOUD_DEPLOY_KEY }}
+          path: cloud-plugin
+
+      - name: Build + test billing plugin
+        if: ${{ vars.DEPLOY_BILLING == '1' }}
+        working-directory: cloud-plugin
+        run: |
+          bun install --frozen-lockfile
+          bun run build
+          bun test
+
+      - name: Inject billing plugin into server output
+        if: ${{ vars.DEPLOY_BILLING == '1' }}
+        # The plugin's own runtime deps (stripe, @supabase/*) are installed
+        # into a nested node_modules under the plugin dir — Node resolution
+        # walks up from @tcgvault/cloud/dist/*.js and finds them there, no
+        # collision with whatever Nitro bundled for the core. --ignore-scripts
+        # is required: package.json's `prepare` re-runs `tsc`, but we only
+        # copied `dist` (prebuilt above), not the source/tsconfig, so the
+        # prepare script has nothing to compile and fails the install.
+        run: |
+          PLUG=.output/server/node_modules/@tcgvault/cloud
+          mkdir -p "$PLUG"
+          cp -r cloud-plugin/package.json cloud-plugin/dist "$PLUG"/
+          (cd "$PLUG" && bun install --production --ignore-scripts)
 
       - name: Ship .output to the server tree
         # Same box as the runner, so a local rsync. --delete prunes stale files.
@@ -69,3 +128,14 @@ jobs:
         # Needs a sudoers rule allowing exactly this command for the runner user
         # (see deploy/DEPLOY.md). nginx serves stale cache through the ~1s restart.
         run: sudo systemctl restart tcg
+
+      - name: Post-deploy health gate
+        # Fails the deploy loudly if the box comes back misconfigured, instead
+        # of waiting for the first paying customer to find out (006 Task 2).
+        run: |
+          sleep 3
+          if [ "${{ vars.DEPLOY_BILLING }}" == "1" ]; then
+            curl -sf http://127.0.0.1:3000/api/health | grep -q '"plugin":"present"'
+          else
+            curl -sf http://127.0.0.1:3000/api/health
+          fi

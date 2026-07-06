@@ -15,6 +15,8 @@ export interface CloudPlugin {
 	createCheckoutSession(request: Request): Promise<Response>;
 	createPortalSession(request: Request): Promise<Response>;
 	reconcileForUser(request: Request): Promise<Response>;
+	/** R16 misconfig guard (STRIPE_SECRET_KEY set but billing_config.billing_enabled false). Used by /api/health. */
+	assertBillingConfigured(): Promise<{ ok: boolean; warning?: string }>;
 }
 
 let cached: CloudPlugin | null | undefined;
