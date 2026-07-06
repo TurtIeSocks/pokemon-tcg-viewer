@@ -6,12 +6,13 @@
 //
 // Pattern: two caches A+B sharing one cloud, signed-in as a test user.
 // Validates: push (A→cloud), pull (cloud→B), conflict (LWW), binder-merge
-// (union), tombstone propagation, no-op second pass.
+// (union), tombstone propagation, quiescence (push → echo-pull → no-op),
+// watermark advancement from pulled rows only (never from pushed rows).
 
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { allRows, createCacheRepos } from "./cache-repo";
-import { getWatermark, syncOnce } from "./sync-engine";
+import { getWatermark, setWatermark, syncOnce } from "./sync-engine";
 
 // ── Stack connectivity check ──────────────────────────────────────────────────
 
@@ -293,7 +294,12 @@ describe("sync-engine integration", () => {
 		expect(tombstone?.deletedAt).not.toBeNull();
 	});
 
-	test("second syncOnce with no changes is a no-op (pulled=0, pushed=0)", async () => {
+	// Contract: the watermark advances only from PULLED rows — pushed rows'
+	// server timestamps are deliberately excluded (see sync-engine.ts header).
+	// A push-only pass therefore leaves the watermark unchanged; the NEXT pass
+	// pulls the pushed rows back (harmless echo) and only then advances. True
+	// quiescence is reached on the third pass.
+	test("sync reaches quiescence: push pass → echo-pull pass → true no-op pass", async () => {
 		if (!supabaseAvailable || !testUserClient) {
 			skip("stack unavailable");
 			return;
@@ -302,17 +308,41 @@ describe("sync-engine integration", () => {
 
 		const reposA = createCacheRepos(uidA);
 		await reposA.collection.clear();
-
-		await reposA.collection.add({ cardId: "hs1-1" });
+		// Drain leftover state from earlier tests (clear() re-dirties rows as
+		// tombstones): one pass to push it, one to absorb the echoes, so the
+		// staged counts below are deterministic.
+		await syncOnce(uidA, testUserClient);
 		await syncOnce(uidA, testUserClient);
 
-		// Second sync: nothing new, nothing dirty
-		const result = await syncOnce(uidA, testUserClient);
-		expect(result.pulled).toBe(0);
-		expect(result.pushed).toBe(0);
+		const watermarkBefore = await getWatermark(uidA);
+		await reposA.collection.add({ cardId: "hs1-1" });
+
+		// Pass 1: pushes the new row; nothing to pull → watermark unchanged.
+		const pass1 = await syncOnce(uidA, testUserClient);
+		expect(pass1.pushed).toBe(1);
+		expect(pass1.pulled).toBe(0);
+		expect(await getWatermark(uidA)).toBe(watermarkBefore);
+
+		// Pass 2: pulls the pushed row back (echo → no-op reconcile), nothing
+		// dirty to push → watermark advances to the echoed row's updated_at.
+		const pass2 = await syncOnce(uidA, testUserClient);
+		expect(pass2.pulled).toBe(1);
+		expect(pass2.pushed).toBe(0);
+		const watermarkAfterEcho = await getWatermark(uidA);
+		expect(watermarkAfterEcho > watermarkBefore).toBe(true);
+
+		// Pass 3: true no-op — nothing pulled, nothing pushed, watermark still.
+		const pass3 = await syncOnce(uidA, testUserClient);
+		expect(pass3.pulled).toBe(0);
+		expect(pass3.pushed).toBe(0);
+		expect(await getWatermark(uidA)).toBe(watermarkAfterEcho);
 	});
 
-	test("watermark advances after sync", async () => {
+	// Contract: the watermark advances only from PULLED rows — pushed rows'
+	// server timestamps are deliberately excluded (see sync-engine.ts header).
+	// So it advances on the pass AFTER a push, when the pushed rows echo back
+	// through the pull.
+	test("watermark advances after sync (via the echo pull, not the push)", async () => {
 		if (!supabaseAvailable || !testUserClient) {
 			skip("stack unavailable");
 			return;
@@ -321,12 +351,98 @@ describe("sync-engine integration", () => {
 
 		const reposA = createCacheRepos(uidA);
 		await reposA.collection.clear();
+		// Drain leftover dirty state so the push-only pass below is isolated.
+		await syncOnce(uidA, testUserClient);
+		await syncOnce(uidA, testUserClient);
 
 		const before = await getWatermark(uidA);
 		await reposA.collection.add({ cardId: "wm-card" });
+
+		// Push-only pass: nothing pulled → watermark must NOT move.
+		await syncOnce(uidA, testUserClient);
+		expect(await getWatermark(uidA)).toBe(before);
+
+		// Echo pass: the pushed row comes back through the pull → advances.
 		await syncOnce(uidA, testUserClient);
 		const after = await getWatermark(uidA);
-
 		expect(after > before).toBe(true);
+	});
+
+	// ── Regression: watermark race from push-returned timestamps ──────────────
+	//
+	// Plan finding: folding PUSHED rows' updated_at into the watermark can
+	// advance it past a row from another device that was pulled in the SAME
+	// pass but happens to have an earlier server timestamp than what A just
+	// pushed. If the watermark were pinned to the later push timestamp
+	// instead of the max PULLED timestamp, A's *next* pull
+	// (`gt("updated_at", watermark)`) would still be correct here (B's row
+	// already landed in this pass) — but the watermark value itself would be
+	// wrong, silently masking future rows that land between B's timestamp and
+	// A's push timestamp. This test pins the watermark to a known value right
+	// before B's row lands, then has A pull B's row AND push a row of its own
+	// in one pass, and asserts the resulting watermark equals B's (pulled)
+	// timestamp exactly — never A's (pushed) timestamp.
+	test("watermark race: a push must never advance the watermark past an un-pulled row", async () => {
+		if (!supabaseAvailable || !testUserClient) {
+			skip("stack unavailable");
+			return;
+		}
+		await clearCloud();
+
+		const reposA = createCacheRepos(uidA);
+		const reposB = createCacheRepos(uidB);
+		await reposA.collection.clear();
+		await reposB.collection.clear();
+
+		// Baseline: nothing to pull, watermark starts at epoch-ish "before B".
+		const watermarkBeforeB = await getWatermark(uidA);
+
+		// B commits a row -> gets a server updated_at ("T0.5"), strictly after
+		// watermarkBeforeB.
+		const bStack = await reposB.collection.add({ cardId: "race-b-card" });
+		await syncOnce(uidB, testUserClient);
+
+		const { data: bRow } = await testUserClient
+			.from("stacks")
+			.select("updated_at")
+			.eq("id", bStack.id)
+			.single();
+		const bTimestamp = (bRow as { updated_at: string }).updated_at;
+		expect(bTimestamp > watermarkBeforeB).toBe(true);
+
+		// Roll A's watermark back to just before B's row so this pass's pull
+		// query (`gt("updated_at", watermark)`) is guaranteed to include it —
+		// then push an unrelated dirty row of A's own in the SAME pass. If
+		// push-returned timestamps leak into the watermark, the watermark
+		// could jump to A's push timestamp; assert it never exceeds the max
+		// PULLED timestamp for this pass.
+		await setWatermark(uidA, watermarkBeforeB);
+		await reposA.collection.add({ cardId: "race-a-card" });
+		const result = await syncOnce(uidA, testUserClient);
+
+		// Sanity: this pass really did both pull B's row and push A's row.
+		expect(result.pulled).toBeGreaterThanOrEqual(1);
+		expect(result.pushed).toBeGreaterThanOrEqual(1);
+
+		const aStacks = await reposA.collection.list();
+		expect(aStacks.some((s) => s.id === bStack.id)).toBe(true);
+
+		const watermarkAfter = await getWatermark(uidA);
+		// The watermark after this pass must not exceed the max timestamp
+		// among rows actually PULLED (B's row). It must not be pinned to a
+		// later push-returned timestamp for A's own row.
+		expect(watermarkAfter).toBe(bTimestamp);
+
+		// Now simulate a SECOND concurrent write from B that lands strictly
+		// between bTimestamp and "now". A syncs again with no local writes
+		// (pure pull). If the earlier pass had wrongly advanced the
+		// watermark past bTimestamp, this pull would still work for a NEW
+		// row — so the real proof is the assertion above. This second pass
+		// just confirms normal forward progress still works post-fix.
+		const bStack2 = await reposB.collection.add({ cardId: "race-b-card-2" });
+		await syncOnce(uidB, testUserClient);
+		await syncOnce(uidA, testUserClient);
+		const aStacksAfter2 = await reposA.collection.list();
+		expect(aStacksAfter2.some((s) => s.id === bStack2.id)).toBe(true);
 	});
 });

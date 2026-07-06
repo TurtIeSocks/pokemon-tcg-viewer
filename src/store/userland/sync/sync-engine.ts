@@ -8,7 +8,9 @@
 //   2. Reconcile per entity (cache allRows + pulled + dirtyIds) → write merged back
 //   3. Push toPush via remote upsert (never hard-delete; tombstones = deletedAt set)
 //   4. clearDirty for pushed ids (conditional — only ids unchanged since snapshot)
-//   5. Advance watermark to max server updated_at across pulled + push-returned rows
+//   5. Advance watermark to max server updated_at across PULLED rows only
+//      (push-returned timestamps must never move the watermark — see the
+//      note at the "Advance watermark" step below)
 //
 // startSync / stopSync: register / unregister event-driven triggers.
 
@@ -265,23 +267,20 @@ export async function syncOnce(
 	]);
 
 	// ── 5. Push toPush rows to cloud ─────────────────────────────────────────
-	const [pushedStackRows, pushedBinderRows, pushedProfileRows] =
-		await Promise.all([
-			pushRows<StackRow>(client, "stacks", stacksToPush.map(stackToRow)),
-			pushRows<BinderRow>(client, "binders", bindersToPush.map(binderToRow)),
-			pushRows<ProfileRow>(
-				client,
-				"profiles",
-				profilesToPush.map(profileToRow),
-			),
-		]);
-
-	// Collect pushed server timestamps
-	serverTimestamps.push(
-		...pushedStackRows.map((r) => r.updated_at),
-		...pushedBinderRows.map((r) => r.updated_at),
-		...pushedProfileRows.map((r) => r.updated_at),
-	);
+	// The pushed rows' server-assigned updated_at are intentionally NOT
+	// folded into serverTimestamps / the watermark. Doing so let a push
+	// advance the watermark past a concurrent write from another device that
+	// this pass never pulled (e.g. device B commits between this pass's pull
+	// and push) — that row would then sit before the new watermark and never
+	// be pulled again. The watermark must only reflect what was actually
+	// PULLED; this device's own pushed rows simply echo back on the next
+	// pull, which is a harmless no-op (reconcile treats a pulled row equal
+	// to cache as a no-op push candidate).
+	await Promise.all([
+		pushRows<StackRow>(client, "stacks", stacksToPush.map(stackToRow)),
+		pushRows<BinderRow>(client, "binders", bindersToPush.map(binderToRow)),
+		pushRows<ProfileRow>(client, "profiles", profilesToPush.map(profileToRow)),
+	]);
 
 	// ── 6. clearDirty (conditional) ──────────────────────────────────────────
 	// Only clear ids that were in the snapshot AND were successfully pushed.
