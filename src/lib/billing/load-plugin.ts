@@ -17,6 +17,13 @@ export interface CloudPlugin {
 	reconcileForUser(request: Request): Promise<Response>;
 	/** R16 misconfig guard (STRIPE_SECRET_KEY set but billing_config.billing_enabled false). Used by /api/health. */
 	assertBillingConfigured(): Promise<{ ok: boolean; warning?: string }>;
+	/**
+	 * Self-serve account deletion: cancels the user's active Stripe subscriptions,
+	 * then deletes the auth user (cascades all vault + billing rows). Optional —
+	 * older plugin builds predate this member and stay type-compatible; the
+	 * `/api/account/delete` stub returns 501 when it's absent.
+	 */
+	deleteAccount?(request: Request): Promise<Response>;
 }
 
 let cached: CloudPlugin | null | undefined;

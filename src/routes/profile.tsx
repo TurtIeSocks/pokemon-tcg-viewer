@@ -2,6 +2,7 @@
 import { ClientOnly, createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { CollectorAvatar } from "@/components/profile/collector-avatar";
+import { DangerZone } from "@/components/profile/danger-zone";
 import { ProfileFormDialog } from "@/components/profile/profile-form-dialog";
 import { SetTile } from "@/components/shell/set-tile";
 import { Button } from "@/components/ui/button";
@@ -132,6 +133,8 @@ export function ProfilePageInner({ tree }: { tree: NavTree }) {
 					</GlassPanel>
 				)}
 			</section>
+
+			<DangerZone />
 
 			<ProfileFormDialog
 				open={editOpen}
