@@ -118,16 +118,20 @@ async function pushRows<Row extends object>(
 	client: SupabaseClient,
 	table: string,
 	rows: Row[],
-): Promise<Row[]> {
-	if (rows.length === 0) return [];
-	const { data, error } = await client.from(table).upsert(rows).select();
+): Promise<void> {
+	if (rows.length === 0) return;
+	// No .select(): callers only need success/failure — the pushed count comes
+	// from the pre-push `rowsToPush` arrays, not from what's echoed back here
+	// (see the watermark note above this call site). Dropping .select() skips
+	// Supabase re-fetching and re-serializing every upserted row for a result
+	// nothing reads.
+	const { error } = await client.from(table).upsert(rows);
 	if (error) {
 		// 42501 = RLS with-check rejection = no entitlement to write new state.
 		// Throw before clearDirty so the rows stay dirty and retry once entitled.
 		if (error.code === "42501") throw new EntitlementError(error.message);
 		throw new Error(`syncOnce: push ${table} failed: ${error.message}`);
 	}
-	return (data ?? []) as Row[];
 }
 
 // ---------------------------------------------------------------------------

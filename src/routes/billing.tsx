@@ -41,17 +41,23 @@ function BillingPage() {
 	const { entitlement, billingEnabled, loading, refresh } = useBilling();
 	const [busy, setBusy] = useState(false);
 	const [reconcileFailed, setReconcileFailed] = useState(false);
+	const [reconcileUnauthorized, setReconcileUnauthorized] = useState(false);
 
 	// Lost/late-webhook self-heal: on return from Checkout, reconcile then refresh.
 	// The endpoint returns 500 + { ok: false } when the reconcile RPC itself fails
 	// (vs. a plain network error) — surface that explicitly instead of silently
-	// proceeding as if activation succeeded.
+	// proceeding as if activation succeeded. A 401 means the session expired
+	// between Checkout and this return redirect: that's a signed-out state, not
+	// a failed reconcile, so it gets its own message asking the user to sign
+	// back in rather than "activation is retrying".
 	useEffect(() => {
 		if (!upgraded) return;
-		void reconcileBilling().then((ok) => {
+		void reconcileBilling().then((result) => {
 			refresh();
-			if (ok) {
+			if (result === "ok") {
 				toast.success("You're on Plus. Your Vault now syncs everywhere.");
+			} else if (result === "unauthorized") {
+				setReconcileUnauthorized(true);
 			} else {
 				setReconcileFailed(true);
 			}
@@ -85,6 +91,17 @@ function BillingPage() {
 				The whole app is free and local-first. Plus pays for the sync servers,
 				not for access to your own cards. Self-hosters get it unbilled.
 			</p>
+
+			{reconcileUnauthorized && (
+				<GlassPanel
+					role="alert"
+					className="mb-4 border-amber-400/30 p-4 text-sm"
+				>
+					<p className="font-medium text-(--ink)">
+						Payment received. Please sign in again to finish activating Plus.
+					</p>
+				</GlassPanel>
+			)}
 
 			{reconcileFailed && (
 				<GlassPanel

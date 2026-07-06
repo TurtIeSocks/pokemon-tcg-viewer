@@ -104,7 +104,7 @@ jobs:
           # change what code executes here without a review gate in THIS
           # repo's history. Bump the SHA deliberately when the plugin
           # advances (007 §D.5).
-          ref: df3cb2af363e2734d5f24d2b995f510d518d9276
+          ref: 5a005e316c29d80b08e7c05f02f2af959f32659e
           ssh-key: ${{ secrets.CLOUD_DEPLOY_KEY }}
           path: cloud-plugin
 
@@ -125,11 +125,16 @@ jobs:
         # is required: package.json's `prepare` re-runs `tsc`, but we only
         # copied `dist` (prebuilt above), not the source/tsconfig, so the
         # prepare script has nothing to compile and fails the install.
+        # --frozen-lockfile (needs bun.lock copied alongside package.json)
+        # pins the plugin's runtime deps to the exact versions the pinned
+        # `ref:` SHA above was tested against — without it, semver ranges in
+        # package.json re-resolve fresh on every deploy, which defeats the
+        # whole point of pinning an exact commit SHA.
         run: |
           PLUG=.output/server/node_modules/@tcgvault/cloud
           mkdir -p "$PLUG"
-          cp -r cloud-plugin/package.json cloud-plugin/dist "$PLUG"/
-          (cd "$PLUG" && bun install --production --ignore-scripts)
+          cp -r cloud-plugin/package.json cloud-plugin/bun.lock cloud-plugin/dist "$PLUG"/
+          (cd "$PLUG" && bun install --production --ignore-scripts --frozen-lockfile)
 
       - name: Ship .output to the server tree
         # Same box as the runner, so a local rsync. --delete prunes stale files.
@@ -143,10 +148,24 @@ jobs:
       - name: Post-deploy health gate
         # Fails the deploy loudly if the box comes back misconfigured, instead
         # of waiting for the first paying customer to find out (006 Task 2).
+        # Retries up to ~30s instead of a single `sleep 3` — a fixed 3s sleep
+        # flaked on a slower systemd restart / cold Nitro boot, failing a
+        # deploy that would have gone green a couple seconds later. When
+        # billing is on, also grep `"billingEnv":7` — the plugin loads fine
+        # (plugin:"present") even with an empty runtime env, so checking
+        # presence alone misses a box where every checkout would 500 at
+        # request time for lack of STRIPE_*/SUPABASE_* env vars.
         run: |
-          sleep 3
+          ok=""
+          for i in $(seq 1 10); do
+            body=$(curl -sf http://127.0.0.1:3000/api/health) && ok="$body" && break
+            sleep 3
+          done
+          if [ -z "$ok" ]; then
+            echo "health check never returned 2xx after ~30s" >&2
+            exit 1
+          fi
           if [ "${{ vars.DEPLOY_BILLING }}" == "1" ]; then
-            curl -sf http://127.0.0.1:3000/api/health | grep -q '"plugin":"present"'
-          else
-            curl -sf http://127.0.0.1:3000/api/health
+            echo "$ok" | grep -q '"plugin":"present"'
+            echo "$ok" | grep -q '"billingEnv":7'
           fi

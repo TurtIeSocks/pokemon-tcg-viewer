@@ -32,6 +32,19 @@ begin
     -- the block) — nothing below runs and nothing further commits.
   end;
 
+  -- Deleted-user webhook poison: `deleteAccount` (card-stack-cloud src/account.ts)
+  -- cancels Stripe subs THEN deletes the auth.users row, but Stripe's own
+  -- webhook retries (up to ~3 days) can still deliver a late event for that
+  -- now-nonexistent user_id after the ledger insert above already recorded it
+  -- as new. Without this guard the insert below FK-violates on user_id,
+  -- process_stripe_event throws, the webhook 500s, and Stripe retries the
+  -- same doomed event for days. 200-ack (return, not raise) instead — the
+  -- event is legitimately unactionable, not a transient failure to retry.
+  if (p_payload ? 'user_id')
+     and not exists (select 1 from auth.users where id = (p_payload->>'user_id')::uuid) then
+    return;
+  end if;
+
   if (p_payload ? 'customer') then
     insert into public.stripe_customers (user_id, stripe_customer_id)
     values ((p_payload->>'user_id')::uuid, p_payload->>'customer')

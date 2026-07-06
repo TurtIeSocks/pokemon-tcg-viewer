@@ -42,8 +42,9 @@ function makeFakeClient(opts?: {
 		const pullChain = {
 			gt: () => ({ range: pullResult }),
 		};
-		// Push chain: .upsert(rows).select() → Promise
-		const upsert = () => ({ select: pushResult });
+		// Push chain: .upsert(rows) → Promise directly (no .select(); the
+		// pushed count comes from the pre-push arrays, nothing reads the echo).
+		const upsert = () => pushResult();
 
 		return {
 			select: () => pullChain,
@@ -217,11 +218,9 @@ describe("startSync / stopSync triggers", () => {
 						},
 					}),
 				}),
-				upsert: () => ({
-					select: async () => {
-						return { data: [], error: null };
-					},
-				}),
+				upsert: async () => {
+					return { data: [], error: null };
+				},
 			}),
 		} as unknown as SupabaseClient;
 

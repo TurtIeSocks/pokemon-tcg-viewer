@@ -171,7 +171,12 @@ what `is_pro()` enforces in RLS.
 - *Stripe secret key*: Stripe dashboard → Developers → API keys → roll the
   key (issues a new one, old one keeps working for a grace period). Update
   `STRIPE_SECRET_KEY` in `/etc/tcg/env`, restart, verify a checkout session
-  creates successfully, then revoke the old key.
+  creates successfully, then revoke the old key. Any webhook delivered during
+  the broken-key window is dropped as a permanent 400 (Stripe classifies a
+  `StripeAuthenticationError` as non-retryable), not queued for retry — once
+  the key is fixed, either have affected users hit `/billing` (the reconcile
+  self-heal picks up the missed subscription state) or re-send the specific
+  events from the Stripe dashboard's delivery log.
 - *Supabase service-role key*: Supabase dashboard → Project Settings → API →
   regenerate. This invalidates the old key immediately (no grace period) —
   update `SUPABASE_SERVICE_ROLE_KEY` in `/etc/tcg/env` and restart in the same

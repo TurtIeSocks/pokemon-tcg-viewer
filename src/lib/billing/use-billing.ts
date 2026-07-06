@@ -73,13 +73,22 @@ export const startCheckout = (): Promise<string | null> =>
 export const openPortal = (): Promise<string | null> =>
 	postStripe("/api/stripe/portal");
 
+export type ReconcileResult = "ok" | "failed" | "unauthorized";
+
 /**
- * Reconcile on the `?upgraded=1` return (lost/late webhook self-heal). Returns
- * `true` on a 200 `{ ok: true }`, `false` on a 500 `{ ok: false, failed }` (the
- * reconcile RPC failed) or a network error — the caller surfaces an error state
- * rather than silently assuming activation succeeded.
+ * Reconcile on the `?upgraded=1` return (lost/late webhook self-heal).
+ * `"ok"` on a 200 `{ ok: true }`. `"unauthorized"` on a 401 — the session
+ * expired between Checkout and the return redirect, which is a signed-out
+ * state, not a failed reconcile; the caller should ask the user to sign back
+ * in rather than say "activation is retrying". `"failed"` on any other
+ * non-2xx (e.g. 500 `{ ok: false, failed }`, the reconcile RPC failed) or a
+ * network error.
  */
-export const reconcileBilling = (): Promise<boolean> =>
+export const reconcileBilling = (): Promise<ReconcileResult> =>
 	fetch("/api/stripe/sync", { method: "POST" })
-		.then((res) => res.ok)
-		.catch(() => false);
+		.then((res) => {
+			if (res.ok) return "ok";
+			if (res.status === 401) return "unauthorized";
+			return "failed";
+		})
+		.catch((): ReconcileResult => "failed");
