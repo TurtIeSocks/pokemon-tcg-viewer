@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, expect, mock, test } from "bun:test";
 import { fireEvent, screen } from "@testing-library/react";
 import {
+	resetHistoryRuntimeForTests,
+	setHistoryFetchersForTests,
+} from "../../store/corpus/history-runtime";
+import {
 	resetPricesRuntimeForTests,
 	usePricesRuntime,
 } from "../../store/corpus/prices-runtime";
@@ -35,10 +39,22 @@ const CARD = makeFocusCard({
 beforeEach(async () => {
 	seedCorpusFor(CARD);
 	await setupUserlandTest();
+	// The Pricing tab mounts <CardHistory>, whose mount effect calls the real
+	// loadSetHistory(card.setId). Without a fetcher stub it hits the live
+	// Worker over the network and leaves the shared history-runtime module
+	// state (statusBySet/bySet) populated after this file ends, which starves
+	// later test files' loadSetHistory calls (they see status "loading"/"ready"
+	// and short-circuit before ever calling their own injected fetcher).
+	setHistoryFetchersForTests({
+		fetchHistory: async () => {
+			throw new Response(null, { status: 503 });
+		},
+	});
 });
 
 afterEach(async () => {
 	await resetPricesRuntimeForTests();
+	await resetHistoryRuntimeForTests();
 });
 
 test("Details tab shows the attack body", async () => {
