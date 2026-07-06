@@ -7,6 +7,7 @@ import {
 	collectGaps,
 	detailCard,
 	detailVersion,
+	fetchJson,
 	harvestPriceIds,
 	priceIdsOf,
 	resolveFallbackImages,
@@ -520,6 +521,25 @@ test("harvestPriceIds builds the crosswalk from injected per-card fetches", asyn
 	expect(map).toEqual({ "a-1": [11, 22], "a-2": [33, null] });
 	// Hits the official base, not the mirror; encodes the id in the path.
 	expect(seen).toContain("https://api.tcgdex.net/v2/en/cards/a-1");
+});
+
+test("fetchJson sends a default User-Agent and merges caller headers", async () => {
+	// Bun's fetch omits a UA; tcgcsv 401s empty-UA requests, so every request
+	// must carry one. Regression guard for the build-prices tcgcsv 401.
+	const original = globalThis.fetch;
+	const sent: Array<string | null> = [];
+	globalThis.fetch = (async (_url: string, init?: RequestInit) => {
+		sent.push(new Headers(init?.headers).get("User-Agent"));
+		return new Response(JSON.stringify({ ok: true }), { status: 200 });
+	}) as typeof fetch;
+	try {
+		await fetchJson("https://tcgcsv.com/tcgplayer/3/groups");
+		await fetchJson("https://x", { headers: { "X-Test": "1" } });
+	} finally {
+		globalThis.fetch = original;
+	}
+	expect(sent[0]).toBeTruthy(); // default UA present
+	expect(sent[1]).toBeTruthy(); // still present when caller passes other headers
 });
 
 test("assertCrosswalkOk throws on a near-empty crosswalk, passes when covered", () => {

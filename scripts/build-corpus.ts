@@ -25,8 +25,11 @@ const TCGDEX_BASE = process.env.TCGDEX_BASE ?? "https://api.tcgdex.net/v2/en";
 const TCGDEX_OFFICIAL_BASE =
 	process.env.TCGDEX_PRICING_BASE ?? "https://api.tcgdex.net/v2/en";
 const PRICE_HARVEST_CONCURRENCY = 8;
-const HARVEST_UA =
-	"cardstack-corpus-build/1.0 (+https://github.com/TurtIeSocks/pokemon-tcg-viewer)";
+// Bun's fetch sends NO default User-Agent, and some upstreams (notably tcgcsv)
+// return 401 for an empty UA. Identify ourselves on every request so those
+// sources serve us and we stay a polite citizen everywhere else.
+const DEFAULT_UA =
+	"cardstack-bot/1.0 (+https://github.com/TurtIeSocks/pokemon-tcg-viewer)";
 
 /**
  * Derive the per-region TCGdex API base by swapping the trailing "/en" of
@@ -263,12 +266,7 @@ export async function harvestPriceIds(
 	const concurrency = opts.concurrency ?? PRICE_HARVEST_CONCURRENCY;
 	const fetchCard =
 		opts.fetchCard ??
-		((url: string) =>
-			fetchJson(url, {
-				onRetry: opts.onRetry,
-				retries: 2,
-				headers: { "User-Agent": HARVEST_UA },
-			}));
+		((url: string) => fetchJson(url, { onRetry: opts.onRetry, retries: 2 }));
 	console.log(
 		`Harvesting price crosswalk for ${ids.length} cards from ${base} (concurrency=${concurrency})…`,
 	);
@@ -394,10 +392,9 @@ export async function fetchJson(
 			await new Promise((r) => setTimeout(r, waitMs));
 		}
 		try {
-			const res = await fetch(
-				url,
-				opts.headers ? { headers: opts.headers } : undefined,
-			);
+			const res = await fetch(url, {
+				headers: { "User-Agent": DEFAULT_UA, ...opts.headers },
+			});
 			if (res.ok) return await res.json();
 			if (!isRetryable(res.status)) {
 				throw new NonRetryableError(`${url}: HTTP ${res.status}`);
