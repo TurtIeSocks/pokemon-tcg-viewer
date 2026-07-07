@@ -242,17 +242,21 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<head>
+				{/* Dev-only on-page error reporter for devtools-less devices (phones
+				    on the LAN); prints UA + uncaught errors/rejections to a red box.
+				    Disabled for now, kept for the next devtools-less debugging round.
+				    Re-enable by restoring the block below inside the head:
 				{import.meta.env.DEV && (
 					<script
-						// Dev-only on-page error reporter for devtools-less devices
-						// (phones on the LAN). Inline + first so it catches module
-						// parse/load failures that kill hydration before React runs.
-						// biome-ignore lint/security/noDangerouslySetInnerHtml: dev-only static string
+						// Inline + first so it catches module parse/load failures that
+						// kill hydration before React runs.
+						// dev-only static string, no user input
 						dangerouslySetInnerHTML={{
 							__html: `(function(){function show(m){var d=document.getElementById('__dev_err');if(!d){d=document.createElement('pre');d.id='__dev_err';d.style.cssText='position:fixed;bottom:0;left:0;right:0;z-index:2147483647;background:#7f1d1d;color:#fff;font:11px/1.4 monospace;padding:8px;margin:0;max-height:40vh;overflow:auto;white-space:pre-wrap';document.documentElement.appendChild(d);}d.textContent+=m+'\\n\\n';}show('UA: '+navigator.userAgent);window.addEventListener('error',function(e){show((e.message||'error')+' @ '+(e.filename||'?')+':'+(e.lineno||'?'))},true);window.addEventListener('unhandledrejection',function(e){show('unhandledrejection: '+(e.reason&&(e.reason.stack||e.reason.message)||e.reason))});})();`,
 						}}
 					/>
 				)}
+				*/}
 				<HeadContent />
 			</head>
 			<body>
