@@ -249,7 +249,7 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
 						// parse/load failures that kill hydration before React runs.
 						// biome-ignore lint/security/noDangerouslySetInnerHtml: dev-only static string
 						dangerouslySetInnerHTML={{
-							__html: `(function(){function show(m){var d=document.getElementById('__dev_err');if(!d){d=document.createElement('pre');d.id='__dev_err';d.style.cssText='position:fixed;bottom:0;left:0;right:0;z-index:2147483647;background:#7f1d1d;color:#fff;font:11px/1.4 monospace;padding:8px;margin:0;max-height:40vh;overflow:auto;white-space:pre-wrap';document.documentElement.appendChild(d);}d.textContent+=m+'\\n\\n';}window.addEventListener('error',function(e){show((e.message||'error')+' @ '+(e.filename||'?')+':'+(e.lineno||'?'))},true);window.addEventListener('unhandledrejection',function(e){show('unhandledrejection: '+(e.reason&&(e.reason.stack||e.reason.message)||e.reason))});})();`,
+							__html: `(function(){function show(m){var d=document.getElementById('__dev_err');if(!d){d=document.createElement('pre');d.id='__dev_err';d.style.cssText='position:fixed;bottom:0;left:0;right:0;z-index:2147483647;background:#7f1d1d;color:#fff;font:11px/1.4 monospace;padding:8px;margin:0;max-height:40vh;overflow:auto;white-space:pre-wrap';document.documentElement.appendChild(d);}d.textContent+=m+'\\n\\n';}show('UA: '+navigator.userAgent);window.addEventListener('error',function(e){show((e.message||'error')+' @ '+(e.filename||'?')+':'+(e.lineno||'?'))},true);window.addEventListener('unhandledrejection',function(e){show('unhandledrejection: '+(e.reason&&(e.reason.stack||e.reason.message)||e.reason))});})();`,
 						}}
 					/>
 				)}
