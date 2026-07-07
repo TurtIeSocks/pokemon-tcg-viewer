@@ -139,3 +139,23 @@ slab OCR, PWA install prompt work, per-user scan metering (R8), native apps.
 |---|---|---|
 | `ANTHROPIC_API_KEY` | `/etc/tcg/env` (server-only) | AI scan; absent ⇒ /api/scan returns 503 `scan not configured` |
 | `SCAN_MODEL` | `/etc/tcg/env`, optional | default `claude-haiku-4-5` |
+
+## Amendment 2026-07-07 — R1b: detection-assisted regions
+
+Field testing on real hardware (phone, autofocus) confirmed guide-frame
+alignment alone is too finicky: exact framing frustration, and vintage cards
+mismatching on shared printed totals (Base Set vs Triumphant, both /102)
+because the name strip missed the actual card name and the tiebreaker tied.
+
+- **R1b — lightweight on-device card-box detection, no new deps.** Per frame:
+  downscale to ~160px, luminance + Otsu threshold, row/column histogram
+  trimming to a bounding box, validated by card aspect (w/h 0.55-0.9), area
+  fraction (8-90%), and fill ratio (>=0.65), trying both polarity classes
+  (bright card on dark, dark card on bright). Valid box => OCR regions are
+  computed from the DETECTED box; invalid/null => fall back to the R1 guide
+  frame unchanged. The guide overlay remains as an aiming hint; a live
+  outline shows the detected box (lock-on feedback). Full perspective
+  warp/OpenCV remains out of scope (recorded v2 ceiling).
+- The AI scan crop also prefers the detected box.
+- Pure engine code (`src/store/scan/detect.ts`) tested on synthetic frames;
+  region math additions live in guide.ts with tests.
