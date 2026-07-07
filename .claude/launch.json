@@ -4,7 +4,7 @@
 		{
 			"name": "vite",
 			"runtimeExecutable": "bun",
-			"runtimeArgs": ["run", "dev:preview", "--port", "6201"],
+			"runtimeArgs": ["run", "dev:preview", "--port", "6201", "--host"],
 			"port": 6201,
 			"env": {
 				"VITE_CLAUDE_PREVIEW": "true"
