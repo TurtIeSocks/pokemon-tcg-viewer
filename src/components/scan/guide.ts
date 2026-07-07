@@ -103,3 +103,49 @@ export function ocrCropDims(rect: Rect): { w: number; h: number } {
 		h: Math.max(1, Math.round(rect.h * scale)),
 	};
 }
+
+/**
+ * R1b: map a rect from intrinsic video-source pixel coordinates to
+ * container (rendered element) coordinates under CSS `object-fit: cover`.
+ * `cover` uniformly scales the source to fully cover the container (never
+ * letterboxes) and crops whichever axis overflows, centered. `scale` is
+ * therefore the LARGER of the two per-axis ratios, and the crop offset on
+ * the overflowing axis is half of the excess.
+ *
+ * Points outside the visible slice (i.e. in the cropped-away margin) map to
+ * negative or over-container coordinates on purpose — this function does
+ * not clamp. Callers that only want the on-screen outline should intersect
+ * the result with the container bounds themselves; the detection overlay
+ * (scan-view.tsx) doesn't need to, since a detected card box is by
+ * construction within the visible video frame.
+ */
+export function sourceRectToContainer(
+	rect: Rect,
+	source: { w: number; h: number },
+	container: { w: number; h: number },
+): Rect {
+	const scale = Math.max(container.w / source.w, container.h / source.h);
+	const offX = (source.w * scale - container.w) / 2;
+	const offY = (source.h * scale - container.h) / 2;
+	return {
+		x: rect.x * scale - offX,
+		y: rect.y * scale - offY,
+		w: rect.w * scale,
+		h: rect.h * scale,
+	};
+}
+
+/**
+ * R1b: uniformly scale a rect (position AND size) about the origin. Used to
+ * map a box detected on a downscaled detection canvas back to full video
+ * pixel coordinates -- both canvases share an origin (top-left), so scaling
+ * every field by the same factor is the whole transform.
+ */
+export function scaleRect(rect: Rect, factor: number): Rect {
+	return {
+		x: rect.x * factor,
+		y: rect.y * factor,
+		w: rect.w * factor,
+		h: rect.h * factor,
+	};
+}

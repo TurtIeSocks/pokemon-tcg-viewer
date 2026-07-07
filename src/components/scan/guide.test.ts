@@ -5,6 +5,8 @@ import {
 	numberRegion,
 	numberRegionWide,
 	ocrCropDims,
+	scaleRect,
+	sourceRectToContainer,
 } from "./guide";
 
 // R1: guide-frame alignment geometry (pure math, no DOM/camera).
@@ -112,6 +114,64 @@ describe("numberRegionWide", () => {
 		const region = numberRegionWide(guide);
 		expect(region.x).toBeCloseTo(guide.x, 5);
 		expect(region.w).toBeCloseTo(guide.w, 5);
+	});
+});
+
+// R1b: object-cover coordinate mapping (video intrinsic px -> rendered
+// container px), used to draw the live lock-on outline.
+describe("sourceRectToContainer", () => {
+	test("identity when source and container aspects match", () => {
+		const rect = sourceRectToContainer(
+			{ x: 10, y: 10, w: 20, h: 20 },
+			{ w: 100, h: 100 },
+			{ w: 200, h: 200 },
+		);
+		// same aspect -> uniform 2x scale, no crop offset on either axis.
+		expect(rect).toEqual({ x: 20, y: 20, w: 40, h: 40 });
+	});
+
+	test("horizontal center-crop: a centered source rect maps to a centered container rect", () => {
+		// 16:9 source letterboxed into a 3:4 (portrait) container under
+		// object-cover crops the source's left/right edges; scale is set by
+		// height (the constraining axis).
+		const source = { w: 1600, h: 900 };
+		const container = { w: 300, h: 400 };
+		const rect = sourceRectToContainer(
+			{ x: 700, y: 350, w: 200, h: 200 }, // centered 200x200 box in source
+			source,
+			container,
+		);
+		const scale = 4 / 9; // max(300/1600, 400/900)
+		expect(rect.w).toBeCloseTo(200 * scale, 2);
+		expect(rect.h).toBeCloseTo(200 * scale, 2);
+		// its center lands on the container's center
+		const centerX = rect.x + rect.w / 2;
+		const centerY = rect.y + rect.h / 2;
+		expect(centerX).toBeCloseTo(container.w / 2, 2);
+		expect(centerY).toBeCloseTo(container.h / 2, 2);
+	});
+
+	test("points outside the visible slice map to negative/overflow coords (not clamped)", () => {
+		const source = { w: 1600, h: 900 };
+		const container = { w: 300, h: 400 };
+		// the source's top-left corner sits inside the horizontally-cropped
+		// margin under object-cover -- its mapped x must be negative.
+		const rect = sourceRectToContainer(
+			{ x: 0, y: 0, w: 100, h: 100 },
+			source,
+			container,
+		);
+		const scale = 4 / 9;
+		const offX = (source.w * scale - container.w) / 2;
+		expect(rect.x).toBeCloseTo(0 * scale - offX, 2);
+		expect(rect.x).toBeLessThan(0);
+	});
+});
+
+describe("scaleRect", () => {
+	test("scales position and size uniformly", () => {
+		const rect = scaleRect({ x: 10, y: 20, w: 30, h: 40 }, 2);
+		expect(rect).toEqual({ x: 20, y: 40, w: 60, h: 80 });
 	});
 });
 

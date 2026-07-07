@@ -15,6 +15,7 @@ import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import { useStore } from "../../store";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime-store";
 import { normalize } from "../../store/corpus/fuzzy";
+import { detectCardRect } from "../../store/scan/detect";
 import { matchScan } from "../../store/scan/match";
 import { disposeOcr, getOcr } from "../../store/scan/ocr";
 import { parseNameText, parseNumberText } from "../../store/scan/parse";
@@ -31,6 +32,9 @@ import {
 	numberRegion,
 	numberRegionWide,
 	ocrCropDims,
+	type Rect,
+	scaleRect,
+	sourceRectToContainer,
 } from "./guide";
 import { useAiScan } from "./use-ai-scan";
 import { useCamera } from "./use-camera";
@@ -73,6 +77,54 @@ function getFullCanvas(ref: {
 		ref.current = document.createElement("canvas");
 	}
 	return ref.current;
+}
+
+/**
+ * R1b: detection runs on a small downscaled canvas -- the histogram
+ * trimming in detectCardRect is O(pixels), and a full-res frame buys
+ * nothing extra for a box this coarse. Height stays proportional to the
+ * video's own aspect ratio so the downscale doesn't distort what gets fed
+ * to the Otsu threshold.
+ */
+const DETECT_CANVAS_W = 160;
+
+/** Lazily create-and-cache the offscreen detection canvas on `ref` (mirrors getFullCanvas). */
+function getDetectCanvas(ref: {
+	current: HTMLCanvasElement | null;
+}): HTMLCanvasElement {
+	if (!ref.current) {
+		ref.current = document.createElement("canvas");
+	}
+	return ref.current;
+}
+
+/**
+ * R1b: downscale `video` onto the shared detection canvas and run
+ * `detectCardRect`. Returns a Rect already scaled back up to FULL video
+ * pixel coordinates, or null when no card-shaped region was found --
+ * callers fall back to the fixed guide frame unchanged. Safe to call from
+ * both the live loop (runFrame) and the one-shot AI-scan button: each call
+ * is a synchronous draw+read with no `await` in between, so two calls can't
+ * interleave on the shared canvas even though they share `ref`.
+ */
+function detectGuideFromVideo(
+	video: HTMLVideoElement,
+	viewW: number,
+	viewH: number,
+	ref: { current: HTMLCanvasElement | null },
+): Rect | null {
+	const canvas = getDetectCanvas(ref);
+	const detW = DETECT_CANVAS_W;
+	const detH = Math.max(1, Math.round((DETECT_CANVAS_W * viewH) / viewW));
+	canvas.width = detW;
+	canvas.height = detH;
+	const ctx = canvas.getContext("2d", { willReadFrequently: true });
+	if (!ctx) return null;
+	ctx.filter = "none";
+	ctx.drawImage(video, 0, 0, detW, detH);
+	const detected = detectCardRect(ctx.getImageData(0, 0, detW, detH));
+	if (!detected) return null;
+	return scaleRect(detected, viewW / detW);
 }
 
 /** Encode a canvas as JPEG (quality 0.8, R6) and strip the data-URL prefix. */
@@ -127,6 +179,16 @@ export function ScanView() {
 	// event-driven capture paths (runFrame/handleFileFallback), so it is
 	// created on first use via getFullCanvas() below, never at render time.
 	const fullCanvasRef = useRef<HTMLCanvasElement | null>(null);
+	// R1b: separate small canvas for detection (see DETECT_CANVAS_W) so the
+	// full-res canvas above stays dedicated to crops/fixtures.
+	const detectCanvasRef = useRef<HTMLCanvasElement | null>(null);
+	// R1b: last box painted for the live lock-on outline, in CONTAINER
+	// (rendered-element) coords -- compared against the next tick's mapped
+	// box to skip a setState when nothing moved meaningfully. The tick is
+	// already throttled to 500ms so this isn't load-bearing for perf; it's
+	// here mainly so a jittery detection near the validity boundary doesn't
+	// flicker the outline's transition on every frame.
+	const lastBoxRef = useRef<Rect | null>(null);
 	const voterRef = useRef(createVoter());
 	const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 	// True only while the live loop is supposed to be running. clearInterval
@@ -162,6 +224,8 @@ export function ScanView() {
 
 	const [candidates, setCandidates] = useState<ScanCandidate[]>([]);
 	const [nameGuess, setNameGuess] = useState<string | null>(null);
+	// R1b: live lock-on outline, in CONTAINER coords (see sourceRectToContainer).
+	const [detectedBox, setDetectedBox] = useState<Rect | null>(null);
 	const [lastRead, setLastRead] = useState<string | null>(null);
 	const [sessionCount, setSessionCount] = useState(0);
 	const [showHint, setShowHint] = useState(false);
@@ -209,7 +273,46 @@ export function ScanView() {
 			fullCtx.filter = "none";
 			fullCtx.drawImage(video, 0, 0, viewW, viewH);
 
-			const guide = guideRect(viewW, viewH);
+			// R1b: prefer the detected card box over the fixed guide frame --
+			// null (no valid box this tick) falls back to guideRect unchanged.
+			const detected = detectGuideFromVideo(
+				video,
+				viewW,
+				viewH,
+				detectCanvasRef,
+			);
+			const guide = detected ?? guideRect(viewW, viewH);
+
+			// Live lock-on outline (container coords). Presynchronous with the
+			// detection above -- no `await` has happened yet, so isActiveRef
+			// can't have flipped since this tick started.
+			if (!detected) {
+				if (lastBoxRef.current !== null) {
+					lastBoxRef.current = null;
+					setDetectedBox(null);
+				}
+			} else {
+				const container = { w: video.clientWidth, h: video.clientHeight };
+				if (container.w && container.h) {
+					const mapped = sourceRectToContainer(
+						detected,
+						{ w: viewW, h: viewH },
+						container,
+					);
+					const prev = lastBoxRef.current;
+					const moved =
+						!prev ||
+						Math.abs(prev.x - mapped.x) > 2 ||
+						Math.abs(prev.y - mapped.y) > 2 ||
+						Math.abs(prev.w - mapped.w) > 2 ||
+						Math.abs(prev.h - mapped.h) > 2;
+					if (moved) {
+						lastBoxRef.current = mapped;
+						setDetectedBox(mapped);
+					}
+				}
+			}
+
 			// Wide bottom band as the ONLY number region: numbers sit bottom-left,
 			// bottom-right, or centered depending on era, and the parser already
 			// digs N/T out of surrounding noise. One pass per tick beats the old
@@ -293,6 +396,10 @@ export function ScanView() {
 	useEffect(() => {
 		if (camera.status !== "active" || candidates.length > 0) {
 			clearLoop();
+			// R1b: don't leave a stale lock-on outline showing over a stopped
+			// camera or behind the open candidate tray.
+			lastBoxRef.current = null;
+			setDetectedBox(null);
 			return;
 		}
 		setScanning(true);
@@ -369,9 +476,11 @@ export function ScanView() {
 	}
 
 	/**
-	 * R6/R7: Plus AI scan. Captures the current guide-cropped frame as a
-	 * color JPEG (quality 0.8), POSTs it once via `useAiScan`, and folds the
-	 * result into the same candidate tray the device loop feeds. Mirrors
+	 * R6/R7/R1b: Plus AI scan. Captures the current frame as a color JPEG
+	 * (quality 0.8), cropped to the detected card box when one validates on
+	 * this frame (falling back to the fixed guide otherwise, same as the
+	 * device loop), POSTs it once via `useAiScan`, and folds the result into
+	 * the same candidate tray the device loop feeds. Mirrors
 	 * `runFrame`'s isActiveRef discipline: every check after an `await`
 	 * bails before touching state once the view has gone inactive (unmount,
 	 * camera stopped, or the tray already opened for a different scan).
@@ -394,7 +503,8 @@ export function ScanView() {
 		const viewH = video.videoHeight;
 		if (!viewW || !viewH) return;
 
-		const guide = guideRect(viewW, viewH);
+		const detected = detectGuideFromVideo(video, viewW, viewH, detectCanvasRef);
+		const guide = detected ?? guideRect(viewW, viewH);
 		const frameCanvas = cropToCanvasColor(video, guide);
 		const frameBase64 = canvasToJpegBase64(frameCanvas);
 		if (!frameBase64) {
@@ -495,6 +605,9 @@ export function ScanView() {
 				</div>
 
 				{camera.status === "active" && <GuideOverlay />}
+				{camera.status === "active" && detectedBox && (
+					<DetectedBoxOutline rect={detectedBox} />
+				)}
 
 				{camera.status === "active" && (
 					<div className="absolute top-3 left-3 rounded-[var(--r-pill)] border border-white/10 bg-black/50 px-3 py-1 font-mono text-xs text-white tabular-nums">
@@ -601,7 +714,7 @@ export function ScanView() {
 	);
 }
 
-/** Fixed card-shaped outline (R1): dimmed surround, bright border on the guide. */
+/** Fixed card-shaped outline (R1): dimmed surround, bright border on the guide. Aiming hint; stays up even once R1b lock-on takes over. */
 function GuideOverlay() {
 	return (
 		<div
@@ -610,6 +723,23 @@ function GuideOverlay() {
 		>
 			<div className="aspect-[63/88] h-[80%] rounded-2xl border-2 border-white/40 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]" />
 		</div>
+	);
+}
+
+/**
+ * R1b: live lock-on outline for the detected card box, positioned in
+ * container (rendered-element) coords via `sourceRectToContainer`. A short
+ * transition smooths box-to-box movement between ticks without implying
+ * anything is animating continuously (each tick either holds still or
+ * jumps to the next detection).
+ */
+function DetectedBoxOutline({ rect }: { rect: Rect }) {
+	return (
+		<div
+			aria-hidden
+			className="pointer-events-none absolute rounded-2xl border-2 border-[var(--primary)] transition-all duration-150 motion-reduce:transition-none"
+			style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h }}
+		/>
 	);
 }
 
