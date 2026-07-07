@@ -8,7 +8,7 @@ import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import { useStore } from "../../store";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime-store";
 import { matchScan } from "../../store/scan/match";
-import { getOcr } from "../../store/scan/ocr";
+import { disposeOcr, getOcr } from "../../store/scan/ocr";
 import { parseNameText, parseNumberText } from "../../store/scan/parse";
 import type { ScanCandidate } from "../../store/scan/scan-types";
 import { createVoter } from "../../store/scan/vote";
@@ -60,6 +60,11 @@ export function ScanView() {
 	);
 	const voterRef = useRef(createVoter());
 	const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+	// True only while the live loop is supposed to be running. clearInterval
+	// stops FUTURE ticks, but an in-flight runFrame continuation would still
+	// land setState calls after unmount (or after the tray opened) — each
+	// await in runFrame is followed by a check of this ref before touching state.
+	const isActiveRef = useRef(false);
 	const lastCropsRef = useRef<{
 		full: HTMLCanvasElement;
 		number: HTMLCanvasElement;
@@ -105,7 +110,9 @@ export function ScanView() {
 
 		try {
 			const ocr = await getOcr();
+			if (!isActiveRef.current) return;
 			let numberText = await ocr.recognizeNumber(numberCanvas);
+			if (!isActiveRef.current) return;
 			let reading = parseNumberText(numberText);
 			if (!reading) {
 				// Retry with the wide fallback region (number printed off the
@@ -117,9 +124,11 @@ export function ScanView() {
 					name: nameCanvas,
 				};
 				numberText = await ocr.recognizeNumber(numberCanvas);
+				if (!isActiveRef.current) return;
 				reading = parseNumberText(numberText);
 			}
 			const nameText = parseNameText(await ocr.recognizeName(nameCanvas));
+			if (!isActiveRef.current) return;
 			setNameGuess(nameText);
 
 			const consensus = voterRef.current.push(reading);
@@ -148,11 +157,27 @@ export function ScanView() {
 			return;
 		}
 		setScanning(true);
+		isActiveRef.current = true;
 		intervalRef.current = setInterval(() => {
 			void runFrame();
 		}, LOOP_INTERVAL_MS);
-		return clearLoop;
+		return () => {
+			// In-flight runFrame continuations check this ref after each await:
+			// once false (unmount, tray opened, camera stopped), they bail
+			// before touching state.
+			isActiveRef.current = false;
+			clearLoop();
+		};
 	}, [camera.status, candidates.length, runFrame, clearLoop]);
+
+	// R4 teardown: terminate the Tesseract worker when leaving /scan. Without
+	// this the ~3MB wasm worker stays resident for the rest of the session.
+	// Safe when the worker was never initialized (disposeOcr no-ops).
+	useEffect(() => {
+		return () => {
+			void disposeOcr();
+		};
+	}, []);
 
 	// Cleared on unmount AND when the document is hidden (R1: don't keep the
 	// camera light on in a backgrounded tab); use-camera already stops tracks
@@ -191,30 +216,37 @@ export function ScanView() {
 	}
 
 	async function handleFileFallback(file: File) {
-		const bitmap = await createImageBitmap(file);
-		const video = { videoWidth: bitmap.width, videoHeight: bitmap.height };
-		const guide = guideRect(video.videoWidth, video.videoHeight);
-		const full = fullCanvasRef.current;
-		full.width = bitmap.width;
-		full.height = bitmap.height;
-		full.getContext("2d")?.drawImage(bitmap, 0, 0);
+		try {
+			const bitmap = await createImageBitmap(file);
+			const video = { videoWidth: bitmap.width, videoHeight: bitmap.height };
+			const guide = guideRect(video.videoWidth, video.videoHeight);
+			const full = fullCanvasRef.current;
+			full.width = bitmap.width;
+			full.height = bitmap.height;
+			full.getContext("2d")?.drawImage(bitmap, 0, 0);
 
-		let numberCanvas = cropToCanvas(bitmap, numberRegion(guide));
-		const nameCanvas = cropToCanvas(bitmap, nameRegion(guide));
-		lastCropsRef.current = { full, number: numberCanvas, name: nameCanvas };
-
-		const ocr = await getOcr();
-		let reading = parseNumberText(await ocr.recognizeNumber(numberCanvas));
-		if (!reading) {
-			numberCanvas = cropToCanvas(bitmap, numberRegionWide(guide));
+			let numberCanvas = cropToCanvas(bitmap, numberRegion(guide));
+			const nameCanvas = cropToCanvas(bitmap, nameRegion(guide));
 			lastCropsRef.current = { full, number: numberCanvas, name: nameCanvas };
-			reading = parseNumberText(await ocr.recognizeNumber(numberCanvas));
+
+			const ocr = await getOcr();
+			let reading = parseNumberText(await ocr.recognizeNumber(numberCanvas));
+			if (!reading) {
+				numberCanvas = cropToCanvas(bitmap, numberRegionWide(guide));
+				lastCropsRef.current = { full, number: numberCanvas, name: nameCanvas };
+				reading = parseNumberText(await ocr.recognizeNumber(numberCanvas));
+			}
+			const nameText = parseNameText(await ocr.recognizeName(nameCanvas));
+			setNameGuess(nameText);
+			if (!index) return;
+			const found = matchScan({ reading, nameText }, index.cards, sets ?? []);
+			setCandidates(found);
+		} catch {
+			// Corrupt/undecodable upload or a failed OCR pass; mirror runFrame's
+			// swallow-and-continue policy but tell the user, since a one-shot
+			// upload has no next tick to retry on.
+			toast.error("Could not read that image. Try another photo.");
 		}
-		const nameText = parseNameText(await ocr.recognizeName(nameCanvas));
-		setNameGuess(nameText);
-		if (!index) return;
-		const found = matchScan({ reading, nameText }, index.cards, sets ?? []);
-		setCandidates(found);
 	}
 
 	return (

@@ -18,6 +18,8 @@
 export interface OcrEngine {
 	recognizeNumber(canvas: HTMLCanvasElement): Promise<string>;
 	recognizeName(canvas: HTMLCanvasElement): Promise<string>;
+	/** Terminate the underlying Tesseract worker. Callers use {@link disposeOcr}. */
+	terminate(): Promise<void>;
 }
 
 // Digits + slash for `086/198`-style strips, plus letters to tolerate promo
@@ -43,7 +45,28 @@ async function createOcrEngine(): Promise<OcrEngine> {
 			const { data } = await worker.recognize(canvas);
 			return data.text;
 		},
+		async terminate(): Promise<void> {
+			await worker.terminate();
+		},
 	};
+}
+
+/**
+ * Terminate the memoized worker (frees the ~3MB wasm runtime) and clear the
+ * memo so a later getOcr() boots a fresh one. Safe to call when the engine
+ * was never initialized (no-op) or while initialization is still in flight
+ * (awaits it, then terminates). Call on /scan unmount.
+ */
+export async function disposeOcr(): Promise<void> {
+	const pending = enginePromise;
+	if (!pending) return;
+	enginePromise = null;
+	try {
+		const engine = await pending;
+		await engine.terminate();
+	} catch {
+		// Initialization failed — there is no live worker to tear down.
+	}
 }
 
 /**
