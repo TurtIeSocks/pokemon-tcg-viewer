@@ -136,7 +136,10 @@ function PreviewLoginPanel() {
 	}
 
 	return (
-		<div className="fixed right-3 bottom-3 z-[9999] w-56 rounded-lg border border-amber-400/40 bg-black/85 p-2.5 font-mono text-[11px] text-amber-200 shadow-lg backdrop-blur">
+		// Hidden on phones: this fixed overlay sat on top of the scan/vault
+		// action buttons on narrow viewports and blocked mobile testing. Dev
+		// login from a phone still works via a >=sm-width window if needed.
+		<div className="fixed right-3 bottom-3 z-[9999] hidden w-56 rounded-lg border border-amber-400/40 bg-black/85 p-2.5 font-mono text-[11px] text-amber-200 shadow-lg backdrop-blur sm:block">
 			<div className="mb-1.5 flex items-center gap-1 font-semibold uppercase tracking-wide text-amber-300">
 				<span aria-hidden>⚙</span> preview login
 			</div>
