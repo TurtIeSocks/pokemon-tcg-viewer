@@ -1,9 +1,16 @@
 // scan-view.tsx
 import { Link } from "@tanstack/react-router";
-import { CameraIcon, FlashlightIcon, UploadIcon } from "lucide-react";
+import {
+	CameraIcon,
+	FlashlightIcon,
+	SparklesIcon,
+	UploadIcon,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { GlassPanel } from "@/components/ui/glass";
+import { useBilling } from "@/lib/billing/use-billing";
 import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import { useStore } from "../../store";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime-store";
@@ -18,10 +25,45 @@ import { Button } from "../ui/button";
 import { CandidateTray } from "./candidate-tray";
 import { captureFixture, FIXTURE_CAPTURE_ENABLED } from "./fixture-capture";
 import { guideRect, nameRegion, numberRegion, numberRegionWide } from "./guide";
+import { useAiScan } from "./use-ai-scan";
 import { useCamera } from "./use-camera";
+
+/** JPEG quality for the one-shot AI scan upload (R6). */
+const AI_SCAN_JPEG_QUALITY = 0.8;
 
 const LOOP_INTERVAL_MS = 500;
 const HINT_DELAY_MS = 6000;
+
+/** Draw `source` cropped to `rect` (source coords) onto an offscreen canvas, full color. */
+function cropToCanvasColor(
+	source: CanvasImageSource,
+	rect: { x: number; y: number; w: number; h: number },
+): HTMLCanvasElement {
+	const canvas = document.createElement("canvas");
+	canvas.width = Math.max(1, Math.round(rect.w));
+	canvas.height = Math.max(1, Math.round(rect.h));
+	const ctx = canvas.getContext("2d");
+	if (!ctx) return canvas;
+	ctx.drawImage(
+		source,
+		rect.x,
+		rect.y,
+		rect.w,
+		rect.h,
+		0,
+		0,
+		canvas.width,
+		canvas.height,
+	);
+	return canvas;
+}
+
+/** Encode a canvas as JPEG (quality 0.8, R6) and strip the data-URL prefix. */
+function canvasToJpegBase64(canvas: HTMLCanvasElement): string | null {
+	const dataUrl = canvas.toDataURL("image/jpeg", AI_SCAN_JPEG_QUALITY);
+	const comma = dataUrl.indexOf(",");
+	return comma === -1 ? null : dataUrl.slice(comma + 1);
+}
 
 /** Draw `source` cropped to `rect` (source coords) onto an offscreen canvas, grayscale+contrast. */
 function cropToCanvas(
@@ -76,10 +118,18 @@ export function ScanView() {
 	const [sessionCount, setSessionCount] = useState(0);
 	const [showHint, setShowHint] = useState(false);
 	const [scanning, setScanning] = useState(false);
+	const [aiScanning, setAiScanning] = useState(false);
 
 	const index = useCorpusRuntime((s) => s.index);
 	const activeRegion = useCorpusRuntime((s) => s.activeRegion);
 	const sets = useStore((s) => setsForRegion(s, activeRegion));
+
+	// R6/R7: Plus AI scan. `useBilling()` is render-only UI state (R15
+	// fail-open convention) -- used ONLY to decide the chip/button copy here,
+	// never as a gate. The real gate lives server-side in /api/scan.
+	const aiScan = useAiScan();
+	const billing = useBilling();
+	const isPlus = billing.entitlement.tier !== "free";
 
 	const clearLoop = useCallback(() => {
 		if (intervalRef.current) {
@@ -215,6 +265,59 @@ export function ScanView() {
 		}
 	}
 
+	/**
+	 * R6/R7: Plus AI scan. Captures the current guide-cropped frame as a
+	 * color JPEG (quality 0.8), POSTs it once via `useAiScan`, and folds the
+	 * result into the same candidate tray the device loop feeds. Mirrors
+	 * `runFrame`'s isActiveRef discipline: every check after an `await`
+	 * bails before touching state once the view has gone inactive (unmount,
+	 * camera stopped, or the tray already opened for a different scan).
+	 */
+	async function handleAiScan() {
+		if (aiScanning) return;
+		const video = camera.videoRef.current;
+		if (!video || video.readyState < 2) {
+			toast.error("Start the camera first.");
+			return;
+		}
+		const viewW = video.videoWidth;
+		const viewH = video.videoHeight;
+		if (!viewW || !viewH) return;
+
+		const guide = guideRect(viewW, viewH);
+		const frameCanvas = cropToCanvasColor(video, guide);
+		const frameBase64 = canvasToJpegBase64(frameCanvas);
+		if (!frameBase64) {
+			toast.error("Could not capture a frame. Try again.");
+			return;
+		}
+
+		setAiScanning(true);
+		try {
+			const found = await aiScan.run(frameBase64);
+			if (!isActiveRef.current) return;
+
+			if (aiScan.state === "unauthorized" || aiScan.state === "needs_plus") {
+				// Handled inline by the button (routes to /billing); nothing to
+				// fall back to here, the device loop keeps running underneath.
+				return;
+			}
+			if (aiScan.state === "error") {
+				// R7: errors fall back silently to the device loop, plus a toast.
+				toast.error("AI scan failed. Falling back to the live scanner.");
+				return;
+			}
+			if (found.length > 0) {
+				setCandidates(found);
+				setShowHint(false);
+			} else {
+				toast.error("Couldn't identify that card. Try again or keep scanning.");
+			}
+		} finally {
+			if (isActiveRef.current) setAiScanning(false);
+		}
+	}
+
 	async function handleFileFallback(file: File) {
 		try {
 			const bitmap = await createImageBitmap(file);
@@ -316,6 +419,26 @@ export function ScanView() {
 				{camera.status !== "active" && (
 					<FileFallbackButton onFile={handleFileFallback} />
 				)}
+				{camera.status === "active" &&
+					(aiScan.state === "needs_plus" || aiScan.state === "unauthorized" ? (
+						<Button type="button" variant="outline" size="sm" asChild>
+							<Link to="/billing">
+								<SparklesIcon /> AI scan
+								<Badge variant="default">Plus</Badge>
+							</Link>
+						</Button>
+					) : (
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={() => void handleAiScan()}
+							disabled={aiScanning}
+						>
+							<SparklesIcon /> {aiScanning ? "Scanning..." : "AI scan"}
+							{!isPlus && <Badge variant="default">Plus</Badge>}
+						</Button>
+					))}
 				{FIXTURE_CAPTURE_ENABLED && lastCropsRef.current && (
 					<Button
 						type="button"
@@ -329,6 +452,12 @@ export function ScanView() {
 					</Button>
 				)}
 			</div>
+
+			{camera.status === "active" && (
+				<p className="max-w-md text-xs text-[var(--ink-muted)]">
+					AI scan sends this one photo to the server.
+				</p>
+			)}
 
 			<CandidateTray candidates={candidates} onAdd={handleAdd} />
 
