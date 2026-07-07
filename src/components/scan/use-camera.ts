@@ -29,6 +29,27 @@ export function useCamera(): UseCameraResult {
 	const [torchSupported, setTorchSupported] = useState(false);
 	const [torchOn, setTorchOn] = useState(false);
 
+	// The consumer renders <video> only while status === "active", so at the
+	// moment getUserMedia resolves the ref is still null and start()'s inline
+	// attach silently skips. Re-attach after the commit that mounts the video,
+	// or the user gets a black frame with the camera light on.
+	useEffect(() => {
+		if (status !== "active") return;
+		const video = videoRef.current;
+		const stream = streamRef.current;
+		if (video && stream && video.srcObject !== stream) {
+			video.srcObject = stream;
+			// autoplay covers most mounts; nudge play() for browsers that don't
+			// re-evaluate autoplay when srcObject arrives after mount. play()
+			// can throw synchronously (and does in happy-dom) — swallow both.
+			try {
+				void video.play?.()?.catch?.(() => {});
+			} catch {
+				// non-playing environment; the attach above is what matters
+			}
+		}
+	}, [status]);
+
 	const stopTracks = useCallback(() => {
 		const stream = streamRef.current;
 		if (!stream) return;
