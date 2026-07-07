@@ -84,3 +84,22 @@ export function numberRegionWide(guide: Rect): Rect {
 		h: guide.h * 0.1,
 	};
 }
+
+/**
+ * Minimum crop height (px) worth handing to OCR: Tesseract wants glyphs at
+ * roughly 20px+ and low-res streams (default webcam 640x480) produce number
+ * strips far below that. Crops smaller than this get upscaled at draw time.
+ */
+export const MIN_OCR_CROP_HEIGHT = 96;
+
+/**
+ * Output dimensions for an OCR crop of `rect`: identity for large-enough
+ * crops, uniformly upscaled so height reaches MIN_OCR_CROP_HEIGHT otherwise.
+ */
+export function ocrCropDims(rect: Rect): { w: number; h: number } {
+	const scale = Math.max(1, MIN_OCR_CROP_HEIGHT / Math.max(1, rect.h));
+	return {
+		w: Math.max(1, Math.round(rect.w * scale)),
+		h: Math.max(1, Math.round(rect.h * scale)),
+	};
+}

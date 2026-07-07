@@ -1,5 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { guideRect, nameRegion, numberRegion, numberRegionWide } from "./guide";
+import {
+	guideRect,
+	nameRegion,
+	numberRegion,
+	numberRegionWide,
+	ocrCropDims,
+} from "./guide";
 
 // R1: guide-frame alignment geometry (pure math, no DOM/camera).
 const CARD_ASPECT = 63 / 88; // w:h
@@ -106,5 +112,24 @@ describe("numberRegionWide", () => {
 		const region = numberRegionWide(guide);
 		expect(region.x).toBeCloseTo(guide.x, 5);
 		expect(region.w).toBeCloseTo(guide.w, 5);
+	});
+});
+
+describe("ocrCropDims", () => {
+	test("small crops upscale uniformly to the OCR floor", () => {
+		const dims = ocrCropDims({ x: 0, y: 0, w: 100, h: 24 });
+		expect(dims.h).toBe(96);
+		expect(dims.w).toBe(400); // 4x uniform
+	});
+	test("large crops pass through untouched", () => {
+		expect(ocrCropDims({ x: 0, y: 0, w: 500, h: 120 })).toEqual({
+			w: 500,
+			h: 120,
+		});
+	});
+	test("degenerate rects stay positive", () => {
+		const dims = ocrCropDims({ x: 0, y: 0, w: 0, h: 0 });
+		expect(dims.w).toBeGreaterThanOrEqual(1);
+		expect(dims.h).toBeGreaterThanOrEqual(1);
 	});
 });

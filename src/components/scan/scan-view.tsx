@@ -25,7 +25,13 @@ import { addStack } from "../../store/userland/userland-store";
 import { Button } from "../ui/button";
 import { CandidateTray } from "./candidate-tray";
 import { captureFixture, FIXTURE_CAPTURE_ENABLED } from "./fixture-capture";
-import { guideRect, nameRegion, numberRegion, numberRegionWide } from "./guide";
+import {
+	guideRect,
+	nameRegion,
+	numberRegion,
+	numberRegionWide,
+	ocrCropDims,
+} from "./guide";
 import { useAiScan } from "./use-ai-scan";
 import { useCamera } from "./use-camera";
 
@@ -76,16 +82,23 @@ function canvasToJpegBase64(canvas: HTMLCanvasElement): string | null {
 	return comma === -1 ? null : dataUrl.slice(comma + 1);
 }
 
-/** Draw `source` cropped to `rect` (source coords) onto an offscreen canvas, grayscale+contrast. */
+/**
+ * Draw `source` cropped to `rect` (source coords) onto an offscreen canvas,
+ * grayscale+contrast, upscaled to the OCR floor when the strip is small
+ * (low-res webcam streams starve Tesseract of glyph pixels otherwise).
+ */
 function cropToCanvas(
 	source: CanvasImageSource,
 	rect: { x: number; y: number; w: number; h: number },
 ): HTMLCanvasElement {
 	const canvas = document.createElement("canvas");
-	canvas.width = Math.max(1, Math.round(rect.w));
-	canvas.height = Math.max(1, Math.round(rect.h));
+	const dims = ocrCropDims(rect);
+	canvas.width = dims.w;
+	canvas.height = dims.h;
 	const ctx = canvas.getContext("2d");
 	if (!ctx) return canvas;
+	ctx.imageSmoothingEnabled = true;
+	ctx.imageSmoothingQuality = "high";
 	ctx.filter = "grayscale(1) contrast(1.6)";
 	ctx.drawImage(
 		source,

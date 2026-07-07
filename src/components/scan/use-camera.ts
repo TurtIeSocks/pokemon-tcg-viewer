@@ -79,7 +79,14 @@ export function useCamera(): UseCameraResult {
 		}
 		try {
 			const stream = await navigator.mediaDevices.getUserMedia({
-				video: { facingMode: { ideal: "environment" } },
+				video: {
+					facingMode: { ideal: "environment" },
+					// Default streams are often 640x480, which starves the OCR
+					// crops of pixels (a number strip lands ~100x25). Ask for
+					// 1080p+; devices downgrade gracefully to their best mode.
+					width: { ideal: 1920 },
+					height: { ideal: 1080 },
+				},
 				audio: false,
 			});
 			streamRef.current = stream;
@@ -91,6 +98,21 @@ export function useCamera(): UseCameraResult {
 			// `torch` isn't in the lib.dom.d.ts MediaTrackCapabilities type yet
 			// on most TS lib versions; capability checks fall back to `in`.
 			setTorchSupported(Boolean(capabilities && "torch" in capabilities));
+			// Continuous autofocus must be requested where supported (phones,
+			// some webcams). Fixed-focus hardware simply lacks the capability;
+			// best-effort, same non-standard-typing dance as torch.
+			if (track && capabilities && "focusMode" in capabilities) {
+				const modes = (capabilities as { focusMode?: string[] }).focusMode;
+				if (modes?.includes("continuous")) {
+					void track
+						.applyConstraints({
+							advanced: [
+								{ focusMode: "continuous" } as MediaTrackConstraintSet,
+							],
+						})
+						.catch(() => {});
+				}
+			}
 			setStatus("active");
 		} catch (err) {
 			if (err instanceof DOMException && err.name === "NotAllowedError") {
