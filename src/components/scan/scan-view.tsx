@@ -162,6 +162,7 @@ export function ScanView() {
 
 	const [candidates, setCandidates] = useState<ScanCandidate[]>([]);
 	const [nameGuess, setNameGuess] = useState<string | null>(null);
+	const [lastRead, setLastRead] = useState<string | null>(null);
 	const [sessionCount, setSessionCount] = useState(0);
 	const [showHint, setShowHint] = useState(false);
 	const [scanning, setScanning] = useState(false);
@@ -209,32 +210,34 @@ export function ScanView() {
 			fullCtx.drawImage(video, 0, 0, viewW, viewH);
 
 			const guide = guideRect(viewW, viewH);
-			let numberCanvas = cropToCanvas(video, numberRegion(guide));
+			// Wide bottom band as the ONLY number region: numbers sit bottom-left,
+			// bottom-right, or centered depending on era, and the parser already
+			// digs N/T out of surrounding noise. One pass per tick beats the old
+			// narrow-then-wide retry (half the OCR latency when not bottom-left).
+			const numberCanvas = cropToCanvas(video, numberRegionWide(guide));
 			const nameCanvas = cropToCanvas(video, nameRegion(guide));
 			lastCropsRef.current = { full, number: numberCanvas, name: nameCanvas };
 
 			try {
 				const ocr = await getOcr();
 				if (!isActiveRef.current) return;
-				let numberText = await ocr.recognizeNumber(numberCanvas);
+				const numberText = await ocr.recognizeNumber(numberCanvas);
 				if (!isActiveRef.current) return;
-				let reading = parseNumberText(numberText);
-				if (!reading) {
-					// Retry with the wide fallback region (number printed off the
-					// bottom-left corner) before giving up this frame.
-					numberCanvas = cropToCanvas(video, numberRegionWide(guide));
-					lastCropsRef.current = {
-						full,
-						number: numberCanvas,
-						name: nameCanvas,
-					};
-					numberText = await ocr.recognizeNumber(numberCanvas);
-					if (!isActiveRef.current) return;
-					reading = parseNumberText(numberText);
-				}
+				const reading = parseNumberText(numberText);
 				const nameText = parseNameText(await ocr.recognizeName(nameCanvas));
 				if (!isActiveRef.current) return;
 				setNameGuess(nameText);
+				// Live alignment feedback: without this the user wiggles the card
+				// blindly until the tray appears. Show what OCR actually read.
+				setLastRead(
+					reading
+						? reading.total != null
+							? `${reading.number}/${reading.total}`
+							: reading.number
+						: nameText
+							? `name: ${nameText}`
+							: null,
+				);
 
 				const consensus = voterRef.current.push(reading);
 				// R3: single-frame results are never trusted. A keyed reading
@@ -514,7 +517,12 @@ export function ScanView() {
 					</Button>
 				)}
 
-				{showHint && (
+				{camera.status === "active" && lastRead && (
+					<div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-[var(--r-pill)] border border-white/10 bg-black/60 px-3 py-1.5 text-center font-mono text-xs text-white tabular-nums">
+						Saw: {lastRead}
+					</div>
+				)}
+				{showHint && !lastRead && (
 					<div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-[var(--r-pill)] border border-white/10 bg-black/60 px-3 py-1.5 text-center text-xs text-white">
 						More light. Fill the frame.
 					</div>
