@@ -7,6 +7,7 @@ import {
 	Layers,
 	LayoutDashboard,
 	type LucideIcon,
+	ScanLine,
 	UserRound,
 } from "lucide-react";
 
@@ -49,6 +50,12 @@ export const NAV_DESTINATIONS: readonly NavDestination[] = [
 		to: "/vault/binders",
 		icon: BookOpen,
 		keywords: "goals lists",
+	},
+	{
+		label: "Scan cards",
+		to: "/scan",
+		icon: ScanLine,
+		keywords: "camera ocr add",
 	},
 	{ label: "Profile", to: "/profile", icon: UserRound, keywords: "account" },
 	{

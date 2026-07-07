@@ -6,6 +6,7 @@ import {
 	Layers,
 	LayoutDashboard,
 	type LucideIcon,
+	ScanLine,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
@@ -116,6 +117,7 @@ const VAULT_CHILDREN = [
 	{ label: "All Cards", to: "/vault/cards", icon: Layers },
 	{ label: "Sets", to: "/vault/sets", icon: Boxes },
 	{ label: "Binders", to: "/vault/binders", icon: BookOpen },
+	{ label: "Scan cards", to: "/scan", icon: ScanLine },
 ] as const satisfies VaultChild[];
 
 /** Flat Vault items under the "Vault" group label (matches the mock — no nested

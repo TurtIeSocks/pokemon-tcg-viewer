@@ -62,6 +62,8 @@ mechanism as the CI-only build-time vars below.
 | `APP_ORIGIN` | `@tcgvault/cloud` (optional) | `/etc/tcg/env` (server runtime) | no |
 | `VITE_SUPABASE_URL` | core — **both** client bundle AND server SSR | GitHub Actions repo **Variable** (build time) AND `/etc/tcg/env` (server runtime) | no |
 | `VITE_SUPABASE_ANON_KEY` | core — **both** client bundle AND server SSR | GitHub Actions repo **Variable** (build time) AND `/etc/tcg/env` (server runtime) | no (RLS-scoped) |
+| `ANTHROPIC_API_KEY` | core (`/api/scan`, AI card scan) | `/etc/tcg/env` (server runtime) | **yes** |
+| `SCAN_MODEL` | core (`/api/scan`, optional, default `claude-haiku-4-5`) | `/etc/tcg/env` (server runtime) | no |
 
 Notes:
 
@@ -145,6 +147,11 @@ real Stripe test-mode path end to end, not the DI-mocked plugin unit tests —
 treat a red step there as a launch blocker.
 
 ## Billing runbook
+
+**AI card scan returns 503.** `ANTHROPIC_API_KEY` is missing from
+`/etc/tcg/env` (it gates the whole route, R6); the free on-device OCR
+scanner at `/scan` still works with no key set. Add the key, `sudo systemctl
+restart tcg`, then confirm with a signed-in Plus account (R5, R8).
 
 **Webhook failures.** Stripe Dashboard → Developers → Webhooks → click the
 endpoint → delivery log shows every attempt + response code/body. On the

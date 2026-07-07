@@ -69,6 +69,11 @@ export function VaultOverviewInner({ tree }: { tree: NavTree }) {
 			<VaultPageHeader
 				title="Overview"
 				subtitle="Every copy you own, in one place."
+				actions={
+					<Button asChild size="sm">
+						<Link to="/scan">Scan cards</Link>
+					</Button>
+				}
 			/>
 
 			{/* Summary bezel */}
