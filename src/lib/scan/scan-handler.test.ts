@@ -110,6 +110,43 @@ describe("handleScan", () => {
 		expect(await res.json()).toEqual({ error: "image too large" });
 	});
 
+	it("returns 400 for a malformed (non-JSON) body without calling vision", async () => {
+		const deps = fakeDeps({
+			vision: async () => {
+				throw new Error("must not be called");
+			},
+		});
+		const malformed = new Request("http://localhost/api/scan", {
+			method: "POST",
+			body: "not json {",
+		});
+		const res = await handleScan(malformed, deps);
+		expect(res.status).toBe(400);
+		expect(await res.json()).toEqual({ error: "invalid request body" });
+	});
+
+	it("returns 400 for valid JSON missing imageBase64 without calling vision", async () => {
+		const deps = fakeDeps({
+			vision: async () => {
+				throw new Error("must not be called");
+			},
+		});
+		const res = await handleScan(req({ somethingElse: "abc" }), deps);
+		expect(res.status).toBe(400);
+		expect(await res.json()).toEqual({ error: "invalid request body" });
+	});
+
+	it("returns 400 for a non-string imageBase64 without calling vision", async () => {
+		const deps = fakeDeps({
+			vision: async () => {
+				throw new Error("must not be called");
+			},
+		});
+		const res = await handleScan(req({ imageBase64: 42 }), deps);
+		expect(res.status).toBe(400);
+		expect(await res.json()).toEqual({ error: "invalid request body" });
+	});
+
 	it("returns 502 with a terse body and logs forensics without the image payload when vision throws", async () => {
 		const originalError = console.error;
 		const logged: unknown[][] = [];
