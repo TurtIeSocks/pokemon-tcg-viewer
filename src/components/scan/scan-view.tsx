@@ -46,6 +46,13 @@ const AI_SCAN_JPEG_QUALITY = 0.8;
 const LOOP_INTERVAL_MS = 500;
 const HINT_DELAY_MS = 6000;
 
+// AI scan (Plus, /api/scan haiku vision) is built and server-gated but held
+// back from the UI until on-device accuracy is field-proven -- the vision path
+// isn't ready to be seen yet. Flip to true to surface the button + upload
+// disclosure again. Handler + crop helpers stay wired (not deleted) so
+// re-enabling is this one line, not a rebuild.
+const AI_SCAN_ENABLED = false;
+
 /** Draw `source` cropped to `rect` (source coords) onto an offscreen canvas, full color. */
 function cropToCanvasColor(
 	source: CanvasImageSource,
@@ -583,6 +590,13 @@ export function ScanView() {
 
 	return (
 		<div className="flex flex-col gap-4">
+			<p className="max-w-md rounded-[var(--r-control)] border border-[var(--primary)]/30 bg-[var(--primary-wash)] px-3 py-2 text-xs text-[var(--ink-muted)]">
+				<span className="font-medium text-[var(--ink)]">Early alpha.</span> The
+				scanner is brand new and still learning, so results will keep improving.
+				If a card is not found, line it up inside the frame, add more light, or
+				search for it manually.
+			</p>
+
 			<GlassPanel className="relative aspect-[3/4] w-full max-w-md overflow-hidden">
 				<div ref={videoWrapRef} className="absolute inset-0">
 					{camera.status === "active" ? (
@@ -677,7 +691,8 @@ export function ScanView() {
 				{camera.status !== "active" && (
 					<FileFallbackButton onFile={handleFileFallback} />
 				)}
-				{camera.status === "active" &&
+				{AI_SCAN_ENABLED &&
+					camera.status === "active" &&
 					(aiScan.state === "needs_plus" || aiScan.state === "unauthorized" ? (
 						<Button type="button" variant="outline" size="sm" asChild>
 							<Link to="/billing">
@@ -711,7 +726,7 @@ export function ScanView() {
 				)}
 			</div>
 
-			{camera.status === "active" && (
+			{AI_SCAN_ENABLED && camera.status === "active" && (
 				<p className="max-w-md text-xs text-[var(--ink-muted)]">
 					AI scan sends this one photo to the server.
 				</p>
