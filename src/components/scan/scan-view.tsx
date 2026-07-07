@@ -4,6 +4,7 @@ import {
 	CameraIcon,
 	FlashlightIcon,
 	SparklesIcon,
+	SwitchCameraIcon,
 	UploadIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -615,20 +616,41 @@ export function ScanView() {
 					</div>
 				)}
 
-				{camera.torch.supported && camera.status === "active" && (
-					<Button
-						type="button"
-						size="icon-sm"
-						variant="secondary"
-						className="absolute top-3 right-3"
-						aria-label={
-							camera.torch.on ? "Turn off flashlight" : "Turn on flashlight"
-						}
-						onClick={() => void camera.torch.toggle()}
-					>
-						<FlashlightIcon />
-					</Button>
-				)}
+				{camera.status === "active" &&
+					(camera.torch.supported || camera.lenses.count > 1) && (
+						<div className="absolute top-3 right-3 flex items-center gap-2">
+							{camera.torch.supported && (
+								<Button
+									type="button"
+									size="icon-sm"
+									variant="secondary"
+									aria-label={
+										camera.torch.on
+											? "Turn off flashlight"
+											: "Turn on flashlight"
+									}
+									onClick={() => void camera.torch.toggle()}
+								>
+									<FlashlightIcon />
+								</Button>
+							)}
+							{camera.lenses.count > 1 && (
+								// Lens pinning: some phones firmware-switch to a macro
+								// lens inside a trigger distance that card scanning
+								// sits right on, causing focus flapping -- cycling to
+								// a pinned deviceId is the fix.
+								<Button
+									type="button"
+									size="icon-sm"
+									variant="secondary"
+									aria-label="Switch camera lens"
+									onClick={() => void camera.lenses.cycle()}
+								>
+									<SwitchCameraIcon />
+								</Button>
+							)}
+						</div>
+					)}
 
 				{camera.status === "active" && lastRead && (
 					<div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-[var(--r-pill)] border border-white/10 bg-black/60 px-3 py-1.5 text-center font-mono text-xs text-white tabular-nums">
@@ -693,6 +715,42 @@ export function ScanView() {
 				<p className="max-w-md text-xs text-[var(--ink-muted)]">
 					AI scan sends this one photo to the server.
 				</p>
+			)}
+
+			{camera.zoom.supported && camera.status === "active" && (
+				// The other lens-flapping lever (see the lenses.cycle() button
+				// above): zooming in from farther away keeps the card outside the
+				// macro-lens trigger distance without switching physical lenses.
+				// Two fixed stops only (ponytail) -- no slider.
+				<div className="flex flex-col gap-1.5">
+					<div className="flex items-center gap-2">
+						<Button
+							type="button"
+							size="sm"
+							variant={
+								Math.round(camera.zoom.value) === 1 ? "default" : "secondary"
+							}
+							aria-label="Zoom 1x"
+							onClick={() => void camera.zoom.set(1)}
+						>
+							1x
+						</Button>
+						<Button
+							type="button"
+							size="sm"
+							variant={
+								Math.round(camera.zoom.value) === 2 ? "default" : "secondary"
+							}
+							aria-label="Zoom 2x"
+							onClick={() => void camera.zoom.set(2)}
+						>
+							2x
+						</Button>
+					</div>
+					<p className="max-w-md text-xs text-[var(--ink-muted)]">
+						Tip: zoom in and hold the card farther away for steadier focus.
+					</p>
+				</div>
 			)}
 
 			<CandidateTray
