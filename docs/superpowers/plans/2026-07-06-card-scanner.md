@@ -409,3 +409,9 @@ Not an agent task until fixtures exist. Owner shoots ~15 cards via the R10 captu
 - Spec coverage: R1 (T4/T5), R2 (T1/T2), R3 (T3), R4 (T4), R5/R6 (T6), R7 (T5/T7), R8 (T8), R9 (T2 digit matching is region-agnostic by construction; copy in T5), R10 (T5 + T9). Env table (T8). All covered.
 - Type consistency: `NumberReading`/`ScanCandidate` defined once (T1) and consumed by T2/T3/T5/T7; `AiScanResult.setTotal` maps to `NumberReading.total` explicitly in T7.
 - No placeholders: every code step shows real code or names the exact source file whose pattern to copy.
+
+## Recorded deviations (final review)
+
+- Quick-add (`candidate-tray.tsx`) ships quantity only; there is no variant field, unlike the spec §2 prose ("variant, quantity; sane defaults").
+- There is no batch summary screen when the user is done scanning; only the running session-count chip (`scan-view.tsx`).
+- AI scan 401 routes the button to `/billing` (same as `needs_plus`), not a sign-in prompt as the spec's error-handling table states.

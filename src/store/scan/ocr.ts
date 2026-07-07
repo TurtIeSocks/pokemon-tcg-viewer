@@ -28,22 +28,50 @@ const NUMBER_WHITELIST = "0123456789/ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 let enginePromise: Promise<OcrEngine> | null = null;
 
+// R4: the underlying Tesseract worker is a single FIFO queue -- there is
+// only ever one of it (memoized above). `setParameters` then `recognize`
+// must run as an atomic pair per call; without serialization, two overlapping
+// callers (e.g. an in-flight runFrame tick racing a late-arriving one before
+// scan-view.tsx's busyRef could stop it) can interleave their setParameters
+// calls, so the number pass's whitelist gets clobbered by the name pass's
+// empty whitelist (or vice versa) mid-recognition. `withOcrLock` chains every
+// setParameters+recognize pair onto a module-level promise so pair N+1 never
+// starts until pair N's `recognize()` has resolved, regardless of caller.
+let queue: Promise<unknown> = Promise.resolve();
+
+function withOcrLock<T>(task: () => Promise<T>): Promise<T> {
+	const result = queue.then(task, task);
+	// Swallow so a failed task doesn't wedge the queue for later callers; the
+	// caller of withOcrLock still sees (and can react to) the rejection.
+	queue = result.then(
+		() => undefined,
+		() => undefined,
+	);
+	return result;
+}
+
 async function createOcrEngine(): Promise<OcrEngine> {
 	const { createWorker } = await import("tesseract.js");
 	const worker = await createWorker("eng");
 
 	return {
-		async recognizeNumber(canvas: HTMLCanvasElement): Promise<string> {
-			await worker.setParameters({ tessedit_char_whitelist: NUMBER_WHITELIST });
-			const { data } = await worker.recognize(canvas);
-			return data.text;
+		recognizeNumber(canvas: HTMLCanvasElement): Promise<string> {
+			return withOcrLock(async () => {
+				await worker.setParameters({
+					tessedit_char_whitelist: NUMBER_WHITELIST,
+				});
+				const { data } = await worker.recognize(canvas);
+				return data.text;
+			});
 		},
-		async recognizeName(canvas: HTMLCanvasElement): Promise<string> {
-			// No whitelist for the name pass: card names use full latin text
-			// (and accented characters for some regions).
-			await worker.setParameters({ tessedit_char_whitelist: "" });
-			const { data } = await worker.recognize(canvas);
-			return data.text;
+		recognizeName(canvas: HTMLCanvasElement): Promise<string> {
+			return withOcrLock(async () => {
+				// No whitelist for the name pass: card names use full latin text
+				// (and accented characters for some regions).
+				await worker.setParameters({ tessedit_char_whitelist: "" });
+				const { data } = await worker.recognize(canvas);
+				return data.text;
+			});
 		},
 		async terminate(): Promise<void> {
 			await worker.terminate();

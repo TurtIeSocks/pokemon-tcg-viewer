@@ -159,15 +159,34 @@ export async function handleScan(
 	if (imageBase64.length > MAX_BODY_BYTES) {
 		return jsonResponse(413, { error: "image too large" });
 	}
+	// Cheap poison-pill guard: reject anything that isn't valid base64
+	// charset BEFORE it ever reaches the vision call. A non-base64 string
+	// would still cost a full Anthropic round trip (and dollars, R6 margin)
+	// only to fail upstream; this catches it for the price of a regex.
+	if (!/^[A-Za-z0-9+/=]+$/.test(imageBase64)) {
+		return jsonResponse(400, { error: "invalid request body" });
+	}
 
 	if (deps.cloudEnabled()) {
-		const user = await deps.getUser();
-		if (!user) {
-			return jsonResponse(401, { error: "not signed in" });
-		}
-		const entitled = await deps.isEntitled();
-		if (!entitled) {
-			return jsonResponse(403, { error: "needs_plus" });
+		try {
+			const user = await deps.getUser();
+			if (!user) {
+				return jsonResponse(401, { error: "not signed in" });
+			}
+			const entitled = await deps.isEntitled();
+			if (!entitled) {
+				return jsonResponse(403, { error: "needs_plus" });
+			}
+		} catch (err) {
+			// getUser/isEntitled reaching this catch means Supabase itself is
+			// unreachable/erroring, not a normal auth-denied outcome (those are
+			// the 401/403 branches above). Fail closed with a terse 503 and log
+			// forensics server-side only -- never the image payload.
+			console.error(
+				"[scan] auth/entitlement check threw:",
+				err instanceof Error ? err.message : String(err),
+			);
+			return jsonResponse(503, { error: "auth unavailable" });
 		}
 	}
 	// !cloudEnabled() -> self-host open-core: skip auth/entitlement entirely (R5).

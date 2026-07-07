@@ -73,11 +73,13 @@ describe("useAiScan", () => {
 		});
 		const { result } = renderHook(() => useAiScan());
 
-		let candidates: Awaited<ReturnType<typeof result.current.run>> = [];
+		let runResult!: Awaited<ReturnType<typeof result.current.run>>;
 		await act(async () => {
-			candidates = await result.current.run("base64jpeg");
+			runResult = await result.current.run("base64jpeg");
 		});
 
+		expect(runResult.state).toBe("ok");
+		const candidates = runResult.state === "ok" ? runResult.candidates : [];
 		expect(candidates.length).toBeGreaterThan(0);
 		expect(candidates[0]?.cardId).toBe("sv1-86");
 		expect(result.current.state).toBe("idle");
@@ -90,58 +92,113 @@ describe("useAiScan", () => {
 		});
 	});
 
-	test("401 sets state to unauthorized and returns no candidates", async () => {
+	test("empty number in the AI result falls back to name-only matching (no keyed match)", async () => {
+		mockFetchOnce(200, {
+			name: "Skiddo",
+			number: "   ",
+			setTotal: 198,
+			language: "en",
+			confidence: 0.4,
+		});
+		const { result } = renderHook(() => useAiScan());
+
+		let runResult!: Awaited<ReturnType<typeof result.current.run>>;
+		await act(async () => {
+			runResult = await result.current.run("base64jpeg");
+		});
+
+		expect(runResult.state).toBe("ok");
+		const candidates = runResult.state === "ok" ? runResult.candidates : [];
+		expect(candidates.some((c) => c.cardId === "sv1-86")).toBe(true);
+	});
+
+	test("401 returns the unauthorized discriminated result and sets state", async () => {
 		mockFetchOnce(401, { error: "not signed in" });
 		const { result } = renderHook(() => useAiScan());
 
-		let candidates: Awaited<ReturnType<typeof result.current.run>> = [];
+		let runResult!: Awaited<ReturnType<typeof result.current.run>>;
 		await act(async () => {
-			candidates = await result.current.run("base64jpeg");
+			runResult = await result.current.run("base64jpeg");
 		});
 
-		expect(candidates).toEqual([]);
+		expect(runResult).toEqual({ state: "unauthorized" });
 		expect(result.current.state).toBe("unauthorized");
 	});
 
-	test("403 sets state to needs_plus and returns no candidates", async () => {
+	test("403 returns the needs_plus discriminated result and sets state", async () => {
 		mockFetchOnce(403, { error: "needs_plus" });
 		const { result } = renderHook(() => useAiScan());
 
-		let candidates: Awaited<ReturnType<typeof result.current.run>> = [];
+		let runResult!: Awaited<ReturnType<typeof result.current.run>>;
 		await act(async () => {
-			candidates = await result.current.run("base64jpeg");
+			runResult = await result.current.run("base64jpeg");
 		});
 
-		expect(candidates).toEqual([]);
+		expect(runResult).toEqual({ state: "needs_plus" });
 		expect(result.current.state).toBe("needs_plus");
 	});
 
-	test("500 sets state to error and returns no candidates", async () => {
+	test("500 returns the error discriminated result and sets state", async () => {
 		mockFetchOnce(500, { error: "scan failed" });
 		const { result } = renderHook(() => useAiScan());
 
-		let candidates: Awaited<ReturnType<typeof result.current.run>> = [];
+		let runResult!: Awaited<ReturnType<typeof result.current.run>>;
 		await act(async () => {
-			candidates = await result.current.run("base64jpeg");
+			runResult = await result.current.run("base64jpeg");
 		});
 
-		expect(candidates).toEqual([]);
+		expect(runResult).toEqual({ state: "error" });
 		expect(result.current.state).toBe("error");
 	});
 
-	test("a network throw also lands in error state", async () => {
+	test("a network throw also returns the error discriminated result", async () => {
 		fetchSpy = spyOn(globalThis, "fetch").mockRejectedValue(
 			new Error("network down"),
 		);
 		const { result } = renderHook(() => useAiScan());
 
-		let candidates: Awaited<ReturnType<typeof result.current.run>> = [];
+		let runResult!: Awaited<ReturnType<typeof result.current.run>>;
 		await act(async () => {
-			candidates = await result.current.run("base64jpeg");
+			runResult = await result.current.run("base64jpeg");
 		});
 
-		expect(candidates).toEqual([]);
+		expect(runResult).toEqual({ state: "error" });
 		expect(result.current.state).toBe("error");
+	});
+
+	test("a successful retry after a prior failure is not discarded (regression: stale-closure bug)", async () => {
+		// Simulates the exact bug scan-view.tsx handleAiScan had: reading
+		// `aiScan.state` after an `await` instead of branching on the return
+		// value. Here we call `run` twice back-to-back (first fails, second
+		// succeeds) and assert the SECOND call's own return value is "ok" with
+		// candidates, regardless of what `state` settles to afterward.
+		mockFetchOnce(500, { error: "scan failed" });
+		const { result } = renderHook(() => useAiScan());
+
+		let firstResult!: Awaited<ReturnType<typeof result.current.run>>;
+		await act(async () => {
+			firstResult = await result.current.run("base64jpeg");
+		});
+		expect(firstResult).toEqual({ state: "error" });
+
+		fetchSpy?.mockRestore();
+		mockFetchOnce(200, {
+			name: "Skiddo",
+			number: "86",
+			setTotal: 198,
+			language: "en",
+			confidence: 0.9,
+		});
+
+		let secondResult!: Awaited<ReturnType<typeof result.current.run>>;
+		await act(async () => {
+			secondResult = await result.current.run("base64jpeg");
+		});
+
+		expect(secondResult.state).toBe("ok");
+		const candidates =
+			secondResult.state === "ok" ? secondResult.candidates : [];
+		expect(candidates.some((c) => c.cardId === "sv1-86")).toBe(true);
 	});
 
 	test("state is loading while the request is in flight", async () => {

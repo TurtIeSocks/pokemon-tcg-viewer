@@ -22,9 +22,22 @@ export type AiScanState =
 	| "unauthorized"
 	| "needs_plus";
 
+/**
+ * Discriminated result returned directly from `run()`. Callers MUST branch on
+ * this return value, not on `state` read after the `await` -- `state` is
+ * exposed purely so the button can re-render (Plus chip / spinner text)
+ * across renders, and reading it post-await is a stale closure: if the user
+ * retries quickly, a second call's `setState` can land between the first
+ * call's `await` and its own post-await read of `state`, silently discarding
+ * a successful retry. See scan-view.tsx handleAiScan.
+ */
+export type AiRunResult =
+	| { state: "ok"; candidates: ScanCandidate[] }
+	| { state: "unauthorized" | "needs_plus" | "error" };
+
 export interface UseAiScanResult {
-	/** POST the JPEG (base64, no data-URL prefix) and resolve ranked matches. */
-	run(frameJpegBase64: string): Promise<ScanCandidate[]>;
+	/** POST the JPEG (base64, no data-URL prefix); resolves the discriminated result. */
+	run(frameJpegBase64: string): Promise<AiRunResult>;
 	state: AiScanState;
 }
 
@@ -44,7 +57,7 @@ export function useAiScan(): UseAiScanResult {
 	const sets = useStore((s) => setsForRegion(s, activeRegion));
 
 	const run = useCallback(
-		async (frameJpegBase64: string): Promise<ScanCandidate[]> => {
+		async (frameJpegBase64: string): Promise<AiRunResult> => {
 			setState("loading");
 			try {
 				const res = await fetch("/api/scan", {
@@ -55,31 +68,39 @@ export function useAiScan(): UseAiScanResult {
 
 				if (res.status === 401) {
 					setState("unauthorized");
-					return [];
+					return { state: "unauthorized" };
 				}
 				if (res.status === 403) {
 					setState("needs_plus");
-					return [];
+					return { state: "needs_plus" };
 				}
 				if (!res.ok) {
 					setState("error");
-					return [];
+					return { state: "error" };
 				}
 
 				const result = (await res.json()) as AiScanResultBody;
 				setState("idle");
-				if (!index) return [];
-				return matchScan(
-					{
-						reading: { number: result.number, total: result.setTotal },
-						nameText: result.name,
-					},
-					index.cards,
-					sets ?? [],
-				);
+				// R2/R6: empty/whitespace `number` means the vision model found no
+				// printed collector number (e.g. glare, sticker, odd promo) --
+				// treat it the same as no reading at all so matchScan falls back to
+				// name-only fuzzy instead of keying off an empty string.
+				const trimmedNumber = result.number.trim();
+				const reading =
+					trimmedNumber.length > 0
+						? { number: trimmedNumber, total: result.setTotal }
+						: null;
+				const candidates = index
+					? matchScan(
+							{ reading, nameText: result.name },
+							index.cards,
+							sets ?? [],
+						)
+					: [];
+				return { state: "ok", candidates };
 			} catch {
 				setState("error");
-				return [];
+				return { state: "error" };
 			}
 		},
 		[index, sets],

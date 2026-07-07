@@ -98,6 +98,48 @@ describe("handleScan", () => {
 		expect(await res.json()).toEqual(SAMPLE_RESULT);
 	});
 
+	it("returns 503 auth unavailable when getUser throws, without calling vision", async () => {
+		const deps = fakeDeps({
+			getUser: async () => {
+				throw new Error("supabase unreachable");
+			},
+			vision: async () => {
+				throw new Error("must not be called");
+			},
+		});
+		const res = await handleScan(req({ imageBase64: "abc" }), deps);
+		expect(res.status).toBe(503);
+		expect(await res.json()).toEqual({ error: "auth unavailable" });
+	});
+
+	it("returns 503 auth unavailable when isEntitled throws, without calling vision", async () => {
+		const deps = fakeDeps({
+			isEntitled: async () => {
+				throw new Error("rpc timeout");
+			},
+			vision: async () => {
+				throw new Error("must not be called");
+			},
+		});
+		const res = await handleScan(req({ imageBase64: "abc" }), deps);
+		expect(res.status).toBe(503);
+		expect(await res.json()).toEqual({ error: "auth unavailable" });
+	});
+
+	it("returns 400 for a non-base64-charset imageBase64 without calling vision (poison-pill guard)", async () => {
+		const deps = fakeDeps({
+			vision: async () => {
+				throw new Error("must not be called");
+			},
+		});
+		const res = await handleScan(
+			req({ imageBase64: "not base64!! <script>alert(1)</script>" }),
+			deps,
+		);
+		expect(res.status).toBe(400);
+		expect(await res.json()).toEqual({ error: "invalid request body" });
+	});
+
 	it("returns 413 when the body exceeds 1.5MB", async () => {
 		const oversized = "a".repeat(1.5 * 1024 * 1024 + 100);
 		const deps = fakeDeps({

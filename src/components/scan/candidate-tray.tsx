@@ -14,6 +14,8 @@ interface CandidateTrayProps {
 	candidates: ScanCandidate[];
 	/** Called once the user confirms a quantity for a picked candidate. */
 	onAdd(cardId: string, quantity: number): void;
+	/** Called when the user rejects every candidate shown and wants to keep scanning. */
+	onDismiss(): void;
 }
 
 /**
@@ -23,7 +25,11 @@ interface CandidateTrayProps {
  * zustand-subscription-patterns skill (S3: subscribe in the consuming
  * component).
  */
-export function CandidateTray({ candidates, onAdd }: CandidateTrayProps) {
+export function CandidateTray({
+	candidates,
+	onAdd,
+	onDismiss,
+}: CandidateTrayProps) {
 	const index = useCorpusRuntime((s) => s.index);
 	const activeRegion = useCorpusRuntime((s) => s.activeRegion);
 	const sets = useStore((s) => setsForRegion(s, activeRegion));
@@ -106,6 +112,10 @@ export function CandidateTray({ candidates, onAdd }: CandidateTrayProps) {
 					</Button>
 				</div>
 			)}
+
+			<Button type="button" variant="ghost" size="sm" onClick={onDismiss}>
+				Not these, keep scanning
+			</Button>
 		</GlassPanel>
 	);
 }

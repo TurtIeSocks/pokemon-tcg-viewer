@@ -10,8 +10,15 @@ const PIKACHU_ID = "sv1-87";
 
 function renderTray(candidates: ScanCandidate[]) {
 	const onAdd = mock((_cardId: string, _quantity: number) => {});
-	rtlRender(<CandidateTray candidates={candidates} onAdd={onAdd} />);
-	return { onAdd };
+	const onDismiss = mock(() => {});
+	rtlRender(
+		<CandidateTray
+			candidates={candidates}
+			onAdd={onAdd}
+			onDismiss={onDismiss}
+		/>,
+	);
+	return { onAdd, onDismiss };
 }
 
 beforeEach(() => {
@@ -63,4 +70,14 @@ test("stepping quantity up before confirming passes the stepped value", () => {
 	fireEvent.click(screen.getByRole("button", { name: /add to vault/i }));
 
 	expect(onAdd).toHaveBeenCalledWith(CHARIZARD_ID, 2);
+});
+
+test("dismiss button calls onDismiss so the parent can clear candidates and resume scanning", () => {
+	const { onDismiss } = renderTray([{ cardId: CHARIZARD_ID, score: 0.9 }]);
+
+	fireEvent.click(
+		screen.getByRole("button", { name: /not these, keep scanning/i }),
+	);
+
+	expect(onDismiss).toHaveBeenCalledTimes(1);
 });

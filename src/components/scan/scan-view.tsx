@@ -14,6 +14,7 @@ import { useBilling } from "@/lib/billing/use-billing";
 import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import { useStore } from "../../store";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime-store";
+import { normalize } from "../../store/corpus/fuzzy";
 import { matchScan } from "../../store/scan/match";
 import { disposeOcr, getOcr } from "../../store/scan/ocr";
 import { parseNameText, parseNumberText } from "../../store/scan/parse";
@@ -58,6 +59,16 @@ function cropToCanvasColor(
 	return canvas;
 }
 
+/** Lazily create-and-cache the offscreen full-frame canvas on `ref` (R1 SSR safety, see ScanView). */
+function getFullCanvas(ref: {
+	current: HTMLCanvasElement | null;
+}): HTMLCanvasElement {
+	if (!ref.current) {
+		ref.current = document.createElement("canvas");
+	}
+	return ref.current;
+}
+
 /** Encode a canvas as JPEG (quality 0.8, R6) and strip the data-URL prefix. */
 function canvasToJpegBase64(canvas: HTMLCanvasElement): string | null {
 	const dataUrl = canvas.toDataURL("image/jpeg", AI_SCAN_JPEG_QUALITY);
@@ -97,9 +108,12 @@ function cropToCanvas(
 export function ScanView() {
 	const camera = useCamera();
 	const videoWrapRef = useRef<HTMLDivElement | null>(null);
-	const fullCanvasRef = useRef<HTMLCanvasElement>(
-		document.createElement("canvas"),
-	);
+	// Lazy-init (R1 SSR safety): `useRef(document.createElement("canvas"))`
+	// would call `document.createElement` during render, which throws under
+	// SSR (no `document`). The offscreen canvas is only ever needed inside
+	// event-driven capture paths (runFrame/handleFileFallback), so it is
+	// created on first use via getFullCanvas() below, never at render time.
+	const fullCanvasRef = useRef<HTMLCanvasElement | null>(null);
 	const voterRef = useRef(createVoter());
 	const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 	// True only while the live loop is supposed to be running. clearInterval
@@ -107,6 +121,26 @@ export function ScanView() {
 	// land setState calls after unmount (or after the tray opened) — each
 	// await in runFrame is followed by a check of this ref before touching state.
 	const isActiveRef = useRef(false);
+	// R4: skip a tick while the previous runFrame is still in flight. Without
+	// this, overlapping 500ms ticks can race the single FIFO Tesseract worker
+	// -- two concurrent runFrame calls both await getOcr() then interleave
+	// setParameters+recognize pairs, so the whitelist can flip (name pass
+	// clears it, number pass expects it set) mid-frame. ocr.ts additionally
+	// serializes each pair with a module-level mutex as defense in depth;
+	// this ref is the cheap first line of defense in the caller.
+	const busyRef = useRef(false);
+	// R3: name-only path has no voter behind it (the voter only tallies
+	// keyed number readings), so a tiny local streak counter stands in for
+	// it -- two consecutive ~equal (normalized) name guesses required before
+	// the live loop opens the tray. Reset whenever a keyed consensus fires
+	// or a frame disagrees. The one-shot file-upload path
+	// (handleFileFallback) does NOT use this: a single photo has no "next
+	// frame" to build a streak from, so an immediate name-only tray there is
+	// the legitimate single-shot behavior R3 already carves out.
+	const nameStreakRef = useRef<{ text: string | null; count: number }>({
+		text: null,
+		count: 0,
+	});
 	const lastCropsRef = useRef<{
 		full: HTMLCanvasElement;
 		number: HTMLCanvasElement;
@@ -139,63 +173,102 @@ export function ScanView() {
 	}, []);
 
 	const runFrame = useCallback(async () => {
-		const video = camera.videoRef.current;
-		if (!video || video.readyState < 2 || !index) return;
-		const viewW = video.videoWidth;
-		const viewH = video.videoHeight;
-		if (!viewW || !viewH) return;
-
-		const full = fullCanvasRef.current;
-		full.width = viewW;
-		full.height = viewH;
-		const fullCtx = full.getContext("2d");
-		if (!fullCtx) return;
-		fullCtx.filter = "none";
-		fullCtx.drawImage(video, 0, 0, viewW, viewH);
-
-		const guide = guideRect(viewW, viewH);
-		let numberCanvas = cropToCanvas(video, numberRegion(guide));
-		const nameCanvas = cropToCanvas(video, nameRegion(guide));
-		lastCropsRef.current = { full, number: numberCanvas, name: nameCanvas };
-
+		// R4: skip this tick entirely if the previous runFrame hasn't finished.
+		// Overlapping ticks would both await getOcr() and interleave
+		// setParameters+recognize pairs on the single FIFO Tesseract worker,
+		// so the whitelist could flip between the number and name pass
+		// mid-frame. See busyRef comment above and the mutex in ocr.ts.
+		if (busyRef.current) return;
+		busyRef.current = true;
 		try {
-			const ocr = await getOcr();
-			if (!isActiveRef.current) return;
-			let numberText = await ocr.recognizeNumber(numberCanvas);
-			if (!isActiveRef.current) return;
-			let reading = parseNumberText(numberText);
-			if (!reading) {
-				// Retry with the wide fallback region (number printed off the
-				// bottom-left corner) before giving up this frame.
-				numberCanvas = cropToCanvas(video, numberRegionWide(guide));
-				lastCropsRef.current = {
-					full,
-					number: numberCanvas,
-					name: nameCanvas,
-				};
-				numberText = await ocr.recognizeNumber(numberCanvas);
-				if (!isActiveRef.current) return;
-				reading = parseNumberText(numberText);
-			}
-			const nameText = parseNameText(await ocr.recognizeName(nameCanvas));
-			if (!isActiveRef.current) return;
-			setNameGuess(nameText);
+			const video = camera.videoRef.current;
+			if (!video || video.readyState < 2 || !index) return;
+			const viewW = video.videoWidth;
+			const viewH = video.videoHeight;
+			if (!viewW || !viewH) return;
 
-			const consensus = voterRef.current.push(reading);
-			if (consensus || (!reading && nameText)) {
-				const found = matchScan(
-					{ reading: consensus, nameText },
-					index.cards,
-					sets ?? [],
-				);
-				if (found.length > 0) {
-					setCandidates(found);
-					setShowHint(false);
+			const full = getFullCanvas(fullCanvasRef);
+			full.width = viewW;
+			full.height = viewH;
+			const fullCtx = full.getContext("2d");
+			if (!fullCtx) return;
+			fullCtx.filter = "none";
+			fullCtx.drawImage(video, 0, 0, viewW, viewH);
+
+			const guide = guideRect(viewW, viewH);
+			let numberCanvas = cropToCanvas(video, numberRegion(guide));
+			const nameCanvas = cropToCanvas(video, nameRegion(guide));
+			lastCropsRef.current = { full, number: numberCanvas, name: nameCanvas };
+
+			try {
+				const ocr = await getOcr();
+				if (!isActiveRef.current) return;
+				let numberText = await ocr.recognizeNumber(numberCanvas);
+				if (!isActiveRef.current) return;
+				let reading = parseNumberText(numberText);
+				if (!reading) {
+					// Retry with the wide fallback region (number printed off the
+					// bottom-left corner) before giving up this frame.
+					numberCanvas = cropToCanvas(video, numberRegionWide(guide));
+					lastCropsRef.current = {
+						full,
+						number: numberCanvas,
+						name: nameCanvas,
+					};
+					numberText = await ocr.recognizeNumber(numberCanvas);
+					if (!isActiveRef.current) return;
+					reading = parseNumberText(numberText);
 				}
+				const nameText = parseNameText(await ocr.recognizeName(nameCanvas));
+				if (!isActiveRef.current) return;
+				setNameGuess(nameText);
+
+				const consensus = voterRef.current.push(reading);
+				// R3: single-frame results are never trusted. A keyed reading
+				// already goes through the voter's 2-frame consensus above. The
+				// name-only path (no number detected at all, e.g. glare on the
+				// bottom strip) has no voter backing it, so it gets its own
+				// 2-consecutive-agreeing-guess counter here before opening the
+				// tray -- see nameStreakRef below.
+				if (consensus) {
+					nameStreakRef.current = { text: null, count: 0 };
+					const found = matchScan(
+						{ reading: consensus, nameText },
+						index.cards,
+						sets ?? [],
+					);
+					if (found.length > 0) {
+						setCandidates(found);
+						setShowHint(false);
+					}
+				} else if (!reading && nameText) {
+					const normalized = normalize(nameText);
+					const streak = nameStreakRef.current;
+					if (streak.text === normalized) {
+						streak.count += 1;
+					} else {
+						nameStreakRef.current = { text: normalized, count: 1 };
+					}
+					if (nameStreakRef.current.count >= 2) {
+						const found = matchScan(
+							{ reading: null, nameText },
+							index.cards,
+							sets ?? [],
+						);
+						if (found.length > 0) {
+							setCandidates(found);
+							setShowHint(false);
+						}
+					}
+				} else {
+					nameStreakRef.current = { text: null, count: 0 };
+				}
+			} catch {
+				// A single bad frame is expected (motion blur, misalignment); the
+				// voter/loop simply tries again on the next tick.
 			}
-		} catch {
-			// A single bad frame is expected (motion blur, misalignment); the
-			// voter/loop simply tries again on the next tick.
+		} finally {
+			busyRef.current = false;
 		}
 	}, [camera.videoRef, index, sets]);
 
@@ -260,9 +333,23 @@ export function ScanView() {
 			setCandidates([]);
 			setNameGuess(null);
 			voterRef.current.reset();
+			nameStreakRef.current = { text: null, count: 0 };
 		} catch (e) {
 			toast.error(e instanceof Error ? e.message : "Couldn't add that card.");
 		}
+	}
+
+	/**
+	 * "Not these, keep scanning" (fix 4): clears the current candidates and
+	 * both accumulators so the live loop resumes from a clean slate instead
+	 * of instantly re-opening the tray on the very next tick with the same
+	 * stale voter/streak state.
+	 */
+	function handleDismissCandidates() {
+		setCandidates([]);
+		setNameGuess(null);
+		voterRef.current.reset();
+		nameStreakRef.current = { text: null, count: 0 };
 	}
 
 	/**
@@ -272,6 +359,13 @@ export function ScanView() {
 	 * `runFrame`'s isActiveRef discipline: every check after an `await`
 	 * bails before touching state once the view has gone inactive (unmount,
 	 * camera stopped, or the tray already opened for a different scan).
+	 *
+	 * Branches ONLY on `run`'s returned discriminated result, never on
+	 * `aiScan.state` read after the `await` -- `state` is a hook-internal
+	 * value that can already reflect a LATER call by the time this
+	 * continuation resumes (e.g. a quick retry), which previously both kept
+	 * dead 401/403 branches alive here and could silently discard a
+	 * successful retry that followed a prior failure.
 	 */
 	async function handleAiScan() {
 		if (aiScanning) return;
@@ -294,27 +388,35 @@ export function ScanView() {
 
 		setAiScanning(true);
 		try {
-			const found = await aiScan.run(frameBase64);
+			const result = await aiScan.run(frameBase64);
 			if (!isActiveRef.current) return;
 
-			if (aiScan.state === "unauthorized" || aiScan.state === "needs_plus") {
+			if (result.state === "unauthorized" || result.state === "needs_plus") {
 				// Handled inline by the button (routes to /billing); nothing to
 				// fall back to here, the device loop keeps running underneath.
 				return;
 			}
-			if (aiScan.state === "error") {
+			if (result.state === "error") {
 				// R7: errors fall back silently to the device loop, plus a toast.
 				toast.error("AI scan failed. Falling back to the live scanner.");
 				return;
 			}
-			if (found.length > 0) {
-				setCandidates(found);
+			// result.state === "ok" (only remaining case, narrowed explicitly
+			// since TS doesn't infer it across the two `return`s above).
+			if (result.state !== "ok") return;
+			if (result.candidates.length > 0) {
+				setCandidates(result.candidates);
 				setShowHint(false);
 			} else {
 				toast.error("Couldn't identify that card. Try again or keep scanning.");
 			}
 		} finally {
-			if (isActiveRef.current) setAiScanning(false);
+			// React 18 no-ops a post-unmount setState, so this can run
+			// unconditionally: a guard here (checking isActiveRef) would leave
+			// `aiScanning` stuck true if the view deactivates mid-call while the
+			// component is still mounted (e.g. camera stopped, tray opened by
+			// the device loop) -- see final-review fix 6.
+			setAiScanning(false);
 		}
 	}
 
@@ -323,7 +425,7 @@ export function ScanView() {
 			const bitmap = await createImageBitmap(file);
 			const video = { videoWidth: bitmap.width, videoHeight: bitmap.height };
 			const guide = guideRect(video.videoWidth, video.videoHeight);
-			const full = fullCanvasRef.current;
+			const full = getFullCanvas(fullCanvasRef);
 			full.width = bitmap.width;
 			full.height = bitmap.height;
 			full.getContext("2d")?.drawImage(bitmap, 0, 0);
@@ -459,7 +561,11 @@ export function ScanView() {
 				</p>
 			)}
 
-			<CandidateTray candidates={candidates} onAdd={handleAdd} />
+			<CandidateTray
+				candidates={candidates}
+				onAdd={handleAdd}
+				onDismiss={handleDismissCandidates}
+			/>
 
 			{showHint && (
 				<Link

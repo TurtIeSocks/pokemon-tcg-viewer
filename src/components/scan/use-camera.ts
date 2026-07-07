@@ -103,8 +103,14 @@ export function useCamera(): UseCameraResult {
 
 	useEffect(() => {
 		function onVisibilityChange() {
+			// Full stop() (not stopTracks()) on hide: stopTracks() alone left
+			// status "active" with a dead srcObject, so coming back to the tab
+			// showed a frozen video frame, the live OCR loop (gated on
+			// `status === "active"` in scan-view.tsx) never re-armed, and the
+			// Start-camera button stayed hidden -- a zombie state with no way
+			// back short of reloading the route.
 			if (document.visibilityState === "hidden") {
-				stopTracks();
+				stop();
 			}
 		}
 		document.addEventListener("visibilitychange", onVisibilityChange);
@@ -112,7 +118,7 @@ export function useCamera(): UseCameraResult {
 			document.removeEventListener("visibilitychange", onVisibilityChange);
 			stopTracks();
 		};
-	}, [stopTracks]);
+	}, [stop, stopTracks]);
 
 	return {
 		videoRef,
