@@ -8,6 +8,7 @@ import {
 	LayoutDashboard,
 	type LucideIcon,
 	ScanLine,
+	Search,
 	UserRound,
 } from "lucide-react";
 
@@ -64,4 +65,39 @@ export const NAV_DESTINATIONS: readonly NavDestination[] = [
 		icon: CreditCard,
 		keywords: "plan subscription upgrade",
 	},
+];
+
+/**
+ * One slot in the mobile-only bottom nav. Either a route (`to`) or the single
+ * `action: "search"` slot that opens the ⌘K palette. `center` marks the raised
+ * accent FAB (Scan). Route + icon are reused from {@link NAV_DESTINATIONS} via
+ * {@link dest} so the bottom nav never re-declares a route — the short `label`
+ * and `center` flag are the only bottom-nav-specific presentation.
+ */
+export interface BottomNavItem {
+	label: string;
+	icon: LucideIcon;
+	to?: LinkProps["to"];
+	action?: "search";
+	center?: boolean;
+}
+
+/** Pull a destination's route + icon by route, overriding the label for the bar. */
+function dest(
+	to: LinkProps["to"],
+	label: string,
+	extra?: Partial<BottomNavItem>,
+): BottomNavItem {
+	const d = NAV_DESTINATIONS.find((n) => n.to === to);
+	if (!d) throw new Error(`bottom-nav: no destination for route ${String(to)}`);
+	return { label, to: d.to, icon: d.icon, ...extra };
+}
+
+/** Ordered slots for the mobile bottom nav (Scan is the center FAB). */
+export const BOTTOM_NAV_ITEMS: readonly BottomNavItem[] = [
+	dest("/", "Browse"),
+	dest("/vault", "Vault"),
+	dest("/scan", "Scan", { center: true }),
+	{ label: "Search", icon: Search, action: "search" },
+	dest("/profile", "Profile"),
 ];
