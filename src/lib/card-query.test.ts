@@ -114,6 +114,14 @@ describe("buildCorpusQuery", () => {
 		expect(q.nameSlug).toBeUndefined();
 		expect(q.relevance).toBe(false);
 	});
+	test("card filter (ids) applies on a supertype-anchored page (Trainer/Energy)", () => {
+		const q = buildCorpusQuery(
+			{ ...empty, ids: ["Barry"] },
+			{ supertype: "Trainer" },
+		);
+		expect(q.ids).toEqual(["Barry"]);
+		expect(q.filters?.supertypes).toEqual(["Trainer"]);
+	});
 	test("supertype + nameSlug context → name-anchored", () => {
 		const q = buildCorpusQuery(empty, {
 			supertype: "Trainer",

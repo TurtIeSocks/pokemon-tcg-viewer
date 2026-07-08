@@ -125,6 +125,7 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 		return {
 			setId: null,
 			nameSlug: ctx.nameSlug,
+			ids: orUndef(s.ids),
 			chronological: true,
 			query,
 			filters,
