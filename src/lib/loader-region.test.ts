@@ -17,12 +17,14 @@ afterAll(() => {
 });
 
 test("writeUiLangCookie writes a supported lang to the ui-lang cookie", () => {
+	// biome-ignore lint/suspicious/noDocumentCookie: test setup, resets the cookie
 	document.cookie = `${UI_LANG_COOKIE}=; path=/; max-age=0`;
 	writeUiLangCookie("ja");
 	expect(document.cookie).toContain(`${UI_LANG_COOKIE}=ja`);
 });
 
 test("writeUiLangCookie ignores unsupported langs", () => {
+	// biome-ignore lint/suspicious/noDocumentCookie: test setup, seeds a prior value
 	document.cookie = `${UI_LANG_COOKIE}=fr; path=/`;
 	writeUiLangCookie("xx");
 	expect(document.cookie).toContain(`${UI_LANG_COOKIE}=fr`);
