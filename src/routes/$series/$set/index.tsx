@@ -19,15 +19,24 @@ import { SelectAndBulkAdd } from "../../../components/vault/select-and-bulk-add"
 import { cardModalLinkPropsFor } from "../../../lib/card-route";
 import { buildSetCardSlugs } from "../../../lib/card-slugs";
 import {
+	REGION_BASE_LANGUAGE,
+	regionForLanguage,
+} from "../../../lib/languages";
+import {
 	LIST_SEARCH_DEFAULTS,
 	listSearchToUrl,
 	validateListSearch,
 } from "../../../lib/list-search";
-import { loaderLang, loaderRegion } from "../../../lib/loader-region";
+import { loaderRegion } from "../../../lib/loader-region";
 import { toSerializedQuery } from "../../../lib/serialized-query";
 import { getPokemonListFn } from "../../../server/card-data";
 import { getSetCardsFn } from "../../../server/corpus-server";
-import { findSet, getNavTreeFn } from "../../../server/nav-tree";
+import {
+	findSet,
+	getNavTreeFn,
+	getPreferredRegionFn,
+	resolveSetRegion,
+} from "../../../server/nav-tree";
 import { nameByDex } from "../../../server/pokemon-dex";
 import { deriveFacets } from "../../../server/set-facets";
 
@@ -36,14 +45,32 @@ export const Route = createFileRoute("/$series/$set/")({
 	search: { middlewares: [stripSearchParams(LIST_SEARCH_DEFAULTS)] },
 	loaderDeps: ({ search }) => ({ lang: search.lang }),
 	loader: async ({ params, deps }) => {
-		// Region from `?lang` when present (shared/cold link), else the active
-		// client region (an in-app sidebar/tile click carries no `?lang`). Pass the
-		// matching language to the server fns so they resolve the same region.
-		const region = loaderRegion(deps.lang);
-		const lang = loaderLang(deps.lang);
-		const tree = await getNavTreeFn({ data: { region } });
-		const set = findSet(tree, params.series, params.set);
-		if (!set) throw notFound();
+		// Preferred region: from `?lang` when present (shared/cold link), else the
+		// active client region (an in-app sidebar/tile click carries no `?lang`).
+		// On an SSR cold-load with no `?lang` there is no client store, so
+		// loaderRegion can only hard-default `west`; recover the viewer's real
+		// preference from the locale cookie (set on every language change).
+		let preferred = loaderRegion(deps.lang);
+		if (!deps.lang && typeof window === "undefined") {
+			preferred = await getPreferredRegionFn();
+		}
+		// Safety net: a set's region is intrinsic and slugs are globally unique, so
+		// if the set isn't in the preferred region, try the other before giving up.
+		// This is what stops the post-refresh crash even when the cookie is stale or
+		// absent. The asia tree loads lazily — only on a preferred-region miss.
+		const resolved = await resolveSetRegion(preferred, async (region) => {
+			const tree = await getNavTreeFn({ data: { region } });
+			return findSet(tree, params.series, params.set);
+		});
+		if (!resolved) throw notFound();
+		const { region, set } = resolved;
+		// Language must match the RESOLVED region so the card fetch reads the right
+		// catalog. Keep the explicit `?lang` only when it belongs to that region;
+		// otherwise fall back to the region's base language.
+		const lang =
+			deps.lang && regionForLanguage(deps.lang) === region
+				? deps.lang
+				: REGION_BASE_LANGUAGE[region];
 
 		// Species list runs in parallel with the set cards; it labels the Pokémon
 		// filter options (dex number → species name).

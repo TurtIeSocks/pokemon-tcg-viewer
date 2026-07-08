@@ -1,9 +1,42 @@
 import { useCorpusRuntime } from "../store/corpus/corpus-runtime-store";
 import {
+	isSupportedLanguage,
 	REGION_BASE_LANGUAGE,
 	type Region,
 	regionForLanguage,
 } from "./languages";
+
+/**
+ * Cookie the client persists the chosen display language to, so a cold SSR load
+ * can pick the catalog region BEFORE the client IndexedDB store hydrates. The
+ * chosen locale otherwise lives only in `profile.displayLanguage` (client IDB),
+ * unreadable by the server — which is exactly why an SSR cold-load of an Asian
+ * set page used to hard-default `west` and 404. Read server-side by
+ * `getPreferredRegionFn` (src/server/nav-tree.ts); written client-side by
+ * `writeLangCookie`. Client-safe (a plain string + a `document`-guarded write),
+ * so the server fn can import the name from here without dragging server-only
+ * code into the client bundle — mirroring the sidebar-cookie split.
+ */
+export const LANG_COOKIE = "ptcg-lang";
+/** ~1 year, matching a durable display-language preference. */
+const LANG_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+/**
+ * Persist the display language to the locale cookie (client-only; a no-op on the
+ * server, where there is no `document`). Called on every language change (and
+ * once from the loaded profile for pre-cookie users) so a subsequent cold SSR
+ * load resolves the right catalog region without the client store. Only supported
+ * languages are written; anything else is ignored (the cookie keeps its last good
+ * value rather than being cleared to an ambiguous state).
+ */
+export function writeLangCookie(lang: string | null | undefined): void {
+	if (typeof document === "undefined") return;
+	if (lang && isSupportedLanguage(lang)) {
+		// Mirrors the sidebar-cookie write; the Cookie Store API isn't broadly available.
+		// biome-ignore lint/suspicious/noDocumentCookie: necessary
+		document.cookie = `${LANG_COOKIE}=${lang}; path=/; max-age=${LANG_COOKIE_MAX_AGE}; SameSite=Lax`;
+	}
+}
 
 /**
  * The catalog region a route loader should resolve against.

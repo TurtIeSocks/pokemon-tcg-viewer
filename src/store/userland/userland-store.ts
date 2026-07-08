@@ -1,5 +1,6 @@
 // src/store/userland/userland-store.ts
 import { create } from "zustand";
+import { writeLangCookie } from "../../lib/loader-region";
 import { getBrowserClient, isCloudEnabled } from "../../lib/supabase/client";
 // Leaf store module (NOT ../corpus/corpus-runtime): importing the heavy corpus
 // module here — statically or dynamically — forms a chunk cycle that crashed the
@@ -846,6 +847,11 @@ export async function restoreCardToBinder(
 export async function updateProfile(patch: ProfilePatch): Promise<Profile> {
 	const profile = await activeRepos().profile.save(patch);
 	useUserland.setState({ profile });
+	// Mirror a display-language change into the locale cookie so a subsequent cold
+	// SSR load resolves the right catalog region before the client store hydrates
+	// (the chosen locale otherwise lives only in client IndexedDB, invisible to the
+	// server). Centralized here so every language switch persists the cookie.
+	if (patch.displayLanguage != null) writeLangCookie(profile.displayLanguage);
 	notifyLocalWrite();
 	return profile;
 }

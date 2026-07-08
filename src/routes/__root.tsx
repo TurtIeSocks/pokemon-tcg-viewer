@@ -20,6 +20,11 @@ import {
 	SidebarProvider,
 	SidebarTrigger,
 } from "@/components/ui/sidebar";
+import {
+	parseSidebarState,
+	readCookieValue,
+	SIDEBAR_COOKIE_NAME,
+} from "@/components/ui/sidebar-cookie";
 import { Toaster } from "@/components/ui/sonner";
 import { VersionToast } from "@/lib/version-check";
 import appCss from "../app.css?url";
@@ -31,11 +36,28 @@ import type { NavTree } from "../lib/nav-tree";
 import { titleCaseSlug } from "../lib/slug";
 import { isCloudEnabled } from "../lib/supabase/client";
 import { getNavTreeFn } from "../server/nav-tree";
+import { getSidebarStateFn } from "../server/sidebar-state";
 import { useCommandPalette } from "../store/command-palette";
 import { useActiveRegionNavTree } from "../store/corpus/region-nav-tree";
 import { subscribeAuth } from "../store/userland/userland-store";
 
 export const Route = createRootRoute({
+	// Restore the persisted sidebar drawer state SSR-side so it never flashes
+	// open before collapsing. The same cookie is read on both render passes —
+	// server: the incoming Cookie header (getSidebarStateFn); client hydration +
+	// later navigations: document.cookie — so the `defaultOpen` value matches and
+	// React sees no hydration mismatch. Absent/invalid cookie → open. Carried in
+	// route context (not loader data) to stay additive for the nav-tree loader's
+	// other consumers. On the client this reads document.cookie directly, so it
+	// never becomes a per-navigation RPC.
+	beforeLoad: async (): Promise<{ sidebarOpen: boolean }> => ({
+		sidebarOpen:
+			typeof document === "undefined"
+				? await getSidebarStateFn()
+				: parseSidebarState(
+						readCookieValue(document.cookie, SIDEBAR_COOKIE_NAME),
+					),
+	}),
 	loader: () => getNavTreeFn(),
 	head: () => ({
 		meta: [
@@ -175,10 +197,12 @@ function ShellHeader({ tree }: { tree: NavTree }) {
 				))}
 			</div>
 
-			{/* Search / command palette (⌘K) */}
+			{/* Search / command palette (⌘K) — md:+ only; on mobile the bottom nav
+			    carries the Search slot, so this duplicate header button is hidden. */}
 			<Button
 				variant="ghost"
 				size="icon"
+				className="hidden md:inline-flex"
 				aria-label="Search and commands"
 				title="Search  ⌘K"
 				onClick={() => openPalette(true)}
@@ -200,6 +224,8 @@ function RootComponent() {
 	// The root loader tree is region-blind (west); follow the active region so a
 	// client-side language switch reshapes the sidebar/header/browse tree.
 	const tree = useActiveRegionNavTree(Route.useLoaderData());
+	// Persisted drawer state, resolved from the cookie in beforeLoad (SSR-safe).
+	const { sidebarOpen } = Route.useRouteContext();
 
 	// Wire Supabase auth listener once at app mount (client-side only).
 	// No-ops when cloud is disabled (no env vars set).
@@ -224,7 +250,7 @@ function RootComponent() {
 
 	return (
 		<RootDocument>
-			<SidebarProvider defaultOpen={true}>
+			<SidebarProvider defaultOpen={sidebarOpen}>
 				<AppSidebar tree={tree} />
 				<SidebarInset>
 					<ShellHeader tree={tree} />
