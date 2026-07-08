@@ -23,6 +23,11 @@ export default defineConfig({
 			project: "./project.inlang",
 			outdir: "./src/paraglide",
 			strategy: ["cookie", "preferredLanguage", "baseLocale"],
+			// cookieName has no CLI equivalent, so the `paraglide`/`postinstall`
+			// compile scripts emit the stock cookie name. This vite build is the
+			// authoritative one for dev + prod (`vite build`), so the running app
+			// always reads `ui-lang`; the CLI compile only scaffolds src/paraglide
+			// for tsc/test (which don't exercise the cookie), then vite overwrites it.
 			cookieName: "ui-lang",
 		}),
 		// Next so its dev middleware registers ahead of nitro's catch-all
