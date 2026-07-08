@@ -107,6 +107,18 @@ export const useUiPrefs = create<UiPrefsStore>()(
 				cardMotion: s.cardMotion,
 				printPrefs: s.printPrefs,
 			}),
+			onRehydrateStorage: (defaults) => {
+				return (persisted) => {
+					return {
+						...defaults,
+						...persisted,
+						printPrefs: {
+							...defaults.printPrefs,
+							...persisted?.printPrefs
+						},
+					};
+				};
+			},
 		},
 	),
 );
