@@ -144,6 +144,8 @@ export const getSupertypeCardsFn = createServerFn({ method: "GET" })
 			{
 				setId: null,
 				filters: { supertypes: [data.supertype] },
+				// Trainer/Energy views: drop dex-bearing cards (upstream-mislabeled Pokémon).
+				excludeDexCards: data.supertype !== "Pokémon",
 				chronological: true,
 				relevance: false,
 			},
@@ -173,6 +175,8 @@ export const getNamedCardsFn = createServerFn({ method: "GET" })
 				setId: null,
 				filters: { supertypes: [data.supertype] },
 				nameSlug: data.name,
+				// Trainer/Energy views: drop dex-bearing cards (upstream-mislabeled Pokémon).
+				excludeDexCards: data.supertype !== "Pokémon",
 				chronological: true,
 				relevance: false,
 			},

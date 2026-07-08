@@ -36,6 +36,13 @@ export interface CorpusQuery {
 	 * (stringified) if it has them, else its `name`. Empty/undefined → no filter.
 	 */
 	ids?: string[];
+	/**
+	 * Drop cards carrying a national dex number. A real Trainer/Energy never has
+	 * one, so this filters out Pokémon that the upstream data mislabeled as
+	 * Trainer/Energy (they'd otherwise pass a `supertype: Trainer` filter). Set on
+	 * the Trainer/Energy browse views only.
+	 */
+	excludeDexCards?: boolean;
 	/** Slug of a single card name (e.g. "rare-candy"). Keeps only printings whose slugified name matches. */
 	nameSlug?: string | null;
 	/** Order results by release date (then number) instead of plain number order — for cross-set views. */
@@ -215,6 +222,9 @@ export function queryCorpus(
 	for (let i = 0; i < index.cards.length; i++) {
 		const card = index.cards[i];
 		if (q.setId && card.setId !== q.setId) continue;
+		// Guard against upstream mislabels: a card with a national dex is a Pokémon,
+		// so it can never be a real Trainer/Energy — drop it on those browse views.
+		if (q.excludeDexCards && card.nationalPokedexNumbers?.length) continue;
 		if (
 			q.dexNumbers?.length &&
 			!q.dexNumbers.some((d) => card.nationalPokedexNumbers?.includes(d))

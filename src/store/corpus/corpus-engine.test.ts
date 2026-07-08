@@ -211,6 +211,39 @@ test("ids: an empty array applies no filter", () => {
 	expect(r.length).toBe(3);
 });
 
+// --- excludeDexCards (guard against upstream Pokémon mislabeled as Trainer/Energy) ---
+
+test("excludeDexCards drops dex-bearing cards from a Trainer view", () => {
+	const c = buildIndex([
+		card({
+			id: "real-potion",
+			name: "Potion",
+			setId: "base1",
+			number: "1",
+			supertype: "Trainer",
+		}),
+		// Upstream mislabel: supertype Trainer but carries a national dex (a Pokémon).
+		card({
+			id: "fake-combusken",
+			name: "Combusken",
+			setId: "base1",
+			number: "2",
+			supertype: "Trainer",
+			nationalPokedexNumbers: [256],
+		}),
+	]);
+	const r = queryCorpus(
+		c,
+		{
+			filters: { supertypes: ["Trainer"] },
+			excludeDexCards: true,
+			relevance: false,
+		},
+		setsById,
+	);
+	expect(r.map((x) => x.id)).toEqual(["real-potion"]);
+});
+
 // --- nameSlug (Trainer/Energy per-name pages) ---
 
 const namedIndex = buildIndex([

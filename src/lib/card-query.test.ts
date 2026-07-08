@@ -114,6 +114,14 @@ describe("buildCorpusQuery", () => {
 		expect(q.nameSlug).toBeUndefined();
 		expect(q.relevance).toBe(false);
 	});
+	test("supertype (Trainer/Energy) context sets excludeDexCards", () => {
+		expect(
+			buildCorpusQuery(empty, { supertype: "Trainer" }).excludeDexCards,
+		).toBe(true);
+		expect(
+			buildCorpusQuery(empty, { supertype: "Energy" }).excludeDexCards,
+		).toBe(true);
+	});
 	test("card filter (ids) applies on a supertype-anchored page (Trainer/Energy)", () => {
 		const q = buildCorpusQuery(
 			{ ...empty, ids: ["Barry"] },

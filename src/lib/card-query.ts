@@ -126,6 +126,8 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 			setId: null,
 			nameSlug: ctx.nameSlug,
 			ids: orUndef(s.ids),
+			// Trainer/Energy views: drop dex-bearing cards (upstream-mislabeled Pokémon).
+			excludeDexCards: ctx.supertype !== "Pokémon",
 			chronological: true,
 			query,
 			filters,
