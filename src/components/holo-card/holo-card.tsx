@@ -295,7 +295,6 @@ export function HoloCard({
 						<source
 							type="image/webp"
 							srcSet={`${cdnImage(focusUrl as string, { w: 734 })} 1x, ${cdnImage(focusUrl as string, { w: 734, dpr: 2 })} 2x`}
-							crossOrigin="anonymous"
 						/>
 						<img
 							ref={fullRef}
@@ -324,7 +323,6 @@ export function HoloCard({
 					<source
 						type="image/webp"
 						srcSet={`${cdnImage(gridUrl as string, { w: 300 })} 1x, ${cdnImage(gridUrl as string, { w: 300, dpr: 2 })} 2x`}
-						crossOrigin="anonymous"
 					/>
 					<img
 						className="holo-card-image"
