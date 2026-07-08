@@ -73,6 +73,12 @@ export interface HoloCardProps {
 	variants?: string[];
 	cardNumber?: string;
 	owned?: boolean;
+	/**
+	 * Dim (grayscale) this card when it is NOT owned. Only collection views (the
+	 * missing-card grids) set this; browse grids stay full color so the catalog
+	 * doesn't render dark/muted when you own few of the cards on screen.
+	 */
+	dimUnowned?: boolean;
 	tilt?: boolean;
 	/**
 	 * Render this card's REVERSE HOLO printing — foil on the body, plain art
@@ -115,6 +121,7 @@ export function HoloCard({
 	variants,
 	cardNumber,
 	owned = false,
+	dimUnowned = false,
 	tilt = false,
 	reverse = false,
 	forceFoil = false,
@@ -183,6 +190,7 @@ export function HoloCard({
 		...(types ?? []).map((t) => t.toLowerCase()),
 		foil.masked ? "masked" : null,
 		owned ? "holo-card--owned" : null,
+		dimUnowned ? "holo-card--dim-unowned" : null,
 		// Motion off → CSS drops the tilt/foil transitions and swaps in a plain
 		// hover lift (the effect hook is already inert; this styles the fallback).
 		cardMotion ? null : "holo-card--static",

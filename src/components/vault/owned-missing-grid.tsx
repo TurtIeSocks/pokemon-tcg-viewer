@@ -56,6 +56,7 @@ function OwnedMissingCard({
 		<HoloCardIsland
 			{...holoCardProps(card)}
 			owned={owned}
+			dimUnowned
 			miniNav={<CardMiniNav card={card} />}
 		/>
 	);

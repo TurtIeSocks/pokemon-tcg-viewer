@@ -456,19 +456,22 @@
 	}
 }
 
-/* Consistent owned signal: unowned grid cards render subtly grayscale, owned
-   cards keep full color. Scoped to grid tiles so the focus/zoom image (which the
-   collector is inspecting) is never desaturated. */
-.holo-card.size-grid:not(.holo-card--owned) .holo-card-image {
+/* Owned signal for COLLECTION views only: unowned grid cards render subtly
+   grayscale, owned cards keep full color. Opt-in via the dimUnowned prop
+   (holo-card--dim-unowned) so the missing-card grids (vault/binder) dim while
+   BROWSE grids stay vibrant — a set page you own none of shouldn't look dead.
+   Scoped to grid tiles so the focus/zoom image is never desaturated. */
+.holo-card--dim-unowned.size-grid:not(.holo-card--owned) .holo-card-image {
 	filter: grayscale(0.72) brightness(0.94);
 	transition: filter 0.2s var(--ease);
 }
-.holo-card.size-grid:not(.holo-card--owned):hover .holo-card-image,
-.holo-card.size-grid:not(.holo-card--owned):focus-within .holo-card-image {
+.holo-card--dim-unowned.size-grid:not(.holo-card--owned):hover .holo-card-image,
+.holo-card--dim-unowned.size-grid:not(.holo-card--owned):focus-within
+	.holo-card-image {
 	filter: grayscale(0.2) brightness(1);
 }
 @media (prefers-reduced-motion: reduce) {
-	.holo-card.size-grid:not(.holo-card--owned) .holo-card-image {
+	.holo-card--dim-unowned.size-grid:not(.holo-card--owned) .holo-card-image {
 		transition: none;
 	}
 }
