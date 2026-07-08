@@ -75,6 +75,9 @@
 	--r-panel: 18px;
 	--r-control: 12px;
 	--r-pill: 999px;
+	--bottom-nav-h: 5rem;
+	/* mobile bottom-nav pill footprint (pill + bottom margin); drives the
+	   scroll-container bottom padding so content clears the fixed bar */
 	--shadow: 0 24px 60px -24px oklch(0 0 0 / 0.7), inset 0 1px 0 oklch(1 0 0 / 0.09);
 	--shadow-lift: 0 32px 80px -28px oklch(0 0 0 / 0.85), 0 0 0 1px var(--primary-wash),
 		inset 0 1px 0 oklch(1 0 0 / 0.12);

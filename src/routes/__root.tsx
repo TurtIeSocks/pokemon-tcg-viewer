@@ -24,7 +24,9 @@ import { Toaster } from "@/components/ui/sonner";
 import { VersionToast } from "@/lib/version-check";
 import appCss from "../app.css?url";
 import { CardOverlay } from "../components/islands/card-overlay";
+import { HeaderLanguageControl } from "../components/islands/header-language-control";
 import { AppSidebar } from "../components/shell/app-sidebar";
+import { BottomNav } from "../components/shell/bottom-nav";
 import type { NavTree } from "../lib/nav-tree";
 import { titleCaseSlug } from "../lib/slug";
 import { isCloudEnabled } from "../lib/supabase/client";
@@ -183,6 +185,11 @@ function ShellHeader({ tree }: { tree: NavTree }) {
 			>
 				<Search />
 			</Button>
+			{/* Catalog language — mobile only; the sidebar footer control (off-canvas
+			    on phones) covers md:+. */}
+			<span className="md:hidden">
+				<HeaderLanguageControl />
+			</span>
 			<RepoLink />
 			<AboutDialog />
 		</header>
@@ -221,10 +228,13 @@ function RootComponent() {
 				<AppSidebar tree={tree} />
 				<SidebarInset>
 					<ShellHeader tree={tree} />
-					<main className="flex-1 min-w-0 overflow-auto">
+					{/* Bottom padding on mobile clears the fixed bottom nav (its footprint
+					    + the iOS home indicator); removed at md:+ where the bar is hidden. */}
+					<main className="flex-1 min-w-0 overflow-auto pb-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom))] md:pb-0">
 						<Outlet />
 					</main>
 				</SidebarInset>
+				<BottomNav />
 			</SidebarProvider>
 			<ClientOnly fallback={null}>
 				<CommandPalette tree={tree} />
