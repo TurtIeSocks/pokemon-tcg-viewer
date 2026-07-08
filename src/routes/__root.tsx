@@ -32,9 +32,12 @@ import { CardOverlay } from "../components/islands/card-overlay";
 import { HeaderLanguageControl } from "../components/islands/header-language-control";
 import { AppSidebar } from "../components/shell/app-sidebar";
 import { BottomNav } from "../components/shell/bottom-nav";
+import { bcp47 } from "../lib/bcp47";
 import type { NavTree } from "../lib/nav-tree";
 import { titleCaseSlug } from "../lib/slug";
 import { isCloudEnabled } from "../lib/supabase/client";
+import { LocaleBoundary } from "../lib/ui-locale";
+import { getLocale } from "../paraglide/runtime";
 import { getNavTreeFn } from "../server/nav-tree";
 import { getSidebarStateFn } from "../server/sidebar-state";
 import { useCommandPalette } from "../store/command-palette";
@@ -250,33 +253,35 @@ function RootComponent() {
 
 	return (
 		<RootDocument>
-			<SidebarProvider defaultOpen={sidebarOpen}>
-				<AppSidebar tree={tree} />
-				<SidebarInset>
-					<ShellHeader tree={tree} />
-					{/* Bottom padding on mobile clears the fixed bottom nav (its footprint
-					    + the iOS home indicator); removed at md:+ where the bar is hidden. */}
-					<main className="flex-1 min-w-0 overflow-auto pb-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom))] md:pb-0">
-						<Outlet />
-					</main>
-				</SidebarInset>
-				<BottomNav />
-			</SidebarProvider>
-			<ClientOnly fallback={null}>
-				<CommandPalette tree={tree} />
-				<CardOverlay />
-				<VersionToast />
-				<SyncToastsWatcher />
-				<PreviewLogin />
-				<Toaster />
-			</ClientOnly>
+			<LocaleBoundary>
+				<SidebarProvider defaultOpen={sidebarOpen}>
+					<AppSidebar tree={tree} />
+					<SidebarInset>
+						<ShellHeader tree={tree} />
+						{/* Bottom padding on mobile clears the fixed bottom nav (its footprint
+						    + the iOS home indicator); removed at md:+ where the bar is hidden. */}
+						<main className="flex-1 min-w-0 overflow-auto pb-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom))] md:pb-0">
+							<Outlet />
+						</main>
+					</SidebarInset>
+					<BottomNav />
+				</SidebarProvider>
+				<ClientOnly fallback={null}>
+					<CommandPalette tree={tree} />
+					<CardOverlay />
+					<VersionToast />
+					<SyncToastsWatcher />
+					<PreviewLogin />
+					<Toaster />
+				</ClientOnly>
+			</LocaleBoundary>
 		</RootDocument>
 	);
 }
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
 	return (
-		<html lang="en" suppressHydrationWarning>
+		<html lang={bcp47(getLocale())} suppressHydrationWarning>
 			<head>
 				{/* Dev-only on-page error reporter for devtools-less devices (phones
 				    on the LAN); prints UA + uncaught errors/rejections to a red box.
