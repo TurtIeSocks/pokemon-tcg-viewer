@@ -13,7 +13,6 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import type { HoloCardData } from "../holo-card/types";
 import {
 	CARD_HEIGHT_MM,
@@ -26,12 +25,24 @@ import {
 
 /** Print-friendly defaults: white fill, near-black text + border (least ink, high
  * contrast). Radius ~3mm ≈ a real trading-card corner, so a placeholder reads as
- * a card silhouette out of the box. */
+ * a card silhouette out of the box. Transparency is set via the picker's own
+ * alpha strip (an 8-digit color with alpha 0), so there is no separate toggle. */
 const DEFAULT_BG = "#ffffff";
 const DEFAULT_TEXT = "#111111";
 const DEFAULT_BORDER = "#111111";
 const DEFAULT_RADIUS_MM = 3;
 const MAX_RADIUS_MM = 8;
+
+/** Base text sizes (mm). The text-size slider scales BOTH by the same factor, so
+ * the name/meta proportion is preserved. */
+const NAME_MM = 3.6;
+const META_MM = 2.8;
+const MIN_TEXT_SCALE = 0.6;
+const MAX_TEXT_SCALE = 1.8;
+
+/** Format a millimetre length, rounded to 0.01mm so float math (3.6 * 1.5) never
+ * leaks "5.399999…mm" into the DOM or the printed sheet. */
+const mm = (n: number) => `${Math.round(n * 100) / 100}mm`;
 
 /** Props for {@link PrintMissingDialog}. */
 interface PrintMissingDialogProps {
@@ -45,12 +56,13 @@ interface PrintMissingDialogProps {
 
 interface PrintSheetProps {
 	cards: HoloCardData[];
-	/** Resolved background: a color string, or "transparent". */
 	background: string;
 	textColor: string;
 	borderColor: string;
 	/** Corner radius in millimetres (the card-silhouette rounding). */
 	radiusMm: number;
+	/** Multiplier applied to both text lines, preserving their ratio. */
+	textScale: number;
 	columns: number;
 }
 
@@ -71,6 +83,7 @@ function PrintSheet({
 	textColor,
 	borderColor,
 	radiusMm,
+	textScale,
 	columns,
 }: PrintSheetProps) {
 	return (
@@ -111,14 +124,20 @@ function PrintSheet({
 					<div
 						style={{
 							fontWeight: 700,
-							fontSize: "3.6mm",
+							fontSize: mm(NAME_MM * textScale),
 							lineHeight: 1.15,
 							wordBreak: "break-word",
 						}}
 					>
 						{card.name}
 					</div>
-					<div style={{ marginTop: "2mm", fontSize: "2.8mm", opacity: 0.85 }}>
+					<div
+						style={{
+							marginTop: "2mm",
+							fontSize: mm(META_MM * textScale),
+							opacity: 0.85,
+						}}
+					>
 						{placeholderMeta(card)}
 					</div>
 				</div>
@@ -132,23 +151,66 @@ function ColorControl({
 	label,
 	value,
 	onChange,
-	disabled,
 }: {
 	label: string;
 	value: string;
 	onChange: (next: string) => void;
-	disabled?: boolean;
 }) {
 	return (
 		<div className="flex flex-col gap-2">
 			<span className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[var(--faint)]">
 				{label}
 			</span>
-			<div
-				className={disabled ? "pointer-events-none opacity-40" : undefined}
-				aria-disabled={disabled}
+			<ColorPicker value={value} onChange={(next) => onChange(next)} />
+		</div>
+	);
+}
+
+/** A labelled range slider with a formatted read-out. */
+function SliderControl({
+	id,
+	label,
+	value,
+	min,
+	max,
+	step,
+	ariaLabel,
+	format,
+	onChange,
+}: {
+	id: string;
+	label: string;
+	value: number;
+	min: number;
+	max: number;
+	step: number;
+	ariaLabel: string;
+	format: (v: number) => string;
+	onChange: (v: number) => void;
+}) {
+	return (
+		<div className="flex flex-col gap-2">
+			<Label
+				htmlFor={id}
+				className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[var(--faint)]"
 			>
-				<ColorPicker value={value} onChange={(next) => onChange(next)} />
+				{label}
+			</Label>
+			<div className="flex h-9 items-center gap-3">
+				<input
+					id={id}
+					type="range"
+					min={min}
+					max={max}
+					step={step}
+					value={value}
+					aria-label={ariaLabel}
+					onChange={(e) => onChange(Number(e.target.value))}
+					className="w-32 accent-[var(--primary)]"
+				/>
+				<span className="min-w-[3.5ch] font-mono text-xs tabular-nums text-[var(--ink-muted)]">
+					{format(value)}
+				</span>
 			</div>
 		</div>
 	);
@@ -167,19 +229,30 @@ export function PrintMissingDialog({
 	onOpenChange,
 	cards,
 }: PrintMissingDialogProps) {
-	const [bg, setBg] = useState(DEFAULT_BG);
-	const [transparent, setTransparent] = useState(false);
+	const [background, setBackground] = useState(DEFAULT_BG);
 	const [textColor, setTextColor] = useState(DEFAULT_TEXT);
 	const [borderColor, setBorderColor] = useState(DEFAULT_BORDER);
 	const [radiusMm, setRadiusMm] = useState(DEFAULT_RADIUS_MM);
+	const [textScale, setTextScale] = useState(1);
 
 	const layout = sheetLayout();
 	const count = cards.length;
 	const pages = pageCount(count, layout.perPage);
-	const background = transparent ? "transparent" : bg;
 
 	const canPrint =
 		typeof document !== "undefined" && typeof window !== "undefined";
+
+	const sheet = (
+		<PrintSheet
+			cards={cards}
+			background={background}
+			textColor={textColor}
+			borderColor={borderColor}
+			radiusMm={radiusMm}
+			textScale={textScale}
+			columns={layout.columns}
+		/>
+	);
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -199,31 +272,15 @@ export function PrintMissingDialog({
 						You own every card in this binder. Nothing to print.
 					</p>
 				) : (
-					<div className="flex flex-col gap-5">
-						{/* Color + shape controls */}
+					<div className="flex min-w-0 flex-col gap-5">
+						{/* Color + shape controls. Transparency lives in each picker's alpha
+						    strip, so there is no separate toggle. */}
 						<div className="flex flex-wrap items-end gap-x-8 gap-y-4">
-							<div className="flex flex-col gap-2">
-								<ColorControl
-									label="Background"
-									value={bg}
-									onChange={setBg}
-									disabled={transparent}
-								/>
-							</div>
-							<div className="flex items-center gap-2 pb-1.5">
-								<Switch
-									id="print-transparent"
-									checked={transparent}
-									onCheckedChange={setTransparent}
-								/>
-								<Label
-									htmlFor="print-transparent"
-									className="text-[var(--ink)]"
-								>
-									Transparent
-								</Label>
-							</div>
-
+							<ColorControl
+								label="Background"
+								value={background}
+								onChange={setBackground}
+							/>
 							<ColorControl
 								label="Text color"
 								value={textColor}
@@ -234,31 +291,28 @@ export function PrintMissingDialog({
 								value={borderColor}
 								onChange={setBorderColor}
 							/>
-
-							<div className="flex flex-col gap-2">
-								<Label
-									htmlFor="print-radius"
-									className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[var(--faint)]"
-								>
-									Corner radius
-								</Label>
-								<div className="flex h-9 items-center gap-3">
-									<input
-										id="print-radius"
-										type="range"
-										min={0}
-										max={MAX_RADIUS_MM}
-										step={0.5}
-										value={radiusMm}
-										aria-label="Corner radius in millimetres"
-										onChange={(e) => setRadiusMm(Number(e.target.value))}
-										className="w-32 accent-[var(--primary)]"
-									/>
-									<span className="min-w-[3.5ch] font-mono text-xs tabular-nums text-[var(--ink-muted)]">
-										{radiusMm}mm
-									</span>
-								</div>
-							</div>
+							<SliderControl
+								id="print-radius"
+								label="Corner radius"
+								value={radiusMm}
+								min={0}
+								max={MAX_RADIUS_MM}
+								step={0.5}
+								ariaLabel="Corner radius in millimetres"
+								format={(v) => `${v}mm`}
+								onChange={setRadiusMm}
+							/>
+							<SliderControl
+								id="print-text-size"
+								label="Text size"
+								value={textScale}
+								min={MIN_TEXT_SCALE}
+								max={MAX_TEXT_SCALE}
+								step={0.1}
+								ariaLabel="Text size"
+								format={(v) => `${Math.round(v * 100)}%`}
+								onChange={setTextScale}
+							/>
 						</div>
 
 						{/* Count feedback */}
@@ -271,19 +325,13 @@ export function PrintMissingDialog({
 							</p>
 						</div>
 
-						{/* On-screen live preview (scrolls; not the print target) */}
+						{/* On-screen live preview (scrolls; not the print target). min-w-0 +
+						    overflow keeps the true-size sheet inside the modal box. */}
 						<section
 							aria-label="Placeholder preview"
-							className="max-h-[55vh] overflow-auto rounded-[var(--r-panel)] border border-[var(--hairline)] bg-[var(--glass-2)] p-4"
+							className="max-h-[55vh] min-w-0 overflow-auto rounded-[var(--r-panel)] border border-[var(--hairline)] bg-[var(--glass-2)] p-4"
 						>
-							<PrintSheet
-								cards={cards}
-								background={background}
-								textColor={textColor}
-								borderColor={borderColor}
-								radiusMm={radiusMm}
-								columns={layout.columns}
-							/>
+							{sheet}
 						</section>
 					</div>
 				)}
@@ -318,14 +366,7 @@ export function PrintMissingDialog({
 				canPrint &&
 				createPortal(
 					<div className="tcgv-print-portal" aria-hidden="true">
-						<PrintSheet
-							cards={cards}
-							background={background}
-							textColor={textColor}
-							borderColor={borderColor}
-							radiusMm={radiusMm}
-							columns={layout.columns}
-						/>
+						{sheet}
 					</div>,
 					document.body,
 				)}

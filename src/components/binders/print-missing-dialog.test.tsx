@@ -69,16 +69,24 @@ test("placeholder renders as a card silhouette: white fill, dark text + border, 
 	expect(ph.style.borderRadius).toBe("3mm");
 });
 
-test("toggling Transparent makes the placeholder background transparent", () => {
+test("the text-size slider scales both lines by the same factor (ratio preserved)", () => {
 	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
-	expect(firstPlaceholder().style.backgroundColor).not.toBe("transparent");
+	// Defaults: 3.6mm name / 2.8mm meta.
+	expect(within(preview()).getByText("Bulbasaur").style.fontSize).toBe("3.6mm");
+	expect(within(preview()).getByText("#1 / Base Set").style.fontSize).toBe(
+		"2.8mm",
+	);
 
-	const toggle = screen.getByLabelText("Transparent");
+	const slider = screen.getByLabelText("Text size") as HTMLInputElement;
 	act(() => {
-		fireEvent.click(toggle);
+		fireEvent.change(slider, { target: { value: "1.5" } });
 	});
 
-	expect(firstPlaceholder().style.backgroundColor).toBe("transparent");
+	// Both scaled by 1.5, ratio preserved (5.4 / 4.2 === 3.6 / 2.8).
+	expect(within(preview()).getByText("Bulbasaur").style.fontSize).toBe("5.4mm");
+	expect(within(preview()).getByText("#1 / Base Set").style.fontSize).toBe(
+		"4.2mm",
+	);
 });
 
 test("the corner-radius slider updates the placeholder rounding", () => {
