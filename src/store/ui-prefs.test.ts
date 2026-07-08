@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { useUiPrefs } from "./ui-prefs";
+import { DEFAULT_PRINT_PREFS, useUiPrefs } from "./ui-prefs";
 
 // ui-prefs is a persisted singleton; mutating it (esp. filtersOpen) leaks across
 // test FILES in the shared happy-dom process and collapses the filter panel in
@@ -27,5 +27,14 @@ describe("ui-prefs cardMotion", () => {
 		useUiPrefs.setState({ filtersOpen: false });
 		useUiPrefs.getState().setCardMotion(false);
 		expect(useUiPrefs.getState().filtersOpen).toBe(false);
+	});
+});
+
+describe("ui-prefs print defaults", () => {
+	test("enable the price line and QR at sensible sizes", () => {
+		expect(DEFAULT_PRINT_PREFS.showPrice).toBe(true);
+		expect(DEFAULT_PRINT_PREFS.priceSizeMm).toBe(2.8);
+		expect(DEFAULT_PRINT_PREFS.showQr).toBe(true);
+		expect(DEFAULT_PRINT_PREFS.qrSizeMm).toBe(18);
 	});
 });

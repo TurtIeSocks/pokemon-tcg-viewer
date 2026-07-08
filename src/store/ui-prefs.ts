@@ -32,6 +32,12 @@ export interface PrintPrefs {
 	numberSizeMm: number;
 	showSetName: boolean;
 	setNameSizeMm: number;
+	/** Show the card's current market price as a placeholder line, base size (mm, before textScale). */
+	showPrice: boolean;
+	priceSizeMm: number;
+	/** Show a QR code linking to the card's /prices page; square, sized in mm. */
+	showQr: boolean;
+	qrSizeMm: number;
 }
 
 export const DEFAULT_PRINT_PREFS: PrintPrefs = {
@@ -52,6 +58,10 @@ export const DEFAULT_PRINT_PREFS: PrintPrefs = {
 	numberSizeMm: 2.8,
 	showSetName: true,
 	setNameSizeMm: 2.8,
+	showPrice: true,
+	priceSizeMm: 2.8,
+	showQr: true,
+	qrSizeMm: 18,
 };
 
 interface UiPrefsStore {
