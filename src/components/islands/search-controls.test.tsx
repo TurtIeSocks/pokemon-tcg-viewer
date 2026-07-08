@@ -27,9 +27,9 @@ const options = {
 	types: ["fire", "water"],
 	// A mix: Pokémon keyed by dex id, a Trainer keyed by name.
 	ids: [
-		{ id: "6", label: "Charizard" },
-		{ id: "25", label: "Pikachu" },
-		{ id: "Barry", label: "Barry" },
+		{ id: "6", label: "Charizard", group: "Pokémon" },
+		{ id: "25", label: "Pikachu", group: "Pokémon" },
+		{ id: "Barry", label: "Barry", group: "Trainer" },
 	],
 };
 
@@ -220,6 +220,18 @@ test("toggling an already-selected card removes its id from the array", async ()
 		await screen.findByRole("menuitemcheckbox", { name: "Charizard" }),
 	);
 	expect(onChange).toHaveBeenCalledWith({ ids: ["25"] });
+});
+
+test("groups the card options by card type (Pokémon before Trainer) when mixed", async () => {
+	renderControls({ showCardFilter: true });
+	openFilter(/^All Cards$/);
+	const menu = await screen.findByRole("menu");
+	const text = menu.textContent ?? "";
+	expect(text).toContain("Pokémon");
+	expect(text).toContain("Trainer");
+	// Pokémon section (Charizard, Pikachu) renders before the Trainer section (Barry).
+	expect(text.indexOf("Pokémon")).toBeLessThan(text.indexOf("Trainer"));
+	expect(screen.getByRole("menuitemcheckbox", { name: "Barry" })).toBeDefined();
 });
 
 // ─── Search-mode menu (ButtonGroup-fused 3-mode picker) ───────────────────────

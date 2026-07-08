@@ -167,10 +167,33 @@ function YearSelect({
 	);
 }
 
+// Card-type group order for the card filter's sections; unknown groups sort last.
+const CARD_GROUP_ORDER = ["Pokémon", "Trainer", "Energy"];
+
+/** Bucket card-filter options by their supertype, in Pokémon→Trainer→Energy order. */
+function groupCardIds(
+	options: IdFacet[],
+): { label: string; items: IdFacet[] }[] {
+	const byGroup = new Map<string, IdFacet[]>();
+	for (const o of options) {
+		const arr = byGroup.get(o.group);
+		if (arr) arr.push(o);
+		else byGroup.set(o.group, [o]);
+	}
+	const rank = (g: string) => {
+		const i = CARD_GROUP_ORDER.indexOf(g);
+		return i === -1 ? CARD_GROUP_ORDER.length : i;
+	};
+	return [...byGroup.entries()]
+		.sort((a, b) => rank(a[0]) - rank(b[0]) || a[0].localeCompare(b[0]))
+		.map(([label, items]) => ({ label, items }));
+}
+
 // A MULTI-select over the card "name" facet (IdFacet): Pokémon keyed by dex id,
 // Trainers/Energy by name, over a string[] value. A DropdownMenu of checkbox items
-// toggling each id in/out of the array. The trigger reads "All Cards" (none), the
-// single option label (one), or an "N selected" summary (more); the accessible
+// toggling each id in/out of the array, grouped by card type (Pokémon / Trainer /
+// Energy) when more than one type is present. The trigger reads "All Cards" (none),
+// the single option label (one), or an "N selected" summary (more); the accessible
 // name always carries the "Card" dimension label.
 function CardMultiSelect({
 	value,
@@ -197,6 +220,22 @@ function CardMultiSelect({
 	// includes it), so the control is queryable/announced regardless of selection.
 	const ariaLabel = value.length === 0 ? summary : `Card: ${summary}`;
 
+	const renderItem = (o: IdFacet) => (
+		<DropdownMenuCheckboxItem
+			key={o.id}
+			checked={selected.has(o.id)}
+			// Keep the menu open across toggles so several cards can be picked at once.
+			onSelect={(e) => e.preventDefault()}
+			onCheckedChange={() => toggle(o.id)}
+		>
+			{o.label}
+		</DropdownMenuCheckboxItem>
+	);
+
+	// Group by card type only when the page mixes types (a supertype-locked page —
+	// /trainer, /energy — is one group, so render it flat, no redundant heading).
+	const groups = groupCardIds(options);
+
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
@@ -214,17 +253,16 @@ function CardMultiSelect({
 				align="start"
 				className="max-h-72 w-(--radix-dropdown-menu-trigger-width) min-w-40"
 			>
-				{options.map((o) => (
-					<DropdownMenuCheckboxItem
-						key={o.id}
-						checked={selected.has(o.id)}
-						// Keep the menu open across toggles so several cards can be picked at once.
-						onSelect={(e) => e.preventDefault()}
-						onCheckedChange={() => toggle(o.id)}
-					>
-						{o.label}
-					</DropdownMenuCheckboxItem>
-				))}
+				{groups.length > 1
+					? groups.map((g) => (
+							<DropdownMenuGroup key={g.label}>
+								<DropdownMenuLabel className="text-xs text-[var(--ink-muted)]">
+									{g.label}
+								</DropdownMenuLabel>
+								{g.items.map(renderItem)}
+							</DropdownMenuGroup>
+						))
+					: options.map(renderItem)}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);
@@ -404,7 +442,7 @@ export function SearchControls({
 								<SelectValue placeholder="Collection" />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="all">Ownership</SelectItem>
+								<SelectItem value="all">Any</SelectItem>
 								<SelectItem value="owned">Owned</SelectItem>
 								<SelectItem value="missing">Missing</SelectItem>
 							</SelectContent>

@@ -64,6 +64,7 @@ function EnergiesPage() {
 				supertypes: ["Energy"],
 			}}
 			lockSupertype
+			showCardFilter
 			gridKey="Energy"
 		/>
 	);

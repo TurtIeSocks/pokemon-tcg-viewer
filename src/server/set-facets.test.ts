@@ -59,12 +59,12 @@ describe("deriveFacets ids", () => {
 			dexName,
 		);
 		expect(f.ids).toEqual([
-			{ id: "6", label: "Charizard" },
-			{ id: "112", label: "Rhydon" },
+			{ id: "6", label: "Charizard", group: "Pokémon" },
+			{ id: "112", label: "Rhydon", group: "Pokémon" },
 		]);
 	});
 
-	test("cards without a dex (Trainers) key by name — a mix of dex + names", () => {
+	test("cards without a dex (Trainers) key by name — a mix of dex + names, grouped by supertype", () => {
 		const f = deriveFacets(
 			[
 				c({ name: "Charizard", nationalPokedexNumbers: [6] }),
@@ -74,9 +74,9 @@ describe("deriveFacets ids", () => {
 			dexName,
 		);
 		expect(f.ids).toEqual([
-			{ id: "Acerola", label: "Acerola" },
-			{ id: "Barry", label: "Barry" },
-			{ id: "6", label: "Charizard" },
+			{ id: "Acerola", label: "Acerola", group: "Trainer" },
+			{ id: "Barry", label: "Barry", group: "Trainer" },
+			{ id: "6", label: "Charizard", group: "Pokémon" },
 		]);
 	});
 
@@ -95,6 +95,6 @@ describe("deriveFacets ids", () => {
 		const f = deriveFacets([
 			c({ name: "Rhydon", nationalPokedexNumbers: [112] }),
 		]);
-		expect(f.ids).toEqual([{ id: "112", label: "Rhydon" }]);
+		expect(f.ids).toEqual([{ id: "112", label: "Rhydon", group: "Pokémon" }]);
 	});
 });

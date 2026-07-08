@@ -29,6 +29,8 @@ interface CardListPageProps {
 	ruleQuery?: SerializedQuery | null;
 	/** Hide the Card Type dropdown when the page locks the supertype. */
 	lockSupertype?: boolean;
+	/** Render the card "name" filter (Pokémon + Trainers). Defaults to false. */
+	showCardFilter?: boolean;
 	/** Remounts the grid (resets pagination) when the anchored entity changes. */
 	gridKey: string | number;
 }
@@ -48,6 +50,7 @@ export function CardListPage({
 	cardHref,
 	ruleQuery = null,
 	lockSupertype = false,
+	showCardFilter = false,
 	gridKey,
 }: CardListPageProps) {
 	return (
@@ -59,6 +62,7 @@ export function CardListPage({
 						options={options}
 						onChange={onChange}
 						lockSupertype={lockSupertype}
+						showCardFilter={showCardFilter}
 					/>
 				</div>
 				<ResultsBar count={total}>
