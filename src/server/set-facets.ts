@@ -1,4 +1,5 @@
 import type { HoloCardData } from "../components/holo-card";
+import { compareRarity } from "../lib/rarity-order";
 import { titleCaseSlug } from "../lib/slug";
 
 /**
@@ -26,6 +27,10 @@ const sortedDistinct = (vals: (string | undefined)[]): string[] =>
 	[...new Set(vals.filter((v): v is string => !!v))].sort((a, b) =>
 		a.localeCompare(b),
 	);
+
+/** Distinct rarities present, ordered by actual rarity level (not alphabetically). */
+const raritiesByLevel = (vals: (string | undefined)[]): string[] =>
+	[...new Set(vals.filter((v): v is string => !!v))].sort(compareRarity);
 
 /**
  * Distinct filterable card identities present in the cards, alphabetized by
@@ -67,7 +72,7 @@ export function deriveFacets(
 	return {
 		supertypes: sortedDistinct(cards.map((c) => c.supertype)),
 		subtypes: sortedDistinct(cards.flatMap((c) => c.subtypes ?? [])),
-		rarities: sortedDistinct(cards.map((c) => c.rarity)),
+		rarities: raritiesByLevel(cards.map((c) => c.rarity)),
 		types: sortedDistinct(cards.flatMap((c) => c.types ?? [])),
 		ids: deriveIds(cards, dexName),
 	};

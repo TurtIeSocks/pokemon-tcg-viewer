@@ -5,6 +5,7 @@ import {
 	type Region,
 	toSupportedLanguage,
 } from "../../lib/languages";
+import { rarityRank } from "../../lib/rarity-order";
 import { slugify } from "../../lib/slug";
 import type { SortDir } from "../../lib/sort";
 import type { PokemonSet } from "../../server/card-mappers";
@@ -59,7 +60,7 @@ export interface CorpusQuery {
 	 * release-date / number). Union kept inline (must match CardSortMode in
 	 * src/lib/card-query.ts) to avoid a type cycle with that module.
 	 */
-	sort?: "default" | "dex" | "number" | "name" | "released";
+	sort?: "default" | "dex" | "number" | "name" | "rarity" | "released";
 	dir?: SortDir;
 	/** True for global name search (relevance order); false for set/dex (natural order). */
 	relevance: boolean;
@@ -284,6 +285,8 @@ export function queryCorpus(
 				c =
 					(a.card.nationalPokedexNumbers?.[0] ?? DEX_LAST) -
 					(b.card.nationalPokedexNumbers?.[0] ?? DEX_LAST);
+			else if (q.sort === "rarity")
+				c = rarityRank(a.card.rarity) - rarityRank(b.card.rarity);
 			if (c !== 0) return sign * c;
 			// Stable, direction-independent tie-break.
 			return compareCardNumber(a.card.number, b.card.number);

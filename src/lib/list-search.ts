@@ -87,7 +87,11 @@ export function validateListSearch(
 		})(),
 		sort: ((): CardSortMode => {
 			const s = search.sort;
-			return s === "dex" || s === "number" || s === "name" || s === "released"
+			return s === "dex" ||
+				s === "number" ||
+				s === "name" ||
+				s === "rarity" ||
+				s === "released"
 				? s
 				: "default";
 		})(),

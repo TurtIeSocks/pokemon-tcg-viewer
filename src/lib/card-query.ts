@@ -9,7 +9,13 @@ export type OwnedMode = "all" | "owned" | "missing";
 
 // NOTE: this union must stay in sync with the inline `sort` union on CorpusQuery
 // in src/store/corpus/corpus-engine.ts (kept inline there to avoid a type cycle).
-export type CardSortMode = "default" | "dex" | "number" | "name" | "released";
+export type CardSortMode =
+	| "default"
+	| "dex"
+	| "number"
+	| "name"
+	| "rarity"
+	| "released";
 
 /** Sort modes offered by the card pages' SortControl. */
 export const CARD_SORT_OPTIONS: SortOption<CardSortMode>[] = [
@@ -17,6 +23,7 @@ export const CARD_SORT_OPTIONS: SortOption<CardSortMode>[] = [
 	{ value: "dex", label: "Dex #" },
 	{ value: "number", label: "Card #" },
 	{ value: "name", label: "Name" },
+	{ value: "rarity", label: "Rarity" },
 	{ value: "released", label: "Release date" },
 ];
 

@@ -33,7 +33,8 @@ describe("deriveFacets", () => {
 			}),
 		]);
 		expect(f.supertypes).toEqual(["Pokémon", "Trainer"]);
-		expect(f.rarities).toEqual(["Rare", "Uncommon"]);
+		// Rarities are ordered by level (Uncommon < Rare), not alphabetically.
+		expect(f.rarities).toEqual(["Uncommon", "Rare"]);
 		expect(f.subtypes).toEqual(["Item", "Stage 2", "VSTAR"]);
 		expect(f.types).toEqual(["Fire", "Water"]);
 	});

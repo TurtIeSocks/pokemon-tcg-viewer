@@ -244,6 +244,46 @@ test("excludeDexCards drops dex-bearing cards from a Trainer view", () => {
 	expect(r.map((x) => x.id)).toEqual(["real-potion"]);
 });
 
+// --- sort=rarity (orders by rarity level, not alphabetically) ---
+
+test("sort=rarity orders cards by rarity level", () => {
+	const c = buildIndex([
+		card({
+			id: "s",
+			name: "S",
+			setId: "base1",
+			number: "1",
+			rarity: "Rare Secret",
+		}),
+		card({ id: "c", name: "C", setId: "base1", number: "2", rarity: "Common" }),
+		card({
+			id: "h",
+			name: "H",
+			setId: "base1",
+			number: "3",
+			rarity: "Rare Holo",
+		}),
+		card({
+			id: "u",
+			name: "U",
+			setId: "base1",
+			number: "4",
+			rarity: "Uncommon",
+		}),
+	]);
+	const r = queryCorpus(
+		c,
+		{ sort: "rarity", dir: "asc", relevance: false },
+		setsById,
+	);
+	expect(r.map((x) => x.rarity)).toEqual([
+		"Common",
+		"Uncommon",
+		"Rare Holo",
+		"Rare Secret",
+	]);
+});
+
 // --- nameSlug (Trainer/Energy per-name pages) ---
 
 const namedIndex = buildIndex([
