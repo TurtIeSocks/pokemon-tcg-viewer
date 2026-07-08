@@ -36,7 +36,7 @@ export interface PrintPrefs {
 
 export const DEFAULT_PRINT_PREFS: PrintPrefs = {
 	background: "oklch(1 0 29.234 / 0%)",
-	textColor: "oklch(1 0 29.234)",
+	textColor: "oklch(0 0 29.234)",
 	// Site accent violet, kept verbatim from --primary in app.css so they stay matched.
 	borderColor: "oklch(0.7 0.19 295)",
 	radiusMm: 3,
