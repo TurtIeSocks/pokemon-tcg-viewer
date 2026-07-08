@@ -89,7 +89,7 @@ export function CardHistory({ card }: { card: FocusCardData }) {
 	const chips = trendChipsFromCm(priceEntry?.cm);
 
 	return (
-		<div className="flex flex-col gap-3">
+		<div className="flex h-full flex-col gap-3">
 			<ToggleField aria-label="History range">
 				{RANGES.map((r) => (
 					<ToggleButton
@@ -102,18 +102,23 @@ export function CardHistory({ card }: { card: FocusCardData }) {
 				))}
 			</ToggleField>
 
-			{sparse ? (
-				<p className="text-[13px] text-[var(--faint)]">
-					Price history builds daily.
-				</p>
-			) : (
-				<SparkLine
-					points={filtered}
-					width={280}
-					height={72}
-					label="Price history"
-				/>
-			)}
+			{/* Grows to fill the panel (min 72px so it never collapses when the panel
+			    is content-sized, e.g. on the page or mobile). */}
+			<div className="flex min-h-[72px] flex-1">
+				{sparse ? (
+					<p className="text-[13px] text-[var(--faint)]">
+						Price history builds daily.
+					</p>
+				) : (
+					<SparkLine
+						points={filtered}
+						width={280}
+						height={72}
+						fluid
+						label="Price history"
+					/>
+				)}
+			</div>
 
 			{chips.length > 0 ? (
 				<div className="flex items-center gap-4">

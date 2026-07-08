@@ -1,10 +1,5 @@
 import { ClientOnly, Link } from "@tanstack/react-router";
-import {
-	type CSSProperties,
-	type ReactNode,
-	useEffect,
-	useState,
-} from "react";
+import { type CSSProperties, type ReactNode, useEffect, useState } from "react";
 import { cardImage } from "@/lib/card-image";
 import type { CardTab } from "../../lib/card-route";
 import { hasReverseVariant } from "../../lib/card-variants";
@@ -103,7 +98,8 @@ export function CardCockpit({
 	// rail footer pins to the bottom and the glass pane fills — no dead space.
 	const framed = Boolean(railHeader || railFooter);
 	// Shared card-width wrapper so the rail's identity + card + links line up.
-	const railColW = "mx-auto w-full max-w-80 @3xl:mx-0 @3xl:w-70 @3xl:max-w-none";
+	const railColW =
+		"mx-auto w-full max-w-80 @3xl:mx-0 @3xl:w-70 @3xl:max-w-none";
 	return (
 		<div className="@container" style={{ "--accent": accent } as CSSProperties}>
 			{/* Card-art rail + a folder: organizer tabs opening onto a pane of glass
@@ -126,7 +122,10 @@ export function CardCockpit({
 					}
 				>
 					{railHeader ? <div className={railColW}>{railHeader}</div> : null}
-					<div className={`flex flex-col gap-4 ${railColW}`}>
+					{/* framed: grow + center the art between the header and footer. */}
+					<div
+						className={`flex flex-col gap-4 ${railColW} @3xl:flex-1 @3xl:justify-center`}
+					>
 						<ClientOnly
 							fallback={
 								<img
@@ -152,10 +151,9 @@ export function CardCockpit({
 						</ClientOnly>
 						{canReverse && (
 							<ClientOnly fallback={null}>
-								<div
-									role="group"
+								<fieldset
 									aria-label="Printing"
-									className="inline-flex self-center rounded-[var(--r-pill)] border border-white/10 bg-white/[0.05] p-0.5 backdrop-blur-sm"
+									className="m-0 inline-flex min-w-0 self-center rounded-[var(--r-pill)] border border-white/10 bg-white/[0.05] p-0.5 backdrop-blur-sm"
 								>
 									{(
 										[
@@ -177,14 +175,12 @@ export function CardCockpit({
 											{label}
 										</button>
 									))}
-								</div>
+								</fieldset>
 							</ClientOnly>
 						)}
 					</div>
 					{railFooter ? (
-						<div
-							className={`${railColW} border-t border-white/[0.07] pt-3 @3xl:mt-auto`}
-						>
+						<div className={`${railColW} border-t border-white/[0.07] pt-3`}>
 							{railFooter}
 						</div>
 					) : null}
