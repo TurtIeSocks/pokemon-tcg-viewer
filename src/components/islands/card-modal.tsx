@@ -68,6 +68,7 @@ export function CardModal({
 						tab={tab}
 						onTabChange={onTabChange}
 						pending={pending}
+						fill
 					/>
 				</div>
 				<DialogFooter className="shrink-0">

@@ -30,11 +30,17 @@ export function CardCockpit({
 	tab: rawTab,
 	onTabChange,
 	pending,
+	fill,
 }: {
 	card: FocusCardData;
 	tab: CardTab;
 	onTabChange: (t: CardTab) => void;
 	pending?: boolean;
+	// `fill` (modal only): stretch the cockpit to its parent's full height so the
+	// folder fills the fixed-height modal (card sticky on the rail, roomy folder)
+	// instead of being locked to the card-art height. The dedicated page has no
+	// fixed height, so it leaves this off and the folder sizes to its content.
+	fill?: boolean;
 }) {
 	// When pricing is disabled the pricing tab is not rendered (CardTabs hides it).
 	// Coerce any incoming "pricing" tab to "details" so the /prices route shows
@@ -85,12 +91,29 @@ export function CardCockpit({
 		setZoomOpen(false);
 	}, [card.id]);
 	return (
-		<div className="@container" style={{ "--accent": accent } as CSSProperties}>
+		<div
+			// Plain `h-full` (not `@3xl:h-full`): a container-query variant queries an
+			// ancestor container, but this element *is* the `@container`, so it can't
+			// match itself. On mobile the stacked content overflows and scrolls, so a
+			// full-height root is harmless there; the row's `@3xl:h-full` does the rest.
+			className={`@container${fill ? " h-full" : ""}`}
+			style={{ "--accent": accent } as CSSProperties}
+		>
 			{/* Persistent card-art rail + a folder: organizer tabs opening onto a
 			    pane of glass (the active tab's cap merges into the pane below). */}
-			<div className="flex flex-col gap-6 p-2 @3xl:flex-row @3xl:items-stretch @3xl:gap-8">
-				{/* Rail (persistent art) */}
-				<div className="shrink-0 @3xl:sticky @3xl:top-6">
+			<div
+				className={`flex flex-col gap-6 p-2 @3xl:flex-row @3xl:items-stretch @3xl:gap-8${fill ? " @3xl:h-full" : ""}`}
+			>
+				{/* Rail (persistent art). `fill` centers the card in the full-height
+				    column beside the tall folder; otherwise it sticks to the top as
+				    the page scrolls. */}
+				<div
+					className={
+						fill
+							? "flex shrink-0 flex-col @3xl:justify-center"
+							: "shrink-0 @3xl:sticky @3xl:top-6"
+					}
+				>
 					<div className="mx-auto flex w-full max-w-80 flex-col gap-4 @3xl:mx-0 @3xl:w-70 @3xl:max-w-none">
 						<ClientOnly
 							fallback={
