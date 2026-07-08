@@ -59,7 +59,7 @@ test("negative P&L renders with the down tone", async () => {
 			}}
 		/>,
 	);
-	expect(getByText("-$30.00").className).toContain("var(--danger)");
+	expect(getByText("-$30.00").className).toContain("text-(--danger)");
 });
 
 test("market value shows — when prices unavailable", async () => {
