@@ -29,6 +29,7 @@ import {
 } from "../../../lib/list-search";
 import { loaderRegion } from "../../../lib/loader-region";
 import { toSerializedQuery } from "../../../lib/serialized-query";
+import { m } from "../../../paraglide/messages";
 import { getPokemonListFn } from "../../../server/card-data";
 import { getSetCardsFn } from "../../../server/corpus-server";
 import {
@@ -91,10 +92,17 @@ export const Route = createFileRoute("/$series/$set/")({
 	},
 	head: ({ loaderData }) => ({
 		meta: [
-			{ title: `${loaderData?.set.name ?? "Set"} · Pokémon TCG cards` },
+			{
+				title: m.set_meta_title({
+					name: loaderData?.set.name ?? m.set_meta_title_fallback(),
+				}),
+			},
 			{
 				name: "description",
-				content: `All ${loaderData?.cards.length ?? 0} cards in ${loaderData?.set.name ?? ""}.`,
+				content: m.set_meta_description({
+					count: loaderData?.cards.length ?? 0,
+					name: loaderData?.set.name ?? "",
+				}),
 			},
 		],
 	}),
@@ -170,7 +178,7 @@ function SetPageInner({
 						value={search}
 						options={facets}
 						onChange={onChange}
-						placeholder={`Search ${set.name} cards`}
+						placeholder={m.set_search_placeholder({ name: set.name })}
 						showCardFilter
 					/>
 				</div>

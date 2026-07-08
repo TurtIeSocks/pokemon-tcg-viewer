@@ -11,6 +11,7 @@ import { Stagger } from "@/components/ui/motion";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { Stat } from "@/components/ui/stat";
 import { ValueStats } from "@/components/vault/value-stats";
+import { m } from "@/paraglide/messages";
 import type { NavTree } from "../lib/nav-tree";
 import { getNavTreeFn } from "../server/nav-tree";
 import { useEnsureCorpus } from "../store/corpus/use-ensure-corpus";
@@ -20,7 +21,7 @@ import { useUserland } from "../store/userland/userland-store";
 
 export const Route = createFileRoute("/profile")({
 	loader: () => getNavTreeFn(),
-	head: () => ({ meta: [{ title: "Your profile · Cardstack" }] }),
+	head: () => ({ meta: [{ title: m.profile_meta_title() }] }),
 	component: ProfilePage,
 });
 
@@ -37,7 +38,7 @@ export function ProfilePageInner({ tree }: { tree: NavTree }) {
 	const countBySet = useOwnedCountBySet();
 	const [editOpen, setEditOpen] = useState(false);
 
-	const displayName = profile?.displayName || "Collector";
+	const displayName = profile?.displayName || m.profile_default_display_name();
 	const preset = profile?.avatarPreset ?? "dusk";
 
 	const favorite =
@@ -62,11 +63,11 @@ export function ProfilePageInner({ tree }: { tree: NavTree }) {
 							{displayName}
 						</h1>
 						<p className="text-[15px] text-(--ink-muted)">
-							{profile?.bio || "No bio yet. Add the cards you chase."}
+							{profile?.bio || m.profile_bio_placeholder()}
 						</p>
 					</div>
 					<Button variant="soft" size="sm" onClick={() => setEditOpen(true)}>
-						Edit profile
+						{m.profile_edit_button()}
 					</Button>
 				</div>
 			</BezelPanel>
@@ -81,23 +82,23 @@ export function ProfilePageInner({ tree }: { tree: NavTree }) {
 									{stats.completionPct}%
 								</span>
 								<span className="mt-0.5 text-[9.5px] uppercase tracking-widest text-(--faint)">
-									complete
+									{m.vault_complete_label()}
 								</span>
 							</div>
 						</ProgressRing>
 						<div className="flex flex-1 flex-wrap gap-8">
 							<Stat
 								value={stats.cardsOwned.toLocaleString()}
-								label="cards owned"
+								label={m.vault_cards_owned_label()}
 							/>
 							<Stat
 								value={stats.setsTouched.toLocaleString()}
-								label="sets touched"
+								label={m.vault_sets_touched_label()}
 							/>
 							<ValueStats stats={stats} />
 							<Stat
 								value={sinceYear(stats.collectingSince)}
-								label="collecting since"
+								label={m.profile_collecting_since_label()}
 							/>
 						</div>
 					</div>
@@ -107,7 +108,7 @@ export function ProfilePageInner({ tree }: { tree: NavTree }) {
 			{/* Favorite set */}
 			<section className="mt-8 space-y-3.5">
 				<h2 className="font-display text-[21px] font-medium text-(--ink)">
-					Favorite set
+					{m.profile_favorite_set_heading()}
 				</h2>
 				{favorite ? (
 					<div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
@@ -120,15 +121,13 @@ export function ProfilePageInner({ tree }: { tree: NavTree }) {
 					</div>
 				) : (
 					<GlassPanel className="py-10 text-center space-y-3">
-						<p className="text-(--ink-muted)">
-							No favorite set yet. Pick the one you'd show off first.
-						</p>
+						<p className="text-(--ink-muted)">{m.profile_no_favorite_set()}</p>
 						<Button
 							variant="outline"
 							size="sm"
 							onClick={() => setEditOpen(true)}
 						>
-							Pick favorite set
+							{m.profile_pick_favorite_set()}
 						</Button>
 					</GlassPanel>
 				)}
@@ -158,7 +157,7 @@ function ProfilePage() {
 					fallback={
 						<div className="space-y-1.5">
 							<h1 className="font-display text-3xl font-semibold text-(--ink)">
-								Collector
+								{m.profile_default_display_name()}
 							</h1>
 						</div>
 					}

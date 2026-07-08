@@ -6,6 +6,7 @@ import {
 	isSupportedLanguage,
 	type SupportedLanguage,
 } from "../../../lib/languages";
+import { m } from "../../../paraglide/messages";
 import { getCardForRouteFn } from "../../../server/corpus-server";
 import { useRecentsStore } from "../../../store/recents";
 
@@ -38,9 +39,17 @@ export const Route = createFileRoute("/$series/$set/$card")({
 	},
 	head: ({ loaderData }) => {
 		const card = loaderData?.card;
-		if (!card) return { meta: [{ title: "Card · Pokémon TCG" }] };
-		const title = `${card.name} · ${card.setName} · Pokémon TCG`;
-		const desc = `${card.name} (${card.rarity ?? "card"}) from ${card.setName}, #${card.cardNumber}.`;
+		if (!card) return { meta: [{ title: m.card_meta_title_fallback() }] };
+		const title = m.card_meta_title({
+			name: card.name,
+			setName: card.setName,
+		});
+		const desc = m.card_meta_description({
+			name: card.name,
+			rarity: card.rarity ?? m.card_meta_rarity_fallback(),
+			setName: card.setName,
+			cardNumber: card.cardNumber,
+		});
 		return {
 			meta: [
 				{ title },

@@ -11,6 +11,7 @@ import {
 } from "../../lib/list-search";
 import { toSerializedQuery } from "../../lib/serialized-query";
 import { useCorpusCardHref } from "../../lib/use-corpus-card-href";
+import { m } from "../../paraglide/messages";
 import { getSupertypeCardsFn } from "../../server/corpus-server";
 import { deriveFacets } from "../../server/set-facets";
 
@@ -29,12 +30,12 @@ export const Route = createFileRoute("/trainer/")({
 	},
 	head: ({ loaderData }) => ({
 		meta: [
-			{ title: "Trainer cards · every Pokémon TCG Trainer" },
+			{ title: m.trainer_meta_title() },
 			{
 				name: "description",
-				content: `Browse all ${loaderData?.total ?? ""} Trainer cards (Items, Supporters, Stadiums and Tools) across every Pokémon TCG set.`,
+				content: m.trainer_meta_description({ count: loaderData?.total ?? "" }),
 			},
-			{ property: "og:title", content: "Trainer cards · Pokémon TCG" },
+			{ property: "og:title", content: m.trainer_meta_og_title() },
 		],
 	}),
 	component: TrainersPage,

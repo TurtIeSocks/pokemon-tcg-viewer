@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useIsActive } from "@/hooks/use-is-active";
 import { cn } from "@/lib/utils";
+import { m } from "@/paraglide/messages";
 import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import {
 	type NavSeries,
@@ -75,7 +76,7 @@ function SidebarHeaderContent(): React.JSX.Element {
 	return (
 		<SidebarMenu>
 			<SidebarMenuItem>
-				<SidebarMenuButton size="lg" asChild tooltip="Cardstack, home">
+				<SidebarMenuButton size="lg" asChild tooltip={m.sidebar_home_tooltip()}>
 					<Link to="/">
 						<div
 							className="grid size-9 shrink-0 place-items-center rounded-[11px] shadow-[0_6px_18px_-6px_var(--primary)] group-data-[collapsible=icon]:size-8"
@@ -96,7 +97,7 @@ function SidebarHeaderContent(): React.JSX.Element {
 								Cardstack
 							</span>
 							<span className="font-mono text-[10px] text-(--faint)">
-								Your cards. Your call.
+								{m.sidebar_tagline()}
 							</span>
 						</div>
 					</Link>
@@ -107,25 +108,42 @@ function SidebarHeaderContent(): React.JSX.Element {
 }
 
 interface VaultChild {
-	label: string;
+	/** Thunk, not a plain string — see {@link NavDestination.label} in command-palette-data.ts. */
+	label: () => string;
 	to: LinkComponentProps["to"];
 	icon: LucideIcon;
 }
 
-const VAULT_CHILDREN = [
-	{ label: "Overview", to: "/vault", icon: LayoutDashboard },
-	{ label: "All Cards", to: "/vault/cards", icon: Layers },
-	{ label: "Sets", to: "/vault/sets", icon: Boxes },
-	{ label: "Binders", to: "/vault/binders", icon: BookOpen },
-	{ label: "Scan cards", to: "/scan", icon: ScanLine },
-] as const satisfies VaultChild[];
+const VAULT_CHILDREN: readonly VaultChild[] = [
+	{
+		label: () => m.sidebar_vault_overview(),
+		to: "/vault",
+		icon: LayoutDashboard,
+	},
+	{
+		label: () => m.command_palette_nav_all_cards(),
+		to: "/vault/cards",
+		icon: Layers,
+	},
+	{ label: () => m.sidebar_vault_sets(), to: "/vault/sets", icon: Boxes },
+	{
+		label: () => m.command_palette_nav_binders(),
+		to: "/vault/binders",
+		icon: BookOpen,
+	},
+	{
+		label: () => m.command_palette_nav_scan_cards(),
+		to: "/scan",
+		icon: ScanLine,
+	},
+];
 
 /** Flat Vault items under the "Vault" group label (matches the mock — no nested
  *  collapsible, no redundant "Vault" parent). */
 function VaultGroup() {
 	return (
 		<SidebarGroup>
-			<SidebarGroupLabel>Vault</SidebarGroupLabel>
+			<SidebarGroupLabel>{m.bottom_nav_vault()}</SidebarGroupLabel>
 			<SidebarMenu>
 				{VAULT_CHILDREN.map((item) => {
 					return <VaultItem key={item.to} item={item} />;
@@ -152,7 +170,7 @@ function VaultItem({ item }: { item: VaultChild }) {
 					)}
 				/>
 			)}
-			<span>{item.label}</span>
+			<span>{item.label()}</span>
 		</SidebarMenuLink>
 	);
 }
@@ -160,7 +178,7 @@ function VaultItem({ item }: { item: VaultChild }) {
 function SeriesGroup({ tree }: AppSidebarProps) {
 	return (
 		<SidebarGroup>
-			<SidebarGroupLabel>Series &amp; Sets</SidebarGroupLabel>
+			<SidebarGroupLabel>{m.sidebar_series_and_sets()}</SidebarGroupLabel>
 			<SidebarMenu>
 				{tree.map((series) => (
 					<SeriesItem key={series.slug} series={series} />

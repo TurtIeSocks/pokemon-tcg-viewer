@@ -25,6 +25,7 @@ import {
 } from "../../lib/list-search";
 import { toSerializedQuery } from "../../lib/serialized-query";
 import { titleCaseSlug } from "../../lib/slug";
+import { m } from "../../paraglide/messages";
 import { getPokemonListFn } from "../../server/card-data";
 import { getDexCardRoutesFn, getDexCardsFn } from "../../server/corpus-server";
 import { dexByName } from "../../server/pokemon-dex";
@@ -53,15 +54,21 @@ export const Route = createFileRoute("/pokemon/$name")({
 		};
 	},
 	head: ({ loaderData }) => {
-		const d = loaderData?.display ?? "Pokémon";
+		const d = loaderData?.display ?? m.pokemon_name_fallback();
 		return {
 			meta: [
-				{ title: `${d} · every Pokémon TCG card` },
+				{ title: m.pokemon_name_meta_title({ name: d }) },
 				{
 					name: "description",
-					content: `Browse all ${loaderData?.total ?? ""} ${d} cards across every set.`,
+					content: m.pokemon_name_meta_description({
+						count: loaderData?.total ?? "",
+						name: d,
+					}),
 				},
-				{ property: "og:title", content: `${d} · Pokémon TCG cards` },
+				{
+					property: "og:title",
+					content: m.pokemon_name_meta_og_title({ name: d }),
+				},
 			],
 		};
 	},

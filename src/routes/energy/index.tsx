@@ -11,6 +11,7 @@ import {
 } from "../../lib/list-search";
 import { toSerializedQuery } from "../../lib/serialized-query";
 import { useCorpusCardHref } from "../../lib/use-corpus-card-href";
+import { m } from "../../paraglide/messages";
 import { getSupertypeCardsFn } from "../../server/corpus-server";
 import { deriveFacets } from "../../server/set-facets";
 
@@ -29,12 +30,12 @@ export const Route = createFileRoute("/energy/")({
 	},
 	head: ({ loaderData }) => ({
 		meta: [
-			{ title: "Energy cards · every Pokémon TCG Energy" },
+			{ title: m.energy_meta_title() },
 			{
 				name: "description",
-				content: `Browse all ${loaderData?.total ?? ""} Energy cards (Basic and Special) across every Pokémon TCG set.`,
+				content: m.energy_meta_description({ count: loaderData?.total ?? "" }),
 			},
-			{ property: "og:title", content: "Energy cards · Pokémon TCG" },
+			{ property: "og:title", content: m.energy_meta_og_title() },
 		],
 	}),
 	component: EnergiesPage,
