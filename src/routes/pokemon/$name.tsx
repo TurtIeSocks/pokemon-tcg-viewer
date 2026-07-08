@@ -14,7 +14,10 @@ import { SearchControls } from "../../components/islands/search-controls";
 import { ViewModeToggle } from "../../components/islands/view-mode-toggle";
 import { ResultsBar } from "../../components/results-bar";
 import { SelectAndBulkAdd } from "../../components/vault/select-and-bulk-add";
-import { cardModalLinkProps } from "../../lib/card-route";
+import {
+	type CardRouteParams,
+	cardModalLinkPropsForCard,
+} from "../../lib/card-route";
 import {
 	LIST_SEARCH_DEFAULTS,
 	listSearchToUrl,
@@ -23,10 +26,9 @@ import {
 import { toSerializedQuery } from "../../lib/serialized-query";
 import { titleCaseSlug } from "../../lib/slug";
 import { getPokemonListFn } from "../../server/card-data";
-import { getDexCardsFn } from "../../server/corpus-server";
+import { getDexCardRoutesFn, getDexCardsFn } from "../../server/corpus-server";
 import { dexByName } from "../../server/pokemon-dex";
 import { deriveFacets, type SetFacets } from "../../server/set-facets";
-import { useSlugIndex } from "../../store/corpus/corpus-runtime";
 
 export const Route = createFileRoute("/pokemon/$name")({
 	validateSearch: validateListSearch,
@@ -35,12 +37,19 @@ export const Route = createFileRoute("/pokemon/$name")({
 		const list = await getPokemonListFn();
 		const dex = dexByName(list, params.name);
 		if (dex === null) throw notFound();
-		const all = await getDexCardsFn({ data: dex });
+		// Resolve card links server-side: cards span many sets, so the page can't
+		// derive /$series/$set/$card from the URL. Runs in parallel with the card
+		// fetch; both hit the same in-memory server corpus.
+		const [all, routes] = await Promise.all([
+			getDexCardsFn({ data: dex }),
+			getDexCardRoutesFn({ data: dex }),
+		]);
 		return {
 			display: titleCaseSlug(params.name),
 			dex,
 			cards: all.slice(0, 60),
 			total: all.length,
+			routes,
 		};
 	},
 	head: ({ loaderData }) => {
@@ -60,7 +69,7 @@ export const Route = createFileRoute("/pokemon/$name")({
 });
 
 function PokemonPage() {
-	const { dex, cards, total } = Route.useLoaderData();
+	const { dex, cards, total, routes } = Route.useLoaderData();
 	const search = Route.useSearch();
 	const params = Route.useParams();
 	const navigate = useNavigate({ from: Route.fullPath });
@@ -72,17 +81,18 @@ function PokemonPage() {
 		});
 	const options = deriveFacets(cards);
 
-	// Cards for one Pokémon span many sets — resolve each detail link from the
-	// client corpus. Falls back to a no-op until the corpus + sets load.
-	const slugIndex = useSlugIndex();
+	// Cards for one Pokémon span many sets, so the URL can't supply the set —
+	// the loader resolves each card's /$series/$set/$card params server-side
+	// (`routes`), keyed by id, so links work in the first paint. The same-route
+	// fallback is defensive; every dex card is present in `routes`.
 	const cardHref = useCallback(
-		(card: HoloCardData): LinkProps =>
-			(slugIndex ? cardModalLinkProps(slugIndex, card) : null) ?? {
-				to: "/pokemon/$name",
-				params: { name: params.name },
-				search,
-			},
-		[slugIndex, params.name, search],
+		(card: HoloCardData): LinkProps => {
+			const p: CardRouteParams | undefined = routes[card.id];
+			return p
+				? cardModalLinkPropsForCard(p, card)
+				: { to: "/pokemon/$name", params: { name: params.name }, search };
+		},
+		[routes, params.name, search],
 	);
 
 	return (

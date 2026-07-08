@@ -14,20 +14,20 @@ import { ViewModeToggle } from "../components/islands/view-mode-toggle";
 import { ResultsBar } from "../components/results-bar";
 import { SelectAndBulkAdd } from "../components/vault/select-and-bulk-add";
 import { buildCorpusQuery } from "../lib/card-query";
-import { cardModalLinkProps } from "../lib/card-route";
 import {
 	LIST_SEARCH_DEFAULTS,
 	listSearchToUrl,
 	validateListSearch,
 } from "../lib/list-search";
 import { toSerializedQuery } from "../lib/serialized-query";
+import { useCorpusCardHref } from "../lib/use-corpus-card-href";
 import { getPokemonListFn } from "../server/card-data";
-import { searchCardsFn } from "../server/corpus-server";
+import { resolveCardRoutesFn, searchCardsFn } from "../server/corpus-server";
 import { nameByDex } from "../server/pokemon-dex";
 import { deriveFacets, type SetFacets } from "../server/set-facets";
 import { useStore } from "../store";
 import { queryCorpus, setsById } from "../store/corpus/corpus-engine";
-import { useCorpusRuntime, useSlugIndex } from "../store/corpus/corpus-runtime";
+import { useCorpusRuntime } from "../store/corpus/corpus-runtime";
 import { useRecentsStore } from "../store/recents";
 import { setsForRegion } from "../store/sets-slice";
 
@@ -46,7 +46,8 @@ export const Route = createFileRoute("/search")({
 	pendingMs: Number.POSITIVE_INFINITY,
 	loader: async ({ deps }) => {
 		const q = deps.q.trim();
-		if (!q) return { q, cards: [], total: 0, facets: deriveFacets([]) };
+		if (!q)
+			return { q, cards: [], total: 0, facets: deriveFacets([]), routes: {} };
 		// Species list runs in parallel with the search; it labels the Pokémon
 		// filter options (dex number → species name).
 		const [all, list] = await Promise.all([
@@ -55,7 +56,14 @@ export const Route = createFileRoute("/search")({
 		]);
 		const cards = all.slice(0, 40);
 		const facets = deriveFacets(cards, (dex) => nameByDex(list, dex));
-		return { q, cards, total: all.length, facets };
+		// Resolve the seed cards' /$series/$set/$card links server-side (results
+		// span many sets). Resolve-only — no second search query — so per-keystroke
+		// search stays cheap. Client-paginated + live-grid cards use the client slug
+		// index backstop (loaded by then).
+		const routes = await resolveCardRoutesFn({
+			data: { items: cards.map((c) => ({ id: c.id, setId: c.setId })) },
+		});
+		return { q, cards, total: all.length, facets, routes };
 	},
 	head: ({ loaderData }) => ({
 		meta: [
@@ -74,7 +82,7 @@ export const Route = createFileRoute("/search")({
 });
 
 function SearchPage() {
-	const { q, cards, total, facets } = Route.useLoaderData();
+	const { q, cards, total, facets, routes } = Route.useLoaderData();
 	const search = Route.useSearch();
 	const navigate = useNavigate({ from: Route.fullPath });
 	const addRecentSearch = useRecentsStore((s) => s.addRecentSearch);
@@ -127,19 +135,11 @@ function SearchPage() {
 		);
 	}, [index, sets, search]);
 
-	// Search results span many sets, so each card's detail link is resolved from
-	// the client corpus (same slugs the detail route uses). Falls back to a no-op
-	// until the corpus + sets load — the live grid pulls cards from that same
-	// corpus, so server-side enrichment of the SSR seed alone wouldn't cover it.
-	const slugIndex = useSlugIndex();
-	const cardHref = useCallback(
-		(card: HoloCardData): LinkProps =>
-			(slugIndex ? cardModalLinkProps(slugIndex, card) : null) ?? {
-				to: "/search",
-				search,
-			},
-		[slugIndex, search],
-	);
+	// Search results span many sets, so each card's detail link is looked up per
+	// card. The loader's server-resolved `routes` map covers the SSR seed (correct
+	// links in the first paint); the client slug index backstops paginated +
+	// live-grid cards (pulled from the same corpus, loaded by then).
+	const cardHref = useCorpusCardHref({ to: "/search", search }, routes);
 
 	return (
 		<CardSelectionProvider>
