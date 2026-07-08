@@ -41,6 +41,14 @@ describe("<CardLightbox />", () => {
 		expect(closed).toBe(1);
 	});
 
+	test("clicking the card itself also exits", () => {
+		let closed = 0;
+		render(<CardLightbox open onClose={() => closed++} card={card} />);
+		// The holo card is a role=button with the card's name; clicking it closes.
+		fireEvent.click(screen.getByRole("button", { name: "Charizard" }));
+		expect(closed).toBe(1);
+	});
+
 	test("closes on Escape", () => {
 		let closed = 0;
 		render(<CardLightbox open onClose={() => closed++} card={card} />);
