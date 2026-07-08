@@ -66,13 +66,12 @@ export function HomeBrowse({ tree }: { tree: NavTree }) {
  */
 function EraTile({ series }: { series: NavTree[number] }) {
 	const target = series.sets.at(-1);
-	if (!target) return null;
 	const count = series.sets.length;
-	const logo = target.logo || undefined;
+	const logo = target?.logo || undefined;
 	return (
 		<Link
-			to="/$series/$set"
-			params={{ series: series.slug, set: target.slug }}
+			to="/$series"
+			params={{ series: series.slug }}
 			search={LIST_SEARCH_DEFAULTS}
 			aria-label={`Browse ${series.name}`}
 			className="group relative block aspect-4/5 w-full overflow-hidden rounded-2xl transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-8px_rgba(0,0,0,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none motion-reduce:hover:translate-y-0"
