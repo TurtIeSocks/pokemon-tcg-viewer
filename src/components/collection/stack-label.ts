@@ -30,7 +30,7 @@ function autoStackLabel(item: Stack): string {
 		? `${item.grading.company} ${item.grading.grade}`
 		: (item.condition ?? null);
 	const parts = [item.variant, gradeOrCondition].filter(Boolean);
-	// Bare stack (no variant/grade): "Ungraded stack" — NOT the acquired date,
+	// Bare stack (no variant/grade): "Ungraded card" — NOT the acquired date,
 	// which the row already shows as a secondary line.
-	return parts.length > 0 ? parts.join(" · ") : "Ungraded stack";
+	return parts.length > 0 ? parts.join(" · ") : "Ungraded";
 }
