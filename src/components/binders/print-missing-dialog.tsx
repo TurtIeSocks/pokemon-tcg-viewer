@@ -114,7 +114,7 @@ function PlaceholderExtras({
 			{showPrice && extra?.price ? (
 				<div
 					style={{
-						marginTop: "1mm",
+						marginTop: "3mm",
 						fontWeight: 700,
 						fontSize: mm(priceSizeMm * textScale),
 						fontVariantNumeric: "tabular-nums",
@@ -130,7 +130,7 @@ function PlaceholderExtras({
 					viewBox={`0 0 ${extra.qr.count} ${extra.qr.count}`}
 					preserveAspectRatio="none"
 					aria-hidden="true"
-					style={{ marginTop: "1.5mm", display: "block" }}
+					style={{ marginTop: "3mm", display: "block" }}
 				>
 					<rect
 						x={0}
@@ -274,7 +274,7 @@ function PrintSheet({
 						{showNumber ? (
 							<div
 								style={{
-									marginTop: "1.5mm",
+									marginTop: "3mm",
 									fontSize: mm(numberSizeMm * textScale),
 									opacity: 0.85,
 								}}
@@ -285,7 +285,7 @@ function PrintSheet({
 						{showSetName ? (
 							<div
 								style={{
-									marginTop: "1mm",
+									marginTop: "3mm",
 									fontSize: mm(setNameSizeMm * textScale),
 									opacity: 0.85,
 								}}
@@ -592,6 +592,33 @@ export function PrintMissingDialog({
 								</LabeledRow>
 							</ControlGroup>
 
+							<ControlGroup label="Card size">
+								<UnitField
+									label="Width"
+									value={cardWidthMm}
+									spec={FIELD.cardWidth}
+									onCommit={(n) => {
+										setPrintPrefs({ cardWidthMm: n });
+										warnIfOversized("width", n);
+									}}
+								/>
+								<UnitField
+									label="Height"
+									value={cardHeightMm}
+									spec={FIELD.cardHeight}
+									onCommit={(n) => {
+										setPrintPrefs({ cardHeightMm: n });
+										warnIfOversized("height", n);
+									}}
+								/>
+								<UnitField
+									label="Spacing"
+									value={gapMm}
+									spec={FIELD.spacing}
+									onCommit={(n) => setPrintPrefs({ gapMm: n })}
+								/>
+							</ControlGroup>
+
 							<ControlGroup label="Font sizes">
 								<FontSizeField
 									label="Card name"
@@ -620,33 +647,6 @@ export function PrintMissingDialog({
 									onToggle={(on) => setPrintPrefs({ showPrice: on })}
 									sizeMm={priceSizeMm}
 									onSize={(n) => setPrintPrefs({ priceSizeMm: n })}
-								/>
-							</ControlGroup>
-
-							<ControlGroup label="Card size">
-								<UnitField
-									label="Width"
-									value={cardWidthMm}
-									spec={FIELD.cardWidth}
-									onCommit={(n) => {
-										setPrintPrefs({ cardWidthMm: n });
-										warnIfOversized("width", n);
-									}}
-								/>
-								<UnitField
-									label="Height"
-									value={cardHeightMm}
-									spec={FIELD.cardHeight}
-									onCommit={(n) => {
-										setPrintPrefs({ cardHeightMm: n });
-										warnIfOversized("height", n);
-									}}
-								/>
-								<UnitField
-									label="Spacing"
-									value={gapMm}
-									spec={FIELD.spacing}
-									onCommit={(n) => setPrintPrefs({ gapMm: n })}
 								/>
 							</ControlGroup>
 
