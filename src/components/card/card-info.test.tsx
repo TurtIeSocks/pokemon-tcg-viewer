@@ -65,6 +65,36 @@ test("CardInfo omits the printings line when absent", () => {
 	expect(container.textContent).not.toContain("Printings");
 });
 
+test("CardInfo dedupes printings that humanize to the same label", () => {
+	const { container } = render(
+		<CardInfo
+			card={makeFocusCard({
+				variantsDetailed: [
+					{
+						variantId: "a",
+						type: "holo",
+						subtype: "unlimited",
+						size: "standard",
+						stamp: null,
+					},
+					// Different variantId, identical printing identity -> one chip.
+					{
+						variantId: "b",
+						type: "holo",
+						subtype: "unlimited",
+						size: "standard",
+						stamp: null,
+					},
+				],
+			})}
+		/>,
+	);
+	const chips = [...container.querySelectorAll('[class*="r-pill"]')].filter(
+		(el) => /Unlimited · Holo/.test(el.textContent ?? ""),
+	);
+	expect(chips.length).toBe(1);
+});
+
 test("weakness/resistance render as type glyphs (icon), not spelled out", () => {
 	const { container } = render(
 		<CardInfo
