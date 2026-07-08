@@ -1,4 +1,5 @@
 import { fileURLToPath } from "node:url";
+import { paraglideVitePlugin } from "@inlang/paraglide-js";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
@@ -16,7 +17,15 @@ export default defineConfig({
 	// with @tcgvault/cloud absent (the open-core default).
 	ssr: { external: ["@tcgvault/cloud"] },
 	plugins: [
-		// First so its dev middleware registers ahead of nitro's catch-all
+		// Must run first so its compilation of src/paraglide completes before
+		// other plugins (e.g. tanstackStart's route generator) try to resolve it.
+		paraglideVitePlugin({
+			project: "./project.inlang",
+			outdir: "./src/paraglide",
+			strategy: ["cookie", "preferredLanguage", "baseLocale"],
+			cookieName: "ui-lang",
+		}),
+		// Next so its dev middleware registers ahead of nitro's catch-all
 		// (otherwise GET /version.json falls through to the SPA handler → 404).
 		versionPlugin(),
 		tailwindcss(),

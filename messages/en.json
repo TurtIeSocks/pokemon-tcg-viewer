@@ -1,0 +1,7 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "nav_home": "Home",
+  "nav_vault": "Your Vault",
+  "nav_scan": "Scan",
+  "nav_search": "Search"
+}
