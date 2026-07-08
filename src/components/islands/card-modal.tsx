@@ -43,19 +43,26 @@ export function CardModal({
 
 	return (
 		<Dialog open onOpenChange={(o) => !o && onClose()}>
+			{/* Flex column pinned to ~90dvh: header + footer stay fixed while the
+			    body scrolls. A fixed tall height (vs. grow-to-content) keeps the
+			    modal roomy for short cards and, by capping at the viewport, stops
+			    the header being pushed off-screen on mobile when content overflows. */}
 			<DialogContent
 				aria-describedby={undefined}
-				className="max-w-4xl sm:max-w-4xl"
+				className="flex h-[90dvh] max-w-4xl flex-col gap-4 sm:max-w-4xl"
 			>
 				{/* Radix needs a DialogTitle for the dialog's accessible name; the
 				    visible identity is CardHeading (shared with the dedicated page). */}
 				<DialogTitle className="sr-only">
 					{card.name} · {card.setName}
 				</DialogTitle>
-				<DialogHeader>
+				{/* Override the shadcn header's mobile `text-center`: the name row is a
+				    flex (always left) while the meta line obeys text-align, so centering
+				    splits them. Keep both left, matching desktop + the card page. */}
+				<DialogHeader className="shrink-0 pr-8 text-left">
 					<CardHeading card={card} />
 				</DialogHeader>
-				<div className="max-h-[90vh] overflow-y-auto">
+				<div className="min-h-0 flex-1 overflow-y-auto">
 					<CardCockpit
 						card={card}
 						tab={tab}
@@ -63,7 +70,7 @@ export function CardModal({
 						pending={pending}
 					/>
 				</div>
-				<DialogFooter>
+				<DialogFooter className="shrink-0">
 					<CardCrossLinks links={crossLinks} />
 				</DialogFooter>
 			</DialogContent>

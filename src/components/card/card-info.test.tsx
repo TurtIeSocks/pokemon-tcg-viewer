@@ -64,3 +64,21 @@ test("CardInfo omits the printings line when absent", () => {
 	const { container } = render(<CardInfo card={makeFocusCard({})} />);
 	expect(container.textContent).not.toContain("Printings");
 });
+
+test("weakness/resistance render as type glyphs (icon), not spelled out", () => {
+	const { container } = render(
+		<CardInfo
+			card={makeFocusCard({
+				weaknesses: [{ type: "Psychic", value: "×2" }],
+				resistances: [{ type: "Fighting", value: "-30" }],
+			})}
+		/>,
+	);
+	// The type is shown as an EnergyIcon (role="img", a11y name = the type)…
+	expect(screen.getByRole("img", { name: "Psychic" })).toBeDefined();
+	expect(screen.getByRole("img", { name: "Fighting" })).toBeDefined();
+	// …with the value still visible, but never the spelled-out "Psychic ×2".
+	expect(container.textContent).toContain("×2");
+	expect(container.textContent).toContain("-30");
+	expect(container.textContent).not.toContain("Psychic ×2");
+});

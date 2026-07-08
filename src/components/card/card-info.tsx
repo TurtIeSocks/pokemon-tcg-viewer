@@ -94,6 +94,32 @@ function AttackRow({
 	);
 }
 
+/** A stat term (Weak / Resist) rendered as its type glyph(s) + value, matching
+ * the energy-icon language used everywhere else instead of spelling the type. */
+function StatTypes({
+	label,
+	items,
+}: {
+	label: string;
+	items: { type: string; value: string }[];
+}) {
+	return (
+		<span className="inline-flex items-center gap-1.5">
+			{label}
+			{items.map((it, i) => (
+				<span
+					// biome-ignore lint/suspicious/noArrayIndexKey: static read-only list that may repeat a type
+					key={`${it.type}-${i}`}
+					className="inline-flex items-center gap-1"
+				>
+					<EnergyIcon type={it.type} size={16} />
+					<b className="font-medium text-[var(--ink-muted)]">{it.value}</b>
+				</span>
+			))}
+		</span>
+	);
+}
+
 function StatStrip({ card }: { card: FocusCardData }) {
 	const hasWeak = !!card.weaknesses?.length;
 	const hasResist = !!card.resistances?.length;
@@ -101,21 +127,11 @@ function StatStrip({ card }: { card: FocusCardData }) {
 	if (!hasWeak && !hasResist && !hasRetreat && !card.artist) return null;
 	return (
 		<div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.07] pt-3.5 font-mono text-[11px] uppercase tracking-[0.05em] text-[var(--ink-muted)]">
-			{hasWeak ? (
-				<span>
-					Weak{" "}
-					<b className="font-medium text-[var(--ink-muted)]">
-						{card.weaknesses?.map((w) => `${w.type} ${w.value}`).join(", ")}
-					</b>
-				</span>
+			{hasWeak && card.weaknesses ? (
+				<StatTypes label="Weak" items={card.weaknesses} />
 			) : null}
-			{hasResist ? (
-				<span>
-					Resist{" "}
-					<b className="font-medium text-[var(--ink-muted)]">
-						{card.resistances?.map((r) => `${r.type} ${r.value}`).join(", ")}
-					</b>
-				</span>
+			{hasResist && card.resistances ? (
+				<StatTypes label="Resist" items={card.resistances} />
 			) : null}
 			{hasRetreat && card.retreatCost ? (
 				<span className="inline-flex items-center">
