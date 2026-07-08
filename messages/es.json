@@ -5,6 +5,7 @@
 	"nav_scan": "Escanear",
 	"nav_search": "Buscar",
 	"settings_interface_language": "Idioma de la interfaz",
+	"settings_interface_language_description": "Los menús, botones y textos de ajustes se muestran en este idioma. Los nombres y detalles de las cartas se controlan por separado con el idioma del catálogo, arriba.",
 	"settings_page_title": "Ajustes",
 	"settings_catalog_language_title": "Idioma del catálogo",
 	"settings_catalog_language_description": "Los nombres y detalles de las cartas se muestran en este idioma en toda la app. Los idiomas asiáticos cambian al catálogo asiático independiente.",
@@ -32,7 +33,6 @@
 	"settings_image_cache_preset_1000": "1000 miniaturas (~25 MB)",
 	"settings_image_cache_preset_2000": "2000 miniaturas (~50 MB)",
 	"settings_image_cache_preset_4000": "4000 miniaturas (~100 MB)",
-
 	"command_palette_nav_browse": "Explorar",
 	"command_palette_nav_vault_overview": "Resumen del Vault",
 	"command_palette_nav_all_cards": "Todas las cartas",
@@ -55,11 +55,9 @@
 	"command_palette_hint_navigate": "navegar",
 	"command_palette_hint_select": "seleccionar",
 	"command_palette_hint_close": "cerrar",
-
 	"sidebar_mobile_title": "Barra lateral",
 	"sidebar_mobile_description": "Muestra la barra lateral móvil.",
 	"sidebar_toggle": "Alternar barra lateral",
-
 	"home_eyebrow": "Explora · Colecciona · Hazla tuya",
 	"home_tagline": "Lleva el control de toda tu colección del TCG de Pokémon. Local-first y de código abierto, así que de verdad es tuya. Sin cuenta para empezar, sin juicios por el cuarto Charizard.",
 	"home_stat_cards": "{count} cartas",
@@ -91,13 +89,11 @@
 			}
 		}
 	],
-
 	"form_save": "Guardar",
 	"form_saving": "Guardando…",
 	"form_cancel": "Cancelar",
 	"form_price_error": "Debe ser un número ≥ 0",
 	"form_grade_error": "0-10",
-
 	"stack_field_label": "Etiqueta",
 	"stack_label_placeholder": "Ponle un nombre a esta carta (opcional)",
 	"stack_field_quantity": "Cantidad",
@@ -146,7 +142,6 @@
 	"stack_manager_add_card": "Añadir carta",
 	"stack_manager_new_card": "Nueva carta",
 	"stack_manager_empty": "Aún no hay cartas. Añade una arriba.",
-
 	"vault_meta_title": "Tu Vault · Cardstack",
 	"vault_overview_title": "Resumen",
 	"vault_overview_subtitle": "Cada copia que posees, en un solo lugar.",
@@ -302,7 +297,6 @@
 	"vault_shared_not_found": "No se pudo leer este binder compartido. El enlace puede estar roto o incompleto.",
 	"vault_shared_snapshot_banner": "Instantánea del {date} · no en vivo",
 	"vault_loading_shared_binder": "Cargando binder compartido…",
-
 	"binder_progress_label": "Progreso",
 	"binder_rule_count": [
 		{
@@ -412,7 +406,6 @@
 	"binder_print_preview_aria": "Vista previa del marcador",
 	"binder_print_reset_defaults": "Restablecer valores predeterminados",
 	"binder_print_action": "Imprimir",
-
 	"scan_early_alpha_badge": "Alfa temprana.",
 	"scan_early_alpha_body": "El escáner es completamente nuevo y sigue aprendiendo, así que los resultados irán mejorando. Si no se encuentra una carta, alinéala dentro del marco, añade más luz o búscala manualmente.",
 	"scan_camera_denied": "Se denegó el acceso a la cámara. Usa la opción de subir archivo de abajo.",
@@ -450,7 +443,6 @@
 	"scan_increase_qty_aria": "Aumentar cantidad",
 	"scan_add_to_vault_button": "Añadir al Vault",
 	"scan_keep_scanning_button": "Estas no, seguir escaneando",
-
 	"billing_meta_title": "Facturación y plan · Cardstack",
 	"billing_heading": "Facturación y plan",
 	"billing_intro": "Toda la app es gratis y local-first. Plus paga los servidores de sincronización, no el acceso a tus propias cartas. Quien se autoaloja lo tiene sin coste.",
@@ -473,25 +465,20 @@
 	"billing_feature_full_vault_offline": "Tu Vault completo, sin conexión, sin límites",
 	"billing_feature_csv_import_export": "Importación y exportación CSV, siempre activas",
 	"billing_feature_edit_delete_export": "Edita, elimina o expórtalo cuando quieras. Son tus datos.",
-
 	"pokemon_meta_title": "Pokédex · todas las cartas del TCG de Pokémon por especie",
 	"pokemon_meta_description": "Explora {count} especies de Pokémon y encuentra todas las cartas del TCG de cada una.",
 	"pokemon_meta_og_title": "Pokédex · TCG de Pokémon por especie",
 	"pokemon_species_unit": "especies",
-
 	"search_meta_title_query": "\"{query}\" · Búsqueda del TCG de Pokémon",
 	"search_meta_title_empty": "Buscar · TCG de Pokémon",
 	"search_meta_description": "Resultados de búsqueda de {query}.",
 	"search_placeholder": "Buscar en todas las cartas",
-
 	"results_bar_default_unit": "cartas",
-
 	"sidebar_home_tooltip": "Cardstack, inicio",
 	"sidebar_tagline": "Tus cartas. Tu decisión.",
 	"sidebar_series_and_sets": "Series y sets",
 	"sidebar_vault_overview": "Resumen",
 	"sidebar_vault_sets": "Sets",
-
 	"shell_settings": "Ajustes",
 	"profile_edit_button": "Editar perfil",
 	"shell_sign_out": "Cerrar sesión",
@@ -499,13 +486,11 @@
 	"shell_sign_in_dialog_description": "Iniciar sesión es solo para sincronizar. Explorar y coleccionar funcionan bien sin ello. ¿Quieres tu Vault en todos los dispositivos? Te enviaremos un enlace mágico por correo. Sin contraseña, sin fisgoneo.",
 	"shell_upgrade_to_sync": "Mejora para sincronizar",
 	"shell_sync_status_aria": "Estado de sincronización: {label}",
-
 	"sync_status_synced": "Sincronizado",
 	"sync_status_syncing": "Sincronizando…",
 	"sync_status_offline": "Sin conexión",
 	"sync_status_error": "Error de sincronización",
 	"sync_status_local_only": "Solo local",
-
 	"shell_about_credits_aria": "Acerca de y créditos",
 	"shell_about_title": "Acerca de Cardstack",
 	"shell_about_description": "Cardstack es un gestor de colecciones de código abierto hecho por fans para el TCG de Pokémon. Local-first, tus datos, sin anuncios, sin fisgoneo. Creado por coleccionistas, con agradecimiento a:",
@@ -517,7 +502,6 @@
 	"shell_credit_holo_body": "Los shaders holo y foil que hacen brillar a las cartas más codiciadas están adaptados de Pokémon Cards CSS, de Simon Goellner (@simeydotme).",
 	"shell_open_source_note": "Código abierto, de principio a fin. Sin propietario, sin ataduras.",
 	"shell_view_source_github": "Ver el código fuente en GitHub",
-
 	"route_loading_aria": "Cargando",
 	"route_not_found_heading": "No encontrado",
 	"route_not_found_body": "Esa página, set o carta no existe. Puede que se haya movido o que nunca haya existido.",
@@ -525,7 +509,6 @@
 	"route_error_heading": "Algo salió mal",
 	"route_error_generic": "Algo salió mal.",
 	"route_try_again": "Inténtalo de nuevo",
-
 	"profile_meta_title": "Tu perfil · Cardstack",
 	"profile_default_display_name": "Coleccionista",
 	"profile_bio_placeholder": "Aún no hay biografía. Añade las cartas que persigues.",
@@ -533,7 +516,6 @@
 	"profile_favorite_set_heading": "Set favorito",
 	"profile_no_favorite_set": "Aún no hay set favorito. Elige el que presumirías primero.",
 	"profile_pick_favorite_set": "Elegir set favorito",
-
 	"auth_callback_meta_title": "Iniciando sesión… · Cardstack",
 	"auth_cloud_off_message": "La sincronización en la nube está desactivada en esta compilación. Tus cartas siguen funcionando localmente.",
 	"auth_link_expired_message": "Este enlace ha caducado o ya se usó. Pide uno nuevo y volverás a entrar.",
@@ -542,52 +524,41 @@
 	"auth_checking_magic_link": "Comprobando tu enlace mágico. Un segundo.",
 	"auth_link_failed_title": "Ese enlace no funcionó",
 	"auth_back_to_vault": "Volver a tu Vault",
-
 	"root_meta_title": "Cardstack: lleva el control de tu colección del TCG de Pokémon",
 	"root_meta_description": "Explora todo el catálogo del TCG de Pokémon gratis y lleva el control de cada copia que posees. Local-first y de código abierto, así que tus cartas siguen siendo tuyas.",
 	"root_search_and_commands_aria": "Búsqueda y comandos",
 	"root_search_shortcut_title": "Buscar  ⌘K",
-
 	"series_meta_title": "{name} · Sets del TCG de Pokémon",
 	"series_meta_title_fallback": "Serie",
 	"series_meta_description": "Explora todos los sets de {name}.",
-
 	"set_meta_title": "{name} · Cartas del TCG de Pokémon",
 	"set_meta_title_fallback": "Set",
 	"set_meta_description": "Las {count} cartas de {name}.",
 	"set_search_placeholder": "Buscar cartas de {name}",
-
 	"card_meta_title_fallback": "Carta · TCG de Pokémon",
 	"card_meta_title": "{name} · {setName} · TCG de Pokémon",
 	"card_meta_description": "{name} ({rarity}) de {setName}, n.º {cardNumber}.",
 	"card_meta_rarity_fallback": "carta",
-
 	"energy_meta_title": "Cartas de Energía · toda la Energía del TCG de Pokémon",
 	"energy_meta_description": "Explora las {count} cartas de Energía (Básica y Especial) de todos los sets del TCG de Pokémon.",
 	"energy_meta_og_title": "Cartas de Energía · TCG de Pokémon",
-
 	"trainer_meta_title": "Cartas de Entrenador · todos los Entrenadores del TCG de Pokémon",
 	"trainer_meta_description": "Explora las {count} cartas de Entrenador (Objetos, Partidarios, Estadios y Herramientas) de todos los sets del TCG de Pokémon.",
 	"trainer_meta_og_title": "Cartas de Entrenador · TCG de Pokémon",
-
 	"energy_name_meta_title": "{name} · todas las cartas del TCG de Pokémon",
 	"energy_name_meta_description": "Explora las {count} impresiones de la carta de Energía {name} en todos los sets.",
 	"energy_name_meta_og_title": "{name} · Cartas del TCG de Pokémon",
 	"energy_name_fallback": "Energía",
-
 	"trainer_name_meta_title": "{name} · todas las cartas del TCG de Pokémon",
 	"trainer_name_meta_description": "Explora las {count} impresiones de la carta de Entrenador {name} en todos los sets.",
 	"trainer_name_meta_og_title": "{name} · Cartas del TCG de Pokémon",
 	"trainer_name_fallback": "Entrenador",
-
 	"pokemon_name_meta_title": "{name} · todas las cartas del TCG de Pokémon",
 	"pokemon_name_meta_description": "Explora las {count} cartas de {name} en todos los sets.",
 	"pokemon_name_meta_og_title": "{name} · Cartas del TCG de Pokémon",
 	"pokemon_name_fallback": "Pokémon",
-
 	"form_quantity_error": "Número entero ≥ 1",
 	"form_date_error": "Fecha no válida",
-
 	"auth_email_required": "El correo electrónico es obligatorio",
 	"auth_email_invalid": "Introduce un correo electrónico válido",
 	"shell_check_your_email": "Revisa tu correo electrónico",
@@ -597,7 +568,6 @@
 	"shell_email_placeholder": "tu@ejemplo.com",
 	"shell_sending_ellipsis": "Enviando…",
 	"shell_send_magic_link": "Enviar enlace mágico",
-
 	"profile_form_name_required": "El nombre visible es obligatorio",
 	"profile_form_title": "Editar perfil",
 	"profile_form_description": "Tu identidad de coleccionista. Se muestra en toda la app.",
@@ -609,9 +579,7 @@
 	"profile_form_none_option": "Ninguno",
 	"profile_form_currency_label": "Moneda",
 	"profile_form_hide_values_label": "Ocultar valores monetarios",
-
 	"binder_form_name_required": "El nombre es obligatorio",
-
 	"search_mode_label": "Modo de búsqueda",
 	"search_mode_title": "Modo de búsqueda: {label}. {description}",
 	"search_mode_exact_label": "Exacto",
@@ -620,26 +588,20 @@
 	"search_mode_contains_description": "El nombre incluye tu texto",
 	"search_mode_fuzzy_label": "Difuso",
 	"search_mode_fuzzy_description": "Tolera errores tipográficos",
-
 	"card_tab_details": "Detalles",
 	"card_tab_collection": "Colección",
 	"card_tab_pricing": "Precios",
 	"card_tabs_aria": "Vistas de la carta",
-
 	"catalog_western_label": "Catálogo occidental",
 	"catalog_asian_label": "Catálogo asiático",
 	"catalog_asian_switch_note": "Cambia al catálogo asiático, un conjunto de sets independiente.",
 	"catalog_language_title_with_value": "Idioma del catálogo: {language}",
-
 	"date_picker_placeholder": "Elige una fecha",
-
 	"timeline_no_cards_match": "Ninguna carta coincide con estos filtros.",
-
 	"card_market_prices_label": "Precios de mercado",
 	"card_price_history_label": "Historial de precios",
 	"card_price_history_builds_daily": "El historial de precios se actualiza a diario.",
 	"card_history_range_aria": "Rango del historial",
-
 	"profile_danger_zone_heading": "Zona de peligro",
 	"profile_export_data_title": "Exportar mis datos",
 	"profile_export_data_body": "Descarga toda tu colección como copia de seguridad o CSV, cuando quieras.",
@@ -652,7 +614,6 @@
 	"profile_delete_unavailable_error": "La eliminación de cuenta no está disponible en este despliegue.",
 	"profile_generic_error": "Algo salió mal. Inténtalo de nuevo.",
 	"profile_deleting_ellipsis": "Eliminando…",
-
 	"subtype_group_stage": "Etapa",
 	"subtype_group_mechanic": "Mecánica Pokémon",
 	"subtype_group_trainer": "Entrenador",

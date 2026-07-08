@@ -5,6 +5,7 @@
 	"nav_scan": "스캔",
 	"nav_search": "검색",
 	"settings_interface_language": "인터페이스 언어",
+	"settings_interface_language_description": "메뉴, 버튼, 설정 텍스트가 이 언어로 표시됩니다. 카드 이름과 상세 정보는 위의 카탈로그 언어에서 별도로 설정합니다.",
 	"settings_page_title": "설정",
 	"settings_catalog_language_title": "카탈로그 언어",
 	"settings_catalog_language_description": "카드 이름과 상세 정보가 앱 전체에서 이 언어로 표시돼요. 아시아 언어를 선택하면 별도의 아시아 카탈로그로 전환돼요.",
@@ -32,7 +33,6 @@
 	"settings_image_cache_preset_1000": "썸네일 1000개 (~25MB)",
 	"settings_image_cache_preset_2000": "썸네일 2000개 (~50MB)",
 	"settings_image_cache_preset_4000": "썸네일 4000개 (~100MB)",
-
 	"command_palette_nav_browse": "둘러보기",
 	"command_palette_nav_vault_overview": "Vault 개요",
 	"command_palette_nav_all_cards": "전체 카드",
@@ -55,11 +55,9 @@
 	"command_palette_hint_navigate": "이동",
 	"command_palette_hint_select": "선택",
 	"command_palette_hint_close": "닫기",
-
 	"sidebar_mobile_title": "사이드바",
 	"sidebar_mobile_description": "모바일 사이드바를 표시합니다.",
 	"sidebar_toggle": "사이드바 전환",
-
 	"home_eyebrow": "둘러보고 · 모으고 · 내 것으로",
 	"home_tagline": "Pokémon TCG 컬렉션 전체를 관리하세요. 로컬 우선에 오픈소스라 진짜 내 것이 돼요. 시작할 때 계정도 필요 없고, 네 번째 리자몽을 사도 아무도 뭐라 하지 않아요.",
 	"home_stat_cards": "카드 {count}장",
@@ -90,13 +88,11 @@
 			}
 		}
 	],
-
 	"form_save": "저장",
 	"form_saving": "저장 중…",
 	"form_cancel": "취소",
 	"form_price_error": "0 이상의 숫자여야 해요",
 	"form_grade_error": "0-10",
-
 	"stack_field_label": "라벨",
 	"stack_label_placeholder": "이 카드에 이름 붙이기 (선택 사항)",
 	"stack_field_quantity": "수량",
@@ -145,7 +141,6 @@
 	"stack_manager_add_card": "카드 추가",
 	"stack_manager_new_card": "새 카드",
 	"stack_manager_empty": "아직 카드가 없어요. 위에서 추가해 보세요.",
-
 	"vault_meta_title": "내 Vault · Cardstack",
 	"vault_overview_title": "개요",
 	"vault_overview_subtitle": "소유한 모든 카드를 한곳에서.",
@@ -298,7 +293,6 @@
 	"vault_shared_not_found": "공유된 Binder를 읽을 수 없어요. 링크가 깨졌거나 불완전할 수 있어요.",
 	"vault_shared_snapshot_banner": "{date} 기준 스냅샷 · 실시간 아님",
 	"vault_loading_shared_binder": "공유 Binder 불러오는 중…",
-
 	"binder_progress_label": "진행률",
 	"binder_rule_count": [
 		{
@@ -404,7 +398,6 @@
 	"binder_print_preview_aria": "플레이스홀더 미리보기",
 	"binder_print_reset_defaults": "기본값으로 재설정",
 	"binder_print_action": "인쇄",
-
 	"scan_early_alpha_badge": "얼리 알파.",
 	"scan_early_alpha_body": "스캐너는 이제 막 나와서 계속 학습하는 중이라 결과는 점점 좋아질 거예요. 카드를 찾지 못하면 프레임 안에 잘 맞추거나, 조명을 더 밝게 하거나, 직접 검색해 보세요.",
 	"scan_camera_denied": "카메라 접근이 거부됐어요. 아래의 업로드 옵션을 이용하세요.",
@@ -442,7 +435,6 @@
 	"scan_increase_qty_aria": "수량 늘리기",
 	"scan_add_to_vault_button": "Vault에 추가",
 	"scan_keep_scanning_button": "아니에요, 계속 스캔하기",
-
 	"billing_meta_title": "결제 및 요금제 · Cardstack",
 	"billing_heading": "결제 및 요금제",
 	"billing_intro": "앱 전체는 무료이며 로컬 우선으로 동작해요. Plus 요금은 내 카드 접근이 아니라 동기화 서버 비용을 위한 거예요. 셀프 호스팅 사용자는 무료로 이용할 수 있어요.",
@@ -465,25 +457,20 @@
 	"billing_feature_full_vault_offline": "제한 없이 오프라인에서도 전체 Vault 이용",
 	"billing_feature_csv_import_export": "언제나 가능한 CSV 가져오기/내보내기",
 	"billing_feature_edit_delete_export": "언제든 편집, 삭제, 내보내기가 가능해요. 내 데이터니까요.",
-
 	"pokemon_meta_title": "포켓몬 도감 · 종별 모든 Pokémon TCG 카드",
 	"pokemon_meta_description": "Pokémon {count}종을 둘러보고 각각의 모든 TCG 카드를 찾아보세요.",
 	"pokemon_meta_og_title": "포켓몬 도감 · 종별 Pokémon TCG",
 	"pokemon_species_unit": "종",
-
 	"search_meta_title_query": "\"{query}\" · Pokémon TCG 검색",
 	"search_meta_title_empty": "검색 · Pokémon TCG",
 	"search_meta_description": "{query}에 대한 검색 결과.",
 	"search_placeholder": "전체 카드 검색",
-
 	"results_bar_default_unit": "카드",
-
 	"sidebar_home_tooltip": "Cardstack, 홈",
 	"sidebar_tagline": "내 카드는, 내 마음대로.",
 	"sidebar_series_and_sets": "시리즈 및 세트",
 	"sidebar_vault_overview": "개요",
 	"sidebar_vault_sets": "세트",
-
 	"shell_settings": "설정",
 	"profile_edit_button": "프로필 편집",
 	"shell_sign_out": "로그아웃",
@@ -491,13 +478,11 @@
 	"shell_sign_in_dialog_description": "로그인은 동기화를 위한 것일 뿐이에요. 둘러보고 수집하는 데는 로그인이 필요 없어요. 모든 기기에서 Vault를 쓰고 싶다면, 매직 링크를 이메일로 보내드릴게요. 비밀번호도, 엿보기도 없어요.",
 	"shell_upgrade_to_sync": "업그레이드해서 동기화",
 	"shell_sync_status_aria": "동기화 상태: {label}",
-
 	"sync_status_synced": "동기화됨",
 	"sync_status_syncing": "동기화 중…",
 	"sync_status_offline": "오프라인",
 	"sync_status_error": "동기화 오류",
 	"sync_status_local_only": "로컬 전용",
-
 	"shell_about_credits_aria": "정보 및 크레딧",
 	"shell_about_title": "Cardstack 소개",
 	"shell_about_description": "Cardstack은 Pokémon TCG를 위한 팬 제작 오픈소스 컬렉션 매니저예요. 로컬 우선, 내 데이터, 광고 없음, 엿보기 없음. 수집가들이 만들었으며 다음 분들께 감사드려요:",
@@ -509,7 +494,6 @@
 	"shell_credit_holo_body": "레어 카드를 반짝이게 만드는 홀로 및 포일 셰이더는 Simon Goellner(@simeydotme)의 Pokémon Cards CSS를 참고했어요.",
 	"shell_open_source_note": "처음부터 끝까지 오픈소스. 관리자도 없고, 잠금도 없어요.",
 	"shell_view_source_github": "GitHub에서 소스 보기",
-
 	"route_loading_aria": "불러오는 중",
 	"route_not_found_heading": "찾을 수 없음",
 	"route_not_found_body": "해당 페이지, 세트, 카드가 존재하지 않아요. 이동했거나 애초에 없었을 수 있어요.",
@@ -517,7 +501,6 @@
 	"route_error_heading": "문제가 발생했어요",
 	"route_error_generic": "문제가 발생했어요.",
 	"route_try_again": "다시 시도",
-
 	"profile_meta_title": "내 프로필 · Cardstack",
 	"profile_default_display_name": "수집가",
 	"profile_bio_placeholder": "아직 소개가 없어요. 노리는 카드를 적어보세요.",
@@ -525,7 +508,6 @@
 	"profile_favorite_set_heading": "즐겨찾는 세트",
 	"profile_no_favorite_set": "아직 즐겨찾는 세트가 없어요. 가장 자랑하고 싶은 세트를 골라보세요.",
 	"profile_pick_favorite_set": "즐겨찾는 세트 선택",
-
 	"auth_callback_meta_title": "로그인 중… · Cardstack",
 	"auth_cloud_off_message": "이 빌드에서는 클라우드 동기화가 꺼져 있어요. 카드는 여전히 로컬에서 정상 작동해요.",
 	"auth_link_expired_message": "이 링크는 만료됐거나 이미 사용됐어요. 새 링크를 요청하면 다시 들어갈 수 있어요.",
@@ -534,52 +516,41 @@
 	"auth_checking_magic_link": "매직 링크를 확인하는 중이에요. 잠시만요.",
 	"auth_link_failed_title": "링크가 작동하지 않았어요",
 	"auth_back_to_vault": "Vault로 돌아가기",
-
 	"root_meta_title": "Cardstack: Pokémon TCG 컬렉션 관리",
 	"root_meta_description": "Pokémon TCG 카탈로그 전체를 무료로 둘러보고, 보유한 모든 카드를 관리하세요. 로컬 우선에 오픈소스라 카드는 계속 내 것으로 남아요.",
 	"root_search_and_commands_aria": "검색 및 명령",
 	"root_search_shortcut_title": "검색 ⌘K",
-
 	"series_meta_title": "{name} · Pokémon TCG 세트",
 	"series_meta_title_fallback": "시리즈",
 	"series_meta_description": "{name}의 모든 세트를 둘러보세요.",
-
 	"set_meta_title": "{name} · Pokémon TCG 카드",
 	"set_meta_title_fallback": "세트",
 	"set_meta_description": "{name}의 전체 카드 {count}장.",
 	"set_search_placeholder": "{name} 카드 검색",
-
 	"card_meta_title_fallback": "카드 · Pokémon TCG",
 	"card_meta_title": "{name} · {setName} · Pokémon TCG",
 	"card_meta_description": "{setName}의 {name} ({rarity}), #{cardNumber}.",
 	"card_meta_rarity_fallback": "카드",
-
 	"energy_meta_title": "에너지 카드 · 모든 Pokémon TCG 에너지",
 	"energy_meta_description": "모든 Pokémon TCG 세트에서 에너지 카드(기본 및 특수) {count}장을 모두 둘러보세요.",
 	"energy_meta_og_title": "에너지 카드 · Pokémon TCG",
-
 	"trainer_meta_title": "트레이너 카드 · 모든 Pokémon TCG 트레이너",
 	"trainer_meta_description": "모든 Pokémon TCG 세트에서 트레이너 카드(아이템, 서포터, 스타디움, 도구) {count}장을 모두 둘러보세요.",
 	"trainer_meta_og_title": "트레이너 카드 · Pokémon TCG",
-
 	"energy_name_meta_title": "{name} · 모든 Pokémon TCG 카드",
 	"energy_name_meta_description": "모든 세트에서 {name} 에너지 카드의 인쇄판 {count}종을 모두 둘러보세요.",
 	"energy_name_meta_og_title": "{name} · Pokémon TCG 카드",
 	"energy_name_fallback": "에너지",
-
 	"trainer_name_meta_title": "{name} · 모든 Pokémon TCG 카드",
 	"trainer_name_meta_description": "모든 세트에서 {name} 트레이너 카드의 인쇄판 {count}종을 모두 둘러보세요.",
 	"trainer_name_meta_og_title": "{name} · Pokémon TCG 카드",
 	"trainer_name_fallback": "트레이너",
-
 	"pokemon_name_meta_title": "{name} · 모든 Pokémon TCG 카드",
 	"pokemon_name_meta_description": "모든 세트에서 {name} 카드 {count}장을 모두 둘러보세요.",
 	"pokemon_name_meta_og_title": "{name} · Pokémon TCG 카드",
 	"pokemon_name_fallback": "포켓몬",
-
 	"form_quantity_error": "1 이상의 정수",
 	"form_date_error": "잘못된 날짜",
-
 	"auth_email_required": "이메일을 입력하세요",
 	"auth_email_invalid": "올바른 이메일을 입력하세요",
 	"shell_check_your_email": "이메일을 확인하세요",
@@ -589,7 +560,6 @@
 	"shell_email_placeholder": "you@example.com",
 	"shell_sending_ellipsis": "전송 중…",
 	"shell_send_magic_link": "매직 링크 보내기",
-
 	"profile_form_name_required": "표시 이름을 입력하세요",
 	"profile_form_title": "프로필 편집",
 	"profile_form_description": "내 수집가 정체성이에요. 앱 전체에 표시돼요.",
@@ -601,9 +571,7 @@
 	"profile_form_none_option": "없음",
 	"profile_form_currency_label": "통화",
 	"profile_form_hide_values_label": "금액 숨기기",
-
 	"binder_form_name_required": "이름을 입력하세요",
-
 	"search_mode_label": "검색 모드",
 	"search_mode_title": "검색 모드: {label}. {description}",
 	"search_mode_exact_label": "정확히 일치",
@@ -612,26 +580,20 @@
 	"search_mode_contains_description": "이름에 입력한 텍스트가 포함돼요",
 	"search_mode_fuzzy_label": "유사 검색",
 	"search_mode_fuzzy_description": "오타를 허용해요",
-
 	"card_tab_details": "상세 정보",
 	"card_tab_collection": "컬렉션",
 	"card_tab_pricing": "가격",
 	"card_tabs_aria": "카드 보기",
-
 	"catalog_western_label": "서양 카탈로그",
 	"catalog_asian_label": "아시아 카탈로그",
 	"catalog_asian_switch_note": "별도의 세트 목록인 아시아 카탈로그로 전환돼요.",
 	"catalog_language_title_with_value": "카탈로그 언어: {language}",
-
 	"date_picker_placeholder": "날짜 선택",
-
 	"timeline_no_cards_match": "이 필터와 일치하는 카드가 없어요.",
-
 	"card_market_prices_label": "시장 가격",
 	"card_price_history_label": "가격 추이",
 	"card_price_history_builds_daily": "가격 추이는 매일 쌓여요.",
 	"card_history_range_aria": "기록 범위",
-
 	"profile_danger_zone_heading": "위험 구역",
 	"profile_export_data_title": "내 데이터 내보내기",
 	"profile_export_data_body": "언제든 전체 컬렉션을 백업 또는 CSV로 다운로드하세요.",
@@ -644,7 +606,6 @@
 	"profile_delete_unavailable_error": "이 배포 환경에서는 계정 삭제를 이용할 수 없어요.",
 	"profile_generic_error": "문제가 발생했어요. 다시 시도해 주세요.",
 	"profile_deleting_ellipsis": "삭제 중…",
-
 	"subtype_group_stage": "진화 단계",
 	"subtype_group_mechanic": "포켓몬 메커니즘",
 	"subtype_group_trainer": "트레이너",

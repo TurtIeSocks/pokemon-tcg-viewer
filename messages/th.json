@@ -5,6 +5,7 @@
 	"nav_scan": "สแกน",
 	"nav_search": "ค้นหา",
 	"settings_interface_language": "ภาษาอินเทอร์เฟซ",
+	"settings_interface_language_description": "เมนู ปุ่ม และข้อความในการตั้งค่าจะแสดงเป็นภาษานี้ ชื่อการ์ดและรายละเอียดควบคุมแยกต่างหากด้วยภาษาแคตตาล็อกด้านบน",
 	"settings_page_title": "ตั้งค่า",
 	"settings_catalog_language_title": "ภาษาแคตตาล็อก",
 	"settings_catalog_language_description": "ชื่อการ์ดและรายละเอียดจะแสดงเป็นภาษานี้ทั่วทั้งแอป ภาษาในแถบเอเชียจะสลับไปใช้แคตตาล็อกเอเชียแยกต่างหาก",
@@ -32,7 +33,6 @@
 	"settings_image_cache_preset_1000": "ภาพย่อ 1000 รูป (~25 MB)",
 	"settings_image_cache_preset_2000": "ภาพย่อ 2000 รูป (~50 MB)",
 	"settings_image_cache_preset_4000": "ภาพย่อ 4000 รูป (~100 MB)",
-
 	"command_palette_nav_browse": "เรียกดู",
 	"command_palette_nav_vault_overview": "ภาพรวม Vault",
 	"command_palette_nav_all_cards": "การ์ดทั้งหมด",
@@ -55,11 +55,9 @@
 	"command_palette_hint_navigate": "เลื่อน",
 	"command_palette_hint_select": "เลือก",
 	"command_palette_hint_close": "ปิด",
-
 	"sidebar_mobile_title": "แถบด้านข้าง",
 	"sidebar_mobile_description": "แสดงแถบด้านข้างสำหรับมือถือ",
 	"sidebar_toggle": "สลับแถบด้านข้าง",
-
 	"home_eyebrow": "เรียกดู · สะสม · เป็นเจ้าของ",
 	"home_tagline": "ติดตามคอลเลกชัน Pokémon TCG ทั้งหมดของคุณ เน้นเก็บข้อมูลในเครื่องและโอเพนซอร์ส เพื่อให้เป็นของคุณจริง ๆ ไม่ต้องสมัครบัญชีเพื่อเริ่มต้น และไม่มีใครตัดสินการ์ด Charizard ใบที่สี่ของคุณ",
 	"home_stat_cards": "{count} การ์ด",
@@ -90,13 +88,11 @@
 			}
 		}
 	],
-
 	"form_save": "บันทึก",
 	"form_saving": "กำลังบันทึก...",
 	"form_cancel": "ยกเลิก",
 	"form_price_error": "ต้องเป็นตัวเลขที่มากกว่าหรือเท่ากับ 0",
 	"form_grade_error": "0-10",
-
 	"stack_field_label": "ป้ายชื่อ",
 	"stack_label_placeholder": "ตั้งชื่อการ์ดนี้ (ไม่บังคับ)",
 	"stack_field_quantity": "จำนวน",
@@ -145,7 +141,6 @@
 	"stack_manager_add_card": "เพิ่มการ์ด",
 	"stack_manager_new_card": "การ์ดใหม่",
 	"stack_manager_empty": "ยังไม่มีการ์ด เพิ่มการ์ดได้ที่ด้านบน",
-
 	"vault_meta_title": "Vault ของคุณ · Cardstack",
 	"vault_overview_title": "ภาพรวม",
 	"vault_overview_subtitle": "การ์ดทุกใบที่คุณมี รวมไว้ในที่เดียว",
@@ -298,7 +293,6 @@
 	"vault_shared_not_found": "ไม่สามารถอ่าน Binder ที่แชร์นี้ได้ ลิงก์อาจเสียหายหรือไม่สมบูรณ์",
 	"vault_shared_snapshot_banner": "สแนปช็อตจาก {date} · ไม่ใช่ข้อมูลสด",
 	"vault_loading_shared_binder": "กำลังโหลด Binder ที่แชร์...",
-
 	"binder_progress_label": "ความคืบหน้า",
 	"binder_rule_count": [
 		{
@@ -404,7 +398,6 @@
 	"binder_print_preview_aria": "ตัวอย่างตัวแทนที่",
 	"binder_print_reset_defaults": "คืนค่าเริ่มต้น",
 	"binder_print_action": "พิมพ์",
-
 	"scan_early_alpha_badge": "อัลฟาเวอร์ชันแรก",
 	"scan_early_alpha_body": "ตัวสแกนยังใหม่และกำลังเรียนรู้อยู่ ผลลัพธ์จะดีขึ้นเรื่อย ๆ หากหาการ์ดไม่เจอ ให้จัดวางให้อยู่ในกรอบ เพิ่มแสงสว่าง หรือค้นหาด้วยตัวเอง",
 	"scan_camera_denied": "การเข้าถึงกล้องถูกปฏิเสธ ใช้ตัวเลือกอัปโหลดด้านล่างแทน",
@@ -442,7 +435,6 @@
 	"scan_increase_qty_aria": "เพิ่มจำนวน",
 	"scan_add_to_vault_button": "เพิ่มลงใน Vault",
 	"scan_keep_scanning_button": "ไม่ใช่ใบนี้ สแกนต่อไป",
-
 	"billing_meta_title": "การเรียกเก็บเงินและแพ็กเกจ · Cardstack",
 	"billing_heading": "การเรียกเก็บเงินและแพ็กเกจ",
 	"billing_intro": "แอปทั้งหมดใช้งานฟรีและเน้นเก็บข้อมูลในเครื่อง แพ็กเกจ Plus จ่ายเพื่อเซิร์ฟเวอร์ซิงก์ ไม่ใช่เพื่อเข้าถึงการ์ดของคุณเอง ผู้ที่โฮสต์เองไม่ต้องเสียค่าใช้จ่าย",
@@ -465,25 +457,20 @@
 	"billing_feature_full_vault_offline": "Vault ฉบับเต็มของคุณ ใช้งานออฟไลน์ได้ ไม่จำกัด",
 	"billing_feature_csv_import_export": "นำเข้าและส่งออก CSV ใช้งานได้เสมอ",
 	"billing_feature_edit_delete_export": "แก้ไข ลบ หรือส่งออกได้ทุกเมื่อ นี่คือข้อมูลของคุณ",
-
 	"pokemon_meta_title": "Pokédex · การ์ด Pokémon TCG ทุกใบแยกตามสายพันธุ์",
 	"pokemon_meta_description": "เรียกดูสายพันธุ์ Pokémon {count} สายพันธุ์ และค้นหาการ์ด TCG ของแต่ละสายพันธุ์",
 	"pokemon_meta_og_title": "Pokédex · Pokémon TCG แยกตามสายพันธุ์",
 	"pokemon_species_unit": "สายพันธุ์",
-
 	"search_meta_title_query": "\"{query}\" · ค้นหา Pokémon TCG",
 	"search_meta_title_empty": "ค้นหา · Pokémon TCG",
 	"search_meta_description": "ผลการค้นหาสำหรับ {query}",
 	"search_placeholder": "ค้นหาการ์ดทั้งหมด",
-
 	"results_bar_default_unit": "การ์ด",
-
 	"sidebar_home_tooltip": "Cardstack หน้าแรก",
 	"sidebar_tagline": "การ์ดของคุณ การตัดสินใจของคุณ",
 	"sidebar_series_and_sets": "ซีรีส์และเซ็ต",
 	"sidebar_vault_overview": "ภาพรวม",
 	"sidebar_vault_sets": "เซ็ต",
-
 	"shell_settings": "ตั้งค่า",
 	"profile_edit_button": "แก้ไขโปรไฟล์",
 	"shell_sign_out": "ออกจากระบบ",
@@ -491,13 +478,11 @@
 	"shell_sign_in_dialog_description": "การเข้าสู่ระบบมีไว้เพื่อซิงก์เท่านั้น เรียกดูและสะสมได้ตามปกติแม้ไม่เข้าสู่ระบบ ต้องการให้ Vault ของคุณอยู่บนทุกอุปกรณ์ใช่ไหม เราจะส่งลิงก์เข้าสู่ระบบให้ทางอีเมล ไม่ต้องใช้รหัสผ่าน ไม่มีการสอดแนม",
 	"shell_upgrade_to_sync": "อัปเกรดเพื่อซิงก์",
 	"shell_sync_status_aria": "สถานะการซิงก์: {label}",
-
 	"sync_status_synced": "ซิงก์แล้ว",
 	"sync_status_syncing": "กำลังซิงก์...",
 	"sync_status_offline": "ออฟไลน์",
 	"sync_status_error": "ซิงก์ผิดพลาด",
 	"sync_status_local_only": "ในเครื่องเท่านั้น",
-
 	"shell_about_credits_aria": "เกี่ยวกับและเครดิต",
 	"shell_about_title": "เกี่ยวกับ Cardstack",
 	"shell_about_description": "Cardstack เป็นเครื่องมือจัดการคอลเลกชัน Pokémon TCG ที่ทำโดยแฟนคลับและเป็นโอเพนซอร์ส เน้นเก็บข้อมูลในเครื่อง เป็นข้อมูลของคุณ ไม่มีโฆษณา ไม่มีการสอดแนม สร้างโดยนักสะสม ขอขอบคุณ:",
@@ -509,7 +494,6 @@
 	"shell_credit_holo_body": "เชดเดอร์โฮโลและฟอยล์ที่ทำให้การ์ดหายากส่องประกาย ดัดแปลงมาจาก Pokémon Cards CSS โดย Simon Goellner (@simeydotme)",
 	"shell_open_source_note": "โอเพนซอร์สทั้งหมด ไม่มีเจ้าของ ไม่มีการผูกมัด",
 	"shell_view_source_github": "ดูซอร์สโค้ดบน GitHub",
-
 	"route_loading_aria": "กำลังโหลด",
 	"route_not_found_heading": "ไม่พบหน้านี้",
 	"route_not_found_body": "ไม่พบหน้า เซ็ต หรือการ์ดนี้ อาจถูกย้ายหรือไม่เคยมีอยู่",
@@ -517,7 +501,6 @@
 	"route_error_heading": "เกิดข้อผิดพลาด",
 	"route_error_generic": "เกิดข้อผิดพลาด",
 	"route_try_again": "ลองอีกครั้ง",
-
 	"profile_meta_title": "โปรไฟล์ของคุณ · Cardstack",
 	"profile_default_display_name": "นักสะสม",
 	"profile_bio_placeholder": "ยังไม่มีประวัติย่อ เพิ่มการ์ดที่คุณกำลังตามล่า",
@@ -525,7 +508,6 @@
 	"profile_favorite_set_heading": "เซ็ตโปรด",
 	"profile_no_favorite_set": "ยังไม่มีเซ็ตโปรด เลือกเซ็ตที่คุณอยากอวดเป็นอันดับแรก",
 	"profile_pick_favorite_set": "เลือกเซ็ตโปรด",
-
 	"auth_callback_meta_title": "กำลังเข้าสู่ระบบ... · Cardstack",
 	"auth_cloud_off_message": "การซิงก์คลาวด์ปิดอยู่ในเวอร์ชันนี้ การ์ดของคุณยังใช้งานในเครื่องได้ตามปกติ",
 	"auth_link_expired_message": "ลิงก์นี้หมดอายุหรือถูกใช้ไปแล้ว ขอลิงก์ใหม่แล้วกลับเข้าสู่ระบบได้เลย",
@@ -534,52 +516,41 @@
 	"auth_checking_magic_link": "กำลังตรวจสอบลิงก์เข้าสู่ระบบของคุณ รอสักครู่",
 	"auth_link_failed_title": "ลิงก์นั้นใช้ไม่ได้",
 	"auth_back_to_vault": "กลับไปที่ Vault ของคุณ",
-
 	"root_meta_title": "Cardstack: ติดตามคอลเลกชัน Pokémon TCG ของคุณ",
 	"root_meta_description": "เรียกดูแคตตาล็อก Pokémon TCG ทั้งหมดได้ฟรี แล้วติดตามการ์ดทุกใบที่คุณมี เน้นเก็บข้อมูลในเครื่องและโอเพนซอร์ส เพื่อให้การ์ดของคุณเป็นของคุณเสมอ",
 	"root_search_and_commands_aria": "ค้นหาและคำสั่ง",
 	"root_search_shortcut_title": "ค้นหา  ⌘K",
-
 	"series_meta_title": "{name} · เซ็ต Pokémon TCG",
 	"series_meta_title_fallback": "ซีรีส์",
 	"series_meta_description": "เรียกดูทุกเซ็ตของ {name}",
-
 	"set_meta_title": "{name} · การ์ด Pokémon TCG",
 	"set_meta_title_fallback": "เซ็ต",
 	"set_meta_description": "การ์ดทั้งหมด {count} ใบใน {name}",
 	"set_search_placeholder": "ค้นหาการ์ดใน {name}",
-
 	"card_meta_title_fallback": "การ์ด · Pokémon TCG",
 	"card_meta_title": "{name} · {setName} · Pokémon TCG",
 	"card_meta_description": "{name} ({rarity}) จาก {setName}, #{cardNumber}",
 	"card_meta_rarity_fallback": "การ์ด",
-
 	"energy_meta_title": "การ์ดพลังงาน · Pokémon TCG Energy ทุกใบ",
 	"energy_meta_description": "เรียกดูการ์ดพลังงานทั้งหมด {count} ใบ (พื้นฐานและพิเศษ) จากทุกเซ็ต Pokémon TCG",
 	"energy_meta_og_title": "การ์ดพลังงาน · Pokémon TCG",
-
 	"trainer_meta_title": "การ์ดเทรนเนอร์ · Pokémon TCG Trainer ทุกใบ",
 	"trainer_meta_description": "เรียกดูการ์ดเทรนเนอร์ทั้งหมด {count} ใบ (ไอเทม ซัพพอร์ตเตอร์ สเตเดียม และเครื่องมือ) จากทุกเซ็ต Pokémon TCG",
 	"trainer_meta_og_title": "การ์ดเทรนเนอร์ · Pokémon TCG",
-
 	"energy_name_meta_title": "{name} · การ์ด Pokémon TCG ทุกใบ",
 	"energy_name_meta_description": "เรียกดูรุ่นพิมพ์ทั้งหมด {count} รุ่นของการ์ดพลังงาน {name} จากทุกเซ็ต",
 	"energy_name_meta_og_title": "{name} · การ์ด Pokémon TCG",
 	"energy_name_fallback": "พลังงาน",
-
 	"trainer_name_meta_title": "{name} · การ์ด Pokémon TCG ทุกใบ",
 	"trainer_name_meta_description": "เรียกดูรุ่นพิมพ์ทั้งหมด {count} รุ่นของการ์ดเทรนเนอร์ {name} จากทุกเซ็ต",
 	"trainer_name_meta_og_title": "{name} · การ์ด Pokémon TCG",
 	"trainer_name_fallback": "เทรนเนอร์",
-
 	"pokemon_name_meta_title": "{name} · การ์ด Pokémon TCG ทุกใบ",
 	"pokemon_name_meta_description": "เรียกดูการ์ด {name} ทั้งหมด {count} ใบจากทุกเซ็ต",
 	"pokemon_name_meta_og_title": "{name} · การ์ด Pokémon TCG",
 	"pokemon_name_fallback": "Pokémon",
-
 	"form_quantity_error": "ต้องเป็นจำนวนเต็มที่มากกว่าหรือเท่ากับ 1",
 	"form_date_error": "วันที่ไม่ถูกต้อง",
-
 	"auth_email_required": "ต้องกรอกอีเมล",
 	"auth_email_invalid": "กรอกอีเมลที่ถูกต้อง",
 	"shell_check_your_email": "ตรวจสอบอีเมลของคุณ",
@@ -589,7 +560,6 @@
 	"shell_email_placeholder": "you@example.com",
 	"shell_sending_ellipsis": "กำลังส่ง...",
 	"shell_send_magic_link": "ส่งลิงก์เข้าสู่ระบบ",
-
 	"profile_form_name_required": "ต้องกรอกชื่อที่แสดง",
 	"profile_form_title": "แก้ไขโปรไฟล์",
 	"profile_form_description": "ตัวตนนักสะสมของคุณ แสดงทั่วทั้งแอป",
@@ -601,9 +571,7 @@
 	"profile_form_none_option": "ไม่มี",
 	"profile_form_currency_label": "สกุลเงิน",
 	"profile_form_hide_values_label": "ซ่อนมูลค่าเป็นเงิน",
-
 	"binder_form_name_required": "ต้องกรอกชื่อ",
-
 	"search_mode_label": "โหมดค้นหา",
 	"search_mode_title": "โหมดค้นหา: {label} {description}",
 	"search_mode_exact_label": "ตรงทุกตัวอักษร",
@@ -612,26 +580,20 @@
 	"search_mode_contains_description": "ชื่อมีข้อความที่คุณค้นหา",
 	"search_mode_fuzzy_label": "ใกล้เคียง",
 	"search_mode_fuzzy_description": "รองรับการพิมพ์ผิด",
-
 	"card_tab_details": "รายละเอียด",
 	"card_tab_collection": "คอลเลกชัน",
 	"card_tab_pricing": "ราคา",
 	"card_tabs_aria": "มุมมองการ์ด",
-
 	"catalog_western_label": "แคตตาล็อกตะวันตก",
 	"catalog_asian_label": "แคตตาล็อกเอเชีย",
 	"catalog_asian_switch_note": "สลับไปใช้แคตตาล็อกเอเชีย ซึ่งเป็นชุดเซ็ตแยกต่างหาก",
 	"catalog_language_title_with_value": "ภาษาแคตตาล็อก: {language}",
-
 	"date_picker_placeholder": "เลือกวันที่",
-
 	"timeline_no_cards_match": "ไม่มีการ์ดที่ตรงกับตัวกรองเหล่านี้",
-
 	"card_market_prices_label": "ราคาตลาด",
 	"card_price_history_label": "ประวัติราคา",
 	"card_price_history_builds_daily": "ประวัติราคาจะอัปเดตทุกวัน",
 	"card_history_range_aria": "ช่วงเวลาประวัติ",
-
 	"profile_danger_zone_heading": "โซนอันตราย",
 	"profile_export_data_title": "ส่งออกข้อมูลของฉัน",
 	"profile_export_data_body": "ดาวน์โหลดคอลเลกชันทั้งหมดของคุณเป็นไฟล์สำรองหรือ CSV ได้ทุกเมื่อ",
@@ -644,7 +606,6 @@
 	"profile_delete_unavailable_error": "การลบบัญชีไม่สามารถใช้งานได้บนดีพลอยนี้",
 	"profile_generic_error": "เกิดข้อผิดพลาด กรุณาลองอีกครั้ง",
 	"profile_deleting_ellipsis": "กำลังลบ...",
-
 	"subtype_group_stage": "สเตจ",
 	"subtype_group_mechanic": "กลไก Pokémon",
 	"subtype_group_trainer": "เทรนเนอร์",

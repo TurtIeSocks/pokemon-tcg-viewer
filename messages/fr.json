@@ -5,6 +5,7 @@
 	"nav_scan": "Scanner",
 	"nav_search": "Recherche",
 	"settings_interface_language": "Langue de l'interface",
+	"settings_interface_language_description": "Les menus, boutons et textes des réglages s'affichent dans cette langue. Les noms et détails des cartes sont gérés séparément par la langue du catalogue, ci-dessus.",
 	"settings_page_title": "Paramètres",
 	"settings_catalog_language_title": "Langue du catalogue",
 	"settings_catalog_language_description": "Les noms et détails des cartes s'affichent dans cette langue dans toute l'application. Les langues asiatiques basculent vers le catalogue asiatique séparé.",
@@ -32,7 +33,6 @@
 	"settings_image_cache_preset_1000": "1000 miniatures (~25 Mo)",
 	"settings_image_cache_preset_2000": "2000 miniatures (~50 Mo)",
 	"settings_image_cache_preset_4000": "4000 miniatures (~100 Mo)",
-
 	"command_palette_nav_browse": "Parcourir",
 	"command_palette_nav_vault_overview": "Aperçu du Vault",
 	"command_palette_nav_all_cards": "Toutes les cartes",
@@ -55,11 +55,9 @@
 	"command_palette_hint_navigate": "naviguer",
 	"command_palette_hint_select": "sélectionner",
 	"command_palette_hint_close": "fermer",
-
 	"sidebar_mobile_title": "Barre latérale",
 	"sidebar_mobile_description": "Affiche la barre latérale mobile.",
 	"sidebar_toggle": "Afficher/masquer la barre latérale",
-
 	"home_eyebrow": "Parcourez · Collectionnez · Possédez",
 	"home_tagline": "Suivez toute votre collection JCC Pokémon. Local d'abord et open source, pour qu'elle soit vraiment à vous. Aucun compte requis pour commencer, aucun jugement sur votre quatrième Dracaufeu.",
 	"home_stat_cards": "{count} cartes",
@@ -91,13 +89,11 @@
 			}
 		}
 	],
-
 	"form_save": "Enregistrer",
 	"form_saving": "Enregistrement…",
 	"form_cancel": "Annuler",
 	"form_price_error": "Doit être un nombre ≥ 0",
 	"form_grade_error": "0-10",
-
 	"stack_field_label": "Étiquette",
 	"stack_label_placeholder": "Nommez cette carte (facultatif)",
 	"stack_field_quantity": "Quantité",
@@ -146,7 +142,6 @@
 	"stack_manager_add_card": "Ajouter une carte",
 	"stack_manager_new_card": "Nouvelle carte",
 	"stack_manager_empty": "Aucune carte pour l'instant. Ajoutez-en une ci-dessus.",
-
 	"vault_meta_title": "Votre Vault · Cardstack",
 	"vault_overview_title": "Aperçu",
 	"vault_overview_subtitle": "Chaque exemplaire que vous possédez, au même endroit.",
@@ -302,7 +297,6 @@
 	"vault_shared_not_found": "Impossible de lire ce binder partagé. Le lien est peut-être rompu ou incomplet.",
 	"vault_shared_snapshot_banner": "Instantané du {date} · non actualisé",
 	"vault_loading_shared_binder": "Chargement du binder partagé…",
-
 	"binder_progress_label": "Progression",
 	"binder_rule_count": [
 		{
@@ -412,7 +406,6 @@
 	"binder_print_preview_aria": "Aperçu du repère",
 	"binder_print_reset_defaults": "Réinitialiser les valeurs par défaut",
 	"binder_print_action": "Imprimer",
-
 	"scan_early_alpha_badge": "Alpha précoce.",
 	"scan_early_alpha_body": "Le scanner est tout nouveau et continue d'apprendre, donc les résultats vont s'améliorer. Si une carte n'est pas trouvée, alignez-la dans le cadre, ajoutez de la lumière, ou recherchez-la manuellement.",
 	"scan_camera_denied": "L'accès à la caméra a été refusé. Utilisez l'option d'envoi ci-dessous.",
@@ -450,7 +443,6 @@
 	"scan_increase_qty_aria": "Augmenter la quantité",
 	"scan_add_to_vault_button": "Ajouter au Vault",
 	"scan_keep_scanning_button": "Pas celles-ci, continuer à scanner",
-
 	"billing_meta_title": "Facturation et forfait · Cardstack",
 	"billing_heading": "Facturation et forfait",
 	"billing_intro": "Toute l'application est gratuite et local d'abord. Plus finance les serveurs de synchronisation, pas l'accès à vos propres cartes. Les utilisateurs en auto-hébergement l'obtiennent sans frais.",
@@ -473,25 +465,20 @@
 	"billing_feature_full_vault_offline": "Votre Vault complet, hors ligne, sans limite",
 	"billing_feature_csv_import_export": "Import et export CSV, toujours actifs",
 	"billing_feature_edit_delete_export": "Modifiez, supprimez ou exportez à tout moment. Ce sont vos données.",
-
 	"pokemon_meta_title": "Pokédex · toutes les cartes JCC Pokémon par espèce",
 	"pokemon_meta_description": "Parcourez {count} espèces de Pokémon et trouvez chaque carte JCC de chacune.",
 	"pokemon_meta_og_title": "Pokédex · JCC Pokémon par espèce",
 	"pokemon_species_unit": "espèces",
-
 	"search_meta_title_query": "« {query} » · recherche JCC Pokémon",
 	"search_meta_title_empty": "Recherche · JCC Pokémon",
 	"search_meta_description": "Résultats de recherche pour {query}.",
 	"search_placeholder": "Rechercher dans toutes les cartes",
-
 	"results_bar_default_unit": "cartes",
-
 	"sidebar_home_tooltip": "Cardstack, accueil",
 	"sidebar_tagline": "Vos cartes. Votre choix.",
 	"sidebar_series_and_sets": "Séries et sets",
 	"sidebar_vault_overview": "Aperçu",
 	"sidebar_vault_sets": "Sets",
-
 	"shell_settings": "Paramètres",
 	"profile_edit_button": "Modifier le profil",
 	"shell_sign_out": "Se déconnecter",
@@ -499,13 +486,11 @@
 	"shell_sign_in_dialog_description": "La connexion sert uniquement à synchroniser. Parcourir et collectionner fonctionnent très bien sans elle. Vous voulez votre Vault sur tous vos appareils ? Nous vous enverrons un lien magique par e-mail. Pas de mot de passe, pas d'espionnage.",
 	"shell_upgrade_to_sync": "Passer à la synchronisation",
 	"shell_sync_status_aria": "État de synchronisation : {label}",
-
 	"sync_status_synced": "Synchronisé",
 	"sync_status_syncing": "Synchronisation…",
 	"sync_status_offline": "Hors ligne",
 	"sync_status_error": "Erreur de synchronisation",
 	"sync_status_local_only": "Local uniquement",
-
 	"shell_about_credits_aria": "À propos et crédits",
 	"shell_about_title": "À propos de Cardstack",
 	"shell_about_description": "Cardstack est un gestionnaire de collection open source créé par des fans pour le JCC Pokémon. Local d'abord, vos données, sans publicité, sans espionnage. Créé par des collectionneurs, avec nos remerciements à :",
@@ -517,7 +502,6 @@
 	"shell_credit_holo_body": "Les shaders holo et foil qui font scintiller les cartes chase sont adaptés de Pokémon Cards CSS par Simon Goellner (@simeydotme).",
 	"shell_open_source_note": "Open source, de bout en bout. Pas de propriétaire, pas de verrouillage.",
 	"shell_view_source_github": "Voir le code source sur GitHub",
-
 	"route_loading_aria": "Chargement",
 	"route_not_found_heading": "Introuvable",
 	"route_not_found_body": "Cette page, ce set ou cette carte n'existe pas. Il/elle a peut-être été déplacé(e) ou n'a jamais existé.",
@@ -525,7 +509,6 @@
 	"route_error_heading": "Une erreur est survenue",
 	"route_error_generic": "Une erreur est survenue.",
 	"route_try_again": "Réessayer",
-
 	"profile_meta_title": "Votre profil · Cardstack",
 	"profile_default_display_name": "Collectionneur",
 	"profile_bio_placeholder": "Aucune bio pour l'instant. Ajoutez les cartes que vous chassez.",
@@ -533,7 +516,6 @@
 	"profile_favorite_set_heading": "Set favori",
 	"profile_no_favorite_set": "Aucun set favori pour l'instant. Choisissez celui que vous montreriez en premier.",
 	"profile_pick_favorite_set": "Choisir un set favori",
-
 	"auth_callback_meta_title": "Connexion en cours… · Cardstack",
 	"auth_cloud_off_message": "La synchronisation cloud est désactivée dans cette version. Vos cartes fonctionnent toujours localement.",
 	"auth_link_expired_message": "Ce lien a expiré ou a déjà été utilisé. Demandez-en un nouveau et vous serez de retour.",
@@ -542,52 +524,41 @@
 	"auth_checking_magic_link": "Vérification de votre lien magique. Un instant.",
 	"auth_link_failed_title": "Ce lien n'a pas fonctionné",
 	"auth_back_to_vault": "Retour à votre Vault",
-
 	"root_meta_title": "Cardstack : suivez votre collection JCC Pokémon",
 	"root_meta_description": "Parcourez tout le catalogue JCC Pokémon gratuitement, puis suivez chaque exemplaire que vous possédez. Local d'abord et open source, pour que vos cartes restent les vôtres.",
 	"root_search_and_commands_aria": "Recherche et commandes",
 	"root_search_shortcut_title": "Recherche  ⌘K",
-
 	"series_meta_title": "{name} · sets JCC Pokémon",
 	"series_meta_title_fallback": "Série",
 	"series_meta_description": "Parcourez tous les sets de {name}.",
-
 	"set_meta_title": "{name} · cartes JCC Pokémon",
 	"set_meta_title_fallback": "Set",
 	"set_meta_description": "Les {count} cartes de {name}.",
 	"set_search_placeholder": "Rechercher des cartes {name}",
-
 	"card_meta_title_fallback": "Carte · JCC Pokémon",
 	"card_meta_title": "{name} · {setName} · JCC Pokémon",
 	"card_meta_description": "{name} ({rarity}) de {setName}, n°{cardNumber}.",
 	"card_meta_rarity_fallback": "carte",
-
 	"energy_meta_title": "Cartes Énergie · toutes les Énergies du JCC Pokémon",
 	"energy_meta_description": "Parcourez les {count} cartes Énergie (de base et spéciales) de tous les sets JCC Pokémon.",
 	"energy_meta_og_title": "Cartes Énergie · JCC Pokémon",
-
 	"trainer_meta_title": "Cartes Dresseur · tous les Dresseurs du JCC Pokémon",
 	"trainer_meta_description": "Parcourez les {count} cartes Dresseur (Objets, Supporters, Stades et Outils) de tous les sets JCC Pokémon.",
 	"trainer_meta_og_title": "Cartes Dresseur · JCC Pokémon",
-
 	"energy_name_meta_title": "{name} · toutes les cartes JCC Pokémon",
 	"energy_name_meta_description": "Parcourez les {count} tirages de la carte Énergie {name} dans tous les sets.",
 	"energy_name_meta_og_title": "{name} · cartes JCC Pokémon",
 	"energy_name_fallback": "Énergie",
-
 	"trainer_name_meta_title": "{name} · toutes les cartes JCC Pokémon",
 	"trainer_name_meta_description": "Parcourez les {count} tirages de la carte Dresseur {name} dans tous les sets.",
 	"trainer_name_meta_og_title": "{name} · cartes JCC Pokémon",
 	"trainer_name_fallback": "Dresseur",
-
 	"pokemon_name_meta_title": "{name} · toutes les cartes JCC Pokémon",
 	"pokemon_name_meta_description": "Parcourez les {count} cartes {name} dans tous les sets.",
 	"pokemon_name_meta_og_title": "{name} · cartes JCC Pokémon",
 	"pokemon_name_fallback": "Pokémon",
-
 	"form_quantity_error": "Nombre entier ≥ 1",
 	"form_date_error": "Date invalide",
-
 	"auth_email_required": "L'e-mail est requis",
 	"auth_email_invalid": "Saisissez un e-mail valide",
 	"shell_check_your_email": "Vérifiez votre e-mail",
@@ -597,7 +568,6 @@
 	"shell_email_placeholder": "vous@exemple.com",
 	"shell_sending_ellipsis": "Envoi…",
 	"shell_send_magic_link": "Envoyer le lien magique",
-
 	"profile_form_name_required": "Le nom d'affichage est requis",
 	"profile_form_title": "Modifier le profil",
 	"profile_form_description": "Votre identité de collectionneur. Affichée dans toute l'application.",
@@ -609,9 +579,7 @@
 	"profile_form_none_option": "Aucun",
 	"profile_form_currency_label": "Devise",
 	"profile_form_hide_values_label": "Masquer les valeurs monétaires",
-
 	"binder_form_name_required": "Le nom est requis",
-
 	"search_mode_label": "Mode de recherche",
 	"search_mode_title": "Mode de recherche : {label}. {description}",
 	"search_mode_exact_label": "Exact",
@@ -620,26 +588,20 @@
 	"search_mode_contains_description": "Le nom contient votre texte",
 	"search_mode_fuzzy_label": "Approximatif",
 	"search_mode_fuzzy_description": "Tolère les fautes de frappe",
-
 	"card_tab_details": "Détails",
 	"card_tab_collection": "Collection",
 	"card_tab_pricing": "Prix",
 	"card_tabs_aria": "Vues de la carte",
-
 	"catalog_western_label": "Catalogue occidental",
 	"catalog_asian_label": "Catalogue asiatique",
 	"catalog_asian_switch_note": "Bascule vers le catalogue asiatique, un ensemble de sets distinct.",
 	"catalog_language_title_with_value": "Langue du catalogue : {language}",
-
 	"date_picker_placeholder": "Choisissez une date",
-
 	"timeline_no_cards_match": "Aucune carte ne correspond à ces filtres.",
-
 	"card_market_prices_label": "Prix du marché",
 	"card_price_history_label": "Historique des prix",
 	"card_price_history_builds_daily": "L'historique des prix se construit chaque jour.",
 	"card_history_range_aria": "Plage de l'historique",
-
 	"profile_danger_zone_heading": "Zone de danger",
 	"profile_export_data_title": "Exporter mes données",
 	"profile_export_data_body": "Téléchargez votre collection complète sous forme de sauvegarde ou de CSV, à tout moment.",
@@ -652,7 +614,6 @@
 	"profile_delete_unavailable_error": "La suppression de compte n'est pas disponible sur ce déploiement.",
 	"profile_generic_error": "Une erreur est survenue. Veuillez réessayer.",
 	"profile_deleting_ellipsis": "Suppression…",
-
 	"subtype_group_stage": "Stade",
 	"subtype_group_mechanic": "Mécanique Pokémon",
 	"subtype_group_trainer": "Dresseur",

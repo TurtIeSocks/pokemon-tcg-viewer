@@ -31,8 +31,7 @@ export function UiLanguageSetting() {
 					{m.settings_interface_language()}
 				</label>
 				<p className="font-mono text-[12px] text-(--ink-muted)">
-					Menus, buttons, and settings text render in this language. Card names
-					and details are controlled separately by Catalog language, above.
+					{m.settings_interface_language_description()}
 				</p>
 			</div>
 			<select

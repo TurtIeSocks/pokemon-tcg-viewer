@@ -5,6 +5,7 @@
 	"nav_scan": "掃描",
 	"nav_search": "搜尋",
 	"settings_interface_language": "介面語言",
+	"settings_interface_language_description": "選單、按鈕和設定文字會以此語言顯示。卡牌名稱和詳細資料由上方的目錄語言另行控制。",
 	"settings_page_title": "設定",
 	"settings_catalog_language_title": "目錄語言",
 	"settings_catalog_language_description": "卡片名稱與詳細資料會以此語言顯示在整個應用程式中。選擇亞洲語言會切換至獨立的亞洲目錄。",
@@ -32,7 +33,6 @@
 	"settings_image_cache_preset_1000": "1000 張縮圖（約 25 MB）",
 	"settings_image_cache_preset_2000": "2000 張縮圖（約 50 MB）",
 	"settings_image_cache_preset_4000": "4000 張縮圖（約 100 MB）",
-
 	"command_palette_nav_browse": "瀏覽",
 	"command_palette_nav_vault_overview": "Vault 總覽",
 	"command_palette_nav_all_cards": "所有卡片",
@@ -55,11 +55,9 @@
 	"command_palette_hint_navigate": "切換",
 	"command_palette_hint_select": "選取",
 	"command_palette_hint_close": "關閉",
-
 	"sidebar_mobile_title": "側邊欄",
 	"sidebar_mobile_description": "顯示行動裝置側邊欄。",
 	"sidebar_toggle": "切換側邊欄",
-
 	"home_eyebrow": "瀏覽・收藏・擁有",
 	"home_tagline": "追蹤你完整的寶可夢集換式卡牌收藏。本地優先、開放原始碼，資料真正屬於你。無需帳號即可開始，也不會有人對你的第四張噴火龍說三道四。",
 	"home_stat_cards": "{count} 張卡片",
@@ -90,13 +88,11 @@
 			}
 		}
 	],
-
 	"form_save": "儲存",
 	"form_saving": "儲存中…",
 	"form_cancel": "取消",
 	"form_price_error": "必須是大於或等於 0 的數字",
 	"form_grade_error": "0-10",
-
 	"stack_field_label": "標籤",
 	"stack_label_placeholder": "為這張卡片命名（選填）",
 	"stack_field_quantity": "數量",
@@ -145,7 +141,6 @@
 	"stack_manager_add_card": "新增卡片",
 	"stack_manager_new_card": "新卡片",
 	"stack_manager_empty": "尚無卡片。請在上方新增一張。",
-
 	"vault_meta_title": "你的 Vault・Cardstack",
 	"vault_overview_title": "總覽",
 	"vault_overview_subtitle": "你擁有的每一張卡片，都在同一處。",
@@ -298,7 +293,6 @@
 	"vault_shared_not_found": "無法讀取此共享 Binder。連結可能已失效或不完整。",
 	"vault_shared_snapshot_banner": "{date} 的快照・非即時內容",
 	"vault_loading_shared_binder": "正在載入共享 Binder…",
-
 	"binder_progress_label": "進度",
 	"binder_rule_count": [
 		{
@@ -404,7 +398,6 @@
 	"binder_print_preview_aria": "佔位卡預覽",
 	"binder_print_reset_defaults": "重設為預設值",
 	"binder_print_action": "列印",
-
 	"scan_early_alpha_badge": "早期測試版。",
 	"scan_early_alpha_body": "掃描功能全新推出，仍在持續學習中，辨識結果會不斷改善。若找不到卡片，請將卡片對齊框內、增加光線，或改為手動搜尋。",
 	"scan_camera_denied": "相機存取權限遭拒。請使用下方的上傳選項。",
@@ -442,7 +435,6 @@
 	"scan_increase_qty_aria": "增加數量",
 	"scan_add_to_vault_button": "新增到 Vault",
 	"scan_keep_scanning_button": "都不是，繼續掃描",
-
 	"billing_meta_title": "帳單與方案・Cardstack",
 	"billing_heading": "帳單與方案",
 	"billing_intro": "整個應用程式免費且本地優先。Plus 方案支付的是同步伺服器的費用，而非存取你自己卡片的權限。自架使用者可免費使用。",
@@ -465,25 +457,20 @@
 	"billing_feature_full_vault_offline": "完整 Vault，離線可用，沒有上限",
 	"billing_feature_csv_import_export": "CSV 匯入與匯出，永久開放",
 	"billing_feature_edit_delete_export": "隨時編輯、刪除或匯出，這是你的資料。",
-
 	"pokemon_meta_title": "寶可夢圖鑑・依種類列出所有寶可夢集換式卡牌",
 	"pokemon_meta_description": "瀏覽 {count} 種寶可夢，查看每一種的所有集換式卡牌。",
 	"pokemon_meta_og_title": "寶可夢圖鑑・依種類分類的寶可夢卡牌",
 	"pokemon_species_unit": "種",
-
 	"search_meta_title_query": "「{query}」・寶可夢集換式卡牌搜尋",
 	"search_meta_title_empty": "搜尋・寶可夢集換式卡牌",
 	"search_meta_description": "「{query}」的搜尋結果。",
 	"search_placeholder": "搜尋所有卡片",
-
 	"results_bar_default_unit": "張卡片",
-
 	"sidebar_home_tooltip": "Cardstack，首頁",
 	"sidebar_tagline": "你的卡片，你作主。",
 	"sidebar_series_and_sets": "世代與系列",
 	"sidebar_vault_overview": "總覽",
 	"sidebar_vault_sets": "系列",
-
 	"shell_settings": "設定",
 	"profile_edit_button": "編輯個人檔案",
 	"shell_sign_out": "登出",
@@ -491,13 +478,11 @@
 	"shell_sign_in_dialog_description": "登入僅用於同步，瀏覽與收藏功能無需登入即可正常使用。想在每台裝置上使用你的 Vault 嗎？我們會寄送一組登入連結給你。無需密碼，絕不窺探。",
 	"shell_upgrade_to_sync": "升級以同步",
 	"shell_sync_status_aria": "同步狀態：{label}",
-
 	"sync_status_synced": "已同步",
 	"sync_status_syncing": "同步中…",
 	"sync_status_offline": "離線",
 	"sync_status_error": "同步錯誤",
 	"sync_status_local_only": "僅限本機",
-
 	"shell_about_credits_aria": "關於與致謝",
 	"shell_about_title": "關於 Cardstack",
 	"shell_about_description": "Cardstack 是一款由粉絲製作的開放原始碼寶可夢集換式卡牌收藏管理工具。本地優先、資料屬於你、沒有廣告、絕不窺探。由收藏家打造，特別感謝：",
@@ -509,7 +494,6 @@
 	"shell_credit_holo_body": "讓夢幻逸品卡片閃耀生輝的閃卡與燙金光影效果，改編自 Simon Goellner（@simeydotme）的 Pokémon Cards CSS。",
 	"shell_open_source_note": "從頭到尾完全開放原始碼，沒有房東，也不綁架你的資料。",
 	"shell_view_source_github": "在 GitHub 上檢視原始碼",
-
 	"route_loading_aria": "載入中",
 	"route_not_found_heading": "找不到頁面",
 	"route_not_found_body": "該頁面、系列或卡片不存在，可能已被移動或從未存在。",
@@ -517,7 +501,6 @@
 	"route_error_heading": "發生錯誤",
 	"route_error_generic": "發生錯誤。",
 	"route_try_again": "再試一次",
-
 	"profile_meta_title": "你的個人檔案・Cardstack",
 	"profile_default_display_name": "收藏家",
 	"profile_bio_placeholder": "尚無簡介。寫下你正在追尋的卡片吧。",
@@ -525,7 +508,6 @@
 	"profile_favorite_set_heading": "最愛系列",
 	"profile_no_favorite_set": "尚未選擇最愛系列。選一個你最想炫耀的吧。",
 	"profile_pick_favorite_set": "選擇最愛系列",
-
 	"auth_callback_meta_title": "登入中…・Cardstack",
 	"auth_cloud_off_message": "此版本未啟用雲端同步。你的卡片仍可在本機正常使用。",
 	"auth_link_expired_message": "此連結已過期或已被使用。重新索取一組新的連結即可再次登入。",
@@ -534,52 +516,41 @@
 	"auth_checking_magic_link": "正在檢查你的登入連結，請稍候。",
 	"auth_link_failed_title": "該連結無法使用",
 	"auth_back_to_vault": "返回你的 Vault",
-
 	"root_meta_title": "Cardstack：追蹤你的寶可夢集換式卡牌收藏",
 	"root_meta_description": "免費瀏覽完整的寶可夢集換式卡牌目錄，並追蹤你擁有的每一張卡片。本地優先、開放原始碼，你的卡片永遠屬於你。",
 	"root_search_and_commands_aria": "搜尋與指令",
 	"root_search_shortcut_title": "搜尋　⌘K",
-
 	"series_meta_title": "{name}・寶可夢集換式卡牌系列",
 	"series_meta_title_fallback": "世代",
 	"series_meta_description": "瀏覽 {name} 的每個系列。",
-
 	"set_meta_title": "{name}・寶可夢集換式卡牌",
 	"set_meta_title_fallback": "系列",
 	"set_meta_description": "{name} 的全部 {count} 張卡片。",
 	"set_search_placeholder": "搜尋 {name} 的卡片",
-
 	"card_meta_title_fallback": "卡片・寶可夢集換式卡牌",
 	"card_meta_title": "{name}・{setName}・寶可夢集換式卡牌",
 	"card_meta_description": "來自 {setName} 的 {name}（{rarity}），編號 #{cardNumber}。",
 	"card_meta_rarity_fallback": "卡片",
-
 	"energy_meta_title": "能量卡・所有寶可夢集換式卡牌能量卡",
 	"energy_meta_description": "瀏覽所有寶可夢集換式卡牌系列中的全部 {count} 張能量卡（基本與特殊）。",
 	"energy_meta_og_title": "能量卡・寶可夢集換式卡牌",
-
 	"trainer_meta_title": "訓練家卡・所有寶可夢集換式卡牌訓練家卡",
 	"trainer_meta_description": "瀏覽所有寶可夢集換式卡牌系列中的全部 {count} 張訓練家卡（物品、支援者、競技場與道具）。",
 	"trainer_meta_og_title": "訓練家卡・寶可夢集換式卡牌",
-
 	"energy_name_meta_title": "{name}・所有寶可夢集換式卡牌",
 	"energy_name_meta_description": "瀏覽所有系列中 {name} 能量卡的全部 {count} 個印刷版本。",
 	"energy_name_meta_og_title": "{name}・寶可夢集換式卡牌",
 	"energy_name_fallback": "能量",
-
 	"trainer_name_meta_title": "{name}・所有寶可夢集換式卡牌",
 	"trainer_name_meta_description": "瀏覽所有系列中 {name} 訓練家卡的全部 {count} 個印刷版本。",
 	"trainer_name_meta_og_title": "{name}・寶可夢集換式卡牌",
 	"trainer_name_fallback": "訓練家",
-
 	"pokemon_name_meta_title": "{name}・所有寶可夢集換式卡牌",
 	"pokemon_name_meta_description": "瀏覽所有系列中全部 {count} 張 {name} 卡片。",
 	"pokemon_name_meta_og_title": "{name}・寶可夢集換式卡牌",
 	"pokemon_name_fallback": "寶可夢",
-
 	"form_quantity_error": "須為大於或等於 1 的整數",
 	"form_date_error": "日期無效",
-
 	"auth_email_required": "請輸入電子郵件",
 	"auth_email_invalid": "請輸入有效的電子郵件",
 	"shell_check_your_email": "請查看你的電子郵件",
@@ -589,7 +560,6 @@
 	"shell_email_placeholder": "you@example.com",
 	"shell_sending_ellipsis": "傳送中…",
 	"shell_send_magic_link": "傳送登入連結",
-
 	"profile_form_name_required": "請輸入顯示名稱",
 	"profile_form_title": "編輯個人檔案",
 	"profile_form_description": "你的收藏家身分，會顯示在整個應用程式中。",
@@ -601,9 +571,7 @@
 	"profile_form_none_option": "無",
 	"profile_form_currency_label": "幣別",
 	"profile_form_hide_values_label": "隱藏金額數值",
-
 	"binder_form_name_required": "請輸入名稱",
-
 	"search_mode_label": "搜尋模式",
 	"search_mode_title": "搜尋模式：{label}。{description}",
 	"search_mode_exact_label": "完全符合",
@@ -612,26 +580,20 @@
 	"search_mode_contains_description": "名稱包含你輸入的文字",
 	"search_mode_fuzzy_label": "模糊",
 	"search_mode_fuzzy_description": "容許拼字錯誤",
-
 	"card_tab_details": "詳細資料",
 	"card_tab_collection": "收藏",
 	"card_tab_pricing": "價格",
 	"card_tabs_aria": "卡片檢視",
-
 	"catalog_western_label": "西方目錄",
 	"catalog_asian_label": "亞洲目錄",
 	"catalog_asian_switch_note": "切換至亞洲目錄，這是另一套獨立的系列。",
 	"catalog_language_title_with_value": "目錄語言：{language}",
-
 	"date_picker_placeholder": "選擇日期",
-
 	"timeline_no_cards_match": "沒有符合這些篩選條件的卡片。",
-
 	"card_market_prices_label": "市場價格",
 	"card_price_history_label": "價格歷史",
 	"card_price_history_builds_daily": "價格歷史每日累積。",
 	"card_history_range_aria": "歷史範圍",
-
 	"profile_danger_zone_heading": "危險區域",
 	"profile_export_data_title": "匯出我的資料",
 	"profile_export_data_body": "隨時將完整收藏下載為備份檔或 CSV 檔案。",
@@ -644,7 +606,6 @@
 	"profile_delete_unavailable_error": "此部署環境不支援刪除帳號功能。",
 	"profile_generic_error": "發生錯誤，請再試一次。",
 	"profile_deleting_ellipsis": "刪除中…",
-
 	"subtype_group_stage": "進化階段",
 	"subtype_group_mechanic": "寶可夢機制",
 	"subtype_group_trainer": "訓練家",

@@ -5,6 +5,7 @@
 	"nav_scan": "スキャン",
 	"nav_search": "検索",
 	"settings_interface_language": "表示言語",
+	"settings_interface_language_description": "メニュー、ボタン、設定のテキストはこの言語で表示されます。カード名や詳細は、上のカタログ言語で別途設定します。",
 	"settings_page_title": "設定",
 	"settings_catalog_language_title": "カタログの言語",
 	"settings_catalog_language_description": "カードの名前や詳細はアプリ全体でこの言語で表示されます。アジア言語を選ぶと、別のアジアカタログに切り替わります。",
@@ -32,7 +33,6 @@
 	"settings_image_cache_preset_1000": "サムネイル1000件(約25MB)",
 	"settings_image_cache_preset_2000": "サムネイル2000件(約50MB)",
 	"settings_image_cache_preset_4000": "サムネイル4000件(約100MB)",
-
 	"command_palette_nav_browse": "ブラウズ",
 	"command_palette_nav_vault_overview": "Vault概要",
 	"command_palette_nav_all_cards": "すべてのカード",
@@ -55,11 +55,9 @@
 	"command_palette_hint_navigate": "移動",
 	"command_palette_hint_select": "選択",
 	"command_palette_hint_close": "閉じる",
-
 	"sidebar_mobile_title": "サイドバー",
 	"sidebar_mobile_description": "モバイル用サイドバーを表示します。",
 	"sidebar_toggle": "サイドバーの表示切り替え",
-
 	"home_eyebrow": "見る・集める・自分のものにする",
 	"home_tagline": "ポケモンカードゲームのコレクションをまるごと記録。ローカルファースト&オープンソースだから、本当に自分のもの。始めるのにアカウントは不要、4枚目のリザードンだって誰にも咎められません。",
 	"home_stat_cards": "{count}枚",
@@ -90,13 +88,11 @@
 			}
 		}
 	],
-
 	"form_save": "保存",
 	"form_saving": "保存中…",
 	"form_cancel": "キャンセル",
 	"form_price_error": "0以上の数値を入力してください",
 	"form_grade_error": "0-10",
-
 	"stack_field_label": "ラベル",
 	"stack_label_placeholder": "このカードに名前を付ける(任意)",
 	"stack_field_quantity": "数量",
@@ -145,7 +141,6 @@
 	"stack_manager_add_card": "カードを追加",
 	"stack_manager_new_card": "新しいカード",
 	"stack_manager_empty": "まだカードがありません。上から追加してください。",
-
 	"vault_meta_title": "マイVault · Cardstack",
 	"vault_overview_title": "概要",
 	"vault_overview_subtitle": "所有するすべてのカードを一箇所に。",
@@ -298,7 +293,6 @@
 	"vault_shared_not_found": "この共有Binderを読み込めませんでした。リンクが壊れているか不完全な可能性があります。",
 	"vault_shared_snapshot_banner": "{date}時点のスナップショット · リアルタイムではありません",
 	"vault_loading_shared_binder": "共有Binderを読み込み中…",
-
 	"binder_progress_label": "進捗",
 	"binder_rule_count": [
 		{
@@ -404,7 +398,6 @@
 	"binder_print_preview_aria": "プレースホルダーのプレビュー",
 	"binder_print_reset_defaults": "初期設定に戻す",
 	"binder_print_action": "印刷",
-
 	"scan_early_alpha_badge": "早期アルファ版。",
 	"scan_early_alpha_body": "スキャナーはまだ新しく学習中のため、精度は今後も向上していきます。カードが見つからない場合は、枠内にきちんと合わせる、明るさを増やす、または手動で検索してみてください。",
 	"scan_camera_denied": "カメラへのアクセスが拒否されました。下のアップロード機能を使用してください。",
@@ -442,7 +435,6 @@
 	"scan_increase_qty_aria": "数量を増やす",
 	"scan_add_to_vault_button": "Vaultに追加",
 	"scan_keep_scanning_button": "これではない、スキャンを続ける",
-
 	"billing_meta_title": "請求とプラン · Cardstack",
 	"billing_heading": "請求とプラン",
 	"billing_intro": "アプリ全体は無料でローカルファーストです。Plusは同期サーバーの費用であり、自分のカードへのアクセス権を買うものではありません。セルフホストの場合は無料でご利用いただけます。",
@@ -465,25 +457,20 @@
 	"billing_feature_full_vault_offline": "Vault全体を上限なくオフラインで利用",
 	"billing_feature_csv_import_export": "CSVのインポート・エクスポートが常時利用可能",
 	"billing_feature_edit_delete_export": "いつでも編集・削除・エクスポート可能。あなたのデータです。",
-
 	"pokemon_meta_title": "ポケモン図鑑 · 種族別のすべてのポケモンカードゲームカード",
 	"pokemon_meta_description": "{count}種類のポケモンを閲覧し、それぞれのすべてのカードを見つけましょう。",
 	"pokemon_meta_og_title": "ポケモン図鑑 · 種族別ポケモンカードゲーム",
 	"pokemon_species_unit": "種類",
-
 	"search_meta_title_query": "「{query}」· ポケモンカードゲーム検索",
 	"search_meta_title_empty": "検索 · ポケモンカードゲーム",
 	"search_meta_description": "{query}の検索結果。",
 	"search_placeholder": "すべてのカードを検索",
-
 	"results_bar_default_unit": "枚",
-
 	"sidebar_home_tooltip": "Cardstack、ホーム",
 	"sidebar_tagline": "あなたのカード。あなたの判断。",
 	"sidebar_series_and_sets": "シリーズとセット",
 	"sidebar_vault_overview": "概要",
 	"sidebar_vault_sets": "セット",
-
 	"shell_settings": "設定",
 	"profile_edit_button": "プロフィールを編集",
 	"shell_sign_out": "サインアウト",
@@ -491,13 +478,11 @@
 	"shell_sign_in_dialog_description": "サインインは同期のためだけに必要です。閲覧や収集はサインインなしでも問題なく利用できます。Vaultをすべてのデバイスで使いたい場合は、マジックリンクをメールでお送りします。パスワード不要、詮索もありません。",
 	"shell_upgrade_to_sync": "同期にアップグレード",
 	"shell_sync_status_aria": "同期状態: {label}",
-
 	"sync_status_synced": "同期済み",
 	"sync_status_syncing": "同期中…",
 	"sync_status_offline": "オフライン",
 	"sync_status_error": "同期エラー",
 	"sync_status_local_only": "ローカルのみ",
-
 	"shell_about_credits_aria": "アプリ情報とクレジット",
 	"shell_about_title": "Cardstackについて",
 	"shell_about_description": "Cardstackはファンが作った、ポケモンカードゲーム用のオープンソースコレクション管理アプリです。ローカルファーストで、データはあなたのもの、広告なし、詮索なし。コレクターの手によって作られました。感謝を込めて:",
@@ -509,7 +494,6 @@
 	"shell_credit_holo_body": "レアカードを輝かせるホロ・フォイルのシェーダーは、Simon Goellner氏(@simeydotme)によるPokémon Cards CSSを元にしています。",
 	"shell_open_source_note": "隅から隅までオープンソース。大家もロックインもありません。",
 	"shell_view_source_github": "GitHubでソースを見る",
-
 	"route_loading_aria": "読み込み中",
 	"route_not_found_heading": "見つかりません",
 	"route_not_found_body": "そのページ、セット、またはカードは存在しません。移動したか、もともと存在しなかった可能性があります。",
@@ -517,7 +501,6 @@
 	"route_error_heading": "問題が発生しました",
 	"route_error_generic": "問題が発生しました。",
 	"route_try_again": "再試行",
-
 	"profile_meta_title": "プロフィール · Cardstack",
 	"profile_default_display_name": "コレクター",
 	"profile_bio_placeholder": "自己紹介がまだありません。集めているカードを書いてみましょう。",
@@ -525,7 +508,6 @@
 	"profile_favorite_set_heading": "お気に入りのセット",
 	"profile_no_favorite_set": "お気に入りのセットはまだありません。一番自慢したいセットを選びましょう。",
 	"profile_pick_favorite_set": "お気に入りのセットを選択",
-
 	"auth_callback_meta_title": "サインイン中… · Cardstack",
 	"auth_cloud_off_message": "このビルドではクラウド同期がオフです。カードはローカルで問題なく利用できます。",
 	"auth_link_expired_message": "このリンクは期限切れか、すでに使用されています。新しいリンクをリクエストすれば再度サインインできます。",
@@ -534,52 +516,41 @@
 	"auth_checking_magic_link": "マジックリンクを確認しています。少々お待ちください。",
 	"auth_link_failed_title": "そのリンクは無効でした",
 	"auth_back_to_vault": "Vaultに戻る",
-
 	"root_meta_title": "Cardstack: ポケモンカードゲームのコレクションを記録",
 	"root_meta_description": "ポケモンカードゲームのカタログ全体を無料で閲覧し、所有するすべてのカードを記録できます。ローカルファースト&オープンソースだから、カードは常にあなたのもの。",
 	"root_search_and_commands_aria": "検索とコマンド",
 	"root_search_shortcut_title": "検索  ⌘K",
-
 	"series_meta_title": "{name} · ポケモンカードゲームのセット",
 	"series_meta_title_fallback": "シリーズ",
 	"series_meta_description": "{name}のすべてのセットを見る。",
-
 	"set_meta_title": "{name} · ポケモンカードゲームカード",
 	"set_meta_title_fallback": "セット",
 	"set_meta_description": "{name}の全{count}枚のカード。",
 	"set_search_placeholder": "{name}のカードを検索",
-
 	"card_meta_title_fallback": "カード · ポケモンカードゲーム",
 	"card_meta_title": "{name} · {setName} · ポケモンカードゲーム",
 	"card_meta_description": "{setName}の{name}({rarity})、#{cardNumber}。",
 	"card_meta_rarity_fallback": "カード",
-
 	"energy_meta_title": "エネルギーカード · すべてのポケモンカードゲームエネルギー",
 	"energy_meta_description": "すべてのポケモンカードゲームのセットから、全{count}枚のエネルギーカード(基本・特殊)を見る。",
 	"energy_meta_og_title": "エネルギーカード · ポケモンカードゲーム",
-
 	"trainer_meta_title": "トレーナーカード · すべてのポケモンカードゲームトレーナー",
 	"trainer_meta_description": "すべてのポケモンカードゲームのセットから、全{count}枚のトレーナーカード(グッズ・サポート・スタジアム・ポケモンのどうぐ)を見る。",
 	"trainer_meta_og_title": "トレーナーカード · ポケモンカードゲーム",
-
 	"energy_name_meta_title": "{name} · すべてのポケモンカードゲームカード",
 	"energy_name_meta_description": "すべてのセットから、{name}エネルギーカードの全{count}種類の収録版を見る。",
 	"energy_name_meta_og_title": "{name} · ポケモンカードゲームカード",
 	"energy_name_fallback": "エネルギー",
-
 	"trainer_name_meta_title": "{name} · すべてのポケモンカードゲームカード",
 	"trainer_name_meta_description": "すべてのセットから、{name}トレーナーカードの全{count}種類の収録版を見る。",
 	"trainer_name_meta_og_title": "{name} · ポケモンカードゲームカード",
 	"trainer_name_fallback": "トレーナー",
-
 	"pokemon_name_meta_title": "{name} · すべてのポケモンカードゲームカード",
 	"pokemon_name_meta_description": "すべてのセットから、全{count}枚の{name}カードを見る。",
 	"pokemon_name_meta_og_title": "{name} · ポケモンカードゲームカード",
 	"pokemon_name_fallback": "ポケモン",
-
 	"form_quantity_error": "1以上の整数を入力してください",
 	"form_date_error": "無効な日付です",
-
 	"auth_email_required": "メールアドレスを入力してください",
 	"auth_email_invalid": "有効なメールアドレスを入力してください",
 	"shell_check_your_email": "メールを確認してください",
@@ -589,7 +560,6 @@
 	"shell_email_placeholder": "you@example.com",
 	"shell_sending_ellipsis": "送信中…",
 	"shell_send_magic_link": "マジックリンクを送信",
-
 	"profile_form_name_required": "表示名を入力してください",
 	"profile_form_title": "プロフィールを編集",
 	"profile_form_description": "あなたのコレクターとしてのプロフィール。アプリ全体に表示されます。",
@@ -601,9 +571,7 @@
 	"profile_form_none_option": "なし",
 	"profile_form_currency_label": "通貨",
 	"profile_form_hide_values_label": "金額を非表示にする",
-
 	"binder_form_name_required": "名前を入力してください",
-
 	"search_mode_label": "検索モード",
 	"search_mode_title": "検索モード: {label}。{description}",
 	"search_mode_exact_label": "完全一致",
@@ -612,26 +580,20 @@
 	"search_mode_contains_description": "名前に入力した文字を含む",
 	"search_mode_fuzzy_label": "あいまい検索",
 	"search_mode_fuzzy_description": "入力ミスを許容する",
-
 	"card_tab_details": "詳細",
 	"card_tab_collection": "コレクション",
 	"card_tab_pricing": "価格",
 	"card_tabs_aria": "カード表示",
-
 	"catalog_western_label": "欧米カタログ",
 	"catalog_asian_label": "アジアカタログ",
 	"catalog_asian_switch_note": "アジアカタログに切り替わります。これは別のセット群です。",
 	"catalog_language_title_with_value": "カタログの言語: {language}",
-
 	"date_picker_placeholder": "日付を選択",
-
 	"timeline_no_cards_match": "これらのフィルターに一致するカードはありません。",
-
 	"card_market_prices_label": "市場価格",
 	"card_price_history_label": "価格履歴",
 	"card_price_history_builds_daily": "価格履歴は毎日蓄積されます。",
 	"card_history_range_aria": "履歴の期間",
-
 	"profile_danger_zone_heading": "危険な操作",
 	"profile_export_data_title": "データをエクスポート",
 	"profile_export_data_body": "いつでもコレクション全体をバックアップまたはCSVとしてダウンロードできます。",
@@ -644,7 +606,6 @@
 	"profile_delete_unavailable_error": "このデプロイではアカウント削除機能を利用できません。",
 	"profile_generic_error": "問題が発生しました。もう一度お試しください。",
 	"profile_deleting_ellipsis": "削除中…",
-
 	"subtype_group_stage": "進化段階",
 	"subtype_group_mechanic": "ポケモンのギミック",
 	"subtype_group_trainer": "トレーナー",

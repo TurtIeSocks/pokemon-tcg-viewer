@@ -5,6 +5,7 @@
 	"nav_scan": "扫描",
 	"nav_search": "搜索",
 	"settings_interface_language": "界面语言",
+	"settings_interface_language_description": "菜单、按钮和设置文本将以此语言显示。卡牌名称和详细信息由上方的目录语言单独控制。",
 	"settings_page_title": "设置",
 	"settings_catalog_language_title": "目录语言",
 	"settings_catalog_language_description": "卡片名称和详情将以此语言在整个应用中显示。选择亚洲语言会切换到独立的亚洲目录。",
@@ -32,7 +33,6 @@
 	"settings_image_cache_preset_1000": "1000 张缩略图(约 25 MB)",
 	"settings_image_cache_preset_2000": "2000 张缩略图(约 50 MB)",
 	"settings_image_cache_preset_4000": "4000 张缩略图(约 100 MB)",
-
 	"command_palette_nav_browse": "浏览",
 	"command_palette_nav_vault_overview": "Vault 概览",
 	"command_palette_nav_all_cards": "所有卡片",
@@ -55,11 +55,9 @@
 	"command_palette_hint_navigate": "导航",
 	"command_palette_hint_select": "选择",
 	"command_palette_hint_close": "关闭",
-
 	"sidebar_mobile_title": "侧边栏",
 	"sidebar_mobile_description": "显示移动端侧边栏。",
 	"sidebar_toggle": "切换侧边栏",
-
 	"home_eyebrow": "浏览 · 收集 · 拥有",
 	"home_tagline": "追踪你的整个 Pokémon TCG 收藏。本地优先且开源,真正属于你。无需账号即可开始,也不会对你的第四张喷火龙评头论足。",
 	"home_stat_cards": "{count} 张卡片",
@@ -90,13 +88,11 @@
 			}
 		}
 	],
-
 	"form_save": "保存",
 	"form_saving": "正在保存…",
 	"form_cancel": "取消",
 	"form_price_error": "必须是一个 ≥ 0 的数字",
 	"form_grade_error": "0-10",
-
 	"stack_field_label": "标签",
 	"stack_label_placeholder": "为这张卡片命名(可选)",
 	"stack_field_quantity": "数量",
@@ -145,7 +141,6 @@
 	"stack_manager_add_card": "添加卡片",
 	"stack_manager_new_card": "新建卡片",
 	"stack_manager_empty": "还没有卡片。在上方添加一张。",
-
 	"vault_meta_title": "你的 Vault · Cardstack",
 	"vault_overview_title": "概览",
 	"vault_overview_subtitle": "你拥有的每一张卡片,尽在一处。",
@@ -298,7 +293,6 @@
 	"vault_shared_not_found": "无法读取此共享 Binder。链接可能已损坏或不完整。",
 	"vault_shared_snapshot_banner": "{date} 的快照 · 非实时",
 	"vault_loading_shared_binder": "正在加载共享 Binder…",
-
 	"binder_progress_label": "进度",
 	"binder_rule_count": [
 		{
@@ -404,7 +398,6 @@
 	"binder_print_preview_aria": "占位卡预览",
 	"binder_print_reset_defaults": "恢复默认设置",
 	"binder_print_action": "打印",
-
 	"scan_early_alpha_badge": "早期测试版。",
 	"scan_early_alpha_body": "扫描功能是全新推出且仍在学习中,识别效果会持续改进。如果找不到某张卡片,请将其对齐取景框、增加光线,或手动搜索。",
 	"scan_camera_denied": "摄像头访问被拒绝。请使用下方的上传选项。",
@@ -442,7 +435,6 @@
 	"scan_increase_qty_aria": "增加数量",
 	"scan_add_to_vault_button": "添加到 Vault",
 	"scan_keep_scanning_button": "不是这些,继续扫描",
-
 	"billing_meta_title": "账单与套餐 · Cardstack",
 	"billing_heading": "账单与套餐",
 	"billing_intro": "整个应用免费且本地优先。Plus 套餐是为同步服务器付费,而非为访问你自己的卡片付费。自托管用户无需付费即可使用。",
@@ -465,25 +457,20 @@
 	"billing_feature_full_vault_offline": "完整 Vault,离线可用,无上限",
 	"billing_feature_csv_import_export": "CSV 导入导出,始终可用",
 	"billing_feature_edit_delete_export": "随时编辑、删除或导出。这是你的数据。",
-
 	"pokemon_meta_title": "图鉴 · 按物种查看每一张 Pokémon TCG 卡片",
 	"pokemon_meta_description": "浏览 {count} 种宝可梦,查找每一种的所有 TCG 卡片。",
 	"pokemon_meta_og_title": "图鉴 · 按物种查看 Pokémon TCG",
 	"pokemon_species_unit": "种",
-
 	"search_meta_title_query": "“{query}” · Pokémon TCG 搜索",
 	"search_meta_title_empty": "搜索 · Pokémon TCG",
 	"search_meta_description": "{query} 的搜索结果。",
 	"search_placeholder": "搜索所有卡片",
-
 	"results_bar_default_unit": "张卡片",
-
 	"sidebar_home_tooltip": "Cardstack,主页",
 	"sidebar_tagline": "你的卡片,你做主。",
 	"sidebar_series_and_sets": "系列与系列包",
 	"sidebar_vault_overview": "概览",
 	"sidebar_vault_sets": "系列包",
-
 	"shell_settings": "设置",
 	"profile_edit_button": "编辑个人资料",
 	"shell_sign_out": "退出登录",
@@ -491,13 +478,11 @@
 	"shell_sign_in_dialog_description": "登录仅用于同步。浏览和收藏无需登录也能正常使用。想让你的 Vault 出现在每台设备上?我们会给你发送一封登录链接邮件。无需密码,绝不窥探。",
 	"shell_upgrade_to_sync": "升级以同步",
 	"shell_sync_status_aria": "同步状态:{label}",
-
 	"sync_status_synced": "已同步",
 	"sync_status_syncing": "正在同步…",
 	"sync_status_offline": "离线",
 	"sync_status_error": "同步错误",
 	"sync_status_local_only": "仅本地",
-
 	"shell_about_credits_aria": "关于与致谢",
 	"shell_about_title": "关于 Cardstack",
 	"shell_about_description": "Cardstack 是一个由粉丝制作的开源 Pokémon TCG 收藏管理工具。本地优先,数据归你所有,无广告,绝不窥探。由收藏家打造,特别感谢:",
@@ -509,7 +494,6 @@
 	"shell_credit_holo_body": "让闪卡熠熠生辉的闪光与烫金渲染效果改编自 Simon Goellner(@simeydotme)的 Pokémon Cards CSS。",
 	"shell_open_source_note": "从头到尾完全开源。没有房东,没有束缚。",
 	"shell_view_source_github": "在 GitHub 上查看源代码",
-
 	"route_loading_aria": "正在加载",
 	"route_not_found_heading": "未找到",
 	"route_not_found_body": "该页面、系列包或卡片不存在。它可能已被移动,或从未存在过。",
@@ -517,7 +501,6 @@
 	"route_error_heading": "出现了一些问题",
 	"route_error_generic": "出现了一些问题。",
 	"route_try_again": "重试",
-
 	"profile_meta_title": "你的个人资料 · Cardstack",
 	"profile_default_display_name": "收藏家",
 	"profile_bio_placeholder": "还没有简介。写下你正在追寻的卡片吧。",
@@ -525,7 +508,6 @@
 	"profile_favorite_set_heading": "最爱的系列包",
 	"profile_no_favorite_set": "还没有最爱的系列包。选一个你最想展示的吧。",
 	"profile_pick_favorite_set": "选择最爱的系列包",
-
 	"auth_callback_meta_title": "正在登录… · Cardstack",
 	"auth_cloud_off_message": "此版本已关闭云同步。你的卡片仍可在本地正常使用。",
 	"auth_link_expired_message": "此链接已过期或已被使用。重新获取一个即可继续登录。",
@@ -534,52 +516,41 @@
 	"auth_checking_magic_link": "正在验证你的登录链接,请稍候。",
 	"auth_link_failed_title": "该链接无法使用",
 	"auth_back_to_vault": "返回你的 Vault",
-
 	"root_meta_title": "Cardstack:追踪你的 Pokémon TCG 收藏",
 	"root_meta_description": "免费浏览完整的 Pokémon TCG 目录,追踪你拥有的每一张卡片。本地优先且开源,你的卡片始终属于你。",
 	"root_search_and_commands_aria": "搜索与命令",
 	"root_search_shortcut_title": "搜索  ⌘K",
-
 	"series_meta_title": "{name} · Pokémon TCG 系列包",
 	"series_meta_title_fallback": "系列",
 	"series_meta_description": "浏览 {name} 的所有系列包。",
-
 	"set_meta_title": "{name} · Pokémon TCG 卡片",
 	"set_meta_title_fallback": "系列包",
 	"set_meta_description": "{name} 中的全部 {count} 张卡片。",
 	"set_search_placeholder": "搜索 {name} 中的卡片",
-
 	"card_meta_title_fallback": "卡片 · Pokémon TCG",
 	"card_meta_title": "{name} · {setName} · Pokémon TCG",
 	"card_meta_description": "来自 {setName} 的 {name}({rarity}),编号 #{cardNumber}。",
 	"card_meta_rarity_fallback": "卡片",
-
 	"energy_meta_title": "能量卡 · 每一张 Pokémon TCG 能量卡",
 	"energy_meta_description": "浏览所有 Pokémon TCG 系列包中的全部 {count} 张能量卡(基本能量与特殊能量)。",
 	"energy_meta_og_title": "能量卡 · Pokémon TCG",
-
 	"trainer_meta_title": "训练家卡 · 每一张 Pokémon TCG 训练家卡",
 	"trainer_meta_description": "浏览所有 Pokémon TCG 系列包中的全部 {count} 张训练家卡(物品卡、支援者卡、竞技场卡与道具卡)。",
 	"trainer_meta_og_title": "训练家卡 · Pokémon TCG",
-
 	"energy_name_meta_title": "{name} · 每一张 Pokémon TCG 卡片",
 	"energy_name_meta_description": "浏览 {name} 能量卡在所有系列包中的全部 {count} 个印刷版本。",
 	"energy_name_meta_og_title": "{name} · Pokémon TCG 卡片",
 	"energy_name_fallback": "能量",
-
 	"trainer_name_meta_title": "{name} · 每一张 Pokémon TCG 卡片",
 	"trainer_name_meta_description": "浏览 {name} 训练家卡在所有系列包中的全部 {count} 个印刷版本。",
 	"trainer_name_meta_og_title": "{name} · Pokémon TCG 卡片",
 	"trainer_name_fallback": "训练家",
-
 	"pokemon_name_meta_title": "{name} · 每一张 Pokémon TCG 卡片",
 	"pokemon_name_meta_description": "浏览所有系列包中的全部 {count} 张 {name} 卡片。",
 	"pokemon_name_meta_og_title": "{name} · Pokémon TCG 卡片",
 	"pokemon_name_fallback": "宝可梦",
-
 	"form_quantity_error": "必须是 ≥ 1 的整数",
 	"form_date_error": "无效日期",
-
 	"auth_email_required": "邮箱为必填项",
 	"auth_email_invalid": "请输入有效的邮箱地址",
 	"shell_check_your_email": "请查收你的邮箱",
@@ -589,7 +560,6 @@
 	"shell_email_placeholder": "you@example.com",
 	"shell_sending_ellipsis": "正在发送…",
 	"shell_send_magic_link": "发送登录链接",
-
 	"profile_form_name_required": "显示名称为必填项",
 	"profile_form_title": "编辑个人资料",
 	"profile_form_description": "你的收藏家身份,将在整个应用中显示。",
@@ -601,9 +571,7 @@
 	"profile_form_none_option": "无",
 	"profile_form_currency_label": "货币",
 	"profile_form_hide_values_label": "隐藏金额",
-
 	"binder_form_name_required": "名称为必填项",
-
 	"search_mode_label": "搜索模式",
 	"search_mode_title": "搜索模式:{label}。{description}",
 	"search_mode_exact_label": "精确",
@@ -612,26 +580,20 @@
 	"search_mode_contains_description": "名称包含你输入的文本",
 	"search_mode_fuzzy_label": "模糊",
 	"search_mode_fuzzy_description": "容许拼写错误",
-
 	"card_tab_details": "详情",
 	"card_tab_collection": "收藏",
 	"card_tab_pricing": "价格",
 	"card_tabs_aria": "卡片视图",
-
 	"catalog_western_label": "西方目录",
 	"catalog_asian_label": "亚洲目录",
 	"catalog_asian_switch_note": "切换到亚洲目录,这是一套独立的系列包。",
 	"catalog_language_title_with_value": "目录语言:{language}",
-
 	"date_picker_placeholder": "选择日期",
-
 	"timeline_no_cards_match": "没有卡片符合这些筛选条件。",
-
 	"card_market_prices_label": "市场价格",
 	"card_price_history_label": "价格历史",
 	"card_price_history_builds_daily": "价格历史每日更新。",
 	"card_history_range_aria": "历史范围",
-
 	"profile_danger_zone_heading": "危险区域",
 	"profile_export_data_title": "导出我的数据",
 	"profile_export_data_body": "随时将你的完整收藏下载为备份文件或 CSV。",
@@ -644,7 +606,6 @@
 	"profile_delete_unavailable_error": "此部署环境不支持删除账号。",
 	"profile_generic_error": "出现了一些问题。请重试。",
 	"profile_deleting_ellipsis": "正在删除…",
-
 	"subtype_group_stage": "阶段",
 	"subtype_group_mechanic": "宝可梦机制",
 	"subtype_group_trainer": "训练家",
