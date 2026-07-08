@@ -36,6 +36,7 @@ import {
 } from "@/lib/currencies";
 import { fieldErrorText } from "@/lib/field-error";
 import { cn } from "@/lib/utils";
+import { m } from "@/paraglide/messages";
 import { useStore } from "../../store";
 import { allLoadedSets } from "../../store/sets-slice";
 import type { Profile } from "../../store/userland/types";
@@ -48,14 +49,21 @@ import {
 
 const NONE = "__none__";
 
-const profileFormSchema = z.object({
-	displayName: z.string().min(1, "Display name is required"),
-	bio: z.string(),
-	avatarPreset: z.string(),
-	favoriteSetId: z.string(),
-	displayCurrency: z.string(),
-	hideValue: z.boolean(),
-});
+/**
+ * A factory, not a module-scope constant: the `.min()` message calls `m.*()`,
+ * which reads the ACTIVE locale when called — building this at module-eval
+ * time would freeze it to the base locale forever.
+ */
+function makeProfileFormSchema() {
+	return z.object({
+		displayName: z.string().min(1, m.profile_form_name_required()),
+		bio: z.string(),
+		avatarPreset: z.string(),
+		favoriteSetId: z.string(),
+		displayCurrency: z.string(),
+		hideValue: z.boolean(),
+	});
+}
 
 /** Props for {@link ProfileFormDialog}. */
 interface ProfileFormDialogProps {
@@ -82,6 +90,9 @@ export function ProfileFormDialog({
 				.sort((a, b) => a.name.localeCompare(b.name)),
 		[sets],
 	);
+	// Built at render time (not module scope) so its message resolves against
+	// the active locale — see makeProfileFormSchema's doc comment.
+	const profileFormSchema = makeProfileFormSchema();
 
 	const form = useForm({
 		defaultValues: {
@@ -122,10 +133,10 @@ export function ProfileFormDialog({
 		>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle className="font-display">Edit Profile</DialogTitle>
-					<DialogDescription>
-						Your collector identity. Shown across the app.
-					</DialogDescription>
+					<DialogTitle className="font-display">
+						{m.profile_form_title()}
+					</DialogTitle>
+					<DialogDescription>{m.profile_form_description()}</DialogDescription>
 				</DialogHeader>
 
 				<form
@@ -148,14 +159,16 @@ export function ProfileFormDialog({
 									field.state.meta.isTouched && !field.state.meta.isValid;
 								return (
 									<Field data-invalid={isInvalid}>
-										<FieldLabel htmlFor={field.name}>Display name</FieldLabel>
+										<FieldLabel htmlFor={field.name}>
+											{m.profile_form_display_name_label()}
+										</FieldLabel>
 										<Input
 											id={field.name}
 											aria-invalid={isInvalid}
 											value={field.state.value}
 											onBlur={field.handleBlur}
 											onChange={(e) => field.handleChange(e.target.value)}
-											placeholder="e.g. Ash Ketchum"
+											placeholder={m.profile_form_display_name_placeholder()}
 										/>
 										{isInvalid && field.state.meta.errors.length > 0 && (
 											<FieldError>
@@ -173,13 +186,15 @@ export function ProfileFormDialog({
 							// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 							children={(field) => (
 								<Field>
-									<FieldLabel htmlFor={field.name}>Bio</FieldLabel>
+									<FieldLabel htmlFor={field.name}>
+										{m.profile_form_bio_label()}
+									</FieldLabel>
 									<Textarea
 										id={field.name}
 										value={field.state.value}
 										onBlur={field.handleBlur}
 										onChange={(e) => field.handleChange(e.target.value)}
-										placeholder="A line about your collection"
+										placeholder={m.profile_form_bio_placeholder()}
 										rows={3}
 									/>
 								</Field>
@@ -192,7 +207,7 @@ export function ProfileFormDialog({
 							// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 							children={(field) => (
 								<Field>
-									<FieldLabel>Avatar</FieldLabel>
+									<FieldLabel>{m.profile_form_avatar_label()}</FieldLabel>
 									<div className="flex flex-wrap gap-2">
 										{AVATAR_PRESETS.map((p) => {
 											const active = field.state.value === p.id;
@@ -224,16 +239,20 @@ export function ProfileFormDialog({
 							// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 							children={(field) => (
 								<Field>
-									<FieldLabel htmlFor={field.name}>Favorite set</FieldLabel>
+									<FieldLabel htmlFor={field.name}>
+										{m.profile_favorite_set_heading()}
+									</FieldLabel>
 									<Select
 										value={field.state.value}
 										onValueChange={(v) => field.handleChange(v)}
 									>
 										<SelectTrigger id={field.name}>
-											<SelectValue placeholder="None" />
+											<SelectValue placeholder={m.profile_form_none_option()} />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value={NONE}>None</SelectItem>
+											<SelectItem value={NONE}>
+												{m.profile_form_none_option()}
+											</SelectItem>
 											{setOptions.map((s) => (
 												<SelectItem key={s.id} value={s.id}>
 													{s.name}
@@ -251,7 +270,9 @@ export function ProfileFormDialog({
 							// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 							children={(field) => (
 								<Field>
-									<FieldLabel htmlFor={field.name}>Currency</FieldLabel>
+									<FieldLabel htmlFor={field.name}>
+										{m.profile_form_currency_label()}
+									</FieldLabel>
 									<Select
 										value={field.state.value}
 										onValueChange={(v) => field.handleChange(v)}
@@ -278,7 +299,7 @@ export function ProfileFormDialog({
 							children={(field) => (
 								<Field orientation="horizontal">
 									<FieldLabel htmlFor={field.name}>
-										Hide monetary values
+										{m.profile_form_hide_values_label()}
 									</FieldLabel>
 									<Switch
 										id={field.name}
@@ -304,10 +325,10 @@ export function ProfileFormDialog({
 										variant="ghost"
 										onClick={() => onOpenChange(false)}
 									>
-										Cancel
+										{m.form_cancel()}
 									</Button>
 									<Button type="submit" disabled={!canSubmit || isSubmitting}>
-										{isSubmitting ? "Saving…" : "Save"}
+										{isSubmitting ? m.form_saving() : m.form_save()}
 									</Button>
 								</>
 							)}

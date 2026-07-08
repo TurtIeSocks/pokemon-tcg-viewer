@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { SUPPORTED_LANGUAGES } from "@/lib/languages";
+import { m } from "@/paraglide/messages";
 
 /** Allowed raw-card condition grades in order of severity. */
 export const CONDITIONS = ["NM", "LP", "MP", "HP", "DMG"] as const;
@@ -38,24 +39,32 @@ function isPositiveIntStr(s: string): boolean {
 	return Number.isInteger(n) && n >= 1;
 }
 
-/** Zod schema for the stack-edit form; all fields are strings for controlled-input compatibility. */
-export const stackFormSchema = z.object({
-	label: z.string(),
-	quantity: z.string().refine(isPositiveIntStr, "Whole number ≥ 1"),
-	acquiredAt: z.string().refine(isValidDateStr, "Invalid date"),
-	pricePaid: z.string().refine(isMoneyOrEmpty, "Must be a number ≥ 0"),
-	currency: z.string(),
-	language: z.string(),
-	variant: z.string(),
-	variantId: z.string(),
-	notes: z.string(),
-	source: z.string(),
-	storageLocation: z.string(),
-	state: z.enum(["raw", "graded"]),
-	condition: z.enum(["", ...CONDITIONS]),
-	gradingCompany: z.enum(["", ...GRADERS]),
-	grade: z.string().refine(isGradeOrEmpty, "0-10"),
-	gradingCert: z.string(),
-});
-/** Inferred form-value type from {@link stackFormSchema}. */
-export type StackFormValues = z.infer<typeof stackFormSchema>;
+/**
+ * Zod schema for the stack-edit form; all fields are strings for controlled-input
+ * compatibility. A FACTORY, not a module-scope constant: the `.refine()` messages
+ * call `m.*()`, which reads the ACTIVE locale when called — building the schema at
+ * module-eval time would freeze it to the base locale forever. Call this inside
+ * the form component (or on each render) instead.
+ */
+export function makeStackFormSchema() {
+	return z.object({
+		label: z.string(),
+		quantity: z.string().refine(isPositiveIntStr, m.form_quantity_error()),
+		acquiredAt: z.string().refine(isValidDateStr, m.form_date_error()),
+		pricePaid: z.string().refine(isMoneyOrEmpty, m.form_price_error()),
+		currency: z.string(),
+		language: z.string(),
+		variant: z.string(),
+		variantId: z.string(),
+		notes: z.string(),
+		source: z.string(),
+		storageLocation: z.string(),
+		state: z.enum(["raw", "graded"]),
+		condition: z.enum(["", ...CONDITIONS]),
+		gradingCompany: z.enum(["", ...GRADERS]),
+		grade: z.string().refine(isGradeOrEmpty, m.form_grade_error()),
+		gradingCert: z.string(),
+	});
+}
+/** Inferred form-value type from {@link makeStackFormSchema}. */
+export type StackFormValues = z.infer<ReturnType<typeof makeStackFormSchema>>;

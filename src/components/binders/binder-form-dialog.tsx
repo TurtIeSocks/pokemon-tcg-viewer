@@ -27,10 +27,17 @@ import {
 	updateBinder,
 } from "../../store/userland/userland-store";
 
-const binderFormSchema = z.object({
-	name: z.string().min(1, "Name is required"),
-	description: z.string(),
-});
+/**
+ * A factory, not a module-scope constant: the `.min()` message calls `m.*()`,
+ * which reads the ACTIVE locale when called — building this at module-eval
+ * time would freeze it to the base locale forever.
+ */
+function makeBinderFormSchema() {
+	return z.object({
+		name: z.string().min(1, m.binder_form_name_required()),
+		description: z.string(),
+	});
+}
 
 /** Props for {@link BinderFormDialog}. */
 interface BinderFormDialogProps {
@@ -52,6 +59,9 @@ export function BinderFormDialog({
 	onSaved,
 }: BinderFormDialogProps) {
 	const isEdit = !!binder;
+	// Built at render time (not module scope) so its message resolves against
+	// the active locale — see makeBinderFormSchema's doc comment.
+	const binderFormSchema = makeBinderFormSchema();
 
 	const form = useForm({
 		defaultValues: {

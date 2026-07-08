@@ -36,7 +36,7 @@ import {
 	useUserland,
 } from "../../store/userland/userland-store";
 import { formToPatch, itemToForm } from "./stack-form-mapping";
-import { CONDITIONS, GRADERS, stackFormSchema } from "./stack-form-schema";
+import { CONDITIONS, GRADERS, makeStackFormSchema } from "./stack-form-schema";
 
 /** Western-region languages, in display order (everything not in ASIAN_LANGUAGES). */
 const WESTERN_LANGUAGES: readonly SupportedLanguage[] =
@@ -399,6 +399,9 @@ export function StackEditForm({
 		mode === "edit" && item
 			? itemToForm(item)
 			: { ...BLANK_DEFAULTS, currency: toSupportedCurrency(profileCurrency) };
+	// Built at render time (not module scope) so its .refine() messages resolve
+	// against the active locale — see makeStackFormSchema's doc comment.
+	const stackFormSchema = makeStackFormSchema();
 
 	const form = useForm({
 		defaultValues,
