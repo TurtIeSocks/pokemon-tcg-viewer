@@ -1,5 +1,6 @@
-import { beforeEach, expect, test } from "bun:test";
+import { beforeEach, expect, spyOn, test } from "bun:test";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { toast } from "sonner";
 import { DEFAULT_PRINT_PREFS, useUiPrefs } from "@/store/ui-prefs";
 import type { HoloCardData } from "../holo-card/types";
 import { PrintMissingDialog } from "./print-missing-dialog";
@@ -58,8 +59,8 @@ test("exposes background, text, and border color controls", () => {
 	// The registry ColorPicker is a popover trigger, not a native input; assert the
 	// three labelled controls (background, text, border) are present.
 	expect(screen.getByText("Background")).toBeDefined();
-	expect(screen.getByText("Text color")).toBeDefined();
-	expect(screen.getByText("Border color")).toBeDefined();
+	expect(screen.getByText("Text")).toBeDefined();
+	expect(screen.getByText("Border")).toBeDefined();
 });
 
 test("placeholder paints fill + border as an SVG rect (prints reliably): black fill, violet border, 3mm radius", () => {
@@ -72,6 +73,8 @@ test("placeholder paints fill + border as an SVG rect (prints reliably): black f
 	if (!rect) throw new Error("no fill rect rendered");
 	expect(rect.getAttribute("fill")).toBe("#000000");
 	expect(rect.getAttribute("stroke")).toBe("oklch(0.7 0.19 295)");
+	// Border thickness is the default 0.3mm SVG stroke.
+	expect(rect.getAttribute("stroke-width")).toBe("0.3");
 	// Rounded corners (mm units) give the card-silhouette look.
 	expect(rect.getAttribute("rx")).toBe("3");
 	// Text color lives on the HTML overlay, defaulting to white.
@@ -80,7 +83,16 @@ test("placeholder paints fill + border as an SVG rect (prints reliably): black f
 	expect(color === "#ffffff" || color === "rgb(255, 255, 255)").toBe(true);
 });
 
-test("the text-size slider scales both lines by the same factor (ratio preserved)", () => {
+/** Type a value into a UnitInput and commit it (blur). */
+function setUnit(labelText: string, value: string) {
+	const input = screen.getByLabelText(labelText) as HTMLInputElement;
+	act(() => {
+		fireEvent.change(input, { target: { value } });
+		fireEvent.blur(input);
+	});
+}
+
+test("the text-size field (%) scales both lines by the same factor (ratio preserved)", () => {
 	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
 	// Base 3.6mm name / 2.8mm meta, scaled by the 1.3x default → 4.68 / 3.64.
 	expect(within(preview()).getByText("Bulbasaur").style.fontSize).toBe(
@@ -90,45 +102,109 @@ test("the text-size slider scales both lines by the same factor (ratio preserved
 		"3.64mm",
 	);
 
-	const slider = screen.getByLabelText("Text size") as HTMLInputElement;
-	act(() => {
-		fireEvent.change(slider, { target: { value: "1.5" } });
-	});
-
-	// Both scaled by 1.5, ratio preserved (5.4 / 4.2 === 3.6 / 2.8).
+	// 150% → 1.5x multiplier; ratio preserved (5.4 / 4.2 === 3.6 / 2.8).
+	setUnit("Text size", "150");
 	expect(within(preview()).getByText("Bulbasaur").style.fontSize).toBe("5.4mm");
 	expect(within(preview()).getByText("#1 / Base Set").style.fontSize).toBe(
 		"4.2mm",
 	);
 });
 
-test("the corner-radius slider updates the placeholder rounding (SVG rect rx)", () => {
+test("the corner-radius field updates the placeholder rounding (SVG rect rx)", () => {
 	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
 	expect(firstPlaceholder().querySelector("rect")?.getAttribute("rx")).toBe(
 		"3",
 	);
 
-	const slider = screen.getByLabelText(
-		"Corner radius in millimetres",
-	) as HTMLInputElement;
-	act(() => {
-		fireEvent.change(slider, { target: { value: "6" } });
-	});
-
-	expect(slider.value).toBe("6");
+	setUnit("Corner radius", "6");
 	expect(firstPlaceholder().querySelector("rect")?.getAttribute("rx")).toBe(
 		"6",
 	);
+});
+
+test("the border-width field updates the placeholder stroke", () => {
+	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
+	setUnit("Border width", "1");
+	expect(
+		firstPlaceholder().querySelector("rect")?.getAttribute("stroke-width"),
+	).toBe("1");
+});
+
+test("card size drives the grid: wider cards fit fewer columns (auto-fit)", () => {
+	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
+	const sheet = () =>
+		preview().querySelector(".tcgv-print-sheet") as HTMLElement;
+	expect(sheet().style.gridTemplateColumns).toBe("repeat(2, 63mm)");
+
+	// 120mm wide → floor((190 + 5) / (120 + 5)) = 1 column.
+	setUnit("Width", "120");
+	expect(sheet().style.gridTemplateColumns).toBe("repeat(1, 120mm)");
+	// The "fits N per sheet" read-out reflects the re-fit (text spans nodes).
+	const fits = screen.getByText(
+		(_, el) =>
+			el?.tagName === "P" &&
+			(el.textContent ?? "").replace(/\s+/g, " ").includes("Fits 3 per sheet"),
+	);
+	expect(fits.textContent?.replace(/\s+/g, " ")).toContain(
+		"Fits 3 per sheet (1 × 3)",
+	);
+});
+
+test("warns when a card dimension exceeds the standard size", () => {
+	const warn = spyOn(toast, "warning").mockImplementation(() => "");
+	try {
+		render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
+		setUnit("Width", "70"); // > 63mm standard
+		expect(warn).toHaveBeenCalledTimes(1);
+		expect(String(warn.mock.calls[0]?.[0])).toMatch(
+			/wider than a standard card/i,
+		);
+	} finally {
+		warn.mockRestore();
+	}
+});
+
+test("no oversize warning at or below the standard size", () => {
+	const warn = spyOn(toast, "warning").mockImplementation(() => "");
+	try {
+		render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
+		setUnit("Width", "50"); // a real change (from 63) but under standard
+		expect(warn).not.toHaveBeenCalled();
+	} finally {
+		warn.mockRestore();
+	}
+});
+
+test("Reset to defaults restores every setting", () => {
+	useUiPrefs.setState({
+		printPrefs: {
+			...DEFAULT_PRINT_PREFS,
+			background: "#123456",
+			cardWidthMm: 120,
+		},
+	});
+	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
+	// Sanity: the overridden fill + single-column grid are in effect.
+	expect(firstPlaceholder().querySelector("rect")?.getAttribute("fill")).toBe(
+		"#123456",
+	);
+
+	act(() => {
+		fireEvent.click(screen.getByRole("button", { name: /reset to defaults/i }));
+	});
+
+	expect(firstPlaceholder().querySelector("rect")?.getAttribute("fill")).toBe(
+		DEFAULT_PRINT_PREFS.background,
+	);
+	const sheet = preview().querySelector(".tcgv-print-sheet") as HTMLElement;
+	expect(sheet.style.gridTemplateColumns).toBe("repeat(2, 63mm)");
 });
 
 test("print settings persist across dialog remounts (saved in the store)", () => {
 	const { unmount } = render(
 		<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />,
 	);
-	const slider = screen.getByLabelText("Text size") as HTMLInputElement;
-	act(() => {
-		fireEvent.change(slider, { target: { value: "1.5" } });
-	});
+	setUnit("Text size", "150");
 	unmount();
 
 	// Remount reads the persisted store, not a fresh local default → still scaled.

@@ -1,6 +1,9 @@
 "use client";
 
+import { RotateCcw } from "lucide-react";
+import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ColorPicker } from "@/components/ui/color-picker";
 import {
@@ -11,37 +14,60 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Eyebrow } from "@/components/ui/eyebrow";
+import { UnitInput } from "@/components/ui/unit-input";
 import { useUiPrefs } from "@/store/ui-prefs";
 import type { HoloCardData } from "../holo-card/types";
 import {
 	CARD_HEIGHT_MM,
 	CARD_WIDTH_MM,
 	PLACEHOLDER_GAP_MM,
+	PRINTABLE_HEIGHT_MM,
+	PRINTABLE_WIDTH_MM,
 	pageCount,
 	placeholderMeta,
 	printCountLabel,
 	sheetLayout,
 } from "./print-missing";
 
-/** Slider bounds. Defaults + current values live in the persisted store
- * (`useUiPrefs.printPrefs`) so a collector's choices survive across sessions. */
-const MAX_RADIUS_MM = 8;
-
-/** Base text sizes (mm). The text-size slider scales BOTH by the same factor, so
+/** Base text sizes (mm). The text-size control scales BOTH by the same factor, so
  * the name/meta proportion is preserved. */
 const NAME_MM = 3.6;
 const META_MM = 2.8;
-const MIN_TEXT_SCALE = 0.6;
-const MAX_TEXT_SCALE = 1.8;
 
-/** Border stroke width (mm) of a placeholder, ~1px at 96dpi. Painted as an SVG
- * stroke (foreground) so it prints; see {@link PrintSheet}. */
-const BORDER_MM = 0.3;
+/** Bounds for each numeric unit-input. Defaults + current values live in the
+ * persisted store (`useUiPrefs.printPrefs`) so choices survive across sessions. */
+const FIELD = {
+	cardWidth: { unit: "mm", min: 20, max: 120, step: 1, precision: 0 },
+	cardHeight: { unit: "mm", min: 20, max: 180, step: 1, precision: 0 },
+	radius: { unit: "mm", min: 0, max: 8, step: 0.5, precision: 1 },
+	border: { unit: "mm", min: 0, max: 3, step: 0.1, precision: 2 },
+	// Text size is a multiplier stored as 0.6..1.8; shown/edited as a percent.
+	textPct: { unit: "%", min: 60, max: 180, step: 5, precision: 0 },
+} as const;
 
 /** Format a millimetre length, rounded to 0.01mm so float math (3.6 * 1.5) never
  * leaks "5.399999…mm" into the DOM or the printed sheet. */
 const mm = (n: number) => `${Math.round(n * 100) / 100}mm`;
+
+/** Warn (once, via a stable toast id so drag-scrubbing can't stack duplicates) when
+ * a card dimension is pushed past the real trading-card size and might not fit a
+ * binder pocket. No-op at or below standard. */
+function warnIfOversized(axis: "width" | "height", value: number) {
+	const standard = axis === "width" ? CARD_WIDTH_MM : CARD_HEIGHT_MM;
+	if (value <= standard) return;
+	toast.warning(
+		axis === "width"
+			? "Wider than a standard card"
+			: "Taller than a standard card",
+		{
+			id: `print-oversize-${axis}`,
+			description: `Standard ${axis} is ${standard}mm. Placeholders this ${
+				axis === "width" ? "wide" : "tall"
+			} may not fit in binder pockets.`,
+		},
+	);
+}
 
 /** Props for {@link PrintMissingDialog}. */
 interface PrintMissingDialogProps {
@@ -60,8 +86,13 @@ interface PrintSheetProps {
 	borderColor: string;
 	/** Corner radius in millimetres (the card-silhouette rounding). */
 	radiusMm: number;
+	/** Border thickness in millimetres (SVG stroke width). */
+	borderMm: number;
 	/** Multiplier applied to both text lines, preserving their ratio. */
 	textScale: number;
+	/** Placeholder dimensions in millimetres. */
+	cardWidthMm: number;
+	cardHeightMm: number;
 	columns: number;
 	/** Whitespace (mm) between adjacent placeholders, for cutting room. */
 	gapMm: number;
@@ -92,19 +123,22 @@ function PrintSheet({
 	textColor,
 	borderColor,
 	radiusMm,
+	borderMm,
 	textScale,
+	cardWidthMm,
+	cardHeightMm,
 	columns,
 	gapMm,
 }: PrintSheetProps) {
-	const width = columns * CARD_WIDTH_MM + Math.max(0, columns - 1) * gapMm;
+	const width = columns * cardWidthMm + Math.max(0, columns - 1) * gapMm;
 	// Inset the rect by half the stroke so the border isn't clipped by the viewBox.
-	const inset = BORDER_MM / 2;
+	const inset = borderMm / 2;
 	return (
 		<div
 			className="tcgv-print-sheet"
 			style={{
 				display: "grid",
-				gridTemplateColumns: `repeat(${Math.max(1, columns)}, ${CARD_WIDTH_MM}mm)`,
+				gridTemplateColumns: `repeat(${Math.max(1, columns)}, ${cardWidthMm}mm)`,
 				gap: mm(gapMm),
 				width: mm(width),
 			}}
@@ -115,8 +149,8 @@ function PrintSheet({
 					className="tcgv-placeholder"
 					style={{
 						position: "relative",
-						width: `${CARD_WIDTH_MM}mm`,
-						height: `${CARD_HEIGHT_MM}mm`,
+						width: `${cardWidthMm}mm`,
+						height: `${cardHeightMm}mm`,
 						overflow: "hidden",
 						breakInside: "avoid",
 					}}
@@ -124,9 +158,9 @@ function PrintSheet({
 					{/* Foreground-painted fill + border (see PrintSheet docs). viewBox is in
 					    mm units (1 user unit = 1mm) so rx/stroke read as millimetres. */}
 					<svg
-						width={`${CARD_WIDTH_MM}mm`}
-						height={`${CARD_HEIGHT_MM}mm`}
-						viewBox={`0 0 ${CARD_WIDTH_MM} ${CARD_HEIGHT_MM}`}
+						width={`${cardWidthMm}mm`}
+						height={`${cardHeightMm}mm`}
+						viewBox={`0 0 ${cardWidthMm} ${cardHeightMm}`}
 						preserveAspectRatio="none"
 						aria-hidden="true"
 						style={{ position: "absolute", inset: 0, display: "block" }}
@@ -134,13 +168,13 @@ function PrintSheet({
 						<rect
 							x={inset}
 							y={inset}
-							width={CARD_WIDTH_MM - BORDER_MM}
-							height={CARD_HEIGHT_MM - BORDER_MM}
+							width={cardWidthMm - borderMm}
+							height={cardHeightMm - borderMm}
 							rx={radiusMm}
 							ry={radiusMm}
 							fill={background}
 							stroke={borderColor}
-							strokeWidth={BORDER_MM}
+							strokeWidth={borderMm}
 						/>
 					</svg>
 					<div
@@ -183,8 +217,90 @@ function PrintSheet({
 	);
 }
 
-/** A labelled color-picker control (registry ColorPicker: swatch trigger + oklch popover). */
-function ColorControl({
+/**
+ * A grouped, labelled cluster of controls: the app's double-bezel (outer shell +
+ * inner core) with an eyebrow header. Inlined rather than using {@link BezelPanel}
+ * so the inner core carries `h-full`: in a grid the outer shell already stretches
+ * to the row height (align-items: stretch), so the inner core fills it and a shorter
+ * group (Card size) matches a taller neighbour (Style) instead of leaving a gap.
+ * The outer shell has NO `h-full` — that would balloon the full-width Colors group.
+ */
+function ControlGroup({
+	label,
+	children,
+}: {
+	label: string;
+	children: ReactNode;
+}) {
+	return (
+		<div className="min-w-0 rounded-[calc(var(--r-panel)+6px)] border border-(--hairline) bg-white/4 p-1.5 backdrop-blur-xl">
+			<div className="flex h-full flex-col gap-3.5 rounded-(--r-panel) bg-(--bg) p-5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.10)]">
+				<Eyebrow>{label}</Eyebrow>
+				<div className="flex flex-col gap-3">{children}</div>
+			</div>
+		</div>
+	);
+}
+
+/** A single control laid out as `[label] ......... [control]`. */
+function LabeledRow({
+	label,
+	children,
+}: {
+	label: string;
+	children: ReactNode;
+}) {
+	return (
+		<div className="flex items-center justify-between gap-3">
+			<span className="text-xs font-medium text-(--ink-muted)">{label}</span>
+			{children}
+		</div>
+	);
+}
+
+interface UnitFieldSpec {
+	unit: string;
+	min: number;
+	max: number;
+	step: number;
+	precision: number;
+}
+
+/** A numeric unit-input row. `value`/`onCommit` speak the display unit (mm, or %
+ * for text size); the caller maps % back to the stored multiplier. */
+function UnitField({
+	label,
+	value,
+	spec,
+	onCommit,
+}: {
+	label: string;
+	value: number;
+	spec: UnitFieldSpec;
+	onCommit: (n: number) => void;
+}) {
+	return (
+		<LabeledRow label={label}>
+			<UnitInput
+				unit={spec.unit}
+				value={`${Number(value.toFixed(spec.precision))}${spec.unit}`}
+				min={spec.min}
+				max={spec.max}
+				step={spec.step}
+				precision={spec.precision}
+				aria-label={label}
+				onChange={(next) => {
+					const n = Number.parseFloat(next);
+					if (!Number.isNaN(n)) onCommit(n);
+				}}
+				className="h-9 w-[104px]"
+			/>
+		</LabeledRow>
+	);
+}
+
+/** A labelled color picker (stacked label + swatch trigger). */
+function ColorField({
 	label,
 	value,
 	onChange,
@@ -194,61 +310,9 @@ function ColorControl({
 	onChange: (next: string) => void;
 }) {
 	return (
-		<div className="flex flex-col gap-2">
-			<span className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-(--faint)">
-				{label}
-			</span>
-			<ColorPicker value={value} onChange={(next) => onChange(next)} />
-		</div>
-	);
-}
-
-/** A labelled range slider with a formatted read-out. */
-function SliderControl({
-	id,
-	label,
-	value,
-	min,
-	max,
-	step,
-	ariaLabel,
-	format,
-	onChange,
-}: {
-	id: string;
-	label: string;
-	value: number;
-	min: number;
-	max: number;
-	step: number;
-	ariaLabel: string;
-	format: (v: number) => string;
-	onChange: (v: number) => void;
-}) {
-	return (
-		<div className="flex flex-col gap-2">
-			<Label
-				htmlFor={id}
-				className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-(--faint)"
-			>
-				{label}
-			</Label>
-			<div className="flex h-9 items-center gap-3">
-				<input
-					id={id}
-					type="range"
-					min={min}
-					max={max}
-					step={step}
-					value={value}
-					aria-label={ariaLabel}
-					onChange={(e) => onChange(Number(e.target.value))}
-					className="w-32 accent-(--primary)"
-				/>
-				<span className="min-w-[3.5ch] font-mono text-xs tabular-nums text-(--ink-muted)">
-					{format(value)}
-				</span>
-			</div>
+		<div className="flex flex-col items-start gap-1.5">
+			<span className="text-xs font-medium text-(--ink-muted)">{label}</span>
+			<ColorPicker value={value} onChange={onChange} />
 		</div>
 	);
 }
@@ -258,8 +322,10 @@ function SliderControl({
  * a binder. Chrome is liquid-glass (via {@link Dialog}); the placeholders and
  * print sheet are deliberately print-oriented (user-chosen colors, real mm
  * sizing, high contrast, card-silhouette rounding) rather than glass. The
- * customizing settings persist via {@link useUiPrefs}. See print-missing.ts for
- * the pure layout helpers and app.css for the @media print stylesheet.
+ * customizing settings persist via {@link useUiPrefs}, and card width/height feed
+ * {@link sheetLayout} so the grid auto-fits more or fewer cards per sheet. See
+ * print-missing.ts for the pure layout helpers and app.css for the @media print
+ * stylesheet.
  */
 export function PrintMissingDialog({
 	open,
@@ -270,10 +336,26 @@ export function PrintMissingDialog({
 	// re-render on any change, so the whole-object subscription is correct here.
 	const printPrefs = useUiPrefs((s) => s.printPrefs);
 	const setPrintPrefs = useUiPrefs((s) => s.setPrintPrefs);
-	const { background, textColor, borderColor, radiusMm, textScale } =
-		printPrefs;
+	const resetPrintPrefs = useUiPrefs((s) => s.resetPrintPrefs);
+	const {
+		background,
+		textColor,
+		borderColor,
+		radiusMm,
+		borderMm,
+		textScale,
+		cardWidthMm,
+		cardHeightMm,
+	} = printPrefs;
 
-	const layout = sheetLayout();
+	// Card dimensions drive the grid, so it re-fits as the user resizes the card.
+	const layout = sheetLayout(
+		PRINTABLE_WIDTH_MM,
+		PRINTABLE_HEIGHT_MM,
+		cardWidthMm,
+		cardHeightMm,
+		PLACEHOLDER_GAP_MM,
+	);
 	const count = cards.length;
 	const pages = pageCount(count, layout.perPage);
 
@@ -287,7 +369,10 @@ export function PrintMissingDialog({
 			textColor={textColor}
 			borderColor={borderColor}
 			radiusMm={radiusMm}
+			borderMm={borderMm}
 			textScale={textScale}
+			cardWidthMm={cardWidthMm}
+			cardHeightMm={cardHeightMm}
 			columns={layout.columns}
 			gapMm={PLACEHOLDER_GAP_MM}
 		/>
@@ -295,7 +380,7 @@ export function PrintMissingDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-3xl">
+			<DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-3xl">
 				<DialogHeader>
 					<DialogTitle className="font-display">
 						Print missing cards
@@ -311,47 +396,74 @@ export function PrintMissingDialog({
 						You own every card in this binder. Nothing to print.
 					</p>
 				) : (
-					<div className="flex min-w-0 flex-col gap-5">
-						{/* Color + shape controls. Transparency lives in each picker's alpha
-						    strip, so there is no separate toggle. */}
-						<div className="flex flex-wrap items-end gap-x-8 gap-y-4">
-							<ColorControl
-								label="Background"
-								value={background}
-								onChange={(v) => setPrintPrefs({ background: v })}
-							/>
-							<ColorControl
-								label="Text color"
-								value={textColor}
-								onChange={(v) => setPrintPrefs({ textColor: v })}
-							/>
-							<ColorControl
-								label="Border color"
-								value={borderColor}
-								onChange={(v) => setPrintPrefs({ borderColor: v })}
-							/>
-							<SliderControl
-								id="print-radius"
-								label="Corner radius"
-								value={radiusMm}
-								min={0}
-								max={MAX_RADIUS_MM}
-								step={0.5}
-								ariaLabel="Corner radius in millimetres"
-								format={(v) => `${v}mm`}
-								onChange={(v) => setPrintPrefs({ radiusMm: v })}
-							/>
-							<SliderControl
-								id="print-text-size"
-								label="Text size"
-								value={textScale}
-								min={MIN_TEXT_SCALE}
-								max={MAX_TEXT_SCALE}
-								step={0.1}
-								ariaLabel="Text size"
-								format={(v) => `${Math.round(v * 100)}%`}
-								onChange={(v) => setPrintPrefs({ textScale: v })}
-							/>
+					<div className="flex min-w-0 flex-col gap-4">
+						{/* Grouped controls: colors, then card size + style side by side. */}
+						<ControlGroup label="Colors">
+							<div className="grid grid-cols-3 gap-4">
+								<ColorField
+									label="Background"
+									value={background}
+									onChange={(v) => setPrintPrefs({ background: v })}
+								/>
+								<ColorField
+									label="Text"
+									value={textColor}
+									onChange={(v) => setPrintPrefs({ textColor: v })}
+								/>
+								<ColorField
+									label="Border"
+									value={borderColor}
+									onChange={(v) => setPrintPrefs({ borderColor: v })}
+								/>
+							</div>
+						</ControlGroup>
+
+						<div className="grid gap-3 sm:grid-cols-2">
+							<ControlGroup label="Card size">
+								<UnitField
+									label="Width"
+									value={cardWidthMm}
+									spec={FIELD.cardWidth}
+									onCommit={(n) => {
+										setPrintPrefs({ cardWidthMm: n });
+										warnIfOversized("width", n);
+									}}
+								/>
+								<UnitField
+									label="Height"
+									value={cardHeightMm}
+									spec={FIELD.cardHeight}
+									onCommit={(n) => {
+										setPrintPrefs({ cardHeightMm: n });
+										warnIfOversized("height", n);
+									}}
+								/>
+								<p className="pt-0.5 font-mono text-xs tabular-nums text-(--faint)">
+									Fits {layout.perPage} per sheet ({layout.columns} ×{" "}
+									{layout.rows})
+								</p>
+							</ControlGroup>
+
+							<ControlGroup label="Style">
+								<UnitField
+									label="Corner radius"
+									value={radiusMm}
+									spec={FIELD.radius}
+									onCommit={(n) => setPrintPrefs({ radiusMm: n })}
+								/>
+								<UnitField
+									label="Border width"
+									value={borderMm}
+									spec={FIELD.border}
+									onCommit={(n) => setPrintPrefs({ borderMm: n })}
+								/>
+								<UnitField
+									label="Text size"
+									value={textScale * 100}
+									spec={FIELD.textPct}
+									onCommit={(n) => setPrintPrefs({ textScale: n / 100 })}
+								/>
+							</ControlGroup>
 						</div>
 
 						{/* Count feedback */}
@@ -375,22 +487,35 @@ export function PrintMissingDialog({
 					</div>
 				)}
 
-				<DialogFooter>
-					<Button
-						type="button"
-						variant="ghost"
-						onClick={() => onOpenChange(false)}
-					>
-						Close
-					</Button>
-					<Button
-						type="button"
-						variant="soft"
-						onClick={() => window.print()}
-						disabled={count === 0}
-					>
-						Print
-					</Button>
+				<DialogFooter className="sm:justify-between">
+					{count > 0 ? (
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							onClick={() => resetPrintPrefs()}
+						>
+							<RotateCcw aria-hidden="true" />
+							Reset to defaults
+						</Button>
+					) : null}
+					<div className="flex gap-2 sm:ml-auto">
+						<Button
+							type="button"
+							variant="ghost"
+							onClick={() => onOpenChange(false)}
+						>
+							Close
+						</Button>
+						<Button
+							type="button"
+							variant="soft"
+							onClick={() => window.print()}
+							disabled={count === 0}
+						>
+							Print
+						</Button>
+					</div>
 				</DialogFooter>
 			</DialogContent>
 

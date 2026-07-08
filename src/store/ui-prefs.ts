@@ -13,8 +13,14 @@ export interface PrintPrefs {
 	borderColor: string;
 	/** Corner radius in millimetres. */
 	radiusMm: number;
+	/** Border thickness in millimetres (SVG stroke width). */
+	borderMm: number;
 	/** Multiplier applied to both text lines, preserving their ratio. */
 	textScale: number;
+	/** Placeholder width in millimetres. Drives how many fit per row. */
+	cardWidthMm: number;
+	/** Placeholder height in millimetres. Drives how many fit per column. */
+	cardHeightMm: number;
 }
 
 export const DEFAULT_PRINT_PREFS: PrintPrefs = {
@@ -23,7 +29,11 @@ export const DEFAULT_PRINT_PREFS: PrintPrefs = {
 	// Site accent violet, kept verbatim from --primary in app.css so they stay matched.
 	borderColor: "oklch(0.7 0.19 295)",
 	radiusMm: 3,
+	borderMm: 0.3,
 	textScale: 1.3,
+	// Standard trading-card dimensions (mm); adjustable so the grid re-fits.
+	cardWidthMm: 63,
+	cardHeightMm: 88,
 };
 
 interface UiPrefsStore {
@@ -46,6 +56,8 @@ interface UiPrefsStore {
 	printPrefs: PrintPrefs;
 	/** Merge a partial update into the saved print settings. */
 	setPrintPrefs: (patch: Partial<PrintPrefs>) => void;
+	/** Restore every print setting to {@link DEFAULT_PRINT_PREFS}. */
+	resetPrintPrefs: () => void;
 }
 
 // localStorage on the client (synchronous → rehydrates before first paint, no
@@ -68,6 +80,7 @@ export const useUiPrefs = create<UiPrefsStore>()(
 			printPrefs: DEFAULT_PRINT_PREFS,
 			setPrintPrefs: (patch) =>
 				set((s) => ({ printPrefs: { ...s.printPrefs, ...patch } })),
+			resetPrintPrefs: () => set({ printPrefs: DEFAULT_PRINT_PREFS }),
 		}),
 		{
 			name: "cardstack-ui-prefs",
