@@ -174,8 +174,8 @@ export function CardCockpit({
 				<CardLightbox
 					open={zoomOpen}
 					onClose={() => setZoomOpen(false)}
-					src={holo.imageUrl}
-					alt={holo.name}
+					card={holo}
+					reverse={canReverse && showReverse}
 				/>
 			</ClientOnly>
 		</div>
