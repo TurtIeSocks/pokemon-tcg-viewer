@@ -4,6 +4,8 @@ import {
 	CARD_HEIGHT_MM,
 	CARD_WIDTH_MM,
 	missingCardViews,
+	PRINTABLE_HEIGHT_MM,
+	PRINTABLE_WIDTH_MM,
 	pageCount,
 	placeholderMeta,
 	printCountLabel,
@@ -68,11 +70,23 @@ test("printCountLabel contains no em-dash", () => {
 
 // --- sheetLayout ---
 
-test("sheetLayout default fits a 3-column, 3-row, 9-per-page grid", () => {
+test("sheetLayout default leaves a cutting gap: 2-column, 3-row, 6-per-page grid", () => {
+	// The 5mm gap costs the 3rd column (3*63=189mm already ~fills the 190mm width).
 	const layout = sheetLayout();
-	expect(layout.columns).toBe(3);
+	expect(layout.columns).toBe(2);
 	expect(layout.rows).toBe(3);
-	expect(layout.perPage).toBe(9);
+	expect(layout.perPage).toBe(6);
+});
+
+test("sheetLayout with gapMm=0 packs edge-to-edge (3-column, 3-row, 9-per-page)", () => {
+	const layout = sheetLayout(
+		PRINTABLE_WIDTH_MM,
+		PRINTABLE_HEIGHT_MM,
+		CARD_WIDTH_MM,
+		CARD_HEIGHT_MM,
+		0,
+	);
+	expect(layout).toEqual({ columns: 3, rows: 3, perPage: 9 });
 });
 
 test("sheetLayout floors partial columns/rows", () => {

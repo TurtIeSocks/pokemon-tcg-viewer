@@ -1,7 +1,14 @@
-import { expect, test } from "bun:test";
+import { beforeEach, expect, test } from "bun:test";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { DEFAULT_PRINT_PREFS, useUiPrefs } from "@/store/ui-prefs";
 import type { HoloCardData } from "../holo-card/types";
 import { PrintMissingDialog } from "./print-missing-dialog";
+
+// Print settings now live in a persisted (singleton) store, so reset them before
+// every test — otherwise one test's slider change leaks into the next.
+beforeEach(() => {
+	useUiPrefs.setState({ printPrefs: { ...DEFAULT_PRINT_PREFS } });
+});
 
 function card(overrides: Partial<HoloCardData> = {}): HoloCardData {
 	return {
@@ -102,6 +109,27 @@ test("the corner-radius slider updates the placeholder rounding", () => {
 
 	expect(slider.value).toBe("6");
 	expect(firstPlaceholder().style.borderRadius).toBe("6mm");
+});
+
+test("print settings persist across dialog remounts (saved in the store)", () => {
+	const { unmount } = render(
+		<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />,
+	);
+	const slider = screen.getByLabelText("Text size") as HTMLInputElement;
+	act(() => {
+		fireEvent.change(slider, { target: { value: "1.5" } });
+	});
+	unmount();
+
+	// Remount reads the persisted store, not a fresh local default → still scaled.
+	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
+	expect(within(preview()).getByText("Bulbasaur").style.fontSize).toBe("5.4mm");
+});
+
+test("preview sheet leaves a cutting gap between placeholders", () => {
+	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
+	const sheet = preview().querySelector(".tcgv-print-sheet") as HTMLElement;
+	expect(sheet.style.gap).toBe("5mm");
 });
 
 test("Print button calls window.print (stubbed)", () => {

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { ColorPicker } from "@/components/ui/color-picker";
@@ -13,24 +12,20 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { useUiPrefs } from "@/store/ui-prefs";
 import type { HoloCardData } from "../holo-card/types";
 import {
 	CARD_HEIGHT_MM,
 	CARD_WIDTH_MM,
+	PLACEHOLDER_GAP_MM,
 	pageCount,
 	placeholderMeta,
 	printCountLabel,
 	sheetLayout,
 } from "./print-missing";
 
-/** Print-friendly defaults: white fill, near-black text + border (least ink, high
- * contrast). Radius ~3mm ≈ a real trading-card corner, so a placeholder reads as
- * a card silhouette out of the box. Transparency is set via the picker's own
- * alpha strip (an 8-digit color with alpha 0), so there is no separate toggle. */
-const DEFAULT_BG = "#ffffff";
-const DEFAULT_TEXT = "#111111";
-const DEFAULT_BORDER = "#111111";
-const DEFAULT_RADIUS_MM = 3;
+/** Slider bounds. Defaults + current values live in the persisted store
+ * (`useUiPrefs.printPrefs`) so a collector's choices survive across sessions. */
 const MAX_RADIUS_MM = 8;
 
 /** Base text sizes (mm). The text-size slider scales BOTH by the same factor, so
@@ -64,6 +59,8 @@ interface PrintSheetProps {
 	/** Multiplier applied to both text lines, preserving their ratio. */
 	textScale: number;
 	columns: number;
+	/** Whitespace (mm) between adjacent placeholders, for cutting room. */
+	gapMm: number;
 }
 
 /**
@@ -72,10 +69,11 @@ interface PrintSheetProps {
  * into a body-level portal that is the only thing the print stylesheet keeps
  * visible. Both copies read the same props so preview matches paper exactly.
  *
- * `printColorAdjust: exact` forces the chosen background/border colors to actually
- * print (browsers drop them from print output by default). Each placeholder is a
- * rounded, bordered card silhouette; `breakInside: avoid` keeps one from splitting
- * across a page boundary.
+ * A flex `gap` leaves cutting room between cards; the container width is sized to
+ * exactly `columns` cards plus their inter-card gaps so the wrap point is stable.
+ * `printColorAdjust: exact` (belt-and-suspenders with the @media print rule in
+ * app.css) forces the chosen colors to print; `breakInside: avoid` keeps one
+ * placeholder from splitting across a page boundary.
  */
 function PrintSheet({
 	cards,
@@ -85,14 +83,17 @@ function PrintSheet({
 	radiusMm,
 	textScale,
 	columns,
+	gapMm,
 }: PrintSheetProps) {
+	const width = columns * CARD_WIDTH_MM + Math.max(0, columns - 1) * gapMm;
 	return (
 		<div
 			className="tcgv-print-sheet"
 			style={{
-				width: `${columns * CARD_WIDTH_MM}mm`,
+				width: mm(width),
 				display: "flex",
 				flexWrap: "wrap",
+				gap: mm(gapMm),
 			}}
 		>
 			{cards.map((card) => (
@@ -220,20 +221,21 @@ function SliderControl({
  * Modal to print cut-out placeholders for the cards a collector is missing from
  * a binder. Chrome is liquid-glass (via {@link Dialog}); the placeholders and
  * print sheet are deliberately print-oriented (user-chosen colors, real mm
- * sizing, high contrast, card-silhouette rounding) rather than glass. See
- * print-missing.ts for the pure layout helpers and app.css for the @media print
- * stylesheet.
+ * sizing, high contrast, card-silhouette rounding) rather than glass. The
+ * customizing settings persist via {@link useUiPrefs}. See print-missing.ts for
+ * the pure layout helpers and app.css for the @media print stylesheet.
  */
 export function PrintMissingDialog({
 	open,
 	onOpenChange,
 	cards,
 }: PrintMissingDialogProps) {
-	const [background, setBackground] = useState(DEFAULT_BG);
-	const [textColor, setTextColor] = useState(DEFAULT_TEXT);
-	const [borderColor, setBorderColor] = useState(DEFAULT_BORDER);
-	const [radiusMm, setRadiusMm] = useState(DEFAULT_RADIUS_MM);
-	const [textScale, setTextScale] = useState(1);
+	// Persisted print settings; a single small slice fed to one preview that must
+	// re-render on any change, so the whole-object subscription is correct here.
+	const printPrefs = useUiPrefs((s) => s.printPrefs);
+	const setPrintPrefs = useUiPrefs((s) => s.setPrintPrefs);
+	const { background, textColor, borderColor, radiusMm, textScale } =
+		printPrefs;
 
 	const layout = sheetLayout();
 	const count = cards.length;
@@ -251,6 +253,7 @@ export function PrintMissingDialog({
 			radiusMm={radiusMm}
 			textScale={textScale}
 			columns={layout.columns}
+			gapMm={PLACEHOLDER_GAP_MM}
 		/>
 	);
 
@@ -279,17 +282,17 @@ export function PrintMissingDialog({
 							<ColorControl
 								label="Background"
 								value={background}
-								onChange={setBackground}
+								onChange={(v) => setPrintPrefs({ background: v })}
 							/>
 							<ColorControl
 								label="Text color"
 								value={textColor}
-								onChange={setTextColor}
+								onChange={(v) => setPrintPrefs({ textColor: v })}
 							/>
 							<ColorControl
 								label="Border color"
 								value={borderColor}
-								onChange={setBorderColor}
+								onChange={(v) => setPrintPrefs({ borderColor: v })}
 							/>
 							<SliderControl
 								id="print-radius"
@@ -300,7 +303,7 @@ export function PrintMissingDialog({
 								step={0.5}
 								ariaLabel="Corner radius in millimetres"
 								format={(v) => `${v}mm`}
-								onChange={setRadiusMm}
+								onChange={(v) => setPrintPrefs({ radiusMm: v })}
 							/>
 							<SliderControl
 								id="print-text-size"
@@ -311,7 +314,7 @@ export function PrintMissingDialog({
 								step={0.1}
 								ariaLabel="Text size"
 								format={(v) => `${Math.round(v * 100)}%`}
-								onChange={setTextScale}
+								onChange={(v) => setPrintPrefs({ textScale: v })}
 							/>
 						</div>
 

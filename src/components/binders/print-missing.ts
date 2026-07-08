@@ -9,6 +9,15 @@ export const CARD_WIDTH_MM = 63;
 export const CARD_HEIGHT_MM = 88;
 
 /**
+ * Whitespace (mm) left between adjacent placeholders so a collector (or their
+ * kid) has room to cut each one out with scissors instead of slicing along a
+ * shared edge. Threaded into {@link sheetLayout} so the grid, page count, and
+ * the on-screen preview all agree. Note: 3 cards * 63mm = 189mm already fills the
+ * 190mm A4-safe width, so any gap > ~0.5mm drops the grid from 3 columns to 2.
+ */
+export const PLACEHOLDER_GAP_MM = 5;
+
+/**
  * Printable area (mm) of a standard sheet after margins. A4 is the narrower and
  * shorter printable box of the Letter/A4 pair, so laying out for it fits both:
  * A4 210x297 minus 10mm margins per side -> 190 x 277.
@@ -27,19 +36,24 @@ export interface SheetLayout {
 }
 
 /**
- * How many placeholder cards fit on one printed sheet. Pure geometry: the floor
- * of printable / card size on each axis. For the default A4-safe printable box
- * (190 x 277mm) with 63 x 88mm cards this is a 3-column, 3-row, 9-per-page grid,
- * which also fits US Letter.
+ * How many placeholder cards fit on one printed sheet, accounting for the cutting
+ * gap between them. Pure geometry: n cards with (n-1) inter-card gaps fit an axis
+ * when `n*card + (n-1)*gap <= printable`, i.e. `n <= (printable + gap)/(card + gap)`.
+ * For the default A4-safe box (190 x 277mm), 63 x 88mm cards, and a 5mm gap this is
+ * a 2-column, 3-row, 6-per-page grid (also fits US Letter). Pass `gapMm = 0` to pack
+ * edge-to-edge (3 x 3 = 9).
  */
 export function sheetLayout(
 	printableWidthMm: number = PRINTABLE_WIDTH_MM,
 	printableHeightMm: number = PRINTABLE_HEIGHT_MM,
 	cardWidthMm: number = CARD_WIDTH_MM,
 	cardHeightMm: number = CARD_HEIGHT_MM,
+	gapMm: number = PLACEHOLDER_GAP_MM,
 ): SheetLayout {
-	const columns = Math.max(0, Math.floor(printableWidthMm / cardWidthMm));
-	const rows = Math.max(0, Math.floor(printableHeightMm / cardHeightMm));
+	const fit = (printable: number, card: number) =>
+		Math.max(0, Math.floor((printable + gapMm) / (card + gapMm)));
+	const columns = fit(printableWidthMm, cardWidthMm);
+	const rows = fit(printableHeightMm, cardHeightMm);
 	return { columns, rows, perPage: columns * rows };
 }
 

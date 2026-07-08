@@ -380,6 +380,16 @@
 		display: block !important;
 	}
 
+	/* Force the chosen fills/borders to actually print. print-color-adjust is
+	   inherited and defaults to `economy` (browsers drop backgrounds to save ink);
+	   `exact` on the whole print subtree opts every placeholder in, overriding any
+	   inline/specificity quirk that let a black background print white. */
+	.tcgv-print-portal,
+	.tcgv-print-portal * {
+		-webkit-print-color-adjust: exact !important;
+		print-color-adjust: exact !important;
+	}
+
 	@page {
 		margin: 10mm;
 	}
