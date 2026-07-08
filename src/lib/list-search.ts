@@ -25,7 +25,7 @@ export const LIST_SEARCH_DEFAULTS: ListSearch = {
 	owned: "all",
 	yearMin: null,
 	yearMax: null,
-	pokemon: null,
+	pokemon: [],
 	mode: "fuzzy",
 	sort: "default",
 	dir: "asc",
@@ -65,12 +65,24 @@ export function validateListSearch(
 		return v !== "" && Number.isFinite(n) ? n : null;
 	};
 
-	// National dex number (1..1025, the species-list fetch limit). Accept the
-	// string form too (in-page merge) and reject non-integers / out-of-range.
-	const toDex = (v: unknown): number | null => {
-		if (typeof v !== "string" && typeof v !== "number") return null;
-		const n = Number(v);
-		return v !== "" && Number.isInteger(n) && n >= 1 && n <= 1025 ? n : null;
+	// National dex numbers (1..1025, the species-list fetch limit). Parse a CSV
+	// string ("25,6"), an array, or a single number (a cold load JSON-parses
+	// `?pokemon=25` into the number 25) into number[], dropping out-of-range /
+	// non-integer / junk entries — mirrors the string[] `csv` array filters.
+	const toDexList = (v: unknown): number[] => {
+		const parts = Array.isArray(v)
+			? v
+			: typeof v === "number"
+				? [v]
+				: typeof v === "string"
+					? v.split(",")
+					: [];
+		const out: number[] = [];
+		for (const p of parts) {
+			const n = Number(p);
+			if (Number.isInteger(n) && n >= 1 && n <= 1025) out.push(n);
+		}
+		return out;
 	};
 
 	return {
@@ -83,7 +95,7 @@ export function validateListSearch(
 		owned,
 		yearMin: toYear(search.yearMin),
 		yearMax: toYear(search.yearMax),
-		pokemon: toDex(search.pokemon),
+		pokemon: toDexList(search.pokemon),
 		// URL param is "mode"; enum-guard to the three valid values, else "fuzzy".
 		mode: ((): SearchMode => {
 			const m = search.mode;
@@ -122,8 +134,10 @@ export function listSearchToUrl(
 		out.yearMin = s.yearMin != null ? String(s.yearMin) : undefined;
 	if (s.yearMax !== undefined)
 		out.yearMax = s.yearMax != null ? String(s.yearMax) : undefined;
+	// Species multi-select serializes as a CSV of dex numbers (like rarity/types),
+	// omitted when empty so default (no filter) stays out of the crawlable URL.
 	if (s.pokemon !== undefined)
-		out.pokemon = s.pokemon != null ? String(s.pokemon) : undefined;
+		out.pokemon = s.pokemon?.length ? s.pokemon.join(",") : undefined;
 	// Omit "mode" from URL when it's the default ("fuzzy") to keep URLs clean.
 	if (s.mode !== undefined) out.mode = s.mode !== "fuzzy" ? s.mode : undefined;
 	// Omit "default"/"asc" so crawlable URLs stay clean.

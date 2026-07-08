@@ -12,7 +12,11 @@ export function toSerializedQuery(
 	return {
 		text: search.q.trim() || null,
 		setId: ctx.setId ?? null,
-		dexNumber: ctx.dexNumber ?? search.pokemon ?? null,
+		// A binder rule captures a SINGLE dex context. The page context wins; else a
+		// lone selected species still gives one, but a multi-species selection can't
+		// map to one dex, so it captures none (null).
+		dexNumber:
+			ctx.dexNumber ?? (search.pokemon.length === 1 ? search.pokemon[0] : null),
 		types: [...search.types],
 		rarities: [...search.rarity],
 		supertypes: [...search.supertype],

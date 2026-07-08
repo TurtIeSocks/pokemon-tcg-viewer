@@ -25,7 +25,7 @@ describe("buildCorpusQuery", () => {
 	});
 	test("dex context → dex-scoped natural order", () => {
 		const q = buildCorpusQuery(empty, { dexNumber: 6 });
-		expect(q.dexNumber).toBe(6);
+		expect(q.dexNumbers).toEqual([6]);
 		expect(q.relevance).toBe(false);
 	});
 	test("filters pass through; empty arrays omitted", () => {
@@ -81,25 +81,28 @@ describe("buildCorpusQuery", () => {
 		).toBe("exact");
 	});
 
-	test("pokemon filter sets dexNumber in the global branch", () => {
-		expect(buildCorpusQuery({ ...empty, pokemon: 112 }, {}).dexNumber).toBe(
-			112,
-		);
+	test("pokemon filter sets dexNumbers in the global branch", () => {
+		expect(
+			buildCorpusQuery({ ...empty, pokemon: [112] }, {}).dexNumbers,
+		).toEqual([112]);
 	});
-	test("pokemon filter sets dexNumber within a set", () => {
-		const q = buildCorpusQuery({ ...empty, pokemon: 25 }, { setId: "swsh9" });
+	test("pokemon filter sets dexNumbers within a set", () => {
+		const q = buildCorpusQuery({ ...empty, pokemon: [25] }, { setId: "swsh9" });
 		expect(q.setId).toBe("swsh9");
-		expect(q.dexNumber).toBe(25);
+		expect(q.dexNumbers).toEqual([25]);
+	});
+	test("pokemon filter forwards multiple selected dex numbers", () => {
+		expect(
+			buildCorpusQuery({ ...empty, pokemon: [25, 6] }, {}).dexNumbers,
+		).toEqual([25, 6]);
 	});
 	test("dex context wins over the pokemon filter", () => {
-		const q = buildCorpusQuery({ ...empty, pokemon: 25 }, { dexNumber: 6 });
-		expect(q.dexNumber).toBe(6);
+		const q = buildCorpusQuery({ ...empty, pokemon: [25] }, { dexNumber: 6 });
+		expect(q.dexNumbers).toEqual([6]);
 	});
-	test("no pokemon filter → dexNumber undefined in global + set branches", () => {
-		expect(buildCorpusQuery(empty, {}).dexNumber).toBeUndefined();
-		expect(
-			buildCorpusQuery(empty, { setId: "swsh9" }).dexNumber,
-		).toBeUndefined();
+	test("no pokemon filter → empty dexNumbers in global + set branches", () => {
+		expect(buildCorpusQuery(empty, {}).dexNumbers).toEqual([]);
+		expect(buildCorpusQuery(empty, { setId: "swsh9" }).dexNumbers).toEqual([]);
 	});
 
 	test("supertype context → locked supertype, chronological, no query relevance", () => {

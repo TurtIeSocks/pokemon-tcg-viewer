@@ -38,8 +38,12 @@ export interface ListSearch {
 	yearMin: number | null;
 	/** Inclusive upper bound on release year (YYYY). Null → no upper bound. */
 	yearMax: number | null;
-	/** National Pokédex number of the selected species. Null → no species filter. */
-	pokemon: number | null;
+	/**
+	 * National Pokédex numbers of the selected species (multi-select). A card
+	 * matches when ANY selected dex is in its `nationalPokedexNumbers`. Empty
+	 * array → no species filter.
+	 */
+	pokemon: number[];
 	/** Search mode: "exact" (whole name), "contains" (prefix+substring), or "fuzzy" (default). */
 	mode: SearchMode;
 	/** Explicit sort; "default" keeps the context order (relevance/release/number). */
@@ -91,7 +95,7 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 	if (ctx.setId != null) {
 		return {
 			setId: ctx.setId,
-			dexNumber: s.pokemon ?? undefined,
+			dexNumbers: s.pokemon,
 			query,
 			filters,
 			yearMin,
@@ -104,7 +108,7 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 	}
 	if (ctx.dexNumber != null) {
 		return {
-			dexNumber: ctx.dexNumber,
+			dexNumbers: [ctx.dexNumber],
 			query,
 			filters,
 			yearMin,
@@ -134,7 +138,7 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 	}
 	return {
 		setId: null,
-		dexNumber: s.pokemon ?? undefined,
+		dexNumbers: s.pokemon,
 		query,
 		filters,
 		yearMin,

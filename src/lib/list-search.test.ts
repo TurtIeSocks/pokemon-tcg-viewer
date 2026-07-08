@@ -68,30 +68,39 @@ test("yearMin/yearMax: rejects non-finite values (Infinity, overflow)", () => {
 	expect(validateListSearch({ yearMin: "1e999" }).yearMin).toBeNull();
 });
 
-test("pokemon: defaults to null", () => {
-	expect(LIST_SEARCH_DEFAULTS.pokemon).toBeNull();
+test("pokemon: defaults to an empty array", () => {
+	expect(LIST_SEARCH_DEFAULTS.pokemon).toEqual([]);
 });
 
-test("pokemon: validates a dex number from number or string", () => {
-	expect(validateListSearch({ pokemon: 112 }).pokemon).toBe(112);
-	expect(validateListSearch({ pokemon: "112" }).pokemon).toBe(112);
+test("pokemon: validates dex numbers from a CSV string, array, or number", () => {
+	expect(validateListSearch({ pokemon: "112" }).pokemon).toEqual([112]);
+	expect(validateListSearch({ pokemon: 112 }).pokemon).toEqual([112]);
+	expect(validateListSearch({ pokemon: "25,6" }).pokemon).toEqual([25, 6]);
+	expect(validateListSearch({ pokemon: [25, 6] }).pokemon).toEqual([25, 6]);
 });
 
-test("pokemon: rejects out-of-range / junk → null", () => {
-	expect(validateListSearch({ pokemon: 0 }).pokemon).toBeNull();
-	expect(validateListSearch({ pokemon: 9999 }).pokemon).toBeNull();
-	expect(validateListSearch({ pokemon: "abc" }).pokemon).toBeNull();
-	expect(validateListSearch({ pokemon: 1.5 }).pokemon).toBeNull();
-	expect(validateListSearch({}).pokemon).toBeNull();
+test("pokemon: drops out-of-range / non-integer / junk entries", () => {
+	expect(validateListSearch({ pokemon: "0" }).pokemon).toEqual([]);
+	expect(validateListSearch({ pokemon: "9999" }).pokemon).toEqual([]);
+	expect(validateListSearch({ pokemon: "abc" }).pokemon).toEqual([]);
+	expect(validateListSearch({ pokemon: "1.5" }).pokemon).toEqual([]);
+	// Mixed CSV: keeps the two valid dex numbers, drops junk/out-of-range/zero.
+	expect(validateListSearch({ pokemon: "25,foo,9999,0,6" }).pokemon).toEqual([
+		25, 6,
+	]);
+	expect(validateListSearch({}).pokemon).toEqual([]);
 });
 
-test("pokemon: serializes to URL string, omits when null", () => {
-	expect(listSearchToUrl({ pokemon: 112 }).pokemon).toBe("112");
-	expect(listSearchToUrl({ pokemon: null }).pokemon).toBeUndefined();
+test("pokemon: serializes to a CSV of dex numbers, omits when empty", () => {
+	expect(listSearchToUrl({ pokemon: [112] }).pokemon).toBe("112");
+	expect(listSearchToUrl({ pokemon: [25, 6] }).pokemon).toBe("25,6");
+	expect(listSearchToUrl({ pokemon: [] }).pokemon).toBeUndefined();
 });
 
-test("pokemon: full round-trip serialize → parse", () => {
-	expect(validateListSearch(listSearchToUrl({ pokemon: 6 })).pokemon).toBe(6);
+test("pokemon: full round-trip serialize → parse (CSV of dex numbers)", () => {
+	expect(
+		validateListSearch(listSearchToUrl({ pokemon: [25, 6] })).pokemon,
+	).toEqual([25, 6]);
 });
 
 test("mode: defaults to 'fuzzy'", () => {

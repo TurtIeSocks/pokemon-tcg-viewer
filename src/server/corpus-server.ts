@@ -119,7 +119,7 @@ export const getDexCardsFn = createServerFn({ method: "GET" })
 		const { queryCorpusServer } = await import("./corpus-loader");
 		const region = regionForLanguage(data.lang);
 		return queryCorpusServer(
-			{ dexNumber: data.dex, setId: null, relevance: false },
+			{ dexNumbers: [data.dex], setId: null, relevance: false },
 			region,
 		);
 	});

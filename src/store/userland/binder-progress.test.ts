@@ -95,7 +95,7 @@ test("toCorpusQuery: non-null text → query string", () => {
 test("toCorpusQuery: null setId/dexNumber/yearMin/yearMax → undefined", () => {
 	const cq = toCorpusQuery(sq());
 	expect(cq.setId).toBeUndefined();
-	expect(cq.dexNumber).toBeUndefined();
+	expect(cq.dexNumbers).toBeUndefined();
 	expect(cq.yearMin).toBeUndefined();
 	expect(cq.yearMax).toBeUndefined();
 });
@@ -105,7 +105,7 @@ test("toCorpusQuery: non-null scalar fields pass through", () => {
 		sq({ setId: "base1", dexNumber: 25, yearMin: 1999, yearMax: 2000 }),
 	);
 	expect(cq.setId).toBe("base1");
-	expect(cq.dexNumber).toBe(25);
+	expect(cq.dexNumbers).toEqual([25]);
 	expect(cq.yearMin).toBe(1999);
 	expect(cq.yearMax).toBe(2000);
 });

@@ -167,36 +167,68 @@ function YearSelect({
 	);
 }
 
-// Single-select species filter. Value is a national dex number; the "__all__"
-// sentinel clears it (Radix Select forbids an empty-string item value). Options
-// are the species present in the current cards, labeled + sorted upstream.
-function PokemonFilterSelect({
+// A MULTI-select over the species facet, mirroring FilterMultiSelect but keyed by
+// national dex number over a number[] value: a DropdownMenu of checkbox items,
+// each toggling its dex in/out of the array. The trigger reads "All Pokémon"
+// (none), the single species name (one), or an "N selected" summary (more); the
+// accessible name always carries the "Pokémon" dimension label.
+function PokemonMultiSelect({
 	value,
 	options,
 	onChange,
 }: {
-	value: number | null;
+	value: number[];
 	options: PokemonFacet[];
-	onChange: (v: number | null) => void;
+	onChange: (v: number[]) => void;
 }) {
-	const ALL = "__all__";
+	const selected = new Set(value);
+	// Toggle keeps the caller's selection order stable (append on add, filter on remove).
+	const toggle = (dex: number) =>
+		onChange(
+			selected.has(dex) ? value.filter((d) => d !== dex) : [...value, dex],
+		);
+
+	const nameByDex = new Map(options.map((p) => [p.dex, p.name]));
+	const summary =
+		value.length === 0
+			? "All Pokémon"
+			: value.length === 1
+				? (nameByDex.get(value[0]) ?? `#${value[0]}`)
+				: `${value.length} selected`;
+	// Accessible name always carries the dimension label (the empty summary already
+	// includes it), so the control is queryable/announced regardless of selection.
+	const ariaLabel = value.length === 0 ? summary : `Pokémon: ${summary}`;
+
 	return (
-		<Select
-			value={value != null ? String(value) : ALL}
-			onValueChange={(v) => onChange(v === ALL ? null : Number(v))}
-		>
-			<SelectTrigger className="text-sm w-full" aria-label="Pokémon">
-				<SelectValue placeholder="Pokémon" />
-			</SelectTrigger>
-			<SelectContent>
-				<SelectItem value={ALL}>All Pokémon</SelectItem>
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Button
+					type="button"
+					variant="outline"
+					aria-label={ariaLabel}
+					className="w-full justify-between rounded-[var(--r-control)] border-[var(--border)] bg-white/[0.04] px-3 font-normal text-[var(--ink)] hover:bg-white/[0.07]"
+				>
+					<span className="truncate">{summary}</span>
+					<ChevronDown className="size-4 shrink-0 opacity-50" />
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent
+				align="start"
+				className="max-h-72 w-(--radix-dropdown-menu-trigger-width) min-w-40"
+			>
 				{options.map((p) => (
-					<SelectItem key={p.dex} value={String(p.dex)}>
+					<DropdownMenuCheckboxItem
+						key={p.dex}
+						checked={selected.has(p.dex)}
+						// Keep the menu open across toggles so several species can be picked at once.
+						onSelect={(e) => e.preventDefault()}
+						onCheckedChange={() => toggle(p.dex)}
+					>
 						{p.name}
-					</SelectItem>
+					</DropdownMenuCheckboxItem>
 				))}
-			</SelectContent>
-		</Select>
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }
 
@@ -219,7 +251,7 @@ export function SearchControls({
 		value.rarity.length +
 		value.types.length +
 		(value.owned !== "all" ? 1 : 0) +
-		(showPokemonFilter && value.pokemon != null ? 1 : 0) +
+		(showPokemonFilter ? value.pokemon.length : 0) +
 		(showYearFilter && value.yearMin != null ? 1 : 0) +
 		(showYearFilter && value.yearMax != null ? 1 : 0);
 
@@ -233,7 +265,7 @@ export function SearchControls({
 			rarity: [],
 			types: [],
 			owned: "all",
-			pokemon: null,
+			pokemon: [],
 			yearMin: null,
 			yearMax: null,
 		});
@@ -360,7 +392,7 @@ export function SearchControls({
 							/>
 						)}
 						{showPokemonFilter && (
-							<PokemonFilterSelect
+							<PokemonMultiSelect
 								value={value.pokemon}
 								options={options.pokemon}
 								onChange={(pokemon) => onChange({ pokemon })}

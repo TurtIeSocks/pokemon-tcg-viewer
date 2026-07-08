@@ -104,9 +104,64 @@ test("type filter: OR within dimension, AND across", () => {
 	expect(r.map((c) => c.id)).toEqual(["base1-2"]);
 });
 
-test("pokedex: filters by national dex number", () => {
-	const r = queryCorpus(index, { dexNumber: 25, relevance: false }, setsById);
+test("pokedex: filters by a single national dex number", () => {
+	const r = queryCorpus(
+		index,
+		{ dexNumbers: [25], relevance: false },
+		setsById,
+	);
 	expect(r.map((c) => c.id)).toEqual(["base1-58"]);
+});
+
+const dexCorpus = buildIndex([
+	card({
+		id: "d-25",
+		name: "Pikachu",
+		setId: "base1",
+		number: "1",
+		nationalPokedexNumbers: [25],
+	}),
+	card({
+		id: "d-6",
+		name: "Charizard",
+		setId: "base1",
+		number: "2",
+		nationalPokedexNumbers: [6],
+	}),
+	card({
+		id: "d-9",
+		name: "Blastoise",
+		setId: "base1",
+		number: "3",
+		nationalPokedexNumbers: [9],
+	}),
+]);
+
+test("pokedex: matches a card when ANY selected dex is in its list", () => {
+	const r = queryCorpus(
+		dexCorpus,
+		{ dexNumbers: [25, 6], relevance: false },
+		setsById,
+	);
+	expect(r.map((c) => c.id).sort()).toEqual(["d-25", "d-6"]);
+});
+
+test("pokedex: excludes every card when none of the selected dex match", () => {
+	const r = queryCorpus(
+		dexCorpus,
+		{ dexNumbers: [151], relevance: false },
+		setsById,
+	);
+	expect(r).toEqual([]);
+});
+
+test("pokedex: an empty dexNumbers array applies no species filter", () => {
+	const r = queryCorpus(
+		dexCorpus,
+		{ dexNumbers: [], relevance: false },
+		setsById,
+	);
+	expect(r.length).toBe(3);
 });
 
 // --- nameSlug (Trainer/Energy per-name pages) ---

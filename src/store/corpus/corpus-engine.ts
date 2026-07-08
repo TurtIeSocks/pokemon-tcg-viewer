@@ -27,7 +27,8 @@ export interface CorpusQuery {
 	/** Free-text name search. Empty/undefined → no name filter. */
 	query?: string;
 	setId?: string | null;
-	dexNumber?: number | null;
+	/** National dex numbers (species multi-select). A card matches when ANY of these is in its `nationalPokedexNumbers`. Empty/undefined → no species filter. */
+	dexNumbers?: number[];
 	/** Slug of a single card name (e.g. "rare-candy"). Keeps only printings whose slugified name matches. */
 	nameSlug?: string | null;
 	/** Order results by release date (then number) instead of plain number order — for cross-set views. */
@@ -208,8 +209,8 @@ export function queryCorpus(
 		const card = index.cards[i];
 		if (q.setId && card.setId !== q.setId) continue;
 		if (
-			q.dexNumber != null &&
-			!card.nationalPokedexNumbers?.includes(q.dexNumber)
+			q.dexNumbers?.length &&
+			!q.dexNumbers.some((d) => card.nationalPokedexNumbers?.includes(d))
 		)
 			continue;
 		// Name-anchored views (Trainer/Energy per-name pages) group by slugified
@@ -269,7 +270,7 @@ export function queryCorpus(
 		}
 		const ra = relAt(a.card.setId);
 		const rb = relAt(b.card.setId);
-		if (q.dexNumber != null || q.relevance || q.chronological) {
+		if (q.dexNumbers?.length || q.relevance || q.chronological) {
 			if (ra !== rb) return ra.localeCompare(rb);
 		}
 		return compareCardNumber(a.card.number, b.card.number);
