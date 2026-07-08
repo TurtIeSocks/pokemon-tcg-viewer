@@ -23,24 +23,26 @@ const TREE: NavTree = [
 	},
 ];
 
-test("HomeBrowse renders an era pill per series and the newest set tiles", async () => {
+test("HomeBrowse renders a glass era card per series and the newest set tiles", async () => {
 	const { container, queryByText } = await renderInRouter(
 		<HomeBrowse tree={TREE} />,
 	);
 
-	// One era pill per series — the card-type pills moved to the home launch pad,
-	// so every soft-variant link here is now an era pill (no filtering needed).
+	// Latest sets is now the first section (moved above Browse by era).
 	expect(container.textContent).toContain("Latest sets");
-	const eraPills = [...container.querySelectorAll('a[data-variant="soft"]')];
-	expect(eraPills.length).toBe(3);
 
-	// The era section is anchored so the launch pad's "Browse by era" card can
-	// scroll to it, and its heading is present.
+	// Browse by era — one glass launch card per series (pills → LaunchTiles),
+	// inside the anchored section the launch pad's "Browse by era" card scrolls to.
 	const eraSection = container.querySelector("#browse-by-era");
 	expect(eraSection).toBeTruthy();
 	expect(eraSection?.textContent).toContain("Browse by era");
+	const eraCards = eraSection?.querySelectorAll("a") ?? [];
+	expect(eraCards.length).toBe(3);
+	// Each era card links to its series' set page.
+	expect(eraCards[0].getAttribute("href")).toMatch(/^\/base\//);
 
-	// The card-type pills are gone (superseded by the home launch cards).
+	// The card-type pills are gone (superseded by the home launch cards); the era
+	// cards link to /$series/$set, never to /pokemon|/trainer|/energy.
 	expect(queryByText("Browse by card type")).toBeNull();
 	expect(container.querySelector('a[href^="/pokemon"]')).toBeNull();
 	expect(container.querySelector('a[href^="/trainer"]')).toBeNull();
@@ -78,11 +80,12 @@ test("non-core series (TCG Pocket) are hidden from Latest sets but kept in Brows
 	];
 	const { container } = await renderInRouter(<HomeBrowse tree={tree} />);
 
-	// Era pill for TCG Pocket is still present (browsable from the pill cloud).
-	const eraPill = [
-		...container.querySelectorAll('a[data-variant="soft"]'),
-	].find((a) => a.textContent === "Pokémon TCG Pocket");
-	expect(eraPill).toBeTruthy();
+	// Era card for TCG Pocket is still present (browsable from the era grid).
+	const eraSection = container.querySelector("#browse-by-era");
+	const eraCard = [...(eraSection?.querySelectorAll("a") ?? [])].find((a) =>
+		a.textContent?.includes("Pokémon TCG Pocket"),
+	);
+	expect(eraCard).toBeTruthy();
 
 	// ...but its set has no tile in Latest sets, while the core set does.
 	expect(

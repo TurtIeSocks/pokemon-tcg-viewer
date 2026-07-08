@@ -6,7 +6,6 @@ import {
 	LaunchTileButton,
 	LaunchTileLink,
 } from "../components/home/launch-tile";
-import { HomeRecents } from "../components/islands/home-recents";
 import { Eyebrow } from "../components/ui/eyebrow";
 import { Stagger } from "../components/ui/motion";
 import { LIST_SEARCH_DEFAULTS } from "../lib/list-search";
@@ -165,10 +164,6 @@ export function HomeHero() {
 						subtitle="Basic and special Energy."
 					/>
 				</nav>
-
-				<div className="mt-6 w-full max-w-2xl">
-					<HomeRecents />
-				</div>
 
 				<HomeBrowse tree={tree} />
 			</div>
