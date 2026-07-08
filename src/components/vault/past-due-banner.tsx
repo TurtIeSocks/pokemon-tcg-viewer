@@ -9,6 +9,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { openPortal, useBilling } from "@/lib/billing/use-billing";
+import { m } from "@/paraglide/messages";
 
 /** Warning banner: subscription payment failed, still in the grace window. */
 export function PastDueBanner() {
@@ -33,9 +34,7 @@ export function PastDueBanner() {
 			role="alert"
 			className="flex flex-wrap items-center justify-between gap-3 rounded-(--r-panel) border border-amber-400/30 bg-white/5 px-4 py-3 backdrop-blur-xl motion-reduce:transition-none"
 		>
-			<p className="text-sm text-(--ink)">
-				Payment issue. Update your card to keep syncing.
-			</p>
+			<p className="text-sm text-(--ink)">{m.vault_payment_issue()}</p>
 			<div className="flex gap-2">
 				<Button
 					type="button"
@@ -46,14 +45,14 @@ export function PastDueBanner() {
 						void handleUpdateCard();
 					}}
 				>
-					Update card
+					{m.vault_update_card()}
 				</Button>
 				<button
 					type="button"
 					onClick={() => setDismissed(true)}
 					className="rounded-(--r-pill) border border-white/10 px-3 py-1.5 text-xs font-medium text-(--ink-muted) transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary)"
 				>
-					Dismiss
+					{m.vault_dismiss()}
 				</button>
 			</div>
 		</div>

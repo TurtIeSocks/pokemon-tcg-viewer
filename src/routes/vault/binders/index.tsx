@@ -9,6 +9,7 @@ import { BinderCard } from "@/components/binders/binder-card";
 import { BinderFormDialog } from "@/components/binders/binder-form-dialog";
 import { Button } from "@/components/ui/button";
 import { VaultPageHeader } from "@/components/vault/vault-page-header";
+import { m } from "@/paraglide/messages";
 import { useEnsureCorpus } from "@/store/corpus/use-ensure-corpus";
 import type { Binder } from "@/store/userland/types";
 import { useUserland } from "@/store/userland/userland-store";
@@ -36,14 +37,18 @@ export function VaultBindersInner() {
 	return (
 		<div className="space-y-8">
 			<VaultPageHeader
-				title="Binders"
-				subtitle="Lists that fill themselves by rule, plus the ones you hand-pick."
-				actions={<Button onClick={() => setNewOpen(true)}>New binder</Button>}
+				title={m.vault_binders_heading()}
+				subtitle={m.vault_binders_subtitle()}
+				actions={
+					<Button onClick={() => setNewOpen(true)}>
+						{m.vault_new_binder()}
+					</Button>
+				}
 			/>
 
 			{binderIds.length === 0 ? (
 				<p className="py-12 text-center text-muted-foreground">
-					No binders yet. Make one to group the cards that go together.
+					{m.vault_no_binders_full()}
 				</p>
 			) : (
 				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -67,7 +72,7 @@ function VaultBinders() {
 		<ClientOnly
 			fallback={
 				<p className="py-12 text-center text-muted-foreground">
-					Loading binders…
+					{m.vault_loading_binders()}
 				</p>
 			}
 		>

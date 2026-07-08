@@ -1,4 +1,5 @@
 import type { ListContext, ListSearch } from "../../lib/card-query";
+import { m } from "../../paraglide/messages";
 import { useFilteredCardIds } from "../../store/corpus/use-filtered-card-ids";
 import type { SerializedQuery } from "../../store/userland/types";
 import { useCardSelection } from "../islands/card-selection";
@@ -48,10 +49,10 @@ export function SelectAndBulkAdd({
 				onClick={toggleActive}
 			>
 				{!active
-					? "Select cards"
+					? m.vault_select_cards()
 					: selected.size > 0
-						? "Clear selected"
-						: "Cancel"}
+						? m.vault_clear_selected()
+						: m.form_cancel()}
 			</Button>
 			<BulkAddMenu
 				triggerVariant="chevron"

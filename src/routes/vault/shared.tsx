@@ -1,6 +1,7 @@
 import { ClientOnly, createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { OwnedMissingGrid } from "@/components/vault/owned-missing-grid";
+import { m } from "@/paraglide/messages";
 import { useStore } from "@/store";
 import { hydrateCard, setsById } from "@/store/corpus/corpus-engine";
 import { useCorpusRuntime } from "@/store/corpus/corpus-runtime";
@@ -59,8 +60,7 @@ export function SharedBinderInner() {
 		return (
 			<div className="py-16 text-center space-y-2">
 				<p className="text-lg font-medium text-destructive">
-					Couldn't read this shared binder. The link may be broken or
-					incomplete.
+					{m.vault_shared_not_found()}
 				</p>
 			</div>
 		);
@@ -76,7 +76,7 @@ export function SharedBinderInner() {
 				className="flex items-center gap-2 rounded-md border border-[color-mix(in_oklch,var(--warning)_40%,transparent)] bg-[color-mix(in_oklch,var(--warning)_12%,transparent)] px-4 py-3 text-(--warning) text-sm font-medium"
 			>
 				<span aria-hidden="true">📸</span>
-				<span>Snapshot from {snapshotDate} · not live</span>
+				<span>{m.vault_shared_snapshot_banner({ date: snapshotDate })}</span>
 			</div>
 
 			{/* Header */}
@@ -102,7 +102,7 @@ function SharedBinder() {
 		<ClientOnly
 			fallback={
 				<p className="py-12 text-center text-muted-foreground">
-					Loading shared binder…
+					{m.vault_loading_shared_binder()}
 				</p>
 			}
 		>

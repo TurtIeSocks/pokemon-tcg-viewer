@@ -3,6 +3,7 @@
 import { ChevronDown } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { isRuleCapturable } from "../../lib/serialized-query";
+import { m } from "../../paraglide/messages";
 import { useOwnedCardIdSet } from "../../store/userland/selectors";
 import type { Binder, SerializedQuery } from "../../store/userland/types";
 import {
@@ -75,8 +76,8 @@ export function BulkAddMenu({
 	const ruleDisabled =
 		inSelectMode || !ruleQuery || !isRuleCapturable(ruleQuery);
 	const ruleDisabledReason = inSelectMode
-		? "Clear your selection to save a rule"
-		: "Apply a filter/search to save it as a rule";
+		? m.vault_bulk_add_rule_disabled_clear_selection()
+		: m.vault_bulk_add_rule_disabled_apply_filter();
 
 	// Which binder-picker dialog is open (null = none). Opening it on click —
 	// rather than the old hover-only nested submenu — is what makes binder
@@ -108,13 +109,13 @@ export function BulkAddMenu({
 		if (toAdd.length === 0) return;
 		if (toAdd.length > 25) {
 			const ok = window.confirm(
-				`Add ${toAdd.length} cards to your collection?`,
+				m.vault_bulk_add_confirm({ count: toAdd.length }),
 			);
 			if (!ok) return;
 		}
 		await bulkAddStacks(toAdd);
 		window.alert(
-			`Added ${toAdd.length}${skipped ? ` · skipped ${skipped} already owned` : ""}`,
+			`${m.vault_bulk_add_added({ count: toAdd.length })}${skipped ? ` · ${m.vault_bulk_add_skipped({ count: skipped })}` : ""}`,
 		);
 	}
 
@@ -129,16 +130,20 @@ export function BulkAddMenu({
 							size="sm"
 							aria-label={
 								inSelectMode
-									? `Add ${selectedCardIds?.length ?? 0} selected`
-									: (label ?? "Add all")
+									? m.vault_bulk_add_selected({
+											count: selectedCardIds?.length ?? 0,
+										})
+									: (label ?? m.vault_bulk_add_all())
 							}
 						>
-							{inSelectMode ? (selectedCardIds?.length ?? 0) : "All"}
+							{inSelectMode
+								? (selectedCardIds?.length ?? 0)
+								: m.vault_mode_all()}
 							<ChevronDown />
 						</Button>
 					) : (
 						<Button type="button" variant="secondary" size="sm">
-							{label ?? "Add all"}
+							{label ?? m.vault_bulk_add_all()}
 						</Button>
 					)}
 				</DropdownMenuTrigger>
@@ -151,14 +156,16 @@ export function BulkAddMenu({
 						onSelect={handleCollectionAdd}
 					>
 						{toAdd.length === 0
-							? "All owned"
-							: `Add ${toAdd.length} to collection`}
+							? m.vault_bulk_add_all_owned()
+							: m.vault_bulk_add_to_collection({ count: toAdd.length })}
 					</DropdownMenuItem>
 
 					{/* Item 2: Add cards to binder — opens a click-reliable picker
 					    dialog (the old nested submenu only opened on hover). */}
 					<DropdownMenuItem onSelect={() => setPicker("cards")}>
-						Add {targetIds.length} cards to binder
+						{m.vault_bulk_add_cards_to_binder_item({
+							count: targetIds.length,
+						})}
 					</DropdownMenuItem>
 
 					{/* Item 3: Add smart rule to binder. When disabled, the reason is
@@ -167,7 +174,7 @@ export function BulkAddMenu({
 					{ruleDisabled || !ruleQuery ? (
 						<>
 							<DropdownMenuItem disabled>
-								Add smart rule to binder
+								{m.vault_bulk_add_smart_rule_item()}
 							</DropdownMenuItem>
 							<DropdownMenuLabel className="-mt-1 text-xs text-(--ink-muted) font-normal">
 								{ruleDisabledReason}
@@ -175,7 +182,7 @@ export function BulkAddMenu({
 						</>
 					) : (
 						<DropdownMenuItem onSelect={() => setPicker("rule")}>
-							Add smart rule to binder
+							{m.vault_bulk_add_smart_rule_item()}
 						</DropdownMenuItem>
 					)}
 				</DropdownMenuContent>
@@ -187,8 +194,8 @@ export function BulkAddMenu({
 				onOpenChange={(o) => {
 					if (!o) setPicker(null);
 				}}
-				title={`Add ${targetIds.length} ${targetIds.length === 1 ? "card" : "cards"} to a binder`}
-				description="Drop these cards into a binder."
+				title={m.vault_bulk_add_to_binder_title({ count: targetIds.length })}
+				description={m.vault_bulk_add_to_binder_description()}
 				binders={binderList}
 				onPick={(id) => void addCardsToBinder(id, targetIds)}
 				onCreateNew={() => openNewBinder({ kind: "cards", targetIds })}
@@ -199,9 +206,9 @@ export function BulkAddMenu({
 					onOpenChange={(o) => {
 						if (!o) setPicker(null);
 					}}
-					title="Save as a smart rule"
-					description="Pick a binder to save this filter as a smart rule."
-					footnote="Matching cards always appear in this binder, including ones from future sets."
+					title={m.vault_bulk_add_smart_rule_title()}
+					description={m.vault_bulk_add_smart_rule_description()}
+					footnote={m.vault_bulk_add_smart_rule_footnote()}
 					binders={binderList}
 					onPick={(id) => void addRuleToBinder(id, ruleQuery)}
 					onCreateNew={() => openNewBinder({ kind: "rule", query: ruleQuery })}

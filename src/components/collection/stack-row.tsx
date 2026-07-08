@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { m } from "@/paraglide/messages";
 import { formatPrice, formatSignedPrice } from "../../store/userland/money";
 import type { Stack } from "../../store/userland/types";
 import {
@@ -55,7 +56,7 @@ export function StackRow({ item, variants }: StackRowProps) {
 
 	function handleDelete() {
 		if (hasNonNullOptional(item)) {
-			if (!window.confirm("Delete this card?")) return;
+			if (!window.confirm(m.stack_delete_confirm())) return;
 		}
 		void removeStack(item.id);
 	}
@@ -99,7 +100,7 @@ export function StackRow({ item, variants }: StackRowProps) {
 					)}
 					{/* Acquired date */}
 					<span className="font-mono text-[11px] text-(--faint)">
-						acquired {dayMsToInput(item.acquiredAt)}
+						{m.stack_acquired_label({ date: dayMsToInput(item.acquiredAt) })}
 					</span>
 					{/* When the user named the stack, surface key metadata as chips —
 					    the auto-label already shows variant/grade otherwise. */}
@@ -130,9 +131,7 @@ export function StackRow({ item, variants }: StackRowProps) {
 									{market.pnl != null && (
 										<span
 											className={
-												market.pnl >= 0
-													? "text-(--success)"
-													: "text-(--danger)"
+												market.pnl >= 0 ? "text-(--success)" : "text-(--danger)"
 											}
 										>
 											{" "}
@@ -151,8 +150,8 @@ export function StackRow({ item, variants }: StackRowProps) {
 					{item.isPrimary ? (
 						<span
 							role="img"
-							aria-label="Primary"
-							title="Primary"
+							aria-label={m.stack_primary()}
+							title={m.stack_primary()}
 							className="inline-flex items-center justify-center h-8 w-8 text-(--primary)"
 						>
 							<Star className="h-4 w-4 fill-current" aria-hidden="true" />
@@ -163,8 +162,8 @@ export function StackRow({ item, variants }: StackRowProps) {
 							variant="ghost"
 							size="icon"
 							className="h-8 w-8 text-(--ink-muted) hover:text-(--primary) transition-colors duration-150"
-							aria-label="Set as primary"
-							title="Set as primary"
+							aria-label={m.stack_set_primary()}
+							title={m.stack_set_primary()}
 							onClick={handleSetPrimary}
 						>
 							<Star className="h-4 w-4" aria-hidden="true" />
@@ -178,9 +177,9 @@ export function StackRow({ item, variants }: StackRowProps) {
 							variant="ghost"
 							size="icon"
 							className="h-8 w-8"
-							aria-label="Split"
+							aria-label={m.stack_split()}
 							aria-expanded={splitOpen}
-							title="Split"
+							title={m.stack_split()}
 							onClick={() => setSplitOpen((o) => !o)}
 						>
 							<Split className="h-4 w-4" aria-hidden="true" />
@@ -193,9 +192,9 @@ export function StackRow({ item, variants }: StackRowProps) {
 						variant="ghost"
 						size="icon"
 						className="h-8 w-8"
-						aria-label={editOpen ? "Close editor" : "Edit"}
+						aria-label={editOpen ? m.stack_close_editor() : m.stack_edit()}
 						aria-expanded={editOpen}
-						title="Edit details"
+						title={m.stack_edit_details()}
 						onClick={() => setEditOpen((o) => !o)}
 					>
 						<Pencil className="h-4 w-4" aria-hidden="true" />
@@ -207,8 +206,8 @@ export function StackRow({ item, variants }: StackRowProps) {
 						variant="ghost"
 						size="icon"
 						className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors duration-150"
-						aria-label="Delete"
-						title="Delete"
+						aria-label={m.stack_delete()}
+						title={m.stack_delete()}
 						onClick={handleDelete}
 					>
 						<Trash2 className="h-4 w-4" aria-hidden="true" />
@@ -220,19 +219,19 @@ export function StackRow({ item, variants }: StackRowProps) {
 			{splitOpen && (
 				<div className="border-t pt-3 flex items-end gap-2 flex-wrap">
 					<div className="flex flex-col gap-1 text-[11px] text-(--ink-muted)">
-						Quantity to split off
+						{m.stack_split_quantity_label()}
 						<Input
 							type="number"
 							min={1}
 							max={item.quantity - 1}
-							aria-label="Quantity to split off"
+							aria-label={m.stack_split_quantity_label()}
 							value={splitN}
 							onChange={(e) => setSplitN(Number(e.target.value))}
 							className="w-24 font-mono tabular-nums"
 						/>
 					</div>
 					<Button type="button" size="sm" onClick={handleSplit}>
-						Split off
+						{m.stack_split_off()}
 					</Button>
 					<Button
 						type="button"
@@ -240,7 +239,7 @@ export function StackRow({ item, variants }: StackRowProps) {
 						variant="ghost"
 						onClick={() => setSplitOpen(false)}
 					>
-						Cancel
+						{m.form_cancel()}
 					</Button>
 				</div>
 			)}

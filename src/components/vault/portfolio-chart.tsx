@@ -1,5 +1,6 @@
 import { SparkLine } from "@/components/ui/spark-line";
 import { epochDayUtc } from "@/lib/corpus/price-history";
+import { m } from "@/paraglide/messages";
 import { formatPrice } from "@/store/userland/money";
 import { useSnapshots } from "@/store/userland/userland-store";
 import { useHideValue } from "@/store/userland/valuation-hooks";
@@ -20,7 +21,7 @@ export function PortfolioChart() {
 		return (
 			<div className="flex flex-col gap-2">
 				<span className="text-[10px] uppercase tracking-widest text-(--faint)">
-					Portfolio value
+					{m.vault_portfolio_value()}
 				</span>
 				<span className="font-mono text-[15px] tabular-nums text-(--ink)">
 					{MASK}
@@ -32,7 +33,7 @@ export function PortfolioChart() {
 	if (snaps.length < 2) {
 		return (
 			<p className="text-[13px] text-(--faint)">
-				Portfolio history builds daily.
+				{m.vault_portfolio_builds_daily()}
 			</p>
 		);
 	}
@@ -48,7 +49,7 @@ export function PortfolioChart() {
 		<div className="flex flex-col gap-2">
 			<div className="flex items-baseline justify-between gap-3">
 				<span className="text-[10px] uppercase tracking-widest text-(--faint)">
-					Portfolio value
+					{m.vault_portfolio_value()}
 				</span>
 				<span className="font-mono text-[15px] tabular-nums text-(--ink)">
 					{latestValue}
@@ -58,7 +59,7 @@ export function PortfolioChart() {
 				points={points}
 				width={280}
 				height={56}
-				label="Portfolio value"
+				label={m.vault_portfolio_value()}
 			/>
 		</div>
 	);

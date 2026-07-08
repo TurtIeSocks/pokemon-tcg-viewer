@@ -1,5 +1,6 @@
 import { ClientOnly, createFileRoute } from "@tanstack/react-router";
 import { VaultPageHeader } from "@/components/vault/vault-page-header";
+import { m } from "@/paraglide/messages";
 import { OwnedCardsGrid } from "../../components/vault/owned-cards-grid";
 import { VaultBackupControls } from "../../components/vault/vault-backup-controls";
 
@@ -11,8 +12,8 @@ function VaultCards() {
 	return (
 		<div className="space-y-8">
 			<VaultPageHeader
-				title="All cards"
-				subtitle="Every card you own, yours to sort and track."
+				title={m.vault_all_cards_title()}
+				subtitle={m.vault_all_cards_subtitle()}
 				actions={
 					<ClientOnly fallback={null}>
 						<VaultBackupControls />
@@ -23,7 +24,7 @@ function VaultCards() {
 			<ClientOnly
 				fallback={
 					<p className="py-12 text-center text-muted-foreground">
-						Pulling your cards…
+						{m.vault_pulling_cards()}
 					</p>
 				}
 			>

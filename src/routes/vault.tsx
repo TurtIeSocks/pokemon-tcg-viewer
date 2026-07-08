@@ -1,9 +1,10 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { ClaimPromptBanner } from "@/components/vault/claim-prompt";
 import { PastDueBanner } from "@/components/vault/past-due-banner";
+import { m } from "@/paraglide/messages";
 
 export const Route = createFileRoute("/vault")({
-	head: () => ({ meta: [{ title: "Your Vault · Cardstack" }] }),
+	head: () => ({ meta: [{ title: m.vault_meta_title() }] }),
 	component: VaultLayout,
 });
 

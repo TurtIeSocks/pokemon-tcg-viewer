@@ -1,5 +1,6 @@
 import { ArrowDownIcon, ArrowUpIcon } from "lucide-react";
 import { useState } from "react";
+import { m } from "../../paraglide/messages";
 import { useEnsureCorpus } from "../../store/corpus/use-ensure-corpus";
 import type { SortDir, SortKey } from "../../store/userland/card-rows";
 import { useOwnedCardRows } from "../../store/userland/selectors";
@@ -13,12 +14,13 @@ import {
 } from "../ui/select";
 import { OwnedCardTile } from "./owned-card-tile";
 
-/** Sortable column options shown in the sort dropdown. */
-const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-	{ value: "set", label: "Set & number" },
-	{ value: "acquired", label: "Date acquired" },
-	{ value: "price", label: "Price paid" },
-	{ value: "year", label: "Year released" },
+/** Sortable column options shown in the sort dropdown. `label` is a thunk (not
+ *  called at module scope) so it always reads the active locale at render time. */
+const SORT_OPTIONS: { value: SortKey; label: () => string }[] = [
+	{ value: "set", label: () => m.vault_sort_set_number() },
+	{ value: "acquired", label: () => m.vault_sort_date_acquired() },
+	{ value: "price", label: () => m.stack_field_price_paid() },
+	{ value: "year", label: () => m.vault_sort_year_released() },
 ];
 
 /** Sortable grid of all cards the user owns at least one copy of; empty-state handled inline. */
@@ -32,7 +34,7 @@ export function OwnedCardsGrid() {
 	if (rows.length === 0) {
 		return (
 			<p className="py-12 text-center text-muted-foreground">
-				Nothing here yet. Add a card from any set to start the stack.
+				{m.vault_owned_cards_empty()}
 			</p>
 		);
 	}
@@ -47,7 +49,7 @@ export function OwnedCardsGrid() {
 					<SelectContent>
 						{SORT_OPTIONS.map((opt) => (
 							<SelectItem key={opt.value} value={opt.value}>
-								{opt.label}
+								{opt.label()}
 							</SelectItem>
 						))}
 					</SelectContent>
@@ -56,7 +58,9 @@ export function OwnedCardsGrid() {
 					size="sm"
 					variant="outline"
 					onClick={() => setDir((d) => (d === "asc" ? "desc" : "asc"))}
-					aria-label={dir === "asc" ? "Sort descending" : "Sort ascending"}
+					aria-label={
+						dir === "asc" ? m.vault_sort_descending() : m.vault_sort_ascending()
+					}
 				>
 					{dir === "asc" ? (
 						<ArrowUpIcon className="size-4" />
