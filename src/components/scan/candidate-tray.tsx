@@ -2,6 +2,7 @@
 import { MinusIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { GlassPanel } from "@/components/ui/glass";
+import { m } from "@/paraglide/messages";
 import { useStore } from "../../store";
 import { hydrateCard } from "../../store/corpus/corpus-engine";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime-store";
@@ -89,7 +90,7 @@ export function CandidateTray({
 							type="button"
 							size="icon-sm"
 							variant="outline"
-							aria-label="Decrease quantity"
+							aria-label={m.scan_decrease_qty_aria()}
 							onClick={() => setQuantity((q) => Math.max(1, q - 1))}
 						>
 							<MinusIcon />
@@ -101,20 +102,20 @@ export function CandidateTray({
 							type="button"
 							size="icon-sm"
 							variant="outline"
-							aria-label="Increase quantity"
+							aria-label={m.scan_increase_qty_aria()}
 							onClick={() => setQuantity((q) => q + 1)}
 						>
 							<PlusIcon />
 						</Button>
 					</div>
 					<Button type="button" onClick={confirm}>
-						Add to Vault
+						{m.scan_add_to_vault_button()}
 					</Button>
 				</div>
 			)}
 
 			<Button type="button" variant="ghost" size="sm" onClick={onDismiss}>
-				Not these, keep scanning
+				{m.scan_keep_scanning_button()}
 			</Button>
 		</GlassPanel>
 	);
