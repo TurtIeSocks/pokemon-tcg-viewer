@@ -38,6 +38,22 @@ export function writeLangCookie(lang: string | null | undefined): void {
 	}
 }
 
+/** Cookie carrying the chosen SITE-UI language for SSR first-paint (separate from ptcg-lang, which is card content). */
+export const UI_LANG_COOKIE = "ui-lang";
+
+/**
+ * Persist the site-UI language to its cookie (client-only; no-op on the server).
+ * Read server-side by Paraglide's cookie strategy so a cold SSR load renders chrome
+ * in the right locale before the client store hydrates.
+ */
+export function writeUiLangCookie(lang: string | null | undefined): void {
+	if (typeof document === "undefined") return;
+	if (lang && isSupportedLanguage(lang)) {
+		// biome-ignore lint/suspicious/noDocumentCookie: necessary
+		document.cookie = `${UI_LANG_COOKIE}=${lang}; path=/; max-age=${LANG_COOKIE_MAX_AGE}; SameSite=Lax`;
+	}
+}
+
 /**
  * The catalog region a route loader should resolve against.
  *
