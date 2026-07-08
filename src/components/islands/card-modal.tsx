@@ -43,13 +43,13 @@ export function CardModal({
 
 	return (
 		<Dialog open onOpenChange={(o) => !o && onClose()}>
-			{/* Flex column pinned to ~90dvh: header + footer stay fixed while the
-			    body scrolls. A fixed tall height (vs. grow-to-content) keeps the
-			    modal roomy for short cards and, by capping at the viewport, stops
-			    the header being pushed off-screen on mobile when content overflows. */}
+			{/* Flex column that grows to its content but never past ~90dvh: the modal
+			    is exactly as tall as the tab content needs, and only once that would
+			    overflow the viewport does it cap and let the body scroll (header +
+			    footer stay fixed). Capping also keeps the header on-screen on mobile. */}
 			<DialogContent
 				aria-describedby={undefined}
-				className="flex h-[90dvh] max-w-4xl flex-col gap-4 sm:max-w-4xl"
+				className="flex max-h-[90dvh] max-w-4xl flex-col gap-4 sm:max-w-4xl"
 			>
 				{/* Radix needs a DialogTitle for the dialog's accessible name; the
 				    visible identity is CardHeading (shared with the dedicated page). */}
@@ -68,7 +68,6 @@ export function CardModal({
 						tab={tab}
 						onTabChange={onTabChange}
 						pending={pending}
-						fill
 					/>
 				</div>
 				<DialogFooter className="shrink-0">

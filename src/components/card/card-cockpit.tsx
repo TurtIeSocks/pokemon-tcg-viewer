@@ -30,17 +30,11 @@ export function CardCockpit({
 	tab: rawTab,
 	onTabChange,
 	pending,
-	fill,
 }: {
 	card: FocusCardData;
 	tab: CardTab;
 	onTabChange: (t: CardTab) => void;
 	pending?: boolean;
-	// `fill` (modal only): stretch the cockpit to its parent's full height so the
-	// folder fills the fixed-height modal (card sticky on the rail, roomy folder)
-	// instead of being locked to the card-art height. The dedicated page has no
-	// fixed height, so it leaves this off and the folder sizes to its content.
-	fill?: boolean;
 }) {
 	// When pricing is disabled the pricing tab is not rendered (CardTabs hides it).
 	// Coerce any incoming "pricing" tab to "details" so the /prices route shows
@@ -92,28 +86,18 @@ export function CardCockpit({
 	}, [card.id]);
 	return (
 		<div
-			// Plain `h-full` (not `@3xl:h-full`): a container-query variant queries an
-			// ancestor container, but this element *is* the `@container`, so it can't
-			// match itself. On mobile the stacked content overflows and scrolls, so a
-			// full-height root is harmless there; the row's `@3xl:h-full` does the rest.
-			className={`@container${fill ? " h-full" : ""}`}
+			className="@container"
 			style={{ "--accent": accent } as CSSProperties}
 		>
 			{/* Persistent card-art rail + a folder: organizer tabs opening onto a
-			    pane of glass (the active tab's cap merges into the pane below). */}
-			<div
-				className={`flex flex-col gap-6 p-2 @3xl:flex-row @3xl:items-stretch @3xl:gap-8${fill ? " @3xl:h-full" : ""}`}
-			>
-				{/* Rail (persistent art). `fill` centers the card in the full-height
-				    column beside the tall folder; otherwise it sticks to the top as
-				    the page scrolls. */}
-				<div
-					className={
-						fill
-							? "flex shrink-0 flex-col @3xl:justify-center"
-							: "shrink-0 @3xl:sticky @3xl:top-6"
-					}
-				>
+			    pane of glass (the active tab's cap merges into the pane below).
+			    items-start (not stretch) lets each column keep its natural height so
+			    the taller of {card art, folder content} drives the row — which, via
+			    the modal's `max-h`, is what sizes the modal. */}
+			<div className="flex flex-col gap-6 p-2 @3xl:flex-row @3xl:items-start @3xl:gap-8">
+				{/* Rail (persistent art) — sticks to the top as the folder (or page)
+				    scrolls past when the content is taller than the viewport. */}
+				<div className="shrink-0 @3xl:sticky @3xl:top-6">
 					<div className="mx-auto flex w-full max-w-80 flex-col gap-4 @3xl:mx-0 @3xl:w-70 @3xl:max-w-none">
 						<ClientOnly
 							fallback={
@@ -171,19 +155,18 @@ export function CardCockpit({
 					</div>
 				</div>
 
-				{/* Folder: tabs (caps) + the pane (folder body) they open onto. At
-				    @3xl the folder fills the card-art height exactly — the column is
-				    stretched to the row (whose only height contributor is the art),
-				    its contents are absolutely positioned so they never drive that
-				    height, and the pane flex-fills + scrolls within it. */}
-				<div className="min-w-0 flex-1 @3xl:relative">
-					<div className="flex flex-col @3xl:absolute @3xl:inset-0">
+				{/* Folder: tabs (caps) + the pane (folder body) they open onto. The pane
+				    sizes to its own content and drives the row height, so the modal's
+				    `max-h` fits the tab content exactly (capping + scrolling the whole
+				    dialog body only when the content exceeds the viewport). */}
+				<div className="min-w-0 flex-1">
+					<div className="flex flex-col">
 						<CardTabs tab={tab} onChange={onTabChange} idBase={ID_BASE} />
 						<div
 							role="tabpanel"
 							id={`${ID_BASE}-panel-${tab}`}
 							aria-labelledby={`${ID_BASE}-tab-${tab}`}
-							className="-mt-px min-w-0 rounded-tr-[var(--r-panel)] rounded-b-[var(--r-panel)] border border-white/12 bg-[var(--glass-2)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.10),inset_0_-1px_0_rgba(0,0,0,0.30)] backdrop-blur-xl @3xl:min-h-0 @3xl:flex-1 @3xl:overflow-y-auto"
+							className="-mt-px min-w-0 rounded-tr-[var(--r-panel)] rounded-b-[var(--r-panel)] border border-white/12 bg-[var(--glass-2)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.10),inset_0_-1px_0_rgba(0,0,0,0.30)] backdrop-blur-xl"
 						>
 							{tab === "details" ? (
 								<CardInfo card={card} pending={pending} />
