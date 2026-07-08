@@ -282,6 +282,11 @@ export function HoloCard({
 							hdLoaded && "is-loaded",
 						)}
 						src={cdnImage(focusUrl as string, { w: 300 })}
+						// CORS mode so the SW browse-cache stores a non-opaque response
+						// (the wsrv.nl CDN sends access-control-allow-origin: *). Without
+						// it the request is no-cors, the cache put is skipped, and the
+						// image-cache counts stay at zero.
+						crossOrigin="anonymous"
 						alt=""
 						aria-hidden="true"
 					/>
@@ -290,6 +295,7 @@ export function HoloCard({
 						<source
 							type="image/webp"
 							srcSet={`${cdnImage(focusUrl as string, { w: 734 })} 1x, ${cdnImage(focusUrl as string, { w: 734, dpr: 2 })} 2x`}
+							crossOrigin="anonymous"
 						/>
 						<img
 							ref={fullRef}
@@ -298,6 +304,7 @@ export function HoloCard({
 								hdLoaded && "is-loaded",
 							)}
 							src={focusUrl}
+							crossOrigin="anonymous"
 							alt=""
 							loading="eager"
 							decoding="async"
@@ -317,10 +324,14 @@ export function HoloCard({
 					<source
 						type="image/webp"
 						srcSet={`${cdnImage(gridUrl as string, { w: 300 })} 1x, ${cdnImage(gridUrl as string, { w: 300, dpr: 2 })} 2x`}
+						crossOrigin="anonymous"
 					/>
 					<img
 						className="holo-card-image"
 						src={gridUrl}
+						// CORS mode so the SW browse-cache can store a non-opaque
+						// response (see the focus branch above for the full rationale).
+						crossOrigin="anonymous"
 						alt=""
 						loading="lazy"
 						decoding="async"
