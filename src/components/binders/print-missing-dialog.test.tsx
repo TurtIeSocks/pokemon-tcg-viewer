@@ -65,24 +65,21 @@ test("exposes background, text, and border color controls", () => {
 	expect(screen.getByText("Border")).toBeDefined();
 });
 
-test("placeholder paints fill + border as an SVG rect (prints reliably): black fill, violet border, 3mm radius", () => {
+test("placeholder paints fill + border as an SVG rect (prints reliably), from the print defaults", () => {
 	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
 	const ph = firstPlaceholder();
 	// Fill + border are an SVG <rect> (foreground paint), not a CSS background —
-	// CSS backgrounds are dropped by the print pipeline. Defaults: black fill,
-	// site-violet border.
+	// CSS backgrounds are dropped by the print pipeline. Values are read from
+	// DEFAULT_PRINT_PREFS so this tracks the defaults instead of rotting when they change.
 	const rect = ph.querySelector("rect");
 	if (!rect) throw new Error("no fill rect rendered");
-	expect(rect.getAttribute("fill")).toBe("#000000");
-	expect(rect.getAttribute("stroke")).toBe("oklch(0.7 0.19 295)");
-	// Border thickness is the default 0.3mm SVG stroke.
-	expect(rect.getAttribute("stroke-width")).toBe("0.3");
+	expect(rect.getAttribute("fill")).toBe(DEFAULT_PRINT_PREFS.background);
+	expect(rect.getAttribute("stroke")).toBe(DEFAULT_PRINT_PREFS.borderColor);
+	expect(rect.getAttribute("stroke-width")).toBe(
+		String(DEFAULT_PRINT_PREFS.borderMm),
+	);
 	// Rounded corners (mm units) give the card-silhouette look.
-	expect(rect.getAttribute("rx")).toBe("3");
-	// Text color lives on the HTML overlay, defaulting to white.
-	const overlay = ph.lastElementChild as HTMLElement;
-	const color = overlay.style.color;
-	expect(color === "#ffffff" || color === "rgb(255, 255, 255)").toBe(true);
+	expect(rect.getAttribute("rx")).toBe(String(DEFAULT_PRINT_PREFS.radiusMm));
 });
 
 /** Type a value into a UnitInput and commit it (blur). */

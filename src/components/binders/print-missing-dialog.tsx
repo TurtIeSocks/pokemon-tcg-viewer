@@ -125,9 +125,9 @@ function PrintSheet({
 	const inset = borderMm / 2;
 	return (
 		<div
+			className="tcgv-print-sheet"
 			style={{
 				display: "grid",
-
 				gridTemplateColumns: `repeat(${Math.max(1, columns)}, ${cardWidthMm}mm)`,
 				gap: mm(gapMm),
 				width: mm(width),

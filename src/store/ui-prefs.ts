@@ -4,9 +4,9 @@ import { createJSONStorage, persist } from "zustand/middleware";
 
 /**
  * Persisted print-placeholder settings for the "Print missing" binder modal, so a
- * collector's colors/shape choices survive across sessions. Defaults match the
- * site's dark look: black fill, white text, violet border (`--primary`), ~3mm
- * corner radius (a real trading-card corner), 1.3x text scale for legible markers.
+ * collector's colors/shape choices survive across sessions. Defaults are an
+ * ink-saving outline: transparent fill, white text, violet border (`--primary`),
+ * ~3mm corner radius (a real trading-card corner), 1.3x text scale for legible markers.
  */
 export interface PrintPrefs {
 	background: string;
