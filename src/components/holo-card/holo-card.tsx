@@ -387,15 +387,6 @@ export function HoloCard({
 			)}
 			<div className="holo-card-overlay">{hoverOverlay}</div>
 			{miniNav && <div className="holo-card-mininav">{miniNav}</div>}
-			{owned && (
-				<span
-					className="holo-card-owned-badge"
-					role="img"
-					aria-label="In your collection"
-				>
-					✓
-				</span>
-			)}
 		</div>
 	);
 }

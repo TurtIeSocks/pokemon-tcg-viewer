@@ -413,25 +413,6 @@
 	backdrop-filter: blur(4px);
 }
 
-.holo-card-owned-badge {
-	position: absolute;
-	top: 0.4rem;
-	right: 0.4rem;
-	z-index: 5;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 1.5rem;
-	height: 1.5rem;
-	background: rgba(80, 200, 120, 0.95);
-	color: #fff;
-	border-radius: 50%;
-	font-size: 0.9rem;
-	font-weight: 700;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-	pointer-events: none;
-}
-
 /* ────────────────────────────────────────────────────────────────────────────
    Unified mini-nav bar — the glass owned/expand/binder pill, centered in the
    card's LOWER THIRD (~66% down). Fades + scales in on hover / focus-within on
@@ -440,7 +421,7 @@
 .holo-card-mininav {
 	position: absolute;
 	left: 50%;
-	top: 66%;
+	top: 80%;
 	z-index: 6;
 	transform: translate(-50%, -50%) scale(0.96);
 	opacity: 0;
