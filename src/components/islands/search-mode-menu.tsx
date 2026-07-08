@@ -11,12 +11,14 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { m } from "@/paraglide/messages";
 import type { SearchMode } from "@/store/corpus/fuzzy";
 
 interface SearchModeMeta {
 	mode: SearchMode;
-	label: string;
-	description: string;
+	/** Thunk, not a plain string — see {@link NavDestination.label} in command-palette-data.ts. */
+	label: () => string;
+	description: () => string;
 	icon: ComponentType<{ className?: string }>;
 }
 
@@ -25,20 +27,20 @@ interface SearchModeMeta {
 const SEARCH_MODES: readonly SearchModeMeta[] = [
 	{
 		mode: "exact",
-		label: "Exact",
-		description: "Name matches exactly",
+		label: () => m.search_mode_exact_label(),
+		description: () => m.search_mode_exact_description(),
 		icon: Equal,
 	},
 	{
 		mode: "contains",
-		label: "Contains",
-		description: "Name includes your text",
+		label: () => m.search_mode_contains_label(),
+		description: () => m.search_mode_contains_description(),
 		icon: TextSearch,
 	},
 	{
 		mode: "fuzzy",
-		label: "Fuzzy",
-		description: "Tolerates typos",
+		label: () => m.search_mode_fuzzy_label(),
+		description: () => m.search_mode_fuzzy_description(),
 		icon: Sparkles,
 	},
 ];
@@ -67,7 +69,8 @@ export function SearchModeMenu({
 	disabled = false,
 	className,
 }: SearchModeMenuProps) {
-	const active = SEARCH_MODES.find((m) => m.mode === value) ?? SEARCH_MODES[2];
+	const active =
+		SEARCH_MODES.find((mode) => mode.mode === value) ?? SEARCH_MODES[2];
 	const ActiveIcon = active.icon;
 
 	return (
@@ -77,30 +80,33 @@ export function SearchModeMenu({
 					type="button"
 					variant="outline"
 					disabled={disabled}
-					aria-label="Search mode"
-					title={`Search mode: ${active.label} — ${active.description}`}
+					aria-label={m.search_mode_label()}
+					title={m.search_mode_title({
+						label: active.label(),
+						description: active.description(),
+					})}
 					className={cn(
 						"rounded-none border-(--border) bg-(--glass) text-(--ink-muted) hover:bg-white/[0.07] hover:text-(--ink)",
 						className,
 					)}
 				>
 					<ActiveIcon className="size-4" />
-					<span>{active.label}</span>
+					<span>{active.label()}</span>
 					<ChevronDown className="size-4 opacity-70" />
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end">
 				<DropdownMenuRadioGroup
 					value={value}
-					onValueChange={(m) => onChange(m as SearchMode)}
+					onValueChange={(next) => onChange(next as SearchMode)}
 				>
 					{SEARCH_MODES.map(({ mode, label, description, icon: Icon }) => (
 						<DropdownMenuRadioItem key={mode} value={mode}>
 							<Icon className="size-4" aria-hidden="true" />
 							<span className="flex flex-col">
-								<span className="text-(--ink)">{label}</span>
+								<span className="text-(--ink)">{label()}</span>
 								<span className="text-xs text-(--ink-muted)">
-									{description}
+									{description()}
 								</span>
 							</span>
 						</DropdownMenuRadioItem>

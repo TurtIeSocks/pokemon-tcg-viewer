@@ -1,3 +1,5 @@
+import { m } from "@/paraglide/messages";
+
 export type SubtypeGroup =
 	| "Stage"
 	| "Mechanic"
@@ -50,13 +52,14 @@ export const SUBTYPE_GROUP: Record<string, SubtypeGroup> = {
 	Special: "Energy",
 };
 
-// Display order of the groups + their on-screen labels.
-const GROUP_ORDER: { key: SubtypeGroup; label: string }[] = [
-	{ key: "Stage", label: "Stage" },
-	{ key: "Mechanic", label: "Pokémon Mechanic" },
-	{ key: "Trainer", label: "Trainer" },
-	{ key: "Energy", label: "Energy" },
-	{ key: "Other", label: "Other" },
+// Display order of the groups + their on-screen labels. Thunks, not plain
+// strings — see {@link NavDestination.label} in command-palette-data.ts.
+const GROUP_ORDER: { key: SubtypeGroup; label: () => string }[] = [
+	{ key: "Stage", label: () => m.subtype_group_stage() },
+	{ key: "Mechanic", label: () => m.subtype_group_mechanic() },
+	{ key: "Trainer", label: () => m.subtype_group_trainer() },
+	{ key: "Energy", label: () => m.home_supertype_energy() },
+	{ key: "Other", label: () => m.subtype_group_other() },
 ];
 
 // Stage renders in evolution order, not alphabetical.
@@ -98,6 +101,6 @@ export function groupSubtypes(
 				? (a, b) => stageRank(a) - stageRank(b)
 				: (a, b) => a.localeCompare(b),
 		);
-		return [{ label, items }];
+		return [{ label: label(), items }];
 	});
 }

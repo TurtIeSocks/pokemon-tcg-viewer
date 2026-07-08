@@ -3,6 +3,7 @@ import { ToggleButton, ToggleField } from "@/components/islands/toggle-group";
 import { SparkLine } from "@/components/ui/spark-line";
 import { epochDayUtc } from "@/lib/corpus/price-history";
 import type { CmTuple } from "@/lib/corpus/price-types";
+import { m } from "@/paraglide/messages";
 import { loadSetHistory, useCardHistory } from "@/store/corpus/history-runtime";
 import { useCardPriceEntry } from "@/store/corpus/prices-runtime";
 import type { FocusCardData } from "../../server/card-mappers";
@@ -90,7 +91,7 @@ export function CardHistory({ card }: { card: FocusCardData }) {
 
 	return (
 		<div className="flex h-full flex-col gap-3">
-			<ToggleField aria-label="History range">
+			<ToggleField aria-label={m.card_history_range_aria()}>
 				{RANGES.map((r) => (
 					<ToggleButton
 						key={r.key}
@@ -107,7 +108,7 @@ export function CardHistory({ card }: { card: FocusCardData }) {
 			<div className="flex min-h-[72px] flex-1">
 				{sparse ? (
 					<p className="text-[13px] text-(--faint)">
-						Price history builds daily.
+						{m.card_price_history_builds_daily()}
 					</p>
 				) : (
 					<SparkLine
@@ -115,7 +116,7 @@ export function CardHistory({ card }: { card: FocusCardData }) {
 						width={280}
 						height={72}
 						fluid
-						label="Price history"
+						label={m.card_price_history_label()}
 					/>
 				)}
 			</div>

@@ -1,5 +1,6 @@
 import { GlassPanel } from "@/components/ui/glass";
 import { Skeleton } from "@/components/ui/skeleton";
+import { m } from "@/paraglide/messages";
 import type { FocusCardData } from "../../server/card-mappers";
 import { CardPrices } from "../islands/card-prices";
 import { CardHistory } from "./card-history";
@@ -40,17 +41,17 @@ export function CardPricingTab({
 		// instead of leaving it empty. On the page/mobile the pane is content-sized,
 		// so h-full is a no-op and everything keeps its natural height.
 		<div className="flex h-full flex-col gap-5">
-			<section aria-label="Market prices">
-				<div className={SECTION}>Market prices</div>
+			<section aria-label={m.card_market_prices_label()}>
+				<div className={SECTION}>{m.card_market_prices_label()}</div>
 				<div className="mt-2">
 					{pending ? <PriceGhost /> : <CardPrices card={card} />}
 				</div>
 			</section>
 			<section
-				aria-label="Price history"
+				aria-label={m.card_price_history_label()}
 				className="flex min-h-0 flex-1 flex-col"
 			>
-				<div className={SECTION}>Price history</div>
+				<div className={SECTION}>{m.card_price_history_label()}</div>
 				<GlassPanel className="mt-2 flex flex-1 flex-col p-4">
 					<CardHistory card={card} />
 				</GlassPanel>

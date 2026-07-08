@@ -1,4 +1,5 @@
 import { Link, type LinkProps } from "@tanstack/react-router";
+import { m } from "@/paraglide/messages";
 import { useIsOwned } from "../../store/userland/selectors";
 import { HoloCard, type HoloCardData, holoCardProps } from "../holo-card";
 import { CardMiniNav } from "../holo-card/card-mini-nav";
@@ -44,7 +45,7 @@ export function PokemonTimeline({
 	if (cards.length === 0) {
 		return (
 			<div className="pokemon-timeline-empty">
-				<p>No cards match these filters.</p>
+				<p>{m.timeline_no_cards_match()}</p>
 			</div>
 		);
 	}
