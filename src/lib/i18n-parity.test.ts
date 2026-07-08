@@ -41,18 +41,14 @@ const enRec = en as Record<string, MsgValue>;
 
 describe.each(NON_EN)("messages/%s.json", (locale) => {
 	test("has exactly the same keys as en.json", async () => {
-		const mod = (await import(`../../messages/${locale}.json`)).default as Record<
-			string,
-			MsgValue
-		>;
+		const mod = (await import(`../../messages/${locale}.json`))
+			.default as Record<string, MsgValue>;
 		expect(keysOf(mod)).toEqual(keysOf(enRec));
 	});
 
 	test("preserves placeholders + plural structure per key", async () => {
-		const mod = (await import(`../../messages/${locale}.json`)).default as Record<
-			string,
-			MsgValue
-		>;
+		const mod = (await import(`../../messages/${locale}.json`))
+			.default as Record<string, MsgValue>;
 		for (const k of keysOf(enRec)) {
 			const ev = enRec[k];
 			const lv = mod[k];
