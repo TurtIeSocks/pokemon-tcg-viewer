@@ -258,7 +258,8 @@ test("Energy Type filter is hidden when no energy types are in the facet (Traine
 			lockSupertype
 		/>,
 	);
-	// FilterSelect triggers expose their label as visible text, not an aria-label.
+	// An empty multi-select trigger shows its "All <label>" text, so a hidden
+	// Energy filter means no "Energy Types" text is present anywhere.
 	expect(screen.queryByText(/Energy Types/)).toBeNull();
 	// other filters still render
 	expect(screen.getByText(/Rarities/)).toBeDefined();
@@ -271,11 +272,127 @@ test("Energy Type filter is shown when energy types are present", () => {
 
 // ─── Grouped Subtypes facet ───────────────────────────────────────────────────
 
+// Radix DropdownMenu opens on pointerDown (not click) under happy-dom; the
+// multi-select filters render their values as role="menuitemcheckbox".
+function openFilter(name: RegExp) {
+	fireEvent.pointerDown(screen.getByRole("button", { name }), {
+		button: 0,
+		ctrlKey: false,
+	});
+}
+
 test("subtype facet renders grouped section headings", async () => {
 	renderControls({});
-	fireEvent.click(screen.getByRole("combobox", { name: /Subtypes/i }));
-	// SelectLabel headings are non-interactive text in the open listbox
+	openFilter(/Subtypes/i);
+	// DropdownMenuLabel headings are non-interactive text in the open menu
 	expect(await screen.findByText("Stage")).toBeDefined();
 	expect(screen.getByText("Pokémon Mechanic")).toBeDefined();
-	expect(screen.getByRole("option", { name: "All Subtypes" })).toBeDefined();
+	expect(screen.getByRole("menuitemcheckbox", { name: "GX" })).toBeDefined();
+});
+
+// ─── Multi-select filters (item #18) ──────────────────────────────────────────
+
+test("empty filter trigger shows the 'All <label>' placeholder", () => {
+	renderControls();
+	expect(screen.getByText("All Rarities")).toBeDefined();
+});
+
+test("single selected value shows that value as the trigger label", () => {
+	renderControls({ value: { ...defaultValue, rarity: ["Rare Holo"] } });
+	const trigger = screen.getByRole("button", { name: /Rarities/i });
+	expect(trigger.textContent).toContain("Rare Holo");
+});
+
+test("multiple selected values show an 'N selected' summary", () => {
+	renderControls({
+		value: { ...defaultValue, rarity: ["Common", "Rare Holo"] },
+	});
+	const trigger = screen.getByRole("button", { name: /Rarities/i });
+	expect(trigger.textContent).toContain("2 selected");
+});
+
+test("selecting a second value emits the full 2-element array (multi-select)", async () => {
+	const onChange = mock(() => {});
+	renderControls({ value: { ...defaultValue, rarity: ["Common"] }, onChange });
+	openFilter(/Rarities/i);
+	fireEvent.click(
+		await screen.findByRole("menuitemcheckbox", { name: "Rare Holo" }),
+	);
+	expect(onChange).toHaveBeenCalledWith({ rarity: ["Common", "Rare Holo"] });
+});
+
+test("toggling an already-selected value removes it from the array", async () => {
+	const onChange = mock(() => {});
+	renderControls({
+		value: { ...defaultValue, rarity: ["Common", "Rare Holo"] },
+		onChange,
+	});
+	openFilter(/Rarities/i);
+	fireEvent.click(
+		await screen.findByRole("menuitemcheckbox", { name: "Common" }),
+	);
+	expect(onChange).toHaveBeenCalledWith({ rarity: ["Rare Holo"] });
+});
+
+// ─── Clear all filters (item #17) ─────────────────────────────────────────────
+
+test("Clear filters button is hidden when no filters are active", () => {
+	renderControls();
+	expect(screen.queryByRole("button", { name: "Clear filters" })).toBeNull();
+});
+
+test("Clear filters button appears when a filter is active", () => {
+	renderControls({ value: { ...defaultValue, rarity: ["Rare Holo"] } });
+	expect(screen.getByRole("button", { name: "Clear filters" })).toBeDefined();
+});
+
+test("Clear filters resets every filter dimension in one patch", () => {
+	const onChange = mock(() => {});
+	renderControls({
+		value: {
+			...defaultValue,
+			supertype: ["Pokémon"],
+			subtypes: ["GX"],
+			rarity: ["Rare Holo"],
+			types: ["fire"],
+			owned: "owned",
+			pokemon: 25,
+			yearMin: 2020,
+			yearMax: 2023,
+		},
+		onChange,
+		showYearFilter: true,
+		showPokemonFilter: true,
+	});
+	fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+	expect(onChange).toHaveBeenCalledTimes(1);
+	expect(onChange).toHaveBeenCalledWith({
+		supertype: [],
+		subtypes: [],
+		rarity: [],
+		types: [],
+		owned: "all",
+		pokemon: null,
+		yearMin: null,
+		yearMax: null,
+	});
+});
+
+test("Clear filters does NOT touch q, search mode, or sort", () => {
+	const onChange = mock((_patch: Partial<ListSearch>) => {});
+	renderControls({
+		value: {
+			...defaultValue,
+			q: "pikachu",
+			mode: "exact",
+			sort: "name",
+			rarity: ["Rare Holo"],
+		},
+		onChange,
+	});
+	fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+	const patch = onChange.mock.calls[0][0];
+	expect(patch).not.toHaveProperty("q");
+	expect(patch).not.toHaveProperty("mode");
+	expect(patch).not.toHaveProperty("sort");
 });

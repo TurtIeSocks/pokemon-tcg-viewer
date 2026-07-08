@@ -13,7 +13,7 @@ export type CardSortMode = "default" | "dex" | "number" | "name" | "released";
 
 /** Sort modes offered by the card pages' SortControl. */
 export const CARD_SORT_OPTIONS: SortOption<CardSortMode>[] = [
-	{ value: "default", label: "Default" },
+	{ value: "default", label: "Recommended" },
 	{ value: "dex", label: "Dex #" },
 	{ value: "number", label: "Card #" },
 	{ value: "name", label: "Name" },
