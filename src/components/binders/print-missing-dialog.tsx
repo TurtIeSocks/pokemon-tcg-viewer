@@ -289,7 +289,7 @@ function NumberUnitInput({
 	return (
 		<UnitInput
 			unit={spec.unit}
-			value={`${Number(value.toFixed(spec.precision))}${spec.unit}`}
+			value={`${Number(value?.toFixed(spec.precision)) || 0}${spec.unit}`}
 			min={spec.min}
 			max={spec.max}
 			step={spec.step}
