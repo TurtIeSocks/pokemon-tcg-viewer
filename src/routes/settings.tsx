@@ -4,6 +4,7 @@ import { LanguageRadioMenu } from "@/components/islands/card-language-control";
 import { CardDatabaseSetting } from "@/components/settings/card-database-setting";
 import { CardMotionSetting } from "@/components/settings/card-motion-setting";
 import { ImageCacheSetting } from "@/components/settings/image-cache-setting";
+import { UiLanguageSetting } from "@/components/settings/ui-language-setting";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -68,6 +69,7 @@ function SettingsPage() {
 			</header>
 			<ClientOnly fallback={null}>
 				<CatalogLanguageSetting />
+				<UiLanguageSetting />
 				<CardMotionSetting />
 				<h2 className="mt-2 font-display text-lg text-(--ink-muted)">
 					Caching &amp; Offline
