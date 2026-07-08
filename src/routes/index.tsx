@@ -8,9 +8,11 @@ import {
 } from "../components/home/launch-tile";
 import { Eyebrow } from "../components/ui/eyebrow";
 import { Stagger } from "../components/ui/motion";
+import { bcp47 } from "../lib/bcp47";
 import { LIST_SEARCH_DEFAULTS } from "../lib/list-search";
 import { POKEDEX_FILTER_DEFAULTS } from "../lib/pokedex";
 import { m } from "../paraglide/messages";
+import { getLocale } from "../paraglide/runtime";
 import { useCommandPalette } from "../store/command-palette";
 import { loadCorpus, useCorpusRuntime } from "../store/corpus/corpus-runtime";
 import { useActiveRegionNavTree } from "../store/corpus/region-nav-tree";
@@ -101,7 +103,9 @@ export function HomeHero() {
 						    existing "1 sets"/"1 eras" (ungrammatical but tested) output. */}
 						<p className="mt-5 flex flex-wrap justify-center gap-x-2 font-mono text-sm tabular-nums text-(--ink-muted)">
 							<span>
-								{m.home_stat_cards({ count: cardCount.toLocaleString() })}
+								{m.home_stat_cards({
+									count: cardCount.toLocaleString(bcp47(getLocale())),
+								})}
 							</span>
 							<span aria-hidden="true" className="text-(--faint)">
 								·

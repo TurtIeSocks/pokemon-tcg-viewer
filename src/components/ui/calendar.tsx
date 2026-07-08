@@ -11,6 +11,8 @@ import {
 } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
+import { bcp47 } from "@/lib/bcp47"
+import { getLocale } from "@/paraglide/runtime"
 import { Button, buttonVariants } from "@/components/ui/button"
 
 function Calendar({
@@ -39,7 +41,7 @@ function Calendar({
       captionLayout={captionLayout}
       formatters={{
         formatMonthDropdown: (date) =>
-          date.toLocaleString("default", { month: "short" }),
+          date.toLocaleString(bcp47(getLocale()), { month: "short" }),
         ...formatters,
       }}
       classNames={{

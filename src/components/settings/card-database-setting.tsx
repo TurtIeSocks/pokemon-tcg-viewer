@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/ui/glass";
+import { bcp47 } from "@/lib/bcp47";
 import type { Region } from "@/lib/languages";
 import { m } from "@/paraglide/messages";
+import { getLocale } from "@/paraglide/runtime";
 import { loadCorpus } from "@/store/corpus/corpus-runtime";
 import { useCorpusRuntime } from "@/store/corpus/corpus-runtime-store";
 import { clearCorpus } from "@/store/corpus/corpus-store";
@@ -18,7 +20,9 @@ const SIZE = "~2.1 MiB";
 
 /** "3 days ago" / "yesterday" style label for the last sync. */
 function relativeTime(ms: number): string {
-	const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+	const rtf = new Intl.RelativeTimeFormat(bcp47(getLocale()), {
+		numeric: "auto",
+	});
 	const min = Math.round((Date.now() - ms) / 60000);
 	if (min < 60) return rtf.format(-min, "minute");
 	const hr = Math.round(min / 60);

@@ -1,7 +1,9 @@
 import { ClientOnly, createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { OwnedMissingGrid } from "@/components/vault/owned-missing-grid";
+import { bcp47 } from "@/lib/bcp47";
 import { m } from "@/paraglide/messages";
+import { getLocale } from "@/paraglide/runtime";
 import { useStore } from "@/store";
 import { hydrateCard, setsById } from "@/store/corpus/corpus-engine";
 import { useCorpusRuntime } from "@/store/corpus/corpus-runtime";
@@ -66,7 +68,9 @@ export function SharedBinderInner() {
 		);
 	}
 
-	const snapshotDate = new Date(snapshot.sharedAt).toLocaleDateString();
+	const snapshotDate = new Date(snapshot.sharedAt).toLocaleDateString(
+		bcp47(getLocale()),
+	);
 
 	return (
 		<div className="space-y-6">

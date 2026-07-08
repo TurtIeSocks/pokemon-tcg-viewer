@@ -11,7 +11,9 @@ import { Stagger } from "@/components/ui/motion";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { Stat } from "@/components/ui/stat";
 import { ValueStats } from "@/components/vault/value-stats";
+import { bcp47 } from "@/lib/bcp47";
 import { m } from "@/paraglide/messages";
+import { getLocale } from "@/paraglide/runtime";
 import type { NavTree } from "../lib/nav-tree";
 import { getNavTreeFn } from "../server/nav-tree";
 import { useEnsureCorpus } from "../store/corpus/use-ensure-corpus";
@@ -88,11 +90,11 @@ export function ProfilePageInner({ tree }: { tree: NavTree }) {
 						</ProgressRing>
 						<div className="flex flex-1 flex-wrap gap-8">
 							<Stat
-								value={stats.cardsOwned.toLocaleString()}
+								value={stats.cardsOwned.toLocaleString(bcp47(getLocale()))}
 								label={m.vault_cards_owned_label()}
 							/>
 							<Stat
-								value={stats.setsTouched.toLocaleString()}
+								value={stats.setsTouched.toLocaleString(bcp47(getLocale()))}
 								label={m.vault_sets_touched_label()}
 							/>
 							<ValueStats stats={stats} />
