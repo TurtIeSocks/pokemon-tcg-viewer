@@ -1,5 +1,6 @@
 import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 import { Layers, Library, Search, Sparkles, Users, Zap } from "lucide-react";
+import { useEffect } from "react";
 import { HomeBrowse } from "../components/home/home-browse";
 import {
 	LaunchTileButton,
@@ -11,6 +12,7 @@ import { Stagger } from "../components/ui/motion";
 import { LIST_SEARCH_DEFAULTS } from "../lib/list-search";
 import { POKEDEX_FILTER_DEFAULTS } from "../lib/pokedex";
 import { useCommandPalette } from "../store/command-palette";
+import { loadCorpus, useCorpusRuntime } from "../store/corpus/corpus-runtime";
 import { useActiveRegionNavTree } from "../store/corpus/region-nav-tree";
 
 const BACKDROP = [
@@ -19,6 +21,10 @@ const BACKDROP = [
 	{ key: "c", cls: "rotate-[6deg] scale-110", delay: "1.1s" },
 	{ key: "d", cls: "rotate-[15deg]", delay: "1.6s" },
 ];
+
+// SSR fallback for the catalog card count; swapped for the live corpus count once
+// it loads on the client. Kept roughly in sync with the deployed corpus.
+const CARD_COUNT_FALLBACK = 20359;
 
 /** Scroll the Browse-by-era shelf into view; honor reduced-motion for the sweep. */
 function scrollToEras() {
@@ -37,6 +43,16 @@ export function HomeHero() {
 	// Per-field selector (S3) — the Search launch card opens the ⌘K palette,
 	// the same action the header/bottom-nav Search buttons dispatch.
 	const openPalette = useCommandPalette((s) => s.setOpen);
+
+	// Catalog scale, shown under the hero tagline. cardCount comes from the corpus
+	// (loaded lazily, IDB-cached); sets/eras are tree-derived and SSR safe.
+	useEffect(() => {
+		void loadCorpus();
+	}, []);
+	const cardCount =
+		useCorpusRuntime((s) => s.index)?.cards.length ?? CARD_COUNT_FALLBACK;
+	const setCount = tree.reduce((n, s) => n + s.sets.length, 0);
+	const eraCount = tree.length;
 
 	return (
 		<div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4 pb-12 sm:pb-16">
@@ -79,6 +95,25 @@ export function HomeHero() {
 							Track your whole Pokémon TCG collection. Local-first and
 							open-source, so it's actually yours. No account to start, no
 							judgment about the fourth Charizard.
+						</p>
+
+						{/* Catalog scale + the free/no-account promise. */}
+						<p className="mt-5 flex flex-wrap justify-center gap-x-2 font-mono text-sm tabular-nums text-[var(--ink-muted)]">
+							<span>{cardCount.toLocaleString()} cards</span>
+							<span aria-hidden="true" className="text-[var(--faint)]">
+								·
+							</span>
+							<span>{setCount} sets</span>
+							<span aria-hidden="true" className="text-[var(--faint)]">
+								·
+							</span>
+							<span>{eraCount} eras</span>
+							<span aria-hidden="true" className="text-[var(--faint)]">
+								·
+							</span>
+							<span className="text-[var(--primary)]">
+								always free, no account
+							</span>
 						</p>
 					</Stagger>
 				</div>

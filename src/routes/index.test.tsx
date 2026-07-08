@@ -71,6 +71,14 @@ test("the Search launch card opens the command palette", async () => {
 	expect(useCommandPalette.getState().open).toBe(true);
 });
 
+test("the hero shows the catalog stat line (moved out of the browse body)", async () => {
+	await renderHome();
+	// TREE has one series with one set -> 1 set, 1 era; plus the free promise.
+	expect(screen.getByText(/1 sets/)).toBeTruthy();
+	expect(screen.getByText(/1 eras/)).toBeTruthy();
+	expect(screen.getByText(/always free/)).toBeTruthy();
+});
+
 test("the card-type launch cards link to /pokemon, /trainer, and /energy", async () => {
 	const { container } = await renderHome();
 	expect(container.querySelector('a[href^="/pokemon"]')).toBeTruthy();
