@@ -371,8 +371,14 @@
 }
 
 @media print {
-	/* Only the placeholder sheet prints; hide every other top-level node. */
+	/* Only the placeholder sheet prints; hide every other top-level node... */
 	body:has(> .tcgv-print-portal) > *:not(.tcgv-print-portal) {
+		display: none !important;
+	}
+
+	/* ...and the fixed ambient mesh, a body::before pseudo-element the child rule
+	   above can't reach — otherwise it bleeds a violet gradient across the paper. */
+	body:has(> .tcgv-print-portal)::before {
 		display: none !important;
 	}
 
@@ -380,10 +386,9 @@
 		display: block !important;
 	}
 
-	/* Force the chosen fills/borders to actually print. print-color-adjust is
-	   inherited and defaults to `economy` (browsers drop backgrounds to save ink);
-	   `exact` on the whole print subtree opts every placeholder in, overriding any
-	   inline/specificity quirk that let a black background print white. */
+	/* The placeholder fill/border are SVG foreground paint (see print-missing-dialog
+	   PrintSheet) so they print without help. This keeps `exact` as a backstop for
+	   any residual color the pipeline would otherwise drop to save ink. */
 	.tcgv-print-portal,
 	.tcgv-print-portal * {
 		-webkit-print-color-adjust: exact !important;

@@ -3,9 +3,9 @@ import { createJSONStorage, persist } from "zustand/middleware";
 
 /**
  * Persisted print-placeholder settings for the "Print missing" binder modal, so a
- * collector's colors/shape choices survive across sessions. Print-friendly
- * defaults: white fill, near-black text + border (least ink, high contrast),
- * ~3mm corner radius (a real trading-card corner), 1x text scale.
+ * collector's colors/shape choices survive across sessions. Defaults match the
+ * site's dark look: black fill, white text, violet border (`--primary`), ~3mm
+ * corner radius (a real trading-card corner), 1.3x text scale for legible markers.
  */
 export interface PrintPrefs {
 	background: string;
@@ -18,11 +18,12 @@ export interface PrintPrefs {
 }
 
 export const DEFAULT_PRINT_PREFS: PrintPrefs = {
-	background: "#ffffff",
-	textColor: "#111111",
-	borderColor: "#111111",
+	background: "#000000",
+	textColor: "#ffffff",
+	// Site accent violet, kept verbatim from --primary in app.css so they stay matched.
+	borderColor: "oklch(0.7 0.19 295)",
 	radiusMm: 3,
-	textScale: 1,
+	textScale: 1.3,
 };
 
 interface UiPrefsStore {

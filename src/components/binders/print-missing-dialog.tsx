@@ -35,6 +35,10 @@ const META_MM = 2.8;
 const MIN_TEXT_SCALE = 0.6;
 const MAX_TEXT_SCALE = 1.8;
 
+/** Border stroke width (mm) of a placeholder, ~1px at 96dpi. Painted as an SVG
+ * stroke (foreground) so it prints; see {@link PrintSheet}. */
+const BORDER_MM = 0.3;
+
 /** Format a millimetre length, rounded to 0.01mm so float math (3.6 * 1.5) never
  * leaks "5.399999…mm" into the DOM or the printed sheet. */
 const mm = (n: number) => `${Math.round(n * 100) / 100}mm`;
@@ -69,11 +73,18 @@ interface PrintSheetProps {
  * into a body-level portal that is the only thing the print stylesheet keeps
  * visible. Both copies read the same props so preview matches paper exactly.
  *
- * A flex `gap` leaves cutting room between cards; the container width is sized to
- * exactly `columns` cards plus their inter-card gaps so the wrap point is stable.
- * `printColorAdjust: exact` (belt-and-suspenders with the @media print rule in
- * app.css) forces the chosen colors to print; `breakInside: avoid` keeps one
- * placeholder from splitting across a page boundary.
+ * Laid out as a CSS grid with an explicit `columns` count (a `gap` leaves cutting
+ * room). NOT flex-wrap: Firefox's print engine mis-lays flex containers in paged
+ * media — it won't wrap into the 2nd column, so every card lands on its own row and
+ * the page count explodes. Declaring the column count sidesteps the container-width
+ * wrapping that Firefox botches; Chrome is happy either way.
+ *
+ * The fill + border are painted as an SVG `<rect>`, NOT a CSS background. The print
+ * pipeline drops CSS backgrounds (they need the "Background graphics" toggle /
+ * `print-color-adjust`, which is unreliable), but SVG shape fills are foreground
+ * paint — the same category as text and borders, which do print — so they always
+ * reach paper. The card name/meta stay HTML on top so long names still word-wrap.
+ * `breakInside: avoid` keeps one placeholder from splitting across a page boundary.
  */
 function PrintSheet({
 	cards,
@@ -86,14 +97,16 @@ function PrintSheet({
 	gapMm,
 }: PrintSheetProps) {
 	const width = columns * CARD_WIDTH_MM + Math.max(0, columns - 1) * gapMm;
+	// Inset the rect by half the stroke so the border isn't clipped by the viewBox.
+	const inset = BORDER_MM / 2;
 	return (
 		<div
 			className="tcgv-print-sheet"
 			style={{
-				width: mm(width),
-				display: "flex",
-				flexWrap: "wrap",
+				display: "grid",
+				gridTemplateColumns: `repeat(${Math.max(1, columns)}, ${CARD_WIDTH_MM}mm)`,
 				gap: mm(gapMm),
+				width: mm(width),
 			}}
 		>
 			{cards.map((card) => (
@@ -101,45 +114,68 @@ function PrintSheet({
 					key={card.id}
 					className="tcgv-placeholder"
 					style={{
+						position: "relative",
 						width: `${CARD_WIDTH_MM}mm`,
 						height: `${CARD_HEIGHT_MM}mm`,
-						boxSizing: "border-box",
-						borderWidth: "1px",
-						borderStyle: "solid",
-						borderColor,
-						borderRadius: `${radiusMm}mm`,
-						backgroundColor: background,
-						color: textColor,
-						display: "flex",
-						flexDirection: "column",
-						alignItems: "center",
-						justifyContent: "center",
-						textAlign: "center",
-						padding: "3mm",
 						overflow: "hidden",
 						breakInside: "avoid",
-						printColorAdjust: "exact",
-						WebkitPrintColorAdjust: "exact",
 					}}
 				>
+					{/* Foreground-painted fill + border (see PrintSheet docs). viewBox is in
+					    mm units (1 user unit = 1mm) so rx/stroke read as millimetres. */}
+					<svg
+						width={`${CARD_WIDTH_MM}mm`}
+						height={`${CARD_HEIGHT_MM}mm`}
+						viewBox={`0 0 ${CARD_WIDTH_MM} ${CARD_HEIGHT_MM}`}
+						preserveAspectRatio="none"
+						aria-hidden="true"
+						style={{ position: "absolute", inset: 0, display: "block" }}
+					>
+						<rect
+							x={inset}
+							y={inset}
+							width={CARD_WIDTH_MM - BORDER_MM}
+							height={CARD_HEIGHT_MM - BORDER_MM}
+							rx={radiusMm}
+							ry={radiusMm}
+							fill={background}
+							stroke={borderColor}
+							strokeWidth={BORDER_MM}
+						/>
+					</svg>
 					<div
 						style={{
-							fontWeight: 700,
-							fontSize: mm(NAME_MM * textScale),
-							lineHeight: 1.15,
-							wordBreak: "break-word",
+							position: "absolute",
+							inset: 0,
+							boxSizing: "border-box",
+							display: "flex",
+							flexDirection: "column",
+							alignItems: "center",
+							justifyContent: "center",
+							textAlign: "center",
+							padding: "3mm",
+							color: textColor,
 						}}
 					>
-						{card.name}
-					</div>
-					<div
-						style={{
-							marginTop: "2mm",
-							fontSize: mm(META_MM * textScale),
-							opacity: 0.85,
-						}}
-					>
-						{placeholderMeta(card)}
+						<div
+							style={{
+								fontWeight: 700,
+								fontSize: mm(NAME_MM * textScale),
+								lineHeight: 1.15,
+								wordBreak: "break-word",
+							}}
+						>
+							{card.name}
+						</div>
+						<div
+							style={{
+								marginTop: "2mm",
+								fontSize: mm(META_MM * textScale),
+								opacity: 0.85,
+							}}
+						>
+							{placeholderMeta(card)}
+						</div>
 					</div>
 				</div>
 			))}

@@ -62,26 +62,32 @@ test("exposes background, text, and border color controls", () => {
 	expect(screen.getByText("Border color")).toBeDefined();
 });
 
-test("placeholder renders as a card silhouette: white fill, dark text + border, 3mm radius", () => {
+test("placeholder paints fill + border as an SVG rect (prints reliably): black fill, violet border, 3mm radius", () => {
 	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
 	const ph = firstPlaceholder();
-	const bg = ph.style.backgroundColor;
-	expect(bg === "#ffffff" || bg === "rgb(255, 255, 255)").toBe(true);
-	// Text and border are independent state, both defaulting to the dark ink.
-	const color = ph.style.color;
-	expect(color === "#111111" || color === "rgb(17, 17, 17)").toBe(true);
-	const border = ph.style.borderColor;
-	expect(border === "#111111" || border === "rgb(17, 17, 17)").toBe(true);
-	// Rounded corners give the card-silhouette look.
-	expect(ph.style.borderRadius).toBe("3mm");
+	// Fill + border are an SVG <rect> (foreground paint), not a CSS background —
+	// CSS backgrounds are dropped by the print pipeline. Defaults: black fill,
+	// site-violet border.
+	const rect = ph.querySelector("rect");
+	if (!rect) throw new Error("no fill rect rendered");
+	expect(rect.getAttribute("fill")).toBe("#000000");
+	expect(rect.getAttribute("stroke")).toBe("oklch(0.7 0.19 295)");
+	// Rounded corners (mm units) give the card-silhouette look.
+	expect(rect.getAttribute("rx")).toBe("3");
+	// Text color lives on the HTML overlay, defaulting to white.
+	const overlay = ph.lastElementChild as HTMLElement;
+	const color = overlay.style.color;
+	expect(color === "#ffffff" || color === "rgb(255, 255, 255)").toBe(true);
 });
 
 test("the text-size slider scales both lines by the same factor (ratio preserved)", () => {
 	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
-	// Defaults: 3.6mm name / 2.8mm meta.
-	expect(within(preview()).getByText("Bulbasaur").style.fontSize).toBe("3.6mm");
+	// Base 3.6mm name / 2.8mm meta, scaled by the 1.3x default → 4.68 / 3.64.
+	expect(within(preview()).getByText("Bulbasaur").style.fontSize).toBe(
+		"4.68mm",
+	);
 	expect(within(preview()).getByText("#1 / Base Set").style.fontSize).toBe(
-		"2.8mm",
+		"3.64mm",
 	);
 
 	const slider = screen.getByLabelText("Text size") as HTMLInputElement;
@@ -96,9 +102,11 @@ test("the text-size slider scales both lines by the same factor (ratio preserved
 	);
 });
 
-test("the corner-radius slider updates the placeholder rounding", () => {
+test("the corner-radius slider updates the placeholder rounding (SVG rect rx)", () => {
 	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
-	expect(firstPlaceholder().style.borderRadius).toBe("3mm");
+	expect(firstPlaceholder().querySelector("rect")?.getAttribute("rx")).toBe(
+		"3",
+	);
 
 	const slider = screen.getByLabelText(
 		"Corner radius in millimetres",
@@ -108,7 +116,9 @@ test("the corner-radius slider updates the placeholder rounding", () => {
 	});
 
 	expect(slider.value).toBe("6");
-	expect(firstPlaceholder().style.borderRadius).toBe("6mm");
+	expect(firstPlaceholder().querySelector("rect")?.getAttribute("rx")).toBe(
+		"6",
+	);
 });
 
 test("print settings persist across dialog remounts (saved in the store)", () => {
@@ -126,10 +136,13 @@ test("print settings persist across dialog remounts (saved in the store)", () =>
 	expect(within(preview()).getByText("Bulbasaur").style.fontSize).toBe("5.4mm");
 });
 
-test("preview sheet leaves a cutting gap between placeholders", () => {
+test("preview sheet is an explicit 2-col grid with a cutting gap (Firefox-safe, not flex)", () => {
 	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
 	const sheet = preview().querySelector(".tcgv-print-sheet") as HTMLElement;
 	expect(sheet.style.gap).toBe("5mm");
+	// Explicit column count, not flex-wrap — Firefox print won't wrap flex columns.
+	expect(sheet.style.display).toBe("grid");
+	expect(sheet.style.gridTemplateColumns).toBe("repeat(2, 63mm)");
 });
 
 test("Print button calls window.print (stubbed)", () => {
