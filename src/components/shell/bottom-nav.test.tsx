@@ -25,7 +25,7 @@ beforeEach(() => {
 // ── data shape (the dest() helper + ordering) ──
 
 test("BOTTOM_NAV_ITEMS is Browse / Vault / Scan / Search / Profile in order", () => {
-	expect(BOTTOM_NAV_ITEMS.map((i) => i.label)).toEqual([
+	expect(BOTTOM_NAV_ITEMS.map((i) => i.label())).toEqual([
 		"Browse",
 		"Vault",
 		"Scan",
@@ -35,8 +35,8 @@ test("BOTTOM_NAV_ITEMS is Browse / Vault / Scan / Search / Profile in order", ()
 });
 
 test("Scan is the center FAB and Search is the action slot", () => {
-	const scan = BOTTOM_NAV_ITEMS.find((i) => i.label === "Scan");
-	const search = BOTTOM_NAV_ITEMS.find((i) => i.label === "Search");
+	const scan = BOTTOM_NAV_ITEMS.find((i) => i.label() === "Scan");
+	const search = BOTTOM_NAV_ITEMS.find((i) => i.label() === "Search");
 	expect(scan?.center).toBe(true);
 	expect(scan?.to).toBe("/scan");
 	expect(search?.action).toBe("search");

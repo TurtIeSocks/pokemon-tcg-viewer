@@ -11,9 +11,16 @@ import {
 	Search,
 	UserRound,
 } from "lucide-react";
+import { m } from "@/paraglide/messages";
 
 export interface NavDestination {
-	label: string;
+	/**
+	 * Thunk, not a plain string: Paraglide's `m.*()` reads the ACTIVE locale
+	 * when CALLED, so resolving it into a string here (at module-eval time)
+	 * would freeze the base locale forever. Callers invoke `label()` at
+	 * render time instead.
+	 */
+	label: () => string;
 	to: LinkProps["to"];
 	icon: LucideIcon;
 	/** Extra terms folded into the match text (the palette filters by substring). */
@@ -23,44 +30,49 @@ export interface NavDestination {
 /** Static "jump to page" destinations shown in the palette's nav group. */
 export const NAV_DESTINATIONS: readonly NavDestination[] = [
 	{
-		label: "Browse",
+		label: () => m.command_palette_nav_browse(),
 		to: "/",
 		icon: Home,
 		keywords: "home series sets catalog",
 	},
 	{
-		label: "Vault Overview",
+		label: () => m.command_palette_nav_vault_overview(),
 		to: "/vault",
 		icon: LayoutDashboard,
 		keywords: "dashboard stats",
 	},
 	{
-		label: "All Cards",
+		label: () => m.command_palette_nav_all_cards(),
 		to: "/vault/cards",
 		icon: Layers,
 		keywords: "collection owned",
 	},
 	{
-		label: "Sets Progress",
+		label: () => m.command_palette_nav_sets_progress(),
 		to: "/vault/sets",
 		icon: Boxes,
 		keywords: "completion",
 	},
 	{
-		label: "Binders",
+		label: () => m.command_palette_nav_binders(),
 		to: "/vault/binders",
 		icon: BookOpen,
 		keywords: "goals lists",
 	},
 	{
-		label: "Scan cards",
+		label: () => m.command_palette_nav_scan_cards(),
 		to: "/scan",
 		icon: ScanLine,
 		keywords: "camera ocr add",
 	},
-	{ label: "Profile", to: "/profile", icon: UserRound, keywords: "account" },
 	{
-		label: "Billing",
+		label: () => m.command_palette_nav_profile(),
+		to: "/profile",
+		icon: UserRound,
+		keywords: "account",
+	},
+	{
+		label: () => m.command_palette_nav_billing(),
 		to: "/billing",
 		icon: CreditCard,
 		keywords: "plan subscription upgrade",
@@ -75,7 +87,8 @@ export const NAV_DESTINATIONS: readonly NavDestination[] = [
  * and `center` flag are the only bottom-nav-specific presentation.
  */
 export interface BottomNavItem {
-	label: string;
+	/** See {@link NavDestination.label} — a thunk, resolved at render time. */
+	label: () => string;
 	icon: LucideIcon;
 	to?: LinkProps["to"];
 	action?: "search";
@@ -85,7 +98,7 @@ export interface BottomNavItem {
 /** Pull a destination's route + icon by route, overriding the label for the bar. */
 function dest(
 	to: LinkProps["to"],
-	label: string,
+	label: () => string,
 	extra?: Partial<BottomNavItem>,
 ): BottomNavItem {
 	const d = NAV_DESTINATIONS.find((n) => n.to === to);
@@ -95,9 +108,9 @@ function dest(
 
 /** Ordered slots for the mobile bottom nav (Scan is the center FAB). */
 export const BOTTOM_NAV_ITEMS: readonly BottomNavItem[] = [
-	dest("/", "Browse"),
-	dest("/vault", "Vault"),
-	dest("/scan", "Scan", { center: true }),
-	{ label: "Search", icon: Search, action: "search" },
-	dest("/profile", "Profile"),
+	dest("/", () => m.command_palette_nav_browse()),
+	dest("/vault", () => m.bottom_nav_vault()),
+	dest("/scan", () => m.nav_scan(), { center: true }),
+	{ label: () => m.nav_search(), icon: Search, action: "search" },
+	dest("/profile", () => m.command_palette_nav_profile()),
 ];

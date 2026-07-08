@@ -4,5 +4,32 @@
 	"nav_vault": "Your Vault",
 	"nav_scan": "Scan",
 	"nav_search": "Search",
-	"settings_interface_language": "Interface language"
+	"settings_interface_language": "Interface language",
+
+	"command_palette_nav_browse": "Browse",
+	"command_palette_nav_vault_overview": "Vault Overview",
+	"command_palette_nav_all_cards": "All Cards",
+	"command_palette_nav_sets_progress": "Sets Progress",
+	"command_palette_nav_binders": "Binders",
+	"command_palette_nav_scan_cards": "Scan cards",
+	"command_palette_nav_profile": "Profile",
+	"command_palette_nav_billing": "Billing",
+	"bottom_nav_vault": "Vault",
+	"command_palette_search_placeholder": "Search cards, recent searches, pages…",
+	"command_palette_no_matches": "No matches — press Enter to search all cards.",
+	"command_palette_search_all_for": "Search all cards for",
+	"command_palette_cards": "Cards",
+	"command_palette_recent_searches": "Recent searches",
+	"command_palette_recently_viewed": "Recently viewed",
+	"command_palette_clear": "Clear",
+	"command_palette_clear_aria": "Clear {label}",
+	"command_palette_go_to": "Go to",
+	"command_palette_sets": "Sets",
+	"command_palette_hint_navigate": "navigate",
+	"command_palette_hint_select": "select",
+	"command_palette_hint_close": "close",
+
+	"sidebar_mobile_title": "Sidebar",
+	"sidebar_mobile_description": "Displays the mobile sidebar.",
+	"sidebar_toggle": "Toggle Sidebar"
 }
