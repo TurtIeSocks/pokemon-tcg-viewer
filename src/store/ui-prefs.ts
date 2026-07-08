@@ -1,3 +1,4 @@
+import deepmerge from "deepmerge";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
@@ -107,18 +108,10 @@ export const useUiPrefs = create<UiPrefsStore>()(
 				cardMotion: s.cardMotion,
 				printPrefs: s.printPrefs,
 			}),
-			onRehydrateStorage: (defaults) => {
-				return (persisted) => {
-					return {
-						...defaults,
-						...persisted,
-						printPrefs: {
-							...defaults.printPrefs,
-							...persisted?.printPrefs
-						},
-					};
-				};
-			},
+			merge: (persisted, current) =>
+				deepmerge(current, persisted as Partial<UiPrefsStore>, {
+					arrayMerge: (_target, source) => source,
+				}),
 		},
 	),
 );
