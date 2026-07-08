@@ -43,6 +43,7 @@ const FIELD = {
 	cardWidth: { unit: "mm", min: 20, max: 120, step: 1, precision: 0 },
 	cardHeight: { unit: "mm", min: 20, max: 180, step: 1, precision: 0 },
 	spacing: { unit: "mm", min: 0, max: 20, step: 0.5, precision: 1 },
+	lineGap: { unit: "mm", min: 0, max: 12, step: 0.5, precision: 1 },
 	radius: { unit: "mm", min: 0, max: 8, step: 0.5, precision: 1 },
 	border: { unit: "mm", min: 0, max: 3, step: 0.1, precision: 2 },
 	fontLine: { unit: "mm", min: 1, max: 12, step: 0.5, precision: 1 },
@@ -103,6 +104,7 @@ function PlaceholderExtras({
 	qrColor,
 	qrBackground,
 	textScale,
+	lineGapMm,
 }: {
 	extra: PlaceholderExtra | undefined;
 	showPrice: boolean;
@@ -112,13 +114,14 @@ function PlaceholderExtras({
 	qrColor: string;
 	qrBackground: string;
 	textScale: number;
+	lineGapMm: number;
 }) {
 	return (
 		<>
 			{showPrice && extra?.price ? (
 				<div
 					style={{
-						marginTop: "3mm",
+						marginTop: mm(lineGapMm),
 						fontWeight: 700,
 						fontSize: mm(priceSizeMm * textScale),
 						fontVariantNumeric: "tabular-nums",
@@ -134,7 +137,7 @@ function PlaceholderExtras({
 					viewBox={`0 0 ${extra.qr.count} ${extra.qr.count}`}
 					preserveAspectRatio="none"
 					aria-hidden="true"
-					style={{ marginTop: "3mm", display: "block" }}
+					style={{ marginTop: mm(lineGapMm), display: "block" }}
 				>
 					<rect
 						x={0}
@@ -191,6 +194,7 @@ function PrintSheet({
 		cardWidthMm,
 		cardHeightMm,
 		gapMm,
+		lineGapMm,
 		showName,
 		nameSizeMm,
 		showNumber,
@@ -280,7 +284,7 @@ function PrintSheet({
 						{showNumber ? (
 							<div
 								style={{
-									marginTop: "3mm",
+									marginTop: mm(lineGapMm),
 									fontSize: mm(numberSizeMm * textScale),
 									opacity: 0.85,
 								}}
@@ -291,7 +295,7 @@ function PrintSheet({
 						{showSetName ? (
 							<div
 								style={{
-									marginTop: "3mm",
+									marginTop: mm(lineGapMm),
 									fontSize: mm(setNameSizeMm * textScale),
 									opacity: 0.85,
 								}}
@@ -308,6 +312,7 @@ function PrintSheet({
 							qrColor={qrColor}
 							qrBackground={qrBackground}
 							textScale={textScale}
+							lineGapMm={lineGapMm}
 						/>
 					</div>
 				</div>
@@ -495,6 +500,7 @@ export function PrintMissingDialog({
 		cardWidthMm,
 		cardHeightMm,
 		gapMm,
+		lineGapMm,
 		showName,
 		nameSizeMm,
 		showNumber,
@@ -640,6 +646,12 @@ export function PrintMissingDialog({
 									value={gapMm}
 									spec={FIELD.spacing}
 									onCommit={(n) => setPrintPrefs({ gapMm: n })}
+								/>
+								<UnitField
+									label="Row gap"
+									value={lineGapMm}
+									spec={FIELD.lineGap}
+									onCommit={(n) => setPrintPrefs({ lineGapMm: n })}
 								/>
 							</ControlGroup>
 

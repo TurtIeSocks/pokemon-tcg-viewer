@@ -24,6 +24,8 @@ export interface PrintPrefs {
 	cardHeightMm: number;
 	/** Whitespace (mm) between placeholders, for scissor room. Drives the grid too. */
 	gapMm: number;
+	/** Vertical gap (mm) between the stacked rows inside a placeholder (name / # / set / price / QR). */
+	lineGapMm: number;
 	/** Per-line visibility + base font size (mm, before textScale). The card number
 	 * and set name are independent lines so each can be shown/hidden and sized. */
 	showName: boolean;
@@ -57,6 +59,7 @@ export const DEFAULT_PRINT_PREFS: PrintPrefs = {
 	cardWidthMm: 63,
 	cardHeightMm: 88,
 	gapMm: 5,
+	lineGapMm: 3,
 	showName: true,
 	nameSizeMm: 3.6,
 	showNumber: true,

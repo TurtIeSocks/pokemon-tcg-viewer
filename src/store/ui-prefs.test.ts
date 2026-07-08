@@ -38,5 +38,6 @@ describe("ui-prefs print defaults", () => {
 		expect(DEFAULT_PRINT_PREFS.qrSizeMm).toBe(18);
 		expect(DEFAULT_PRINT_PREFS.qrColor).toBe("oklch(0 0 0)");
 		expect(DEFAULT_PRINT_PREFS.qrBackground).toBe("oklch(1 0 29.234)");
+		expect(DEFAULT_PRINT_PREFS.lineGapMm).toBe(3);
 	});
 });
