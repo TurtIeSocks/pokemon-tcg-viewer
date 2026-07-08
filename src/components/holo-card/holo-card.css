@@ -431,3 +431,80 @@
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 	pointer-events: none;
 }
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Unified mini-nav bar — the glass owned/expand/binder pill, centered in the
+   card's LOWER THIRD (~66% down). Fades + scales in on hover / focus-within on
+   desktop; always visible on touch / coarse pointers (no hover to trigger it).
+──────────────────────────────────────────────────────────────────────────── */
+.holo-card-mininav {
+	position: absolute;
+	left: 50%;
+	top: 66%;
+	z-index: 6;
+	transform: translate(-50%, -50%) scale(0.96);
+	opacity: 0;
+	pointer-events: none;
+	transition:
+		opacity 0.18s var(--ease),
+		transform 0.18s var(--ease);
+}
+
+.holo-card:hover .holo-card-mininav,
+.holo-card:focus-within .holo-card-mininav {
+	opacity: 1;
+	transform: translate(-50%, -50%) scale(1);
+	pointer-events: auto;
+}
+
+/* Touch / coarse pointer (no hover state): keep the bar permanently visible. */
+@media (hover: none), (pointer: coarse) {
+	.holo-card-mininav {
+		opacity: 1;
+		transform: translate(-50%, -50%) scale(1);
+		pointer-events: auto;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.holo-card-mininav,
+	.holo-card:hover .holo-card-mininav,
+	.holo-card:focus-within .holo-card-mininav {
+		transition: none;
+		transform: translate(-50%, -50%);
+	}
+}
+
+/* Consistent owned signal: unowned grid cards render subtly grayscale, owned
+   cards keep full color. Scoped to grid tiles so the focus/zoom image (which the
+   collector is inspecting) is never desaturated. */
+.holo-card.size-grid:not(.holo-card--owned) .holo-card-image {
+	filter: grayscale(0.72) brightness(0.94);
+	transition: filter 0.2s var(--ease);
+}
+.holo-card.size-grid:not(.holo-card--owned):hover .holo-card-image,
+.holo-card.size-grid:not(.holo-card--owned):focus-within .holo-card-image {
+	filter: grayscale(0.2) brightness(1);
+}
+@media (prefers-reduced-motion: reduce) {
+	.holo-card.size-grid:not(.holo-card--owned) .holo-card-image {
+		transition: none;
+	}
+}
+
+/* Motion pref OFF: the tilt/foil hook is inert, so swap in a plain hover lift
+   (the design fallback). Guarded so reduced-motion users get no transform. */
+.holo-card--static {
+	transition: transform 0.2s var(--ease);
+}
+.holo-card--static:hover {
+	transform: perspective(600px) translateY(-4px);
+}
+@media (prefers-reduced-motion: reduce) {
+	.holo-card--static {
+		transition: none;
+	}
+	.holo-card--static:hover {
+		transform: none;
+	}
+}

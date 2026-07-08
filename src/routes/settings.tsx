@@ -2,6 +2,7 @@ import { ClientOnly, createFileRoute } from "@tanstack/react-router";
 import { ChevronDown, Languages } from "lucide-react";
 import { LanguageRadioMenu } from "@/components/islands/card-language-control";
 import { CardDatabaseSetting } from "@/components/settings/card-database-setting";
+import { CardMotionSetting } from "@/components/settings/card-motion-setting";
 import { CorpusDatabaseSetting } from "@/components/settings/corpus-database-setting";
 import { ImageCacheSetting } from "@/components/settings/image-cache-setting";
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,7 @@ function SettingsPage() {
 			</header>
 			<ClientOnly fallback={null}>
 				<CatalogLanguageSetting />
+				<CardMotionSetting />
 				<h2 className="mt-2 font-display text-lg text-(--ink-muted)">
 					Caching &amp; Offline
 				</h2>

@@ -17,6 +17,7 @@ import { StackManager } from "../collection/stack-manager";
 import { HoloCard, type HoloCardData, holoCardProps } from "../holo-card";
 import { CardCrossLinks, type CrossLink } from "../islands/cross-links";
 import { CardHeading, CardInfo } from "./card-info";
+import { CardLightbox } from "./card-lightbox";
 import { CardPricingTab } from "./card-pricing-tab";
 import { CardTabs } from "./card-tabs";
 import { toHoloCardData } from "./to-holo";
@@ -74,8 +75,14 @@ export function CardCockpit({
 	// reset when the modal swipes to another card.
 	const canReverse = hasReverseVariant(variants);
 	const [showReverse, setShowReverse] = useState(false);
+	// Click-to-enlarge: the focus card opens a full-bleed hi-res zoom for close
+	// inspection. Reset both view-state flags when the modal swipes to another card.
+	const [zoomOpen, setZoomOpen] = useState(false);
 	// biome-ignore lint/correctness/useExhaustiveDependencies: card.id is the intended reset trigger.
-	useEffect(() => setShowReverse(false), [card.id]);
+	useEffect(() => {
+		setShowReverse(false);
+		setZoomOpen(false);
+	}, [card.id]);
 	return (
 		<div className="@container" style={{ "--accent": accent } as CSSProperties}>
 			{/* Persistent card-art rail + a folder: organizer tabs opening onto a
@@ -97,7 +104,8 @@ export function CardCockpit({
 								{...holoCardProps(holo)}
 								reverse={canReverse && showReverse}
 								size="focus"
-								className="w-full"
+								className="w-full cursor-zoom-in"
+								onClick={() => setZoomOpen(true)}
 							/>
 						</ClientOnly>
 						{canReverse && (
@@ -162,6 +170,14 @@ export function CardCockpit({
 					</div>
 				</div>
 			</div>
+			<ClientOnly fallback={null}>
+				<CardLightbox
+					open={zoomOpen}
+					onClose={() => setZoomOpen(false)}
+					src={holo.imageUrl}
+					alt={holo.name}
+				/>
+			</ClientOnly>
 		</div>
 	);
 }

@@ -1,6 +1,7 @@
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { useUiPrefs } from "../../store/ui-prefs";
 import "./holo-card.css";
 import "./rarity-styles.css";
 import { cdnImage } from "./cdn-image";
@@ -85,7 +86,14 @@ export interface HoloCardProps {
 	onClick?: (e: React.MouseEvent | React.KeyboardEvent) => void;
 	/** Fired on hover/focus — used to warm the card-detail fetch + focus image. */
 	onPrefetch?: () => void;
+	/** Legacy top-right hover slot (retained for grids not yet on the mini-nav). */
 	hoverOverlay?: React.ReactNode;
+	/**
+	 * Unified glass mini-nav bar (owned / expand / binder), rendered centered in
+	 * the card's lower third. Fades/scales in on hover, always shown on touch.
+	 * The consistent interaction surface replacing the old top-right pill.
+	 */
+	miniNav?: React.ReactNode;
 	size?: "grid" | "focus";
 
 	className?: string;
@@ -113,11 +121,16 @@ export function HoloCard({
 	onClick,
 	onPrefetch,
 	hoverOverlay,
+	miniNav,
 	size = "grid",
 	className,
 	style,
 }: HoloCardProps) {
-	const { ref } = useHoloEffect(forceFoil);
+	// The pointer-tracking tilt + foil is gated behind the user's cardMotion pref
+	// (S3: a per-field primitive selector in the component that consumes it).
+	// prefers-reduced-motion further force-disables it inside the hook.
+	const cardMotion = useUiPrefs((s) => s.cardMotion);
+	const { ref } = useHoloEffect(forceFoil, cardMotion);
 	useTiltEffect({ ref, enabled: tilt });
 	const holo = holoPresentation({
 		rarity,
@@ -170,6 +183,9 @@ export function HoloCard({
 		...(types ?? []).map((t) => t.toLowerCase()),
 		foil.masked ? "masked" : null,
 		owned ? "holo-card--owned" : null,
+		// Motion off → CSS drops the tilt/foil transitions and swaps in a plain
+		// hover lift (the effect hook is already inert; this styles the fallback).
+		cardMotion ? null : "holo-card--static",
 		className,
 	]
 		.filter(Boolean)
@@ -243,7 +259,7 @@ export function HoloCard({
 			className={classes}
 			style={{ ...foil.vars, ...style }}
 			role="button"
-			tabIndex={onClick || hoverOverlay ? 0 : -1}
+			tabIndex={onClick || hoverOverlay || miniNav ? 0 : -1}
 			onClick={onClick}
 			onPointerEnter={onPrefetch}
 			onFocus={onPrefetch}
@@ -361,10 +377,16 @@ export function HoloCard({
 			{/* Foil layer stack, 1:1 with simey's DOM: .card__shine → shine div
 			    (+ ::before/::after sub-layers), .card__glare → glare div
 			    (+ ::after). Real elements — CSS can't chain pseudo-elements, and
-			    the recipes need all five compositing layers. */}
-			<div className="holo-card-shine" aria-hidden="true" />
-			<div className="holo-card-glare" aria-hidden="true" />
+			    the recipes need all five compositing layers. Gated on hasImage so
+			    the foil never renders over the missing-image identity placeholder. */}
+			{hasImage && (
+				<>
+					<div className="holo-card-shine" aria-hidden="true" />
+					<div className="holo-card-glare" aria-hidden="true" />
+				</>
+			)}
 			<div className="holo-card-overlay">{hoverOverlay}</div>
+			{miniNav && <div className="holo-card-mininav">{miniNav}</div>}
 			{owned && (
 				<span
 					className="holo-card-owned-badge"

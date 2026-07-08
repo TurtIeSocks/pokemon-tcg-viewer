@@ -25,8 +25,8 @@ import {
 } from "../../store/corpus/i18n-active-hooks";
 import { setsForRegion } from "../../store/sets-slice";
 import { useOwnedCardIdSet } from "../../store/userland/selectors";
-import { CollectionToggle } from "../collection-toggle";
 import { cardThumbSrc, type HoloCardData, holoCardProps } from "../holo-card";
+import { CardMiniNav } from "../holo-card/card-mini-nav";
 import { useCardSelection } from "./card-selection";
 import { FlipCard } from "./flip-card";
 import { HoloCardIsland } from "./holo-card-island";
@@ -186,10 +186,9 @@ export function CardGridIsland({
 			<FlipCard imageUrl={cardThumbSrc(card)}>
 				<HoloCardIsland
 					{...holoCardProps(card)}
+					owned={ownedCardIds.has(card.id)}
 					onPrefetch={onPrefetch}
-					hoverOverlay={
-						selectActive ? undefined : <CollectionToggle card={card} />
-					}
+					miniNav={selectActive ? undefined : <CardMiniNav card={card} />}
 				/>
 				{selectActive && (
 					<div
