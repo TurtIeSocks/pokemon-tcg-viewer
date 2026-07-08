@@ -4,9 +4,9 @@ import { createJSONStorage, persist } from "zustand/middleware";
 
 /**
  * Persisted print-placeholder settings for the "Print missing" binder modal, so a
- * collector's colors/shape choices survive across sessions. Defaults match the
- * site's dark look: black fill, white text, violet border (`--primary`), ~3mm
- * corner radius (a real trading-card corner), 1.3x text scale for legible markers.
+ * collector's colors/shape choices survive across sessions. Defaults are an
+ * ink-saving outline: transparent fill, white text, violet border (`--primary`),
+ * ~3mm corner radius (a real trading-card corner), 1.3x text scale for legible markers.
  */
 export interface PrintPrefs {
 	background: string;
@@ -24,6 +24,8 @@ export interface PrintPrefs {
 	cardHeightMm: number;
 	/** Whitespace (mm) between placeholders, for scissor room. Drives the grid too. */
 	gapMm: number;
+	/** Vertical gap (mm) between the stacked rows inside a placeholder (name / # / set / price / QR). */
+	lineGapMm: number;
 	/** Per-line visibility + base font size (mm, before textScale). The card number
 	 * and set name are independent lines so each can be shown/hidden and sized. */
 	showName: boolean;
@@ -32,6 +34,17 @@ export interface PrintPrefs {
 	numberSizeMm: number;
 	showSetName: boolean;
 	setNameSizeMm: number;
+	/** Show the card's current market price as a placeholder line, base size (mm, before textScale). */
+	showPrice: boolean;
+	priceSizeMm: number;
+	/** Show a QR code linking to the card's /prices page; square, sized in mm. */
+	showQr: boolean;
+	qrSizeMm: number;
+	/** QR module color + backdrop. A transparent backdrop (alpha 0) drops the
+	 * white quiet-zone so the QR floats on the placeholder fill. Keep the modules
+	 * dark on a light backdrop or the code won't scan. */
+	qrColor: string;
+	qrBackground: string;
 }
 
 export const DEFAULT_PRINT_PREFS: PrintPrefs = {
@@ -46,12 +59,19 @@ export const DEFAULT_PRINT_PREFS: PrintPrefs = {
 	cardWidthMm: 63,
 	cardHeightMm: 88,
 	gapMm: 5,
+	lineGapMm: 3,
 	showName: true,
 	nameSizeMm: 3.6,
 	showNumber: true,
 	numberSizeMm: 2.8,
 	showSetName: true,
 	setNameSizeMm: 2.8,
+	showPrice: true,
+	priceSizeMm: 2.8,
+	showQr: true,
+	qrSizeMm: 18,
+	qrColor: "oklch(0 0 0)",
+	qrBackground: "oklch(1 0 29.234)",
 };
 
 interface UiPrefsStore {

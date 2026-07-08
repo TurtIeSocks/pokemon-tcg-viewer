@@ -1,7 +1,7 @@
 "use client";
 
 import { RotateCcw } from "lucide-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,17 @@ import {
 } from "@/components/ui/dialog";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { UnitInput } from "@/components/ui/unit-input";
+import { isSupportedLanguage } from "@/lib/languages";
+import { useSlugIndex } from "@/store/corpus/corpus-runtime";
+import { getActiveI18nLang } from "@/store/corpus/i18n-active";
+import {
+	loadPrices,
+	syncPrices,
+	usePricesRuntime,
+} from "@/store/corpus/prices-runtime";
 import { type PrintPrefs, useUiPrefs } from "@/store/ui-prefs";
 import type { HoloCardData } from "../holo-card/types";
+import { buildPlaceholderExtras, type PlaceholderExtra } from "./print-extras";
 import {
 	CARD_HEIGHT_MM,
 	CARD_WIDTH_MM,
@@ -34,11 +43,14 @@ const FIELD = {
 	cardWidth: { unit: "mm", min: 20, max: 120, step: 1, precision: 0 },
 	cardHeight: { unit: "mm", min: 20, max: 180, step: 1, precision: 0 },
 	spacing: { unit: "mm", min: 0, max: 20, step: 0.5, precision: 1 },
+	lineGap: { unit: "mm", min: 0, max: 12, step: 0.5, precision: 1 },
 	radius: { unit: "mm", min: 0, max: 8, step: 0.5, precision: 1 },
 	border: { unit: "mm", min: 0, max: 3, step: 0.1, precision: 2 },
 	fontLine: { unit: "mm", min: 1, max: 12, step: 0.5, precision: 1 },
 	// Text size is a multiplier stored as 0.6..1.8; shown/edited as a percent.
 	textPct: { unit: "%", min: 60, max: 180, step: 5, precision: 0 },
+	// QR is a square; size is its side length in mm.
+	qrSize: { unit: "mm", min: 10, max: 40, step: 1, precision: 0 },
 } as const;
 
 /** Format a millimetre length, rounded to 0.01mm so float math (3.6 * 1.5) never
@@ -75,6 +87,73 @@ interface PrintMissingDialogProps {
 }
 
 /**
+ * The optional price line + QR code appended below a placeholder's text lines.
+ * Price is the card's formatted market value; the QR encodes its /prices page.
+ * Both are foreground paint (HTML text / SVG `<rect>` + `<path>`) so they reach
+ * paper (CSS backgrounds don't print). Each is hidden when its pref is off or its
+ * data is unavailable: an unpriced card (`price: null`) or an unresolved slug
+ * (`qr: null`). QR is fixed black-on-white for scan reliability, independent of the
+ * user's chosen placeholder colors.
+ */
+function PlaceholderExtras({
+	extra,
+	showPrice,
+	priceSizeMm,
+	showQr,
+	qrSizeMm,
+	qrColor,
+	qrBackground,
+	textScale,
+	lineGapMm,
+}: {
+	extra: PlaceholderExtra | undefined;
+	showPrice: boolean;
+	priceSizeMm: number;
+	showQr: boolean;
+	qrSizeMm: number;
+	qrColor: string;
+	qrBackground: string;
+	textScale: number;
+	lineGapMm: number;
+}) {
+	return (
+		<>
+			{showPrice && extra?.price ? (
+				<div
+					style={{
+						marginTop: mm(lineGapMm),
+						fontWeight: 700,
+						fontSize: mm(priceSizeMm * textScale),
+						fontVariantNumeric: "tabular-nums",
+					}}
+				>
+					{extra.price}
+				</div>
+			) : null}
+			{showQr && extra?.qr ? (
+				<svg
+					width={mm(qrSizeMm)}
+					height={mm(qrSizeMm)}
+					viewBox={`0 0 ${extra.qr.count} ${extra.qr.count}`}
+					preserveAspectRatio="none"
+					aria-hidden="true"
+					style={{ marginTop: mm(lineGapMm), display: "block" }}
+				>
+					<rect
+						x={0}
+						y={0}
+						width={extra.qr.count}
+						height={extra.qr.count}
+						fill={qrBackground}
+					/>
+					<path d={extra.qr.path} fill={qrColor} />
+				</svg>
+			) : null}
+		</>
+	);
+}
+
+/**
  * The physical sheet of placeholders, laid out at true trading-card size (mm).
  * Rendered twice: once as the on-screen live preview inside the modal, and once
  * into a body-level portal that is the only thing the print stylesheet keeps
@@ -98,10 +177,12 @@ function PrintSheet({
 	cards,
 	prefs,
 	columns,
+	extras,
 }: {
 	cards: HoloCardData[];
 	prefs: PrintPrefs;
 	columns: number;
+	extras: Map<string, PlaceholderExtra>;
 }) {
 	const {
 		background,
@@ -113,21 +194,28 @@ function PrintSheet({
 		cardWidthMm,
 		cardHeightMm,
 		gapMm,
+		lineGapMm,
 		showName,
 		nameSizeMm,
 		showNumber,
 		numberSizeMm,
 		showSetName,
 		setNameSizeMm,
+		showPrice,
+		priceSizeMm,
+		showQr,
+		qrSizeMm,
+		qrColor,
+		qrBackground,
 	} = prefs;
 	const width = columns * cardWidthMm + Math.max(0, columns - 1) * gapMm;
 	// Inset the rect by half the stroke so the border isn't clipped by the viewBox.
 	const inset = borderMm / 2;
 	return (
 		<div
+			className="tcgv-print-sheet"
 			style={{
 				display: "grid",
-
 				gridTemplateColumns: `repeat(${Math.max(1, columns)}, ${cardWidthMm}mm)`,
 				gap: mm(gapMm),
 				width: mm(width),
@@ -196,7 +284,7 @@ function PrintSheet({
 						{showNumber ? (
 							<div
 								style={{
-									marginTop: "1.5mm",
+									marginTop: mm(lineGapMm),
 									fontSize: mm(numberSizeMm * textScale),
 									opacity: 0.85,
 								}}
@@ -207,7 +295,7 @@ function PrintSheet({
 						{showSetName ? (
 							<div
 								style={{
-									marginTop: "1mm",
+									marginTop: mm(lineGapMm),
 									fontSize: mm(setNameSizeMm * textScale),
 									opacity: 0.85,
 								}}
@@ -215,6 +303,17 @@ function PrintSheet({
 								{card.setName}
 							</div>
 						) : null}
+						<PlaceholderExtras
+							extra={extras.get(card.id)}
+							showPrice={showPrice}
+							priceSizeMm={priceSizeMm}
+							showQr={showQr}
+							qrSizeMm={qrSizeMm}
+							qrColor={qrColor}
+							qrBackground={qrBackground}
+							textScale={textScale}
+							lineGapMm={lineGapMm}
+						/>
 					</div>
 				</div>
 			))}
@@ -339,12 +438,14 @@ function FontSizeField({
 	onToggle,
 	sizeMm,
 	onSize,
+	spec = FIELD.fontLine,
 }: {
 	label: string;
 	shown: boolean;
 	onToggle: (on: boolean) => void;
 	sizeMm: number;
 	onSize: (n: number) => void;
+	spec?: UnitFieldSpec;
 }) {
 	return (
 		<div className="flex items-center justify-between gap-3">
@@ -358,9 +459,9 @@ function FontSizeField({
 					className="size-4 shrink-0 cursor-pointer accent-primary"
 				/>
 				<NumberUnitInput
-					label={`${label} font size`}
+					label={`${label} size`}
 					value={sizeMm}
-					spec={FIELD.fontLine}
+					spec={spec}
 					disabled={!shown}
 					onCommit={onSize}
 				/>
@@ -399,12 +500,19 @@ export function PrintMissingDialog({
 		cardWidthMm,
 		cardHeightMm,
 		gapMm,
+		lineGapMm,
 		showName,
 		nameSizeMm,
 		showNumber,
 		numberSizeMm,
 		showSetName,
 		setNameSizeMm,
+		showPrice,
+		priceSizeMm,
+		showQr,
+		qrSizeMm,
+		qrColor,
+		qrBackground,
 	} = printPrefs;
 
 	// Card size + spacing drive the grid, so it re-fits as the user resizes.
@@ -421,8 +529,38 @@ export function PrintMissingDialog({
 	const canPrint =
 		typeof document !== "undefined" && typeof window !== "undefined";
 
+	// Load prices when the dialog opens (the binder page doesn't otherwise fetch
+	// them); revalidate the daily blob's date after the instant IDB-first load.
+	useEffect(() => {
+		if (open) void loadPrices().then(() => syncPrices());
+	}, [open]);
+
+	// Precompute each card's price string + QR (pure; memoized). Price reuses the
+	// app's canonical valuation; QR encodes the card's absolute /prices URL.
+	const pricesById = usePricesRuntime((s) => s.byId);
+	const fx = usePricesRuntime((s) => s.meta?.fx ?? null);
+	const slugIndex = useSlugIndex();
+	const extras = useMemo(() => {
+		const active = getActiveI18nLang();
+		const activeLang = isSupportedLanguage(active) ? active : "en";
+		const origin = typeof window === "undefined" ? "" : window.location.origin;
+		return buildPlaceholderExtras({
+			cards,
+			pricesById,
+			fx,
+			slugIndex,
+			origin,
+			activeLang,
+		});
+	}, [cards, pricesById, fx, slugIndex]);
+
 	const sheet = (
-		<PrintSheet cards={cards} prefs={printPrefs} columns={layout.columns} />
+		<PrintSheet
+			cards={cards}
+			prefs={printPrefs}
+			columns={layout.columns}
+			extras={extras}
+		/>
 	);
 
 	return (
@@ -444,7 +582,7 @@ export function PrintMissingDialog({
 					</p>
 				) : (
 					<div className="flex min-w-0 flex-col gap-4">
-						{/* Four control groups in a 2x2 grid, three inputs each. */}
+						{/* Four control groups in a 2x2 grid. */}
 						<div className="grid gap-3 sm:grid-cols-2">
 							<ControlGroup label="Colors">
 								<LabeledRow label="Background">
@@ -468,30 +606,20 @@ export function PrintMissingDialog({
 										onChange={(v) => setPrintPrefs({ borderColor: v })}
 									/>
 								</LabeledRow>
-							</ControlGroup>
-
-							<ControlGroup label="Font sizes">
-								<FontSizeField
-									label="Card name"
-									shown={showName}
-									onToggle={(on) => setPrintPrefs({ showName: on })}
-									sizeMm={nameSizeMm}
-									onSize={(n) => setPrintPrefs({ nameSizeMm: n })}
-								/>
-								<FontSizeField
-									label="Card #"
-									shown={showNumber}
-									onToggle={(on) => setPrintPrefs({ showNumber: on })}
-									sizeMm={numberSizeMm}
-									onSize={(n) => setPrintPrefs({ numberSizeMm: n })}
-								/>
-								<FontSizeField
-									label="Set name"
-									shown={showSetName}
-									onToggle={(on) => setPrintPrefs({ showSetName: on })}
-									sizeMm={setNameSizeMm}
-									onSize={(n) => setPrintPrefs({ setNameSizeMm: n })}
-								/>
+								<LabeledRow label="QR color">
+									<ColorPicker
+										value={qrColor}
+										mode="oklch"
+										onChange={(v) => setPrintPrefs({ qrColor: v })}
+									/>
+								</LabeledRow>
+								<LabeledRow label="QR backdrop">
+									<ColorPicker
+										value={qrBackground}
+										mode="oklch"
+										onChange={(v) => setPrintPrefs({ qrBackground: v })}
+									/>
+								</LabeledRow>
 							</ControlGroup>
 
 							<ControlGroup label="Card size">
@@ -519,6 +647,43 @@ export function PrintMissingDialog({
 									spec={FIELD.spacing}
 									onCommit={(n) => setPrintPrefs({ gapMm: n })}
 								/>
+								<UnitField
+									label="Row gap"
+									value={lineGapMm}
+									spec={FIELD.lineGap}
+									onCommit={(n) => setPrintPrefs({ lineGapMm: n })}
+								/>
+							</ControlGroup>
+
+							<ControlGroup label="Font sizes">
+								<FontSizeField
+									label="Card name"
+									shown={showName}
+									onToggle={(on) => setPrintPrefs({ showName: on })}
+									sizeMm={nameSizeMm}
+									onSize={(n) => setPrintPrefs({ nameSizeMm: n })}
+								/>
+								<FontSizeField
+									label="Card #"
+									shown={showNumber}
+									onToggle={(on) => setPrintPrefs({ showNumber: on })}
+									sizeMm={numberSizeMm}
+									onSize={(n) => setPrintPrefs({ numberSizeMm: n })}
+								/>
+								<FontSizeField
+									label="Set name"
+									shown={showSetName}
+									onToggle={(on) => setPrintPrefs({ showSetName: on })}
+									sizeMm={setNameSizeMm}
+									onSize={(n) => setPrintPrefs({ setNameSizeMm: n })}
+								/>
+								<FontSizeField
+									label="Price"
+									shown={showPrice}
+									onToggle={(on) => setPrintPrefs({ showPrice: on })}
+									sizeMm={priceSizeMm}
+									onSize={(n) => setPrintPrefs({ priceSizeMm: n })}
+								/>
 							</ControlGroup>
 
 							<ControlGroup label="Style">
@@ -539,6 +704,14 @@ export function PrintMissingDialog({
 									value={textScale * 100}
 									spec={FIELD.textPct}
 									onCommit={(n) => setPrintPrefs({ textScale: n / 100 })}
+								/>
+								<FontSizeField
+									label="QR code"
+									spec={FIELD.qrSize}
+									shown={showQr}
+									onToggle={(on) => setPrintPrefs({ showQr: on })}
+									sizeMm={qrSizeMm}
+									onSize={(n) => setPrintPrefs({ qrSizeMm: n })}
 								/>
 							</ControlGroup>
 						</div>

@@ -4,6 +4,7 @@ import type { PokemonSet } from "../../server/card-mappers";
 import { useStore } from "../../store";
 import {
 	resetPricesRuntimeForTests,
+	setPricesFetchersForTests,
 	usePricesRuntime,
 } from "../../store/corpus/prices-runtime";
 import type { Binder } from "../../store/userland/types";
@@ -55,6 +56,16 @@ const renderDetail = (binder: Binder) =>
 
 beforeEach(async () => {
 	await setupUserlandTest();
+	// The "Print missing" dialog loads prices on open; stub the fetchers so this
+	// file never reaches the network when a test opens it.
+	setPricesFetchersForTests({
+		fetchVersion: async () => {
+			throw Object.assign(new Error("unavailable"), { status: 503 });
+		},
+		fetchBlob: async () => {
+			throw Object.assign(new Error("unavailable"), { status: 503 });
+		},
+	});
 	// Pre-seed sets
 	useStore.setState({ sets: [testSet] });
 	// Pre-seed corpus
