@@ -46,23 +46,31 @@ test("renders one placeholder per missing card with name + set/number meta", () 
 	expect(within(p).getByText("#1 / Base Set")).toBeDefined();
 });
 
-test("changing the background color updates the placeholder background", () => {
+test("exposes background, text, and border color controls", () => {
 	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
-	const bgInput = screen.getByLabelText("Background color") as HTMLInputElement;
+	// The registry ColorPicker is a popover trigger, not a native input; assert the
+	// three labelled controls (background, text, border) are present.
+	expect(screen.getByText("Background")).toBeDefined();
+	expect(screen.getByText("Text color")).toBeDefined();
+	expect(screen.getByText("Border color")).toBeDefined();
+});
 
-	act(() => {
-		fireEvent.change(bgInput, { target: { value: "#ff0000" } });
-	});
-
-	expect(bgInput.value).toBe("#ff0000");
-	// Inline style reflects the chosen fill on the live preview.
-	const bg = firstPlaceholder().style.backgroundColor;
-	expect(bg === "#ff0000" || bg === "rgb(255, 0, 0)").toBe(true);
+test("placeholder renders as a card silhouette: white fill, dark text + border, 3mm radius", () => {
+	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
+	const ph = firstPlaceholder();
+	const bg = ph.style.backgroundColor;
+	expect(bg === "#ffffff" || bg === "rgb(255, 255, 255)").toBe(true);
+	// Text and border are independent state, both defaulting to the dark ink.
+	const color = ph.style.color;
+	expect(color === "#111111" || color === "rgb(17, 17, 17)").toBe(true);
+	const border = ph.style.borderColor;
+	expect(border === "#111111" || border === "rgb(17, 17, 17)").toBe(true);
+	// Rounded corners give the card-silhouette look.
+	expect(ph.style.borderRadius).toBe("3mm");
 });
 
 test("toggling Transparent makes the placeholder background transparent", () => {
 	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
-	// Default is a solid (non-transparent) fill.
 	expect(firstPlaceholder().style.backgroundColor).not.toBe("transparent");
 
 	const toggle = screen.getByLabelText("Transparent");
@@ -71,26 +79,21 @@ test("toggling Transparent makes the placeholder background transparent", () => 
 	});
 
 	expect(firstPlaceholder().style.backgroundColor).toBe("transparent");
-	// The background color input disables while transparent is active.
-	expect(
-		(screen.getByLabelText("Background color") as HTMLInputElement).disabled,
-	).toBe(true);
 });
 
-test("changing the text color updates the placeholder text + border color", () => {
+test("the corner-radius slider updates the placeholder rounding", () => {
 	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
-	const textInput = screen.getByLabelText("Text color") as HTMLInputElement;
+	expect(firstPlaceholder().style.borderRadius).toBe("3mm");
 
+	const slider = screen.getByLabelText(
+		"Corner radius in millimetres",
+	) as HTMLInputElement;
 	act(() => {
-		fireEvent.change(textInput, { target: { value: "#0000ff" } });
+		fireEvent.change(slider, { target: { value: "6" } });
 	});
 
-	expect(textInput.value).toBe("#0000ff");
-	const ph = firstPlaceholder();
-	const color = ph.style.color;
-	expect(color === "#0000ff" || color === "rgb(0, 0, 255)").toBe(true);
-	const border = ph.style.borderColor;
-	expect(border === "#0000ff" || border === "rgb(0, 0, 255)").toBe(true);
+	expect(slider.value).toBe("6");
+	expect(firstPlaceholder().style.borderRadius).toBe("6mm");
 });
 
 test("Print button calls window.print (stubbed)", () => {

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
+import { ColorPicker } from "@/components/ui/color-picker";
 import {
 	Dialog,
 	DialogContent,
@@ -23,9 +24,14 @@ import {
 	sheetLayout,
 } from "./print-missing";
 
-/** Print-friendly defaults: white fill, near-black text (least ink, high contrast). */
+/** Print-friendly defaults: white fill, near-black text + border (least ink, high
+ * contrast). Radius ~3mm ≈ a real trading-card corner, so a placeholder reads as
+ * a card silhouette out of the box. */
 const DEFAULT_BG = "#ffffff";
 const DEFAULT_TEXT = "#111111";
+const DEFAULT_BORDER = "#111111";
+const DEFAULT_RADIUS_MM = 3;
+const MAX_RADIUS_MM = 8;
 
 /** Props for {@link PrintMissingDialog}. */
 interface PrintMissingDialogProps {
@@ -39,9 +45,12 @@ interface PrintMissingDialogProps {
 
 interface PrintSheetProps {
 	cards: HoloCardData[];
-	/** Resolved background: a hex color, or "transparent". */
+	/** Resolved background: a color string, or "transparent". */
 	background: string;
 	textColor: string;
+	borderColor: string;
+	/** Corner radius in millimetres (the card-silhouette rounding). */
+	radiusMm: number;
 	columns: number;
 }
 
@@ -51,15 +60,17 @@ interface PrintSheetProps {
  * into a body-level portal that is the only thing the print stylesheet keeps
  * visible. Both copies read the same props so preview matches paper exactly.
  *
- * `printColorAdjust: exact` forces the chosen background color to actually print
- * (browsers drop background colors from print output by default). Cards abut with
- * no gap so adjacent borders form shared cut lines, and `breakInside: avoid`
- * keeps a placeholder from splitting across a page boundary.
+ * `printColorAdjust: exact` forces the chosen background/border colors to actually
+ * print (browsers drop them from print output by default). Each placeholder is a
+ * rounded, bordered card silhouette; `breakInside: avoid` keeps one from splitting
+ * across a page boundary.
  */
 function PrintSheet({
 	cards,
 	background,
 	textColor,
+	borderColor,
+	radiusMm,
 	columns,
 }: PrintSheetProps) {
 	return (
@@ -81,7 +92,8 @@ function PrintSheet({
 						boxSizing: "border-box",
 						borderWidth: "1px",
 						borderStyle: "solid",
-						borderColor: textColor,
+						borderColor,
+						borderRadius: `${radiusMm}mm`,
 						backgroundColor: background,
 						color: textColor,
 						display: "flex",
@@ -115,12 +127,40 @@ function PrintSheet({
 	);
 }
 
+/** A labelled color-picker control (registry ColorPicker: swatch trigger + oklch popover). */
+function ColorControl({
+	label,
+	value,
+	onChange,
+	disabled,
+}: {
+	label: string;
+	value: string;
+	onChange: (next: string) => void;
+	disabled?: boolean;
+}) {
+	return (
+		<div className="flex flex-col gap-2">
+			<span className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[var(--faint)]">
+				{label}
+			</span>
+			<div
+				className={disabled ? "pointer-events-none opacity-40" : undefined}
+				aria-disabled={disabled}
+			>
+				<ColorPicker value={value} onChange={(next) => onChange(next)} />
+			</div>
+		</div>
+	);
+}
+
 /**
  * Modal to print cut-out placeholders for the cards a collector is missing from
  * a binder. Chrome is liquid-glass (via {@link Dialog}); the placeholders and
  * print sheet are deliberately print-oriented (user-chosen colors, real mm
- * sizing, high contrast) rather than glass. See print-missing.ts for the pure
- * layout/derivation helpers and app.css for the @media print stylesheet.
+ * sizing, high contrast, card-silhouette rounding) rather than glass. See
+ * print-missing.ts for the pure layout helpers and app.css for the @media print
+ * stylesheet.
  */
 export function PrintMissingDialog({
 	open,
@@ -130,6 +170,8 @@ export function PrintMissingDialog({
 	const [bg, setBg] = useState(DEFAULT_BG);
 	const [transparent, setTransparent] = useState(false);
 	const [textColor, setTextColor] = useState(DEFAULT_TEXT);
+	const [borderColor, setBorderColor] = useState(DEFAULT_BORDER);
+	const [radiusMm, setRadiusMm] = useState(DEFAULT_RADIUS_MM);
 
 	const layout = sheetLayout();
 	const count = cards.length;
@@ -158,56 +200,64 @@ export function PrintMissingDialog({
 					</p>
 				) : (
 					<div className="flex flex-col gap-5">
-						{/* Color controls */}
-						<div className="flex flex-wrap items-end gap-6">
+						{/* Color + shape controls */}
+						<div className="flex flex-wrap items-end gap-x-8 gap-y-4">
 							<div className="flex flex-col gap-2">
-								<Label
-									htmlFor="print-bg-color"
-									className="text-[10.5px] uppercase tracking-[0.18em] text-[var(--faint)] font-semibold"
-								>
-									Background
-								</Label>
-								<div className="flex items-center gap-3">
-									<input
-										id="print-bg-color"
-										type="color"
-										aria-label="Background color"
-										value={bg}
-										disabled={transparent}
-										onChange={(e) => setBg(e.target.value)}
-										className="h-9 w-12 cursor-pointer rounded-[var(--r-control)] border border-[var(--hairline)] bg-transparent disabled:opacity-40"
-									/>
-									<div className="flex items-center gap-2">
-										<Switch
-											id="print-transparent"
-											checked={transparent}
-											onCheckedChange={setTransparent}
-										/>
-										<Label
-											htmlFor="print-transparent"
-											className="text-[var(--ink)]"
-										>
-											Transparent
-										</Label>
-									</div>
-								</div>
+								<ColorControl
+									label="Background"
+									value={bg}
+									onChange={setBg}
+									disabled={transparent}
+								/>
 							</div>
+							<div className="flex items-center gap-2 pb-1.5">
+								<Switch
+									id="print-transparent"
+									checked={transparent}
+									onCheckedChange={setTransparent}
+								/>
+								<Label
+									htmlFor="print-transparent"
+									className="text-[var(--ink)]"
+								>
+									Transparent
+								</Label>
+							</div>
+
+							<ColorControl
+								label="Text color"
+								value={textColor}
+								onChange={setTextColor}
+							/>
+							<ColorControl
+								label="Border color"
+								value={borderColor}
+								onChange={setBorderColor}
+							/>
 
 							<div className="flex flex-col gap-2">
 								<Label
-									htmlFor="print-text-color"
-									className="text-[10.5px] uppercase tracking-[0.18em] text-[var(--faint)] font-semibold"
+									htmlFor="print-radius"
+									className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[var(--faint)]"
 								>
-									Text color
+									Corner radius
 								</Label>
-								<input
-									id="print-text-color"
-									type="color"
-									aria-label="Text color"
-									value={textColor}
-									onChange={(e) => setTextColor(e.target.value)}
-									className="h-9 w-12 cursor-pointer rounded-[var(--r-control)] border border-[var(--hairline)] bg-transparent"
-								/>
+								<div className="flex h-9 items-center gap-3">
+									<input
+										id="print-radius"
+										type="range"
+										min={0}
+										max={MAX_RADIUS_MM}
+										step={0.5}
+										value={radiusMm}
+										aria-label="Corner radius in millimetres"
+										onChange={(e) => setRadiusMm(Number(e.target.value))}
+										className="w-32 accent-[var(--primary)]"
+									/>
+									<span className="min-w-[3.5ch] font-mono text-xs tabular-nums text-[var(--ink-muted)]">
+										{radiusMm}mm
+									</span>
+								</div>
 							</div>
 						</div>
 
@@ -230,6 +280,8 @@ export function PrintMissingDialog({
 								cards={cards}
 								background={background}
 								textColor={textColor}
+								borderColor={borderColor}
+								radiusMm={radiusMm}
 								columns={layout.columns}
 							/>
 						</section>
@@ -270,6 +322,8 @@ export function PrintMissingDialog({
 							cards={cards}
 							background={background}
 							textColor={textColor}
+							borderColor={borderColor}
+							radiusMm={radiusMm}
 							columns={layout.columns}
 						/>
 					</div>,
