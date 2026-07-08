@@ -1537,7 +1537,7 @@ export function CollectionToggle({ card }: CollectionToggleProps) {
         "w-8 h-8 rounded-full",
         "text-base font-bold text-white",
         "border cursor-pointer",
-        "transition-[background,transform] duration-[120ms] ease-out",
+        "transition-[background,transform] duration-120 ease-out",
         "hover:scale-[1.08] focus-visible:scale-[1.08] focus-visible:outline-none",
         owned
           ? "bg-[rgba(80,200,120,0.92)] border-[rgba(80,200,120,1)] hover:bg-[rgba(60,180,100,1)] focus-visible:bg-[rgba(60,180,100,1)]"
@@ -1580,7 +1580,7 @@ import { addCopy, removeAllCopiesOfCard } from "../../store/userland/userland-st
       className={cn(
         "w-full rounded-[10px] py-2.5 text-center font-mono text-[13px] tracking-[0.04em] transition-colors",
         owned
-          ? "bg-[color:var(--accent,#c9a86a)] font-bold text-[#1a1206]"
+          ? "bg-(--accent,#c9a86a) font-bold text-[#1a1206]"
           : "border border-white/15 text-[#e7e3d8] hover:border-white/30",
       )}
     >

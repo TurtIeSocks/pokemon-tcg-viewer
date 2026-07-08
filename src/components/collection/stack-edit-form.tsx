@@ -282,7 +282,7 @@ function LanguageSelectField({
 
 /**
  * Segmented pill control — renders a track of segments, one active at a time.
- * Active segment: `bg-[var(--primary)] text-[var(--primary-ink)] font-semibold`.
+ * Active segment: `bg-(--primary) text-(--primary-ink) font-semibold`.
  * Matches the `.seg` pattern in the card-manage mock.
  */
 interface SegmentedControlProps<T extends string> {
@@ -305,8 +305,8 @@ function SegmentedControl<T extends string>({
 			role="group"
 			aria-label={ariaLabel}
 			className={cn(
-				"inline-flex bg-[var(--glass)] border border-[var(--border)]",
-				"rounded-[var(--r-pill,9999px)] p-0.5 gap-0.5",
+				"inline-flex bg-(--glass) border border-(--border)",
+				"rounded-(--r-pill,9999px) p-0.5 gap-0.5",
 			)}
 		>
 			{options.map((opt) => {
@@ -322,10 +322,10 @@ function SegmentedControl<T extends string>({
 						onClick={() => onChange(opt.value)}
 						className={cn(
 							"text-[12px] px-3 py-1.5 rounded-[calc(var(--r-pill,9999px)-2px)] transition-colors duration-150",
-							"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]",
+							"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary)",
 							active
-								? "bg-[var(--primary)] text-[var(--primary-ink)] font-semibold"
-								: "text-[var(--ink-muted)] hover:text-[var(--ink)] cursor-pointer",
+								? "bg-(--primary) text-(--primary-ink) font-semibold"
+								: "text-(--ink-muted) hover:text-(--ink) cursor-pointer",
 						)}
 					>
 						{opt.label}
@@ -421,7 +421,7 @@ export function StackEditForm({
 				e.stopPropagation();
 				void form.handleSubmit();
 			}}
-			className="flex flex-col gap-4 [&_[data-slot=field-label]]:text-[var(--ink-muted)]"
+			className="flex flex-col gap-4 **:data-[slot=field-label]:text-(--ink-muted)"
 		>
 			{/* Label — optional user-given name; blank → auto metadata label (stack-label.ts) */}
 			<form.Field

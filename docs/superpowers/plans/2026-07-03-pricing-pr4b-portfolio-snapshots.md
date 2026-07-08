@@ -453,7 +453,7 @@ Expected: FAIL — `Cannot find module './portfolio-chart'`.
 - [ ] **Step 3: Implement** `<PortfolioChart>`:
 - `const snaps = useSnapshots(); const hidden = useHideValue();`
 - Points: `snaps.map((s) => [epochDayUtc(s.priceDate), s.totalCents] as [number, number])`.
-- `hidden` → a small panel showing "•••" (no chart). `snaps.length < 2` → a `text-[var(--faint)]` "Portfolio history builds daily." note. Else a header ("Portfolio value" + latest `formatPrice(snaps.at(-1).totalCents, snaps.at(-1).currency)`) + `<SparkLine points={points} width={...} height={...} />`. Compose the vault's Liquid-Glass tokens (font-mono tabular-nums, --primary line, --faint labels); guard motion with motion-reduce.
+- `hidden` → a small panel showing "•••" (no chart). `snaps.length < 2` → a `text-(--faint)` "Portfolio history builds daily." note. Else a header ("Portfolio value" + latest `formatPrice(snaps.at(-1).totalCents, snaps.at(-1).currency)`) + `<SparkLine points={points} width={...} height={...} />`. Compose the vault's Liquid-Glass tokens (font-mono tabular-nums, --primary line, --faint labels); guard motion with motion-reduce.
 - In `vault-summary.tsx`, render `<PortfolioChart />` in the hero (below the stats row).
 
 - [ ] **Step 4: Run test to verify it passes**

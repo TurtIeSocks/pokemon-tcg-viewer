@@ -108,7 +108,7 @@ function FilterMultiSelect({
 					type="button"
 					variant="outline"
 					aria-label={ariaLabel}
-					className="w-full justify-between rounded-[var(--r-control)] border-[var(--border)] bg-white/[0.04] px-3 font-normal text-[var(--ink)] hover:bg-white/[0.07]"
+					className="w-full justify-between rounded-(--r-control) border-(--border) bg-white/4 px-3 font-normal text-(--ink) hover:bg-white/[0.07]"
 				>
 					<span className="truncate">{summary}</span>
 					<ChevronDown className="size-4 shrink-0 opacity-50" />
@@ -121,7 +121,7 @@ function FilterMultiSelect({
 				{groups
 					? groups.map((g) => (
 							<DropdownMenuGroup key={g.label}>
-								<DropdownMenuLabel className="text-xs text-[var(--ink-muted)]">
+								<DropdownMenuLabel className="text-xs text-(--ink-muted)">
 									{g.label}
 								</DropdownMenuLabel>
 								{g.items.map(renderItem)}
@@ -243,7 +243,7 @@ function CardMultiSelect({
 					type="button"
 					variant="outline"
 					aria-label={ariaLabel}
-					className="w-full justify-between rounded-[var(--r-control)] border-[var(--border)] bg-white/[0.04] px-3 font-normal text-[var(--ink)] hover:bg-white/[0.07]"
+					className="w-full justify-between rounded-(--r-control) border-(--border) bg-white/4 px-3 font-normal text-(--ink) hover:bg-white/[0.07]"
 				>
 					<span className="truncate">{summary}</span>
 					<ChevronDown className="size-4 shrink-0 opacity-50" />
@@ -256,7 +256,7 @@ function CardMultiSelect({
 				{groups.length > 1
 					? groups.map((g) => (
 							<DropdownMenuGroup key={g.label}>
-								<DropdownMenuLabel className="text-xs text-[var(--ink-muted)]">
+								<DropdownMenuLabel className="text-xs text-(--ink-muted)">
 									{g.label}
 								</DropdownMenuLabel>
 								{g.items.map(renderItem)}
@@ -337,7 +337,7 @@ export function SearchControls({
 		<Collapsible
 			open={open}
 			onOpenChange={setFiltersOpen}
-			className="rounded-[var(--r-panel)] border border-[var(--border)] bg-[var(--glass)] backdrop-blur-xl p-3"
+			className="rounded-(--r-panel) border border-(--border) bg-(--glass) backdrop-blur-xl p-3"
 		>
 			<ButtonGroup className="w-full">
 				<Input
@@ -346,7 +346,7 @@ export function SearchControls({
 					placeholder={`${placeholder}...`}
 					aria-label={placeholder}
 					onChange={(e) => onChange({ q: e.target.value })}
-					className="min-w-0 bg-[var(--glass)] border-[var(--border)]"
+					className="min-w-0 bg-(--glass) border-(--border)"
 				/>
 				{/* On mobile the mode picker moves into the filter body to free up
 				    the cramped search bar; on desktop it stays fused in the bar. */}
@@ -365,18 +365,18 @@ export function SearchControls({
 						aria-label="Clear filters"
 						title="Clear filters"
 						onClick={clearFilters}
-						className="flex items-center border border-[var(--border)] bg-[var(--glass)] px-3 text-sm text-[var(--ink-muted)] cursor-pointer transition-colors hover:text-[var(--ink)] outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-[var(--primary)] [&_svg]:pointer-events-none"
+						className="flex items-center border border-(--border) bg-(--glass) px-3 text-sm text-(--ink-muted) cursor-pointer transition-colors hover:text-(--ink) outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-(--primary) [&_svg]:pointer-events-none"
 					>
 						<FilterX className="size-4" />
 					</button>
 				)}
 				<CollapsibleTrigger
 					aria-label="Toggle filters"
-					className="group flex items-center gap-1.5 rounded-r-[var(--r-control)] border border-[var(--border)] bg-[var(--glass)] px-3 text-sm text-[var(--ink-muted)] cursor-pointer transition-colors hover:text-[var(--ink)] outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-[var(--primary)] [&_svg]:pointer-events-none"
+					className="group flex items-center gap-1.5 rounded-r-(--r-control) border border-(--border) bg-(--glass) px-3 text-sm text-(--ink-muted) cursor-pointer transition-colors hover:text-(--ink) outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-(--primary) [&_svg]:pointer-events-none"
 				>
 					<SlidersHorizontal className="size-4" />
 					{activeFilters > 0 && (
-						<span className="inline-flex min-w-4 items-center justify-center rounded-full bg-[var(--primary)] px-1 font-mono text-xs tabular-nums text-[var(--primary-ink)]">
+						<span className="inline-flex min-w-4 items-center justify-center rounded-full bg-(--primary) px-1 font-mono text-xs tabular-nums text-(--primary-ink)">
 							{activeFilters}
 						</span>
 					)}
@@ -387,13 +387,13 @@ export function SearchControls({
 				<div className="space-y-3 pt-3">
 					{isMobile && (
 						<div className="flex items-center gap-2">
-							<span className="shrink-0 text-sm text-[var(--ink-muted)]">
+							<span className="shrink-0 text-sm text-(--ink-muted)">
 								Search mode
 							</span>
 							<SearchModeMenu
 								value={value.mode}
 								onChange={(mode) => onChange({ mode })}
-								className="flex-1 justify-between rounded-[var(--r-control)]"
+								className="flex-1 justify-between rounded-(--r-control)"
 							/>
 						</div>
 					)}

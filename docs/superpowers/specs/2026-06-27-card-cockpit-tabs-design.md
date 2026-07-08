@@ -159,7 +159,7 @@ the existing `SegmentedControl` (`stack-edit-form.tsx`) and `ToggleGroup`
 (`islands/toggle-group.tsx`) are single-select pill groups but neither
 implements `role="tablist"` roving focus, so we don't retrofit them. `CardTabs`
 borrows the SegmentedControl **visual** (active pill =
-`bg-[var(--primary)] text-[var(--primary-ink)]`) with correct semantics:
+`bg-(--primary) text-(--primary-ink)`) with correct semantics:
 
 - `role="tablist"`; each option `role="tab"`, `aria-selected`, roving `tabIndex`
   (active = 0, others = -1), arrow-key navigation moves selection.

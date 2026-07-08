@@ -31,7 +31,7 @@ export function PastDueBanner() {
 	return (
 		<div
 			role="alert"
-			className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--r-panel)] border border-amber-400/30 bg-white/[0.05] px-4 py-3 backdrop-blur-xl motion-reduce:transition-none"
+			className="flex flex-wrap items-center justify-between gap-3 rounded-(--r-panel) border border-amber-400/30 bg-white/5 px-4 py-3 backdrop-blur-xl motion-reduce:transition-none"
 		>
 			<p className="text-sm text-(--ink)">
 				Payment issue. Update your card to keep syncing.
@@ -51,7 +51,7 @@ export function PastDueBanner() {
 				<button
 					type="button"
 					onClick={() => setDismissed(true)}
-					className="rounded-[var(--r-pill)] border border-white/10 px-3 py-1.5 text-xs font-medium text-(--ink-muted) transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary)"
+					className="rounded-(--r-pill) border border-white/10 px-3 py-1.5 text-xs font-medium text-(--ink-muted) transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary)"
 				>
 					Dismiss
 				</button>

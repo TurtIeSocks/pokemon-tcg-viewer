@@ -16,7 +16,7 @@ const isTestEnv =
 export function PokedexGrid({ rows }: { rows: PokedexRow[] }) {
 	if (rows.length === 0) {
 		return (
-			<p className="py-16 text-center font-sans text-sm text-[var(--ink-muted)]">
+			<p className="py-16 text-center font-sans text-sm text-(--ink-muted)">
 				No species match.
 			</p>
 		);

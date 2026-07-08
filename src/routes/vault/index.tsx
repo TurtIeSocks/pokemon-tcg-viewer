@@ -87,7 +87,7 @@ export function VaultOverviewInner({ tree }: { tree: NavTree }) {
 				action={
 					<Link
 						to="/vault/sets"
-						className="text-[12.5px] font-medium text-[var(--primary)] hover:underline"
+						className="text-[12.5px] font-medium text-(--primary) hover:underline"
 					>
 						View all sets →
 					</Link>
@@ -107,7 +107,7 @@ export function VaultOverviewInner({ tree }: { tree: NavTree }) {
 					</div>
 				) : (
 					<GlassPanel className="py-10 text-center">
-						<p className="text-[var(--ink-muted)]">
+						<p className="text-(--ink-muted)">
 							No cards yet. Find your first one and the chase begins.
 						</p>
 					</GlassPanel>
@@ -129,7 +129,7 @@ export function VaultOverviewInner({ tree }: { tree: NavTree }) {
 			>
 				{binderIds.length === 0 ? (
 					<GlassPanel className="py-10 text-center space-y-3">
-						<p className="text-[var(--ink-muted)]">
+						<p className="text-(--ink-muted)">
 							No binders yet. Make your first one.
 						</p>
 						<Button

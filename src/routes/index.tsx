@@ -15,10 +15,10 @@ import { loadCorpus, useCorpusRuntime } from "../store/corpus/corpus-runtime";
 import { useActiveRegionNavTree } from "../store/corpus/region-nav-tree";
 
 const BACKDROP = [
-	{ key: "a", cls: "-rotate-[15deg]", delay: "0s" },
-	{ key: "b", cls: "-rotate-[5deg] scale-125", delay: "0.6s" },
-	{ key: "c", cls: "rotate-[6deg] scale-110", delay: "1.1s" },
-	{ key: "d", cls: "rotate-[15deg]", delay: "1.6s" },
+	{ key: "a", cls: "rotate-[-15deg]", delay: "0s" },
+	{ key: "b", cls: "rotate-[-5deg] scale-125", delay: "0.6s" },
+	{ key: "c", cls: "rotate-6 scale-110", delay: "1.1s" },
+	{ key: "d", cls: "rotate-15", delay: "1.6s" },
 ];
 
 // SSR fallback for the catalog card count; swapped for the live corpus count once
@@ -90,27 +90,27 @@ export function HomeHero() {
 							Cardstack
 						</h1>
 
-						<p className="mt-4 max-w-md text-base text-[var(--ink-muted)]">
+						<p className="mt-4 max-w-md text-base text-(--ink-muted)">
 							Track your whole Pokémon TCG collection. Local-first and
 							open-source, so it's actually yours. No account to start, no
 							judgment about the fourth Charizard.
 						</p>
 
 						{/* Catalog scale + the free/no-account promise. */}
-						<p className="mt-5 flex flex-wrap justify-center gap-x-2 font-mono text-sm tabular-nums text-[var(--ink-muted)]">
+						<p className="mt-5 flex flex-wrap justify-center gap-x-2 font-mono text-sm tabular-nums text-(--ink-muted)">
 							<span>{cardCount.toLocaleString()} cards</span>
-							<span aria-hidden="true" className="text-[var(--faint)]">
+							<span aria-hidden="true" className="text-(--faint)">
 								·
 							</span>
 							<span>{setCount} sets</span>
-							<span aria-hidden="true" className="text-[var(--faint)]">
+							<span aria-hidden="true" className="text-(--faint)">
 								·
 							</span>
 							<span>{eraCount} eras</span>
-							<span aria-hidden="true" className="text-[var(--faint)]">
+							<span aria-hidden="true" className="text-(--faint)">
 								·
 							</span>
-							<span className="text-[var(--primary)]">
+							<span className="text-(--primary)">
 								always free, no account
 							</span>
 						</p>

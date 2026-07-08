@@ -70,10 +70,10 @@ const POPULAR_POKEMON = ["Pikachu", "Charizard", "Eevee", "Mewtwo", "Gengar"];
 // their own properties, so they compose with the float-card `translate`
 // animation without clobbering each other.
 const BACKDROP = [
-	{ transform: "-rotate-[15deg]", delay: "0s" },
-	{ transform: "-rotate-[5deg] scale-125", delay: "0.6s" },
-	{ transform: "rotate-[6deg] scale-110", delay: "1.1s" },
-	{ transform: "rotate-[15deg]", delay: "1.6s" },
+	{ transform: "rotate-[-15deg]", delay: "0s" },
+	{ transform: "rotate-[-5deg] scale-125", delay: "0.6s" },
+	{ transform: "rotate-6 scale-110", delay: "1.1s" },
+	{ transform: "rotate-15", delay: "1.6s" },
 ];
 
 export function Home() {

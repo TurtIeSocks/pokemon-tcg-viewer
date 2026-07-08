@@ -139,7 +139,7 @@ function VaultSetsInnerWithData({ tree }: { tree: NavTree }) {
 					{visibleTree.map((series) => (
 						<section key={series.slug}>
 							<h2 className="mb-3 text-lg font-semibold">{series.name}</h2>
-							<div className="grid [grid-template-columns:repeat(auto-fill,minmax(220px,1fr))] gap-4">
+							<div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
 								{series.sets.map((set) => (
 									<SetTile
 										key={set.id}

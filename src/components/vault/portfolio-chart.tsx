@@ -19,10 +19,10 @@ export function PortfolioChart() {
 	if (hidden) {
 		return (
 			<div className="flex flex-col gap-2">
-				<span className="text-[10px] uppercase tracking-[0.10em] text-[var(--faint)]">
+				<span className="text-[10px] uppercase tracking-widest text-(--faint)">
 					Portfolio value
 				</span>
-				<span className="font-mono text-[15px] tabular-nums text-[var(--ink)]">
+				<span className="font-mono text-[15px] tabular-nums text-(--ink)">
 					{MASK}
 				</span>
 			</div>
@@ -31,7 +31,7 @@ export function PortfolioChart() {
 
 	if (snaps.length < 2) {
 		return (
-			<p className="text-[13px] text-[var(--faint)]">
+			<p className="text-[13px] text-(--faint)">
 				Portfolio history builds daily.
 			</p>
 		);
@@ -47,10 +47,10 @@ export function PortfolioChart() {
 	return (
 		<div className="flex flex-col gap-2">
 			<div className="flex items-baseline justify-between gap-3">
-				<span className="text-[10px] uppercase tracking-[0.10em] text-[var(--faint)]">
+				<span className="text-[10px] uppercase tracking-widest text-(--faint)">
 					Portfolio value
 				</span>
-				<span className="font-mono text-[15px] tabular-nums text-[var(--ink)]">
+				<span className="font-mono text-[15px] tabular-nums text-(--ink)">
 					{latestValue}
 				</span>
 			</div>

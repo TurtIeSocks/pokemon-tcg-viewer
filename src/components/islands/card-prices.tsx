@@ -45,15 +45,15 @@ function PriceLines({ card }: { card: FocusCardData }) {
 						key={`${l.source}:${l.finish ?? ""}`}
 						className="flex items-center justify-between gap-3"
 					>
-						<span className="font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--faint)]">
+						<span className="font-mono text-[11px] uppercase tracking-[0.12em] text-(--faint)">
 							{l.source}
 						</span>
 						<div className="flex items-center gap-2">
-							<span className="font-mono text-[13px] font-bold tabular-nums text-[var(--success)]">
+							<span className="font-mono text-[13px] font-bold tabular-nums text-(--success)">
 								{l.priceLabel}
 							</span>
 							{l.finish ? (
-								<span className="font-mono text-[11px] text-[var(--ink-muted)]">
+								<span className="font-mono text-[11px] text-(--ink-muted)">
 									{l.finish}
 								</span>
 							) : null}
@@ -61,7 +61,7 @@ function PriceLines({ card }: { card: FocusCardData }) {
 								href={l.url}
 								target="_blank"
 								rel="noopener noreferrer"
-								className="font-mono text-[11px] text-[var(--primary)] no-underline transition-colors hover:opacity-80 focus-visible:outline-none focus-visible:opacity-80"
+								className="font-mono text-[11px] text-(--primary) no-underline transition-colors hover:opacity-80 focus-visible:outline-none focus-visible:opacity-80"
 							>
 								↗
 							</a>
@@ -70,12 +70,12 @@ function PriceLines({ card }: { card: FocusCardData }) {
 				))}
 			</div>
 			{hasTcgplayer ? (
-				<p className="mt-2.5 font-mono text-[10px] leading-tight text-[var(--faint)]">
+				<p className="mt-2.5 font-mono text-[10px] leading-tight text-(--faint)">
 					{TCGPLAYER_NOTICE}
 				</p>
 			) : null}
 			{hasCardmarket ? (
-				<p className="mt-2.5 font-mono text-[10px] leading-tight text-[var(--faint)]">
+				<p className="mt-2.5 font-mono text-[10px] leading-tight text-(--faint)">
 					{CARDMARKET_NOTICE}
 				</p>
 			) : null}

@@ -55,8 +55,8 @@ function ReviewRow({
 	}, [corpusIndex, sets, q]);
 
 	return (
-		<div className="rounded-[var(--r-control)] border border-[var(--border)] bg-[var(--glass)] p-2 flex flex-col gap-1.5">
-			<div className="text-xs text-[var(--ink-muted)]">
+		<div className="rounded-(--r-control) border border-(--border) bg-(--glass) p-2 flex flex-col gap-1.5">
+			<div className="text-xs text-(--ink-muted)">
 				{row.card_name || "(no name)"}
 				{row.set_name ? ` · ${row.set_name}` : ""}
 				{row.number ? ` #${row.number}` : ""}
@@ -75,7 +75,7 @@ function ReviewRow({
 							key={c.id}
 							type="button"
 							onClick={() => onPick(c.id)}
-							className="text-left text-xs rounded px-2 py-1 hover:bg-[var(--primary-wash)] text-[var(--ink)]"
+							className="text-left text-xs rounded px-2 py-1 hover:bg-(--primary-wash) text-(--ink)"
 						>
 							{c.name} · {c.setName} #{c.cardNumber}
 						</button>
@@ -147,13 +147,13 @@ export function CsvImportPanel({ rows, onClose }: CsvImportPanelProps) {
 
 	return (
 		<div className="flex flex-col gap-3">
-			<p className="text-[10.5px] uppercase tracking-[0.18em] text-[var(--faint)] font-semibold">
+			<p className="text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold">
 				Column mapping
 			</p>
 			<div className="grid grid-cols-2 gap-x-3 gap-y-2 max-h-44 overflow-y-auto pr-1">
 				{CSV_COLUMNS.map((field) => (
 					<label key={field} className="flex flex-col gap-1 text-xs">
-						<span className="text-[var(--ink-muted)]">
+						<span className="text-(--ink-muted)">
 							{field.replace(/_/g, " ")}
 						</span>
 						<select
@@ -165,7 +165,7 @@ export function CsvImportPanel({ rows, onClose }: CsvImportPanelProps) {
 									[field]: e.target.value || undefined,
 								}))
 							}
-							className="rounded-[var(--r-control)] border border-[var(--border)] bg-[var(--glass)] px-2 py-1 text-[var(--ink)]"
+							className="rounded-(--r-control) border border-(--border) bg-(--glass) px-2 py-1 text-(--ink)"
 						>
 							<option value="">(none)</option>
 							{headers.map((h) => (
@@ -178,15 +178,15 @@ export function CsvImportPanel({ rows, onClose }: CsvImportPanelProps) {
 				))}
 			</div>
 
-			<p className="text-sm font-mono tabular-nums text-[var(--ink-muted)]">
-				<span className="text-[var(--ink)]">{matched.length}</span> matched
+			<p className="text-sm font-mono tabular-nums text-(--ink-muted)">
+				<span className="text-(--ink)">{matched.length}</span> matched
 				{" · "}
-				<span className="text-[var(--ink)]">{review.length}</span> unmatched
+				<span className="text-(--ink)">{review.length}</span> unmatched
 			</p>
 
 			{review.length > 0 && (
 				<div className="flex flex-col gap-2">
-					<p className="text-[10.5px] uppercase tracking-[0.18em] text-[var(--faint)] font-semibold">
+					<p className="text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold">
 						Needs review ({review.length})
 					</p>
 					<div className="max-h-56 overflow-y-auto flex flex-col gap-2">
@@ -207,7 +207,7 @@ export function CsvImportPanel({ rows, onClose }: CsvImportPanelProps) {
 			)}
 
 			<div className="flex items-center gap-2">
-				<label className="mr-auto flex items-center gap-2 text-sm text-[var(--ink-muted)]">
+				<label className="mr-auto flex items-center gap-2 text-sm text-(--ink-muted)">
 					<input
 						type="checkbox"
 						checked={merge}

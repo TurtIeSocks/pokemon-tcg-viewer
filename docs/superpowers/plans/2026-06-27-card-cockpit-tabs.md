@@ -261,10 +261,10 @@ export function CardInfo({
 }) {
 	// …unchanged body computations…
 	return (
-		<div className="flex min-w-0 flex-1 flex-col text-[var(--ink)]">
+		<div className="flex min-w-0 flex-1 flex-col text-(--ink)">
 			{showHeader ? (
 				<>
-					<div className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--ink-muted)]">
+					<div className="font-mono text-[11px] uppercase tracking-[0.14em] text-(--ink-muted)">
 						{card.setName} · #{card.cardNumber}
 					</div>
 					{/* …name + HP row… */}
@@ -354,7 +354,7 @@ Expected: FAIL (module not found).
 
 - [ ] **Step 3: Implement**
 
-Create `src/components/card/card-tabs.tsx`. Visual mirrors the SegmentedControl in `stack-edit-form.tsx` (active pill `bg-[var(--primary)] text-[var(--primary-ink)]`); semantics are a real tablist with roving focus.
+Create `src/components/card/card-tabs.tsx`. Visual mirrors the SegmentedControl in `stack-edit-form.tsx` (active pill `bg-(--primary) text-(--primary-ink)`); semantics are a real tablist with roving focus.
 
 ```tsx
 import { cn } from "@/lib/utils";
@@ -389,7 +389,7 @@ export function CardTabs({
 		<div
 			role="tablist"
 			aria-label="Card views"
-			className="inline-flex gap-1 rounded-[var(--r-pill)] border border-white/10 bg-white/[0.04] p-1"
+			className="inline-flex gap-1 rounded-(--r-pill) border border-white/10 bg-white/4 p-1"
 		>
 			{TABS.map((t) => {
 				const active = t.value === tab;
@@ -413,11 +413,11 @@ export function CardTabs({
 							}
 						}}
 						className={cn(
-							"rounded-[var(--r-pill)] px-3.5 py-1.5 font-mono text-[12px] tracking-[0.04em] transition-colors",
-							"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]",
+							"rounded-(--r-pill) px-3.5 py-1.5 font-mono text-[12px] tracking-[0.04em] transition-colors",
+							"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary)",
 							active
-								? "bg-[var(--primary)] font-semibold text-[var(--primary-ink)]"
-								: "text-[var(--ink-muted)] hover:text-[var(--ink)]",
+								? "bg-(--primary) font-semibold text-(--primary-ink)"
+								: "text-(--ink-muted) hover:text-(--ink)",
 						)}
 					>
 						{t.label}
@@ -497,7 +497,7 @@ import type { FocusCardData } from "../../server/card-mappers";
 import { CardPrices } from "../islands/card-prices";
 
 const SECTION =
-	"font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--faint)]";
+	"font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-(--faint)";
 
 /** Shimmer stand-in for the price panel while the detail RPC is in flight. */
 function PriceGhost() {
@@ -536,7 +536,7 @@ export function CardPricingTab({
 			</section>
 			<section aria-label="Price history">
 				<div className={SECTION}>Price history</div>
-				<GlassPanel className="mt-2 p-4 text-[13px] text-[var(--ink-muted)]">
+				<GlassPanel className="mt-2 p-4 text-[13px] text-(--ink-muted)">
 					Price history. Coming soon.
 				</GlassPanel>
 			</section>
@@ -696,7 +696,7 @@ export function CardCockpit({
 		<div className="@container" style={{ "--accent": accent } as CSSProperties}>
 			{/* Header: breadcrumb + tabs */}
 			<div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.07] px-5 py-3 @3xl:px-6">
-				<span className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--ink-muted)]">
+				<span className="font-mono text-[11px] uppercase tracking-[0.14em] text-(--ink-muted)">
 					{card.setName} · #{card.cardNumber}
 				</span>
 				<CardTabs tab={tab} onChange={onTabChange} idBase={ID_BASE} />
@@ -713,16 +713,16 @@ export function CardCockpit({
 							<HoloCard {...holoCardProps(card)} size="focus" className="w-full" />
 						</ClientOnly>
 						<div className="flex flex-col gap-1.5">
-							<h2 className="font-display text-[22px] font-semibold leading-tight text-[var(--ink)]">
+							<h2 className="font-display text-[22px] font-semibold leading-tight text-(--ink)">
 								{card.name}
 							</h2>
-							<div className="font-display text-sm text-[var(--ink-muted)]">
+							<div className="font-display text-sm text-(--ink-muted)">
 								{describeCard(card)}
 							</div>
 							<div className="flex items-center gap-2">
 								{card.hp ? (
-									<span className="font-mono text-[12px] text-[var(--ink-muted)]">
-										<b className="text-[color:var(--primary)]">{card.hp}</b> HP
+									<span className="font-mono text-[12px] text-(--ink-muted)">
+										<b className="text-(--primary)">{card.hp}</b> HP
 									</span>
 								) : null}
 								{card.rarity ? <Badge variant="default">✦ {card.rarity}</Badge> : null}
@@ -762,9 +762,9 @@ export function CardCockpit({
 function CollectionButton({ cardId, onManage }: { cardId: string; onManage: () => void }) {
 	const owned = useIsOwned(cardId);
 	const base = cn(
-		"flex w-full items-center justify-center gap-2 rounded-[var(--r-control)] py-3 min-h-[44px]",
+		"flex w-full items-center justify-center gap-2 rounded-(--r-control) py-3 min-h-[44px]",
 		"font-mono text-[13px] tracking-[0.04em] transition-colors",
-		"border border-white/15 text-[var(--ink)] hover:border-white/30 cursor-pointer",
+		"border border-white/15 text-(--ink) hover:border-white/30 cursor-pointer",
 	);
 	if (owned) {
 		return (
@@ -779,8 +779,8 @@ function CollectionButton({ cardId, onManage }: { cardId: string; onManage: () =
 			type="button"
 			onClick={() => void addStack(cardId)}
 			className={cn(
-				"w-full rounded-[var(--r-control)] py-2.5 text-center font-mono text-[13px] tracking-[0.04em] transition-colors",
-				"border border-white/15 text-[var(--ink)] hover:border-white/30",
+				"w-full rounded-(--r-control) py-2.5 text-center font-mono text-[13px] tracking-[0.04em] transition-colors",
+				"border border-white/15 text-(--ink) hover:border-white/30",
 			)}
 		>
 			＋ Add to Vault
@@ -981,7 +981,7 @@ function CardPage() {
 					← {card.setName}
 				</Link>
 			</div>
-			<div className="rounded-2xl border border-white/10 bg-[var(--bg)]">
+			<div className="rounded-2xl border border-white/10 bg-(--bg)">
 				<CardCockpit card={card} crossLinks={crossLinks} tab="details" onTabChange={onTabChange} />
 			</div>
 		</div>
@@ -1006,7 +1006,7 @@ function ManagePage() {
 	};
 	return (
 		<div className="mx-auto w-full max-w-4xl overflow-y-auto px-4 py-6">
-			<div className="rounded-2xl border border-white/10 bg-[var(--bg)]">
+			<div className="rounded-2xl border border-white/10 bg-(--bg)">
 				<CardCockpit
 					card={card}
 					crossLinks={[]}
@@ -1049,7 +1049,7 @@ function PricesPage() {
 	};
 	return (
 		<div className="mx-auto w-full max-w-4xl overflow-y-auto px-4 py-6">
-			<div className="rounded-2xl border border-white/10 bg-[var(--bg)]">
+			<div className="rounded-2xl border border-white/10 bg-(--bg)">
 				<CardCockpit
 					card={card}
 					crossLinks={crossLinks}

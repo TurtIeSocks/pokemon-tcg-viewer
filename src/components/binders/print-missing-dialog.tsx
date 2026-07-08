@@ -159,7 +159,7 @@ function ColorControl({
 }) {
 	return (
 		<div className="flex flex-col gap-2">
-			<span className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[var(--faint)]">
+			<span className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-(--faint)">
 				{label}
 			</span>
 			<ColorPicker value={value} onChange={(next) => onChange(next)} />
@@ -193,7 +193,7 @@ function SliderControl({
 		<div className="flex flex-col gap-2">
 			<Label
 				htmlFor={id}
-				className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[var(--faint)]"
+				className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-(--faint)"
 			>
 				{label}
 			</Label>
@@ -207,9 +207,9 @@ function SliderControl({
 					value={value}
 					aria-label={ariaLabel}
 					onChange={(e) => onChange(Number(e.target.value))}
-					className="w-32 accent-[var(--primary)]"
+					className="w-32 accent-(--primary)"
 				/>
-				<span className="min-w-[3.5ch] font-mono text-xs tabular-nums text-[var(--ink-muted)]">
+				<span className="min-w-[3.5ch] font-mono text-xs tabular-nums text-(--ink-muted)">
 					{format(value)}
 				</span>
 			</div>
@@ -271,7 +271,7 @@ export function PrintMissingDialog({
 				</DialogHeader>
 
 				{count === 0 ? (
-					<p className="py-8 text-center text-sm text-[var(--ink-muted)]">
+					<p className="py-8 text-center text-sm text-(--ink-muted)">
 						You own every card in this binder. Nothing to print.
 					</p>
 				) : (
@@ -320,10 +320,10 @@ export function PrintMissingDialog({
 
 						{/* Count feedback */}
 						<div className="flex items-baseline justify-between">
-							<p className="font-mono tabular-nums text-[var(--ink)]">
+							<p className="font-mono tabular-nums text-(--ink)">
 								{printCountLabel(count)}
 							</p>
-							<p className="text-xs text-[var(--ink-muted)]">
+							<p className="text-xs text-(--ink-muted)">
 								About {pages} {pages === 1 ? "sheet" : "sheets"} of paper.
 							</p>
 						</div>
@@ -332,7 +332,7 @@ export function PrintMissingDialog({
 						    overflow keeps the true-size sheet inside the modal box. */}
 						<section
 							aria-label="Placeholder preview"
-							className="max-h-[55vh] min-w-0 overflow-auto rounded-[var(--r-panel)] border border-[var(--hairline)] bg-[var(--glass-2)] p-4"
+							className="max-h-[55vh] min-w-0 overflow-auto rounded-(--r-panel) border border-(--hairline) bg-(--glass-2) p-4"
 						>
 							{sheet}
 						</section>

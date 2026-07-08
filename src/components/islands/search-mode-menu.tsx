@@ -80,7 +80,7 @@ export function SearchModeMenu({
 					aria-label="Search mode"
 					title={`Search mode: ${active.label} — ${active.description}`}
 					className={cn(
-						"rounded-none border-[var(--border)] bg-[var(--glass)] text-[var(--ink-muted)] hover:bg-white/[0.07] hover:text-[var(--ink)]",
+						"rounded-none border-(--border) bg-(--glass) text-(--ink-muted) hover:bg-white/[0.07] hover:text-(--ink)",
 						className,
 					)}
 				>
@@ -98,8 +98,8 @@ export function SearchModeMenu({
 						<DropdownMenuRadioItem key={mode} value={mode}>
 							<Icon className="size-4" aria-hidden="true" />
 							<span className="flex flex-col">
-								<span className="text-[var(--ink)]">{label}</span>
-								<span className="text-xs text-[var(--ink-muted)]">
+								<span className="text-(--ink)">{label}</span>
+								<span className="text-xs text-(--ink-muted)">
 									{description}
 								</span>
 							</span>

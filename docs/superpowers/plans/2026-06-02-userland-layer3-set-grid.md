@@ -142,7 +142,7 @@ export function SetTile({
             {ownedCount}/{set.total}
           </span>
           <span className="absolute inset-x-0 bottom-0 z-10 h-1 bg-black/30">
-            <span className="block h-full bg-[var(--accent,#e0b341)]" style={{ width: `${pct}%` }} />
+            <span className="block h-full bg-(--accent,#e0b341)" style={{ width: `${pct}%` }} />
           </span>
         </>
       )}

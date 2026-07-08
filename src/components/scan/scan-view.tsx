@@ -590,14 +590,14 @@ export function ScanView() {
 
 	return (
 		<div className="flex flex-col gap-4">
-			<p className="max-w-md rounded-[var(--r-control)] border border-[var(--primary)]/30 bg-[var(--primary-wash)] px-3 py-2 text-xs text-[var(--ink-muted)]">
-				<span className="font-medium text-[var(--ink)]">Early alpha.</span> The
+			<p className="max-w-md rounded-(--r-control) border border-(--primary)/30 bg-(--primary-wash) px-3 py-2 text-xs text-(--ink-muted)">
+				<span className="font-medium text-(--ink)">Early alpha.</span> The
 				scanner is brand new and still learning, so results will keep improving.
 				If a card is not found, line it up inside the frame, add more light, or
 				search for it manually.
 			</p>
 
-			<GlassPanel className="relative aspect-[3/4] w-full max-w-md overflow-hidden">
+			<GlassPanel className="relative aspect-3/4 w-full max-w-md overflow-hidden">
 				<div ref={videoWrapRef} className="absolute inset-0">
 					{camera.status === "active" ? (
 						<video
@@ -608,7 +608,7 @@ export function ScanView() {
 							className="h-full w-full object-cover"
 						/>
 					) : (
-						<div className="flex h-full w-full items-center justify-center p-6 text-center text-[var(--ink-muted)]">
+						<div className="flex h-full w-full items-center justify-center p-6 text-center text-(--ink-muted)">
 							{camera.status === "denied" &&
 								"Camera access was denied. Use the upload option below."}
 							{camera.status === "unavailable" &&
@@ -625,7 +625,7 @@ export function ScanView() {
 				)}
 
 				{camera.status === "active" && (
-					<div className="absolute top-3 left-3 rounded-[var(--r-pill)] border border-white/10 bg-black/50 px-3 py-1 font-mono text-xs text-white tabular-nums">
+					<div className="absolute top-3 left-3 rounded-(--r-pill) border border-white/10 bg-black/50 px-3 py-1 font-mono text-xs text-white tabular-nums">
 						{sessionCount} scanned this session
 					</div>
 				)}
@@ -667,18 +667,18 @@ export function ScanView() {
 					)}
 
 				{camera.status === "active" && lastRead && (
-					<div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-[var(--r-pill)] border border-white/10 bg-black/60 px-3 py-1.5 text-center font-mono text-xs text-white tabular-nums">
+					<div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-(--r-pill) border border-white/10 bg-black/60 px-3 py-1.5 text-center font-mono text-xs text-white tabular-nums">
 						Saw: {lastRead}
 					</div>
 				)}
 				{showHint && !lastRead && (
-					<div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-[var(--r-pill)] border border-white/10 bg-black/60 px-3 py-1.5 text-center text-xs text-white">
+					<div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-(--r-pill) border border-white/10 bg-black/60 px-3 py-1.5 text-center text-xs text-white">
 						More light. Fill the frame.
 					</div>
 				)}
 			</GlassPanel>
 
-			<p className="max-w-md text-xs text-[var(--ink-muted)]">
+			<p className="max-w-md text-xs text-(--ink-muted)">
 				Scanning happens on your device. Photos never leave it.
 			</p>
 
@@ -727,7 +727,7 @@ export function ScanView() {
 			</div>
 
 			{AI_SCAN_ENABLED && camera.status === "active" && (
-				<p className="max-w-md text-xs text-[var(--ink-muted)]">
+				<p className="max-w-md text-xs text-(--ink-muted)">
 					AI scan sends this one photo to the server.
 				</p>
 			)}
@@ -762,7 +762,7 @@ export function ScanView() {
 							2x
 						</Button>
 					</div>
-					<p className="max-w-md text-xs text-[var(--ink-muted)]">
+					<p className="max-w-md text-xs text-(--ink-muted)">
 						Tip: zoom in and hold the card farther away for steadier focus.
 					</p>
 				</div>
@@ -778,7 +778,7 @@ export function ScanView() {
 				<Link
 					to="/search"
 					search={{ ...LIST_SEARCH_DEFAULTS, q: nameGuess ?? "" }}
-					className="text-sm text-[var(--primary)] underline-offset-4 hover:underline"
+					className="text-sm text-(--primary) underline-offset-4 hover:underline"
 				>
 					Search for it manually instead
 				</Link>
@@ -794,7 +794,7 @@ function GuideOverlay() {
 			aria-hidden
 			className="pointer-events-none absolute inset-0 flex items-center justify-center"
 		>
-			<div className="aspect-[63/88] h-[80%] rounded-2xl border-2 border-white/40 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]" />
+			<div className="aspect-63/88 h-[80%] rounded-2xl border-2 border-white/40 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]" />
 		</div>
 	);
 }
@@ -810,7 +810,7 @@ function DetectedBoxOutline({ rect }: { rect: Rect }) {
 	return (
 		<div
 			aria-hidden
-			className="pointer-events-none absolute rounded-2xl border-2 border-[var(--primary)] transition-all duration-150 motion-reduce:transition-none"
+			className="pointer-events-none absolute rounded-2xl border-2 border-(--primary) transition-all duration-150 motion-reduce:transition-none"
 			style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h }}
 		/>
 	);

@@ -153,7 +153,7 @@ Used for: toolbar, sidebar, content panels, the Vault summary hero, dialogs, for
 The existing `set-tile.tsx` recipe, generalized. Four layers, back → front (verbatim from CLAUDE.md "Design system"):
 
 1. **Color backdrop** — the surface's own image (set logo / card art) `scale-[1.7] blur-2xl saturate-150 opacity-50`, so it glows in its own palette; over a base gradient `from-black/40 via-black/10 to-black/75` for legibility.
-2. **Frosted pane** — `rounded-2xl border border-white/10 bg-white/[0.05] backdrop-blur-xl` + bright top edge / inset depth: `shadow-[inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(0,0,0,0.35)]`.
+2. **Frosted pane** — `rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl` + bright top edge / inset depth: `shadow-[inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(0,0,0,0.35)]`.
 3. **Specular sheen** (interactive) — `-translate-x-full … group-hover:translate-x-full` sweep `via-white/15`, `motion-reduce:hidden`.
 4. **Content** — crisp hero (logo/name) + accent-stroked **progress ring** + bold `tabular-nums`.
 
@@ -179,7 +179,7 @@ Adopt the Ethereal Glass motion conventions (the user liked the reference, which
 2. **`@theme inline`** maps Tailwind color/font utilities to tokens: `--color-background`, `--color-foreground`, `--color-primary`, `--color-card`, `--color-border`, `--color-ring`, `--color-success/warning/danger`, `--font-display` (Clash), `--font-sans` (Space Grotesk), `--font-mono` (Geist Mono).
 3. **Re-point shadcn semantic vars** to the new oklch values: `--background`, `--foreground`, `--card`, `--card-foreground`, `--primary`, `--primary-foreground`, `--secondary`, `--muted`, `--accent` (→ violet, no longer cyan), `--destructive`, `--border`, `--input`, `--ring`, and the `--sidebar-*` set (see §9).
 4. **Glass as utilities, not bare global classes.** Expose `.glass`, `.bezel`, `.stagger`, `.skel` via `@utility` (Tailwind v4) or small components — **namespaced** to avoid the bare-class/Tailwind collision documented in memory (`tailwind-class-collisions`). Prefer the `GlassPanel`/`BezelPanel` components (§10) over global classes where a component fits.
-5. Expose `--shadow`, `--shadow-lift`, `--ease` for use via arbitrary values (`shadow-[var(--shadow)]`, `ease-[var(--ease)]`).
+5. Expose `--shadow`, `--shadow-lift`, `--ease` for use via arbitrary values (`shadow-(--shadow)`, `ease-(--ease)`).
 
 ## 9. Shell — adopt shadcn `sidebar-04` (inset), re-skinned
 

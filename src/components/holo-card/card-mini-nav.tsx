@@ -40,12 +40,12 @@ function NavButton({
 			className={[
 				"inline-flex h-8 min-w-8 items-center justify-center gap-0.5 rounded-full px-1.5",
 				"font-mono text-xs font-semibold text-white",
-				"transition-[background-color,transform] duration-150 ease-[var(--ease)]",
+				"transition-[background-color,transform] duration-150 ease-(--ease)",
 				"hover:scale-105 focus-visible:scale-105",
 				"motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:focus-visible:scale-100",
-				"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]",
+				"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary)",
 				tone === "owned"
-					? "bg-[var(--success)]/85 hover:bg-[var(--success)] focus-visible:bg-[var(--success)]"
+					? "bg-(--success)/85 hover:bg-(--success) focus-visible:bg-(--success)"
 					: "hover:bg-white/15 focus-visible:bg-white/15",
 			].join(" ")}
 		>
@@ -104,7 +104,7 @@ export function CardMiniNav({ card }: { card: HoloCardData }) {
 
 	return (
 		<>
-			<div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.05] p-1 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(0,0,0,0.35)]">
+			<div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(0,0,0,0.35)]">
 				<NavButton
 					label={
 						owned

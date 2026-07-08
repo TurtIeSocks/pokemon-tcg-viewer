@@ -5,7 +5,7 @@ import { CardPrices } from "../islands/card-prices";
 import { CardHistory } from "./card-history";
 
 const SECTION =
-	"font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--faint)]";
+	"font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-(--faint)";
 
 /** Shimmer stand-in for the price panel while the detail RPC is in flight. */
 function PriceGhost() {

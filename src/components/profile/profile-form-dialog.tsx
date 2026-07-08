@@ -204,9 +204,9 @@ export function ProfileFormDialog({
 													aria-pressed={active}
 													onClick={() => field.handleChange(p.id)}
 													className={cn(
-														"size-8 rounded-full ring-2 ring-offset-2 ring-offset-[var(--canvas)] transition-all",
+														"size-8 rounded-full ring-2 ring-offset-2 ring-offset-(--canvas) transition-all",
 														active
-															? "ring-[var(--primary)]"
+															? "ring-(--primary)"
 															: "ring-transparent hover:ring-white/30",
 													)}
 													style={{ background: getAvatarPreset(p.id).gradient }}

@@ -48,7 +48,7 @@
 - Produces:
   - `function useHideValue(): boolean` — `useUserland((s) => s.profile?.hideValue ?? false)`.
   - `function formatSignedPrice(minor: number | null, currency: string): string` — `null → ""`; `≥0 → "+" + formatPrice`; `<0 → "-" + formatPrice(abs)`.
-  - `<Stat tone="up" | "down">` — down → `text-[var(--danger)]`.
+  - `<Stat tone="up" | "down">` — down → `text-(--danger)`.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -156,15 +156,15 @@ export function Stat({ value, label, tone }: StatProps) {
 				className={cn(
 					"font-mono text-2xl font-medium tabular-nums",
 					tone === "up"
-						? "text-[var(--success)]"
+						? "text-(--success)"
 						: tone === "down"
-							? "text-[var(--danger)]"
-							: "text-[var(--ink)]",
+							? "text-(--danger)"
+							: "text-(--ink)",
 				)}
 			>
 				{value}
 			</div>
-			<div className="mt-0.5 text-[11px] uppercase tracking-wide text-[var(--faint)]">
+			<div className="mt-0.5 text-[11px] uppercase tracking-wide text-(--faint)">
 				{label}
 			</div>
 		</div>
@@ -460,10 +460,10 @@ export function useStackMarketValue(stack: Stack): StackMarket {
 	const { marketValue, pnl, currency } = market; // from useStackMarketValue(item)
 	if (marketValue == null) return null;
 	return (
-		<span className="font-mono text-[11px] text-[var(--success)]">
+		<span className="font-mono text-[11px] text-(--success)">
 			{hidden ? "•••" : formatPrice(marketValue, currency)}
 			{!hidden && pnl != null ? (
-				<span className={pnl >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]"}>
+				<span className={pnl >= 0 ? "text-(--success)" : "text-(--danger)"}>
 					{" "}
 					{formatSignedPrice(pnl, currency)}
 				</span>
@@ -573,10 +573,10 @@ Note: this hook calls hooks unconditionally BEFORE the early return (members/own
 ```tsx
 {value != null ? (
 	<div className="flex justify-between text-sm">
-		<span className="text-[10.5px] uppercase tracking-[0.18em] text-[var(--faint)] font-semibold self-center">
+		<span className="text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold self-center">
 			Market value
 		</span>
-		<span className="font-mono tabular-nums text-[var(--success)]">
+		<span className="font-mono tabular-nums text-(--success)">
 			{hidden ? "•••" : formatPrice(value, currency)}
 		</span>
 	</div>

@@ -145,7 +145,7 @@ import {
 import type { SortControlProps } from "@/lib/sort";
 
 const TRIGGER_CLASS =
-	"border-[var(--border)] bg-[var(--glass)] text-[var(--ink-muted)] hover:bg-white/[0.07] hover:text-[var(--ink)]";
+	"border-(--border) bg-(--glass) text-(--ink-muted) hover:bg-white/[0.07] hover:text-(--ink)";
 
 /**
  * Two fused segments — a sort-mode dropdown and an ASC/DESC toggle — in the
@@ -562,7 +562,7 @@ Inside the `ButtonGroup`, add the search-mode menu between the `Input` and the `
 	placeholder="Search species by name or dex number..."
 	aria-label="Search species by name or dex number"
 	onChange={(e) => onChange({ query: e.target.value })}
-	className="min-w-0 border-[var(--border)] bg-[var(--glass)]"
+	className="min-w-0 border-(--border) bg-(--glass)"
 />
 <SearchModeMenu
 	value={value.searchMode}

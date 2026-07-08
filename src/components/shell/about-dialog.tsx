@@ -60,30 +60,30 @@ export function AboutDialog() {
 					{CREDITS.map((credit) => (
 						<li
 							key={credit.href}
-							className="flex flex-col gap-1 rounded-[var(--r-control)] border border-[var(--hairline)] bg-[var(--glass)] px-3 py-2.5"
+							className="flex flex-col gap-1 rounded-(--r-control) border border-(--hairline) bg-(--glass) px-3 py-2.5"
 						>
-							<span className="text-[10.5px] uppercase tracking-[0.18em] text-[var(--faint)] font-semibold">
+							<span className="text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold">
 								{credit.title}
 							</span>
-							<p className="text-sm text-[var(--ink-muted)]">{credit.body}</p>
+							<p className="text-sm text-(--ink-muted)">{credit.body}</p>
 							<a
 								href={credit.href}
 								target="_blank"
 								rel="noreferrer noopener"
-								className="text-sm font-medium text-[var(--primary)] underline-offset-4 hover:underline"
+								className="text-sm font-medium text-(--primary) underline-offset-4 hover:underline"
 							>
 								{credit.linkLabel}
 							</a>
 						</li>
 					))}
 				</ul>
-				<div className="border-t border-[var(--border)] pt-4 text-sm text-[var(--ink-muted)]">
+				<div className="border-t border-(--border) pt-4 text-sm text-(--ink-muted)">
 					Open source, top to bottom. No landlord, no lock-in.{" "}
 					<a
 						href={REPO_URL}
 						target="_blank"
 						rel="noreferrer noopener"
-						className="font-medium text-[var(--primary)] underline-offset-4 hover:underline"
+						className="font-medium text-(--primary) underline-offset-4 hover:underline"
 					>
 						View source on GitHub
 					</a>

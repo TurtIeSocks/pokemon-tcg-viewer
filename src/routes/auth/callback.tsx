@@ -144,20 +144,20 @@ function AuthCallback() {
 			<BezelPanel className="w-full text-center">
 				{phase === "exchanging" ? (
 					<div className="space-y-2 py-4">
-						<p className="font-display text-lg font-semibold text-[var(--ink)]">
+						<p className="font-display text-lg font-semibold text-(--ink)">
 							Signing you in…
 						</p>
-						<p className="text-sm text-[var(--ink-muted)]">
+						<p className="text-sm text-(--ink-muted)">
 							Checking your magic link. One sec.
 						</p>
 					</div>
 				) : (
 					<div className="space-y-4 py-4">
 						<div className="space-y-1.5">
-							<p className="font-display text-lg font-semibold text-[var(--ink)]">
+							<p className="font-display text-lg font-semibold text-(--ink)">
 								That link didn't work
 							</p>
-							<p className="text-sm text-[var(--ink-muted)]">{message}</p>
+							<p className="text-sm text-(--ink-muted)">{message}</p>
 						</div>
 						<Button asChild variant="soft" size="sm">
 							<Link to="/vault">Back to your Vault</Link>

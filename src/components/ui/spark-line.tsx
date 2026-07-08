@@ -73,7 +73,7 @@ export function SparkLine({
 			role="presentation"
 		>
 			{label ? <title>{label}</title> : null}
-			<polygon points={areaAttr} className="fill-[var(--primary)]/10" />
+			<polygon points={areaAttr} className="fill-(--primary)/10" />
 			<polyline
 				points={pointsAttr}
 				fill="none"
@@ -81,7 +81,7 @@ export function SparkLine({
 				strokeLinecap="round"
 				strokeLinejoin="round"
 				vectorEffect={fluid ? "non-scaling-stroke" : undefined}
-				className="stroke-[var(--primary)] transition-[stroke] duration-300 ease-out motion-reduce:transition-none"
+				className="stroke-(--primary) transition-[stroke] duration-300 ease-out motion-reduce:transition-none"
 			/>
 		</svg>
 	);

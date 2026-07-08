@@ -24,11 +24,11 @@ export function VaultPageHeader({
 	return (
 		<div className="flex flex-wrap items-center justify-between gap-3">
 			<div className="space-y-1.5">
-				<h1 className="font-display text-2xl font-semibold tracking-tight text-[var(--ink)]">
+				<h1 className="font-display text-2xl font-semibold tracking-tight text-(--ink)">
 					{title}
 				</h1>
 				{subtitle ? (
-					<p className="text-[15px] text-[var(--ink-muted)]">{subtitle}</p>
+					<p className="text-[15px] text-(--ink-muted)">{subtitle}</p>
 				) : null}
 			</div>
 			{actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}

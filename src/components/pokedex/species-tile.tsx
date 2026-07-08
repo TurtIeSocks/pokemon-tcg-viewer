@@ -24,7 +24,7 @@ export function SpeciesTile({ row }: { row: PokedexRow }) {
 			to="/pokemon/$name"
 			params={{ name: row.name }}
 			search={LIST_SEARCH_DEFAULTS}
-			className="group block overflow-hidden rounded-2xl border border-white/10 bg-white/[0.05] p-2.5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(0,0,0,0.35)] transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] motion-reduce:transition-none"
+			className="group block overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-2.5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(0,0,0,0.35)] transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) motion-reduce:transition-none"
 		>
 			<div className="relative flex h-24 items-center justify-center">
 				<span
@@ -40,13 +40,13 @@ export function SpeciesTile({ row }: { row: PokedexRow }) {
 					className="relative z-10 h-20 w-20 [image-rendering:pixelated]"
 				/>
 			</div>
-			<div className="truncate font-sans text-sm font-semibold text-[var(--ink)]">
+			<div className="truncate font-sans text-sm font-semibold text-(--ink)">
 				{titleCaseSlug(row.name)}
 			</div>
-			<div className="mt-0.5 font-mono text-[11px] text-[var(--ink-muted)] tabular-nums">
+			<div className="mt-0.5 font-mono text-[11px] text-(--ink-muted) tabular-nums">
 				#{String(row.dex).padStart(3, "0")}
 			</div>
-			<div className="mt-1.5 inline-block rounded-full border border-[var(--primary)]/25 bg-[var(--primary)]/10 px-2 font-mono text-[10px] text-[var(--primary)] tabular-nums">
+			<div className="mt-1.5 inline-block rounded-full border border-(--primary)/25 bg-(--primary)/10 px-2 font-mono text-[10px] text-(--primary) tabular-nums">
 				{row.count} {row.count === 1 ? "card" : "cards"}
 			</div>
 		</Link>

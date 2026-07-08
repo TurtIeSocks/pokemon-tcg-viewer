@@ -89,11 +89,11 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 
 				<div className="flex flex-col gap-3">
 					{/* Dropzone / file picker */}
-					<label className="flex flex-col items-center justify-center gap-2 rounded-[var(--r-panel)] border border-dashed border-[var(--border)] bg-[var(--glass)] px-4 py-6 cursor-pointer text-center hover:border-[var(--primary)] transition-colors">
-						<span className="text-[10.5px] uppercase tracking-[0.18em] text-[var(--faint)] font-semibold">
+					<label className="flex flex-col items-center justify-center gap-2 rounded-(--r-panel) border border-dashed border-(--border) bg-(--glass) px-4 py-6 cursor-pointer text-center hover:border-(--primary) transition-colors">
+						<span className="text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold">
 							JSON or CSV file
 						</span>
-						<span className="text-sm text-[var(--ink-muted)]">
+						<span className="text-sm text-(--ink-muted)">
 							Click to browse or drop a file here
 						</span>
 						<input
@@ -105,16 +105,16 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 						/>
 					</label>
 
-					{error && <p className="text-sm text-[var(--danger)]">{error}</p>}
+					{error && <p className="text-sm text-(--danger)">{error}</p>}
 
 					{snapshot && (
-						<p className="text-sm font-mono tabular-nums text-[var(--ink-muted)]">
-							<span className="text-[var(--ink)]">
+						<p className="text-sm font-mono tabular-nums text-(--ink-muted)">
+							<span className="text-(--ink)">
 								{snapshot.collection.length}
 							</span>{" "}
 							cards
 							{" · "}
-							<span className="text-[var(--ink)]">
+							<span className="text-(--ink)">
 								{snapshot.binders.length}
 							</span>{" "}
 							binders

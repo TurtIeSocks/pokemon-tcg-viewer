@@ -10,19 +10,19 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-[var(--primary-wash)] text-[var(--primary)] border-transparent",
+          "bg-(--primary-wash) text-(--primary) border-transparent",
         secondary:
-          "bg-[var(--glass)] text-[var(--ink-muted)]",
+          "bg-(--glass) text-(--ink-muted)",
         destructive:
-          "bg-[color-mix(in_oklch,var(--danger)_18%,transparent)] text-[var(--danger)]",
+          "bg-[color-mix(in_oklch,var(--danger)_18%,transparent)] text-(--danger)",
         outline:
-          "border-[var(--border)] text-[var(--ink-muted)]",
+          "border-(--border) text-(--ink-muted)",
         success:
-          "bg-[color-mix(in_oklch,var(--success)_18%,transparent)] text-[var(--success)]",
+          "bg-[color-mix(in_oklch,var(--success)_18%,transparent)] text-(--success)",
         warning:
-          "bg-[color-mix(in_oklch,var(--warning)_18%,transparent)] text-[var(--warning)]",
-        ghost: "[a&]:hover:bg-white/[0.09]",
-        link: "text-[var(--primary)] underline-offset-4 [a&]:hover:underline",
+          "bg-[color-mix(in_oklch,var(--warning)_18%,transparent)] text-(--warning)",
+        ghost: "[a&]:hover:bg-white/9",
+        link: "text-(--primary) underline-offset-4 [a&]:hover:underline",
       },
     },
     defaultVariants: {

@@ -21,7 +21,7 @@ import {
 import { useDisplayLanguage } from "@/store/corpus/i18n-active-hooks";
 
 const TRIGGER_CLASS =
-	"border-[var(--border)] bg-[var(--glass)] text-[var(--ink-muted)] hover:bg-white/[0.07] hover:text-[var(--ink)]";
+	"border-(--border) bg-(--glass) text-(--ink-muted) hover:bg-white/[0.07] hover:text-(--ink)";
 
 /** Western-region languages, in display order (everything not in ASIAN_LANGUAGES). */
 const WESTERN_LANGUAGES: readonly SupportedLanguage[] =
@@ -37,7 +37,7 @@ function LanguageRadioItem({ lang }: { lang: SupportedLanguage }) {
 				{LANGUAGE_LABELS[lang]}
 			</span>
 			{lang !== "en" ? (
-				<span className="ml-auto font-mono text-[10px] tabular-nums text-[var(--faint)]">
+				<span className="ml-auto font-mono text-[10px] tabular-nums text-(--faint)">
 					{Math.round(coverage * 100)}%
 				</span>
 			) : null}
@@ -77,7 +77,7 @@ export function LanguageRadioMenu({
 				))}
 				<DropdownMenuSeparator />
 				<DropdownMenuLabel>Asian catalog</DropdownMenuLabel>
-				<p className="px-2 pb-1.5 text-[11px] text-[var(--ink-muted)]">
+				<p className="px-2 pb-1.5 text-[11px] text-(--ink-muted)">
 					Switches to the Asian catalog, a separate set of sets.
 				</p>
 				{ASIAN_LANGUAGES.map((lang) => (

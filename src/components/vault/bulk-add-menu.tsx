@@ -169,7 +169,7 @@ export function BulkAddMenu({
 							<DropdownMenuItem disabled>
 								Add smart rule to binder
 							</DropdownMenuItem>
-							<DropdownMenuLabel className="-mt-1 text-xs text-[var(--ink-muted)] font-normal">
+							<DropdownMenuLabel className="-mt-1 text-xs text-(--ink-muted) font-normal">
 								{ruleDisabledReason}
 							</DropdownMenuLabel>
 						</>

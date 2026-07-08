@@ -36,7 +36,7 @@ import { cardThumbSrc, type HoloCardData } from "../holo-card";
 import { NAV_DESTINATIONS } from "./command-palette-data";
 
 const KBD =
-	"rounded border border-[var(--border)] bg-[var(--glass)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--ink-muted)]";
+	"rounded border border-(--border) bg-(--glass) px-1.5 py-0.5 font-mono text-[10px] text-(--ink-muted)";
 
 /**
  * The ⌘K command palette. Mounted once in the app shell. Owns the global
@@ -65,7 +65,7 @@ function ClearableHeading({
 				aria-label={`Clear ${label.toLowerCase()}`}
 				onMouseDown={(e) => e.preventDefault()}
 				onClick={onClear}
-				className="rounded px-1 tracking-normal text-[var(--faint)] normal-case transition-colors hover:text-[var(--ink)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--primary)]"
+				className="rounded px-1 tracking-normal text-(--faint) normal-case transition-colors hover:text-(--ink) focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--primary)"
 			>
 				Clear
 			</button>
@@ -226,7 +226,7 @@ export function CommandPalette({ tree }: { tree: NavTree }) {
 							<Search />
 							<span className="truncate">
 								Search all cards for{" "}
-								<span className="font-medium text-[var(--ink)]">
+								<span className="font-medium text-(--ink)">
 									“{trimmed}”
 								</span>
 							</span>
@@ -250,7 +250,7 @@ export function CommandPalette({ tree }: { tree: NavTree }) {
 									className="size-7 shrink-0 rounded object-contain"
 								/>
 								<span className="truncate">{card.name}</span>
-								<span className="ml-auto truncate pl-2 text-xs text-[var(--faint)]">
+								<span className="ml-auto truncate pl-2 text-xs text-(--faint)">
 									{card.setName}
 								</span>
 							</CommandItem>
@@ -302,7 +302,7 @@ export function CommandPalette({ tree }: { tree: NavTree }) {
 									className="size-7 shrink-0 rounded object-contain"
 								/>
 								<span className="truncate">{card.name}</span>
-								<span className="ml-auto truncate pl-2 text-xs text-[var(--faint)]">
+								<span className="ml-auto truncate pl-2 text-xs text-(--faint)">
 									{card.setName}
 								</span>
 							</CommandItem>
@@ -345,7 +345,7 @@ export function CommandPalette({ tree }: { tree: NavTree }) {
 							>
 								<Boxes />
 								<span className="truncate">{m.setName}</span>
-								<span className="ml-auto truncate pl-2 text-xs text-[var(--faint)]">
+								<span className="ml-auto truncate pl-2 text-xs text-(--faint)">
 									{m.seriesName}
 								</span>
 							</CommandItem>
@@ -354,7 +354,7 @@ export function CommandPalette({ tree }: { tree: NavTree }) {
 				)}
 			</CommandList>
 
-			<div className="flex items-center gap-3 border-t border-[var(--border)] px-4 py-2 text-[11px] text-[var(--faint)]">
+			<div className="flex items-center gap-3 border-t border-(--border) px-4 py-2 text-[11px] text-(--faint)">
 				<span className="flex items-center gap-1">
 					<kbd className={KBD}>↑↓</kbd> navigate
 				</span>

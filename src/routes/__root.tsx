@@ -172,7 +172,7 @@ function ShellHeader({ tree }: { tree: NavTree }) {
 	const openPalette = useCommandPalette((s) => s.setOpen);
 
 	return (
-		<header className="sticky top-0 z-30 flex h-14 items-center gap-2 justify-between border-b border-[var(--hairline)] px-4 backdrop-blur-md">
+		<header className="sticky top-0 z-30 flex h-14 items-center gap-2 justify-between border-b border-(--hairline) px-4 backdrop-blur-md">
 			<SidebarTrigger />
 
 			{/* Breadcrumb */}
@@ -180,15 +180,15 @@ function ShellHeader({ tree }: { tree: NavTree }) {
 				{crumbItems.map((item) => (
 					<span key={item.key} className="flex items-center gap-1.5 min-w-0">
 						{!item.isFirst && (
-							<span className="font-mono text-[var(--faint)] text-xs opacity-60 shrink-0">
+							<span className="font-mono text-(--faint) text-xs opacity-60 shrink-0">
 								›
 							</span>
 						)}
 						<span
 							className={
 								item.isLast
-									? "truncate text-sm font-semibold text-[var(--ink)]"
-									: "truncate text-sm text-[var(--faint)] hidden sm:block"
+									? "truncate text-sm font-semibold text-(--ink)"
+									: "truncate text-sm text-(--faint) hidden sm:block"
 							}
 						>
 							{item.label}

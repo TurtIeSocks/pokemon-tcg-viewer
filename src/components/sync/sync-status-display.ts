@@ -24,15 +24,15 @@ export interface SyncStatusDisplay {
 export const SYNC_STATUS_DISPLAY: Record<SyncStatus, SyncStatusDisplay> = {
 	synced: {
 		label: "Synced",
-		dotClass: "bg-[var(--success)]",
+		dotClass: "bg-(--success)",
 	},
 	syncing: {
 		label: "Syncing…",
-		dotClass: "bg-[var(--primary)] animate-pulse",
+		dotClass: "bg-(--primary) animate-pulse",
 	},
 	offline: {
 		label: "Offline",
-		dotClass: "bg-[var(--ink-muted)]",
+		dotClass: "bg-(--ink-muted)",
 	},
 	error: {
 		label: "Sync error",
@@ -40,7 +40,7 @@ export const SYNC_STATUS_DISPLAY: Record<SyncStatus, SyncStatusDisplay> = {
 	},
 	needs_upgrade: {
 		label: "Upgrade to sync",
-		dotClass: "bg-[var(--primary)]",
+		dotClass: "bg-(--primary)",
 	},
 };
 
@@ -51,7 +51,7 @@ export const SYNC_STATUS_DISPLAY: Record<SyncStatus, SyncStatusDisplay> = {
  */
 export const LOCAL_ONLY_DISPLAY: SyncStatusDisplay = {
 	label: "Local only",
-	dotClass: "border border-[var(--ink-muted)] bg-transparent",
+	dotClass: "border border-(--ink-muted) bg-transparent",
 };
 
 /**

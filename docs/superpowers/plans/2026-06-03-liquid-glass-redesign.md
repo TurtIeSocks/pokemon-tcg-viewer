@@ -279,7 +279,7 @@ export function ProgressRing({ pct, size = 46, stroke = 4, children }:
         <circle cx={size/2} cy={size/2} r={r} fill="none" strokeWidth={stroke} className="stroke-white/15" />
         <circle cx={size/2} cy={size/2} r={r} fill="none" strokeWidth={stroke} strokeLinecap="round"
           strokeDasharray={circ} strokeDashoffset={offset}
-          className="stroke-[var(--primary)] transition-[stroke-dashoffset] duration-500 ease-out" />
+          className="stroke-(--primary) transition-[stroke-dashoffset] duration-500 ease-out" />
       </svg>
       <span className="relative z-10 flex items-center justify-center">{children}</span>
     </span>
@@ -332,16 +332,16 @@ import { cn } from "@/lib/utils";
 export function GlassPanel({ className, interactive, ...props }:
   ComponentProps<"div"> & { interactive?: boolean }) {
   return <div className={cn(
-    "rounded-[var(--r-panel)] border border-[var(--border)] bg-[var(--card)] backdrop-blur-xl",
-    "shadow-[var(--shadow)]",
-    interactive && "transition-[transform,box-shadow,border-color] duration-300 ease-[var(--ease)] hover:-translate-y-1 hover:shadow-[var(--shadow-lift)] hover:border-[color-mix(in_oklch,var(--primary)_45%,var(--border))] motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+    "rounded-(--r-panel) border border-(--border) bg-(--card) backdrop-blur-xl",
+    "shadow-(--shadow)",
+    interactive && "transition-[transform,box-shadow,border-color] duration-300 ease-(--ease) hover:-translate-y-1 hover:shadow-(--shadow-lift) hover:border-[color-mix(in_oklch,var(--primary)_45%,var(--border))] motion-reduce:transition-none motion-reduce:hover:translate-y-0",
     className)} {...props} />;
 }
 
 export function BezelPanel({ className, children, ...props }: ComponentProps<"div">) {
   return (
-    <div className={cn("rounded-[calc(var(--r-panel)+6px)] border border-[var(--hairline)] bg-white/[0.04] p-1.5 backdrop-blur-xl", className)} {...props}>
-      <div className="rounded-[var(--r-panel)] bg-[var(--bg)] p-5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.10)]">{children}</div>
+    <div className={cn("rounded-[calc(var(--r-panel)+6px)] border border-(--hairline) bg-white/4 p-1.5 backdrop-blur-xl", className)} {...props}>
+      <div className="rounded-(--r-panel) bg-(--bg) p-5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.10)]">{children}</div>
     </div>
   );
 }
@@ -375,8 +375,8 @@ test("Stat shows value and label", () => {
 export function Stat({ value, label, tone }: { value: string; label: string; tone?: "up" }) {
   return (
     <div>
-      <div className={`font-mono text-2xl font-medium tabular-nums ${tone === "up" ? "text-[var(--success)]" : "text-[var(--ink)]"}`}>{value}</div>
-      <div className="mt-0.5 text-[11px] uppercase tracking-wide text-[var(--faint)]">{label}</div>
+      <div className={`font-mono text-2xl font-medium tabular-nums ${tone === "up" ? "text-(--success)" : "text-(--ink)"}`}>{value}</div>
+      <div className="mt-0.5 text-[11px] uppercase tracking-wide text-(--faint)">{label}</div>
     </div>
   );
 }
@@ -384,7 +384,7 @@ export function Stat({ value, label, tone }: { value: string; label: string; ton
 import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 export function Eyebrow({ className, ...p }: ComponentProps<"span">) {
-  return <span className={cn("inline-block rounded-full border border-[var(--border)] bg-[var(--primary-wash)] px-[11px] py-[5px] text-[10.5px] font-semibold uppercase tracking-[0.22em] text-[var(--primary)]", className)} {...p} />;
+  return <span className={cn("inline-block rounded-full border border-(--border) bg-(--primary-wash) px-[11px] py-[5px] text-[10.5px] font-semibold uppercase tracking-[0.22em] text-(--primary)", className)} {...p} />;
 }
 ```
 
@@ -416,7 +416,7 @@ import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 export function Stagger({ className, ...p }: ComponentProps<"div">) { return <div className={cn("stagger", className)} {...p} />; }
 export function Sheen() {
-  return <span aria-hidden className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 ease-[var(--ease)] group-hover:translate-x-full motion-reduce:hidden" />;
+  return <span aria-hidden className="pointer-events-none absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 ease-(--ease) group-hover:translate-x-full motion-reduce:hidden" />;
 }
 ```
 
@@ -426,7 +426,7 @@ export function Sheen() {
 
 **Files:** Modify `src/components/ui/button.tsx` (+ update any test asserting old variant classes).
 
-- [ ] **Step 1:** Update the CVA `buttonVariants`: base → `rounded-[var(--r-pill)] font-medium`; `default` → `bg-[var(--primary)] text-[var(--primary-ink)] hover:bg-[var(--primary-strong)] shadow-[0_10px_26px_-10px_var(--primary)]`; add `soft` → `bg-[var(--primary-wash)] text-[var(--primary)]`; `ghost` → `bg-white/[0.05] text-[var(--ink)] border border-[var(--border)] hover:bg-white/[0.09]`; `outline`/`secondary`/`destructive` mapped to tokens. Keep sizes. Active press: `active:scale-[0.975] transition-transform`.
+- [ ] **Step 1:** Update the CVA `buttonVariants`: base → `rounded-(--r-pill) font-medium`; `default` → `bg-(--primary) text-(--primary-ink) hover:bg-(--primary-strong) shadow-[0_10px_26px_-10px_var(--primary)]`; add `soft` → `bg-(--primary-wash) text-(--primary)`; `ghost` → `bg-white/5 text-(--ink) border border-(--border) hover:bg-white/9`; `outline`/`secondary`/`destructive` mapped to tokens. Keep sizes. Active press: `active:scale-[0.975] transition-transform`.
 
 - [ ] **Step 2:** If a test asserts old button classes, update it to the new contract. Run `bun test` for button.
 
@@ -437,12 +437,12 @@ export function Sheen() {
 **Files (modify):** `ui/badge.tsx`, `ui/input.tsx`, `ui/textarea.tsx`, `ui/select.tsx`, `ui/switch.tsx`, `ui/dialog.tsx`, `ui/sheet.tsx`, `ui/popover.tsx`, `ui/dropdown-menu.tsx`, `ui/command.tsx`, `ui/tooltip.tsx`, `ui/separator.tsx`, `ui/scroll-area.tsx`, `ui/progress-bar.tsx`.
 
 Apply the token contract (one small commit per 2-3 files; preview the `card-manage` mock as the form reference):
-- **badge:** `default` → `bg-[var(--primary-wash)] text-[var(--primary)]`; add `success/warning/danger` wash variants (`color-mix(in oklch, var(--success) 18%, transparent)` etc.); rounded-full.
-- **input/textarea:** `bg-white/[0.04] border-[var(--border)] rounded-[var(--r-control)]`; focus → `border-[var(--primary)] shadow-[0_0_0_3px_var(--primary-wash)]`; placeholder `text-[var(--faint)]`.
-- **select/dropdown/popover/command/tooltip:** panels → `bg-[var(--bg)]/95 border-[var(--border)] backdrop-blur-xl rounded-[var(--r-control)]`; active item → `bg-[var(--primary-wash)] text-[var(--ink)]`.
-- **switch:** checked track → `bg-[var(--primary)]`.
+- **badge:** `default` → `bg-(--primary-wash) text-(--primary)`; add `success/warning/danger` wash variants (`color-mix(in oklch, var(--success) 18%, transparent)` etc.); rounded-full.
+- **input/textarea:** `bg-white/4 border-(--border) rounded-(--r-control)`; focus → `border-(--primary) shadow-[0_0_0_3px_var(--primary-wash)]`; placeholder `text-(--faint)`.
+- **select/dropdown/popover/command/tooltip:** panels → `bg-(--bg)/95 border-(--border) backdrop-blur-xl rounded-(--r-control)`; active item → `bg-(--primary-wash) text-(--ink)`.
+- **switch:** checked track → `bg-(--primary)`.
 - **dialog/sheet:** content → `GlassPanel`-style (glass + `--shadow`); overlay → `bg-black/60 backdrop-blur-sm`.
-- **progress-bar:** fill → `bg-gradient-to-r from-[var(--primary)] to-[var(--primary-strong)]`; track → `bg-white/[0.08]`.
+- **progress-bar:** fill → `bg-linear-to-r from-(--primary) to-(--primary-strong)`; track → `bg-white/8`.
 
 - [ ] **Step 1–N:** For each group: edit → update any class-asserting test → `bun test` + `biome` → `preview_screenshot` a surface that uses it → commit (`feat(design): re-skin <components>`).
 
@@ -477,7 +477,7 @@ Apply the token contract (one small commit per 2-3 files; preview the `card-mana
 --sidebar-ring: var(--primary);
 ```
 
-- [ ] **Step 2:** In `sidebar.tsx`, give the `Sidebar` container the floating-glass treatment (rounded, `bg-[var(--card)]`, `border-[var(--border)]`, `backdrop-blur-xl`, `--shadow`) and active `SidebarMenuButton` (`data-active`) → `bg-[var(--primary-wash)]` + inset violet ring. Target the `sidebar-inset` mock.
+- [ ] **Step 2:** In `sidebar.tsx`, give the `Sidebar` container the floating-glass treatment (rounded, `bg-(--card)`, `border-(--border)`, `backdrop-blur-xl`, `--shadow`) and active `SidebarMenuButton` (`data-active`) → `bg-(--primary-wash)` + inset violet ring. Target the `sidebar-inset` mock.
 - [ ] **Step 3:** `bun test` + `biome` + preview. **Commit** `git commit -m "feat(design): glass-skin sidebar + map sidebar vars"`
 
 ### Task 2.3: Compose the inset shell in the root layout
@@ -518,7 +518,7 @@ Apply the token contract (one small commit per 2-3 files; preview the `card-mana
 
 ### Task 4.1: Search/filter controls + toggles
 **Files:** `src/components/islands/search-controls.tsx`, `view-mode-toggle.tsx`, `match-mode-toggle.tsx`.
-- [ ] **Step 1:** Replace the ad-hoc `rgba(120,100,255,0.25)` in `match-mode-toggle.tsx` with the token segmented-control pattern (active seg → `bg-[var(--primary)] text-[var(--primary-ink)]`; track → `bg-white/[0.05] border-[var(--border)]`). Same for `view-mode-toggle`. Grep to confirm no `rgba(120,100,255` remains.
+- [ ] **Step 1:** Replace the ad-hoc `rgba(120,100,255,0.25)` in `match-mode-toggle.tsx` with the token segmented-control pattern (active seg → `bg-(--primary) text-(--primary-ink)`; track → `bg-white/5 border-(--border)`). Same for `view-mode-toggle`. Grep to confirm no `rgba(120,100,255` remains.
 - [ ] **Step 2:** Filter bar → `GlassPanel`; inputs/selects already re-skinned (1.6). Update any test asserting the old toggle bg. `bun test` + preview. **Commit** `git commit -m "feat(design): search controls on tokens"`
 
 ### Task 4.2: Card grids

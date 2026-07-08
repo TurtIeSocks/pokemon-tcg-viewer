@@ -65,16 +65,16 @@ export function CandidateTray({
 							<button
 								type="button"
 								onClick={() => pick(c.cardId)}
-								className={`rounded-[var(--r-control)] border p-1 transition-[border-color] ${
+								className={`rounded-(--r-control) border p-1 transition-[border-color] ${
 									isPicked
-										? "border-[var(--primary)]"
-										: "border-[var(--border)] hover:border-[color-mix(in_oklch,var(--primary)_45%,var(--border))]"
+										? "border-(--primary)"
+										: "border-(--border) hover:border-[color-mix(in_oklch,var(--primary)_45%,var(--border))]"
 								}`}
 							>
 								<img
 									src={hydrated.imageUrlSmall}
 									alt={hydrated.name}
-									className="h-24 w-auto rounded-[var(--r-control)]"
+									className="h-24 w-auto rounded-(--r-control)"
 								/>
 							</button>
 						</li>

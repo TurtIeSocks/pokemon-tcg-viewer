@@ -1162,7 +1162,7 @@ export function ProfileFormDialog({
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle className="font-display">Edit profile</DialogTitle>
-					<DialogDescription className="text-[var(--ink-muted)]">
+					<DialogDescription className="text-(--ink-muted)">
 						Your collector identity. Shown across the app.
 					</DialogDescription>
 				</DialogHeader>
@@ -1243,9 +1243,9 @@ export function ProfileFormDialog({
 													aria-pressed={active}
 													onClick={() => field.handleChange(p.id)}
 													className={cn(
-														"size-8 rounded-full ring-2 ring-offset-2 ring-offset-[var(--canvas)] transition-all",
+														"size-8 rounded-full ring-2 ring-offset-2 ring-offset-(--canvas) transition-all",
 														active
-															? "ring-[var(--primary)]"
+															? "ring-(--primary)"
 															: "ring-transparent hover:ring-white/30",
 													)}
 													style={{ background: getAvatarPreset(p.id).gradient }}
@@ -1463,10 +1463,10 @@ export function ProfilePageInner({ tree }: { tree: NavTree }) {
 				<div className="flex flex-wrap items-center gap-5">
 					<CollectorAvatar displayName={displayName} preset={preset} size={72} />
 					<div className="flex-1 space-y-1">
-						<h1 className="font-display text-[clamp(1.6rem,3.5vw,2.25rem)] font-semibold leading-none tracking-tight text-[var(--ink)]">
+						<h1 className="font-display text-[clamp(1.6rem,3.5vw,2.25rem)] font-semibold leading-none tracking-tight text-(--ink)">
 							{displayName}
 						</h1>
-						<p className="text-[15px] text-[var(--ink-muted)]">
+						<p className="text-[15px] text-(--ink-muted)">
 							{profile?.bio || "No bio yet."}
 						</p>
 					</div>
@@ -1482,10 +1482,10 @@ export function ProfilePageInner({ tree }: { tree: NavTree }) {
 					<div className="flex flex-wrap items-center gap-7">
 						<ProgressRing pct={stats.completionPct} size={88} stroke={8}>
 							<div className="flex flex-col items-center leading-none">
-								<span className="font-mono text-[21px] font-medium tabular-nums text-[var(--ink)]">
+								<span className="font-mono text-[21px] font-medium tabular-nums text-(--ink)">
 									{stats.completionPct}%
 								</span>
-								<span className="mt-0.5 text-[9.5px] uppercase tracking-[0.10em] text-[var(--faint)]">
+								<span className="mt-0.5 text-[9.5px] uppercase tracking-widest text-(--faint)">
 									complete
 								</span>
 							</div>
@@ -1504,7 +1504,7 @@ export function ProfilePageInner({ tree }: { tree: NavTree }) {
 
 			{/* Favorite set */}
 			<section className="mt-8 space-y-3.5">
-				<h2 className="font-display text-[21px] font-medium text-[var(--ink)]">
+				<h2 className="font-display text-[21px] font-medium text-(--ink)">
 					Favorite set
 				</h2>
 				{favorite ? (
@@ -1518,7 +1518,7 @@ export function ProfilePageInner({ tree }: { tree: NavTree }) {
 					</div>
 				) : (
 					<GlassPanel className="py-10 text-center space-y-3">
-						<p className="text-[var(--ink-muted)]">
+						<p className="text-(--ink-muted)">
 							No favorite set yet — pick one to show it off.
 						</p>
 						<Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
@@ -1550,7 +1550,7 @@ function ProfilePage() {
 					fallback={
 						<div className="space-y-1.5">
 							<Eyebrow>Your profile</Eyebrow>
-							<h1 className="font-display text-3xl font-semibold text-[var(--ink)]">
+							<h1 className="font-display text-3xl font-semibold text-(--ink)">
 								Collector
 							</h1>
 						</div>
@@ -1649,10 +1649,10 @@ function FooterIdentity() {
 		<Link
 			to="/profile"
 			onClick={() => setOpenMobile(false)}
-			className="flex min-w-0 flex-1 items-center gap-2 rounded-md py-0.5 transition-colors hover:text-[var(--ink)]"
+			className="flex min-w-0 flex-1 items-center gap-2 rounded-md py-0.5 transition-colors hover:text-(--ink)"
 		>
 			<CollectorAvatar displayName={displayName} preset={preset} size={28} />
-			<span className="flex-1 truncate text-xs text-[var(--ink-muted)] group-data-[collapsible=icon]:hidden">
+			<span className="flex-1 truncate text-xs text-(--ink-muted) group-data-[collapsible=icon]:hidden">
 				{displayName}
 			</span>
 		</Link>

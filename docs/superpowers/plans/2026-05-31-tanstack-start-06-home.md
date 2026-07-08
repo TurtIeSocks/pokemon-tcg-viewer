@@ -160,10 +160,10 @@ import { HomeRecents } from "../components/islands/home-recents";
 const POPULAR = ["Pikachu", "Charizard", "Eevee", "Mewtwo", "Gengar"];
 
 const BACKDROP = [
-	{ key: "a", cls: "-rotate-[15deg]", delay: "0s" },
-	{ key: "b", cls: "-rotate-[5deg] scale-125", delay: "0.6s" },
-	{ key: "c", cls: "rotate-[6deg] scale-110", delay: "1.1s" },
-	{ key: "d", cls: "rotate-[15deg]", delay: "1.6s" },
+	{ key: "a", cls: "rotate-[-15deg]", delay: "0s" },
+	{ key: "b", cls: "rotate-[-5deg] scale-125", delay: "0.6s" },
+	{ key: "c", cls: "rotate-6 scale-110", delay: "1.1s" },
+	{ key: "d", cls: "rotate-15", delay: "1.6s" },
 ];
 
 export function HomeHero() {

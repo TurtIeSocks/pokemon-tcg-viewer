@@ -894,7 +894,7 @@ export function LangFallbackBadge({ show }: { show: boolean }) {
 	return (
 		<span
 			aria-label="Shown in English"
-			className="pointer-events-none absolute right-1 top-1 rounded-[var(--r-pill)] border border-white/10 bg-black/45 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-[var(--ink-muted)] backdrop-blur-sm"
+			className="pointer-events-none absolute right-1 top-1 rounded-(--r-pill) border border-white/10 bg-black/45 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-(--ink-muted) backdrop-blur-sm"
 		>
 			EN
 		</span>
@@ -1013,7 +1013,7 @@ function ModalLangControl({ cardId }: { cardId: string }) {
 				}
 			/>
 			{isFallback ? (
-				<span className="font-mono text-[11px] text-[var(--ink-muted)]">
+				<span className="font-mono text-[11px] text-(--ink-muted)">
 					Shown in English.
 				</span>
 			) : null}

@@ -11,7 +11,7 @@ import {
 import type { SortControlProps } from "@/lib/sort";
 
 const TRIGGER_CLASS =
-	"border-[var(--border)] bg-[var(--glass)] text-[var(--ink-muted)] hover:bg-white/[0.07] hover:text-[var(--ink)]";
+	"border-(--border) bg-(--glass) text-(--ink-muted) hover:bg-white/[0.07] hover:text-(--ink)";
 
 /**
  * Two fused segments -- a sort-mode dropdown and an ASC/DESC toggle -- in the

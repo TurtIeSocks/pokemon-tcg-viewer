@@ -50,7 +50,7 @@ export function PokedexControls({
 		<Collapsible
 			open={open}
 			onOpenChange={setFiltersOpen}
-			className="rounded-[var(--r-panel)] border border-[var(--border)] bg-[var(--glass)] p-3 backdrop-blur-xl"
+			className="rounded-(--r-panel) border border-(--border) bg-(--glass) p-3 backdrop-blur-xl"
 		>
 			<ButtonGroup className="w-full">
 				<Input
@@ -59,7 +59,7 @@ export function PokedexControls({
 					placeholder="Search species by name or dex number..."
 					aria-label="Search species by name or dex number"
 					onChange={(e) => onChange({ query: e.target.value })}
-					className="min-w-0 border-[var(--border)] bg-[var(--glass)]"
+					className="min-w-0 border-(--border) bg-(--glass)"
 				/>
 				<SearchModeMenu
 					value={value.searchMode}
@@ -67,11 +67,11 @@ export function PokedexControls({
 				/>
 				<CollapsibleTrigger
 					aria-label="Toggle filters"
-					className="group flex cursor-pointer items-center gap-1.5 rounded-r-[var(--r-control)] border border-[var(--border)] bg-[var(--glass)] px-3 text-sm text-[var(--ink-muted)] outline-none transition-colors hover:text-[var(--ink)] focus-visible:relative focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-[var(--primary)] [&_svg]:pointer-events-none"
+					className="group flex cursor-pointer items-center gap-1.5 rounded-r-(--r-control) border border-(--border) bg-(--glass) px-3 text-sm text-(--ink-muted) outline-none transition-colors hover:text-(--ink) focus-visible:relative focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-(--primary) [&_svg]:pointer-events-none"
 				>
 					<SlidersHorizontal className="size-4" />
 					{activeFilters > 0 && (
-						<span className="inline-flex min-w-4 items-center justify-center rounded-full bg-[var(--primary)] px-1 font-mono text-xs text-[var(--primary-ink)] tabular-nums">
+						<span className="inline-flex min-w-4 items-center justify-center rounded-full bg-(--primary) px-1 font-mono text-xs text-(--primary-ink) tabular-nums">
 							{activeFilters}
 						</span>
 					)}

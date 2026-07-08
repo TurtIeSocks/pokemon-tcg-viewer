@@ -9,7 +9,7 @@ export function Sheen() {
 	return (
 		<span
 			aria-hidden="true"
-			className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 ease-[var(--ease)] group-hover:translate-x-full motion-reduce:hidden"
+			className="pointer-events-none absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 ease-(--ease) group-hover:translate-x-full motion-reduce:hidden"
 		/>
 	);
 }

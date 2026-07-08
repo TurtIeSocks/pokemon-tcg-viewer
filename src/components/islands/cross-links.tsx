@@ -18,7 +18,7 @@ export function CardCrossLinks({ links }: { links: CrossLink[] }) {
 				<Link
 					key={cl.label}
 					{...cl.link}
-					className="inline-flex items-center gap-1.5 font-mono text-xs tracking-[0.03em] text-[var(--ink-muted)] no-underline transition-colors hover:text-[color:var(--primary)] focus-visible:text-[color:var(--primary)] focus-visible:outline-none"
+					className="inline-flex items-center gap-1.5 font-mono text-xs tracking-[0.03em] text-(--ink-muted) no-underline transition-colors hover:text-(--primary) focus-visible:text-(--primary) focus-visible:outline-none"
 				>
 					<span aria-hidden="true">→</span>
 					{cl.label}

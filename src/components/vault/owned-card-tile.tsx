@@ -45,7 +45,7 @@ export function OwnedCardTile({ row }: OwnedCardTileProps) {
 				miniNav={<CardMiniNav card={row.card} />}
 			/>
 			{row.count > 1 && (
-				<span className="absolute bottom-1 right-1 flex h-6 min-w-6 items-center justify-center rounded-[var(--r-pill)] bg-[var(--success)] px-1.5 text-xs font-bold text-[var(--primary-ink)]">
+				<span className="absolute bottom-1 right-1 flex h-6 min-w-6 items-center justify-center rounded-(--r-pill) bg-(--success) px-1.5 text-xs font-bold text-(--primary-ink)">
 					×{row.count}
 				</span>
 			)}
@@ -56,7 +56,7 @@ export function OwnedCardTile({ row }: OwnedCardTileProps) {
 		return (
 			<Link
 				{...cardManageLinkPropsFor(p, linkLanguage)}
-				className="relative block w-full text-left rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-wash)]"
+				className="relative block w-full text-left rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary-wash)"
 				aria-label={`Manage stacks of ${row.card.name}`}
 			>
 				{inner}

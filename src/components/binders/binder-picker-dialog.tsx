@@ -57,7 +57,7 @@ export function BinderPickerDialog({
 
 				<div className="flex flex-col gap-1">
 					{binders.length === 0 ? (
-						<p className="px-1 py-2 text-sm text-[var(--ink-muted)]">
+						<p className="px-1 py-2 text-sm text-(--ink-muted)">
 							No binders yet. Create one below.
 						</p>
 					) : (
@@ -88,7 +88,7 @@ export function BinderPickerDialog({
 						＋ New binder…
 					</Button>
 					{footnote ? (
-						<p className="px-1 pt-1 text-xs text-[var(--ink-muted)]">
+						<p className="px-1 pt-1 text-xs text-(--ink-muted)">
 							{footnote}
 						</p>
 					) : null}

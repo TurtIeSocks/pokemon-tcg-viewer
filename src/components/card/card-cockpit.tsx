@@ -153,7 +153,7 @@ export function CardCockpit({
 							<ClientOnly fallback={null}>
 								<fieldset
 									aria-label="Printing"
-									className="m-0 inline-flex min-w-0 self-center rounded-[var(--r-pill)] border border-white/10 bg-white/[0.05] p-0.5 backdrop-blur-sm"
+									className="m-0 inline-flex min-w-0 self-center rounded-(--r-pill) border border-white/10 bg-white/5 p-0.5 backdrop-blur-sm"
 								>
 									{(
 										[
@@ -166,10 +166,10 @@ export function CardCockpit({
 											type="button"
 											aria-pressed={showReverse === isReverse}
 											onClick={() => setShowReverse(isReverse)}
-											className={`rounded-[var(--r-pill)] px-3 py-1 font-mono text-[0.65rem] uppercase tracking-[0.08em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] ${
+											className={`rounded-(--r-pill) px-3 py-1 font-mono text-[0.65rem] uppercase tracking-[0.08em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) ${
 												showReverse === isReverse
-													? "bg-[var(--primary-wash)] text-[var(--primary-ink)]"
-													: "text-[var(--ink-muted)] hover:text-[var(--ink)]"
+													? "bg-(--primary-wash) text-(--primary-ink)"
+													: "text-(--ink-muted) hover:text-(--ink)"
 											}`}
 										>
 											{label}
@@ -202,7 +202,7 @@ export function CardCockpit({
 							role="tabpanel"
 							id={`${ID_BASE}-panel-${tab}`}
 							aria-labelledby={`${ID_BASE}-tab-${tab}`}
-							className={`min-w-0 rounded-tr-[var(--r-panel)] rounded-b-[var(--r-panel)] border border-t-0 border-white/12 bg-[var(--glass-2)] p-5 shadow-[inset_0_-1px_0_rgba(0,0,0,0.30)] backdrop-blur-xl${
+							className={`min-w-0 rounded-tr-(--r-panel) rounded-b-(--r-panel) border border-t-0 border-white/12 bg-(--glass-2) p-5 shadow-[inset_0_-1px_0_rgba(0,0,0,0.30)] backdrop-blur-xl${
 								framed ? " @3xl:min-h-0 @3xl:flex-1" : ""
 							}`}
 						>
@@ -261,12 +261,12 @@ export function CardPageView({
 					to="/$series/$set"
 					params={{ series, set }}
 					search={LIST_SEARCH_DEFAULTS}
-					className="font-mono text-xs tracking-[0.03em] text-[var(--ink-muted)] no-underline transition-colors hover:text-[color:var(--primary)]"
+					className="font-mono text-xs tracking-[0.03em] text-(--ink-muted) no-underline transition-colors hover:text-(--primary)"
 				>
 					← {card.setName}
 				</Link>
 			</div>
-			<div className="rounded-[var(--r-panel)] border border-white/10 bg-[var(--glass-tint)] p-5 shadow-[var(--shadow)] backdrop-blur-2xl">
+			<div className="rounded-(--r-panel) border border-white/10 bg-(--glass-tint) p-5 shadow-(--shadow) backdrop-blur-2xl">
 				<CardHeading card={card} />
 				<div className="mt-4">
 					<CardCockpit card={card} tab={tab} onTabChange={onTabChange} />

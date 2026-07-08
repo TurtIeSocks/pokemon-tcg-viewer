@@ -51,7 +51,7 @@ A fixed ~22px rounded slot that replaces `NavDot`, local to `app-sidebar.tsx`. M
 
 - **icon** — renders a lucide glyph (Vault rows). lucide bumped to `size-5` to fill the slot.
 - **mono** — renders a 2-char monogram: calm neutral glass
-  (`bg-white/[0.05] border border-white/10`, mono font, `tabular-nums`,
+  (`bg-white/5 border border-white/10`, mono font, `tabular-nums`,
   inset top-highlight to match the glass language).
 - **active** prop — when true the glyph/badge goes violet (`var(--primary)`),
   identical active language for both row types and consistent with today's active dot.

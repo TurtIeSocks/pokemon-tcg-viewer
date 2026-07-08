@@ -48,7 +48,7 @@ function TrendChipView({ chip }: { chip: TrendChip }) {
 		<span
 			className={`inline-flex items-center gap-1 font-mono text-[12px] tabular-nums ${color}`}
 		>
-			<span className="text-[10px] uppercase tracking-[0.1em] text-[var(--faint)]">
+			<span className="text-[10px] uppercase tracking-widest text-(--faint)">
 				{chip.label}
 			</span>
 			{sign}
@@ -106,7 +106,7 @@ export function CardHistory({ card }: { card: FocusCardData }) {
 			    is content-sized, e.g. on the page or mobile). */}
 			<div className="flex min-h-[72px] flex-1">
 				{sparse ? (
-					<p className="text-[13px] text-[var(--faint)]">
+					<p className="text-[13px] text-(--faint)">
 						Price history builds daily.
 					</p>
 				) : (

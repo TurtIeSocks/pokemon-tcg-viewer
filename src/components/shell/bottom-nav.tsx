@@ -30,7 +30,7 @@ export function BottomNav() {
 }
 
 const SLOT_CLASS =
-	"group flex flex-1 flex-col items-center justify-center gap-1 rounded-2xl py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]";
+	"group flex flex-1 flex-col items-center justify-center gap-1 rounded-2xl py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary)";
 
 function BottomNavSlot({ item }: { item: BottomNavItem }) {
 	const Icon = item.icon;
@@ -53,9 +53,9 @@ function BottomNavSlot({ item }: { item: BottomNavItem }) {
 			>
 				<span
 					className={cn(
-						"grid size-12 place-items-center rounded-full bg-[var(--primary)] text-[var(--primary-ink)] shadow-[0_10px_28px_-10px_var(--primary)] transition-transform duration-200 ease-[var(--ease)] group-hover:-translate-y-0.5 group-active:scale-95 group-focus-visible:ring-2 group-focus-visible:ring-[var(--primary)] group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-[var(--bg)] motion-reduce:transition-none motion-reduce:group-hover:translate-y-0",
+						"grid size-12 place-items-center rounded-full bg-(--primary) text-(--primary-ink) shadow-[0_10px_28px_-10px_var(--primary)] transition-transform duration-200 ease-(--ease) group-hover:-translate-y-0.5 group-active:scale-95 group-focus-visible:ring-2 group-focus-visible:ring-(--primary) group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-(--bg) motion-reduce:transition-none motion-reduce:group-hover:translate-y-0",
 						active &&
-							"ring-2 ring-[var(--primary)] ring-offset-2 ring-offset-[var(--bg)]",
+							"ring-2 ring-(--primary) ring-offset-2 ring-offset-(--bg)",
 					)}
 				>
 					<Icon className="size-6" />
@@ -69,13 +69,13 @@ function BottomNavSlot({ item }: { item: BottomNavItem }) {
 			<Icon
 				className={cn(
 					"size-5 transition-colors motion-reduce:transition-none",
-					active ? "text-[var(--primary)]" : "text-[var(--ink-muted)]",
+					active ? "text-(--primary)" : "text-(--ink-muted)",
 				)}
 			/>
 			<span
 				className={cn(
 					"text-[10px] leading-none transition-colors motion-reduce:transition-none",
-					active ? "text-[var(--primary)]" : "text-[var(--faint)]",
+					active ? "text-(--primary)" : "text-(--faint)",
 				)}
 			>
 				{item.label}

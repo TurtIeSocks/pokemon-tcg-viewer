@@ -893,7 +893,7 @@ In `src/components/card/card-info.tsx`, inside the `flex-1` body, after the `rul
 
 ```tsx
 				{card.flavorText ? (
-					<p className="mt-4 border-t border-white/[0.07] pt-3 font-display text-[13px] italic leading-relaxed text-[var(--ink-muted)]">
+					<p className="mt-4 border-t border-white/[0.07] pt-3 font-display text-[13px] italic leading-relaxed text-(--ink-muted)">
 						{card.flavorText}
 					</p>
 				) : pending ? (

@@ -66,7 +66,7 @@ function OwnedMissingCard({
 			<li>
 				<Link
 					{...cardModalLinkPropsFor(p, linkLanguage)}
-					className="block rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-wash)]"
+					className="block rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary-wash)"
 				>
 					{inner}
 				</Link>

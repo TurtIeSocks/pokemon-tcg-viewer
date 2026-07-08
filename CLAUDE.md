@@ -49,11 +49,11 @@ The app's visual language fuses **two glass dialects**, governed by tokens in `s
 
 Liquid-Glass recipe — layers, back → front:
 
-1. **Color backdrop** — a content-derived color field. Take the surface's own image (set logo, card art) upscaled `scale-[1.7]` + `blur-2xl saturate-150 opacity-50` so the element glows in its *own* palette. Layer a base gradient (`bg-gradient-to-b from-black/40 via-black/10 to-black/75`) for text legibility.
-2. **Frosted pane** — `rounded-2xl border border-white/10 bg-white/[0.05] backdrop-blur-xl`, with a bright top edge + inset depth: `shadow-[inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(0,0,0,0.35)]`.
+1. **Color backdrop** — a content-derived color field. Take the surface's own image (set logo, card art) upscaled `scale-[1.7]` + `blur-2xl saturate-150 opacity-50` so the element glows in its *own* palette. Layer a base gradient (`bg-linear-to-b from-black/40 via-black/10 to-black/75`) for text legibility.
+2. **Frosted pane** — `rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl`, with a bright top edge + inset depth: `shadow-[inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(0,0,0,0.35)]`.
 3. **Specular sheen** (interactive surfaces) — a hover sweep: a `-translate-x-full … group-hover:translate-x-full` gradient `via-white/15`, with `motion-reduce:hidden`.
 4. **Content** — crisp foreground hero (logo/title); data shown as accent-stroked **progress rings** + bold `tabular-nums` numbers.
 
-- **Interaction:** `group` wrapper + `hover:-translate-y-0.5` lift + soft drop shadow; `focus-visible:ring-2 ring-[var(--primary)]`. Guard **all** motion with `motion-reduce:`.
+- **Interaction:** `group` wrapper + `hover:-translate-y-0.5` lift + soft drop shadow; `focus-visible:ring-2 ring-(--primary)`. Guard **all** motion with `motion-reduce:`.
 - **Accent:** violet `var(--primary)`. White text on glass + `drop-shadow` for contrast. (The old gold `--accent`/`#e0b341` is retired; `--accent` now aliases `--primary`.)
 - **Never** set a self-referential CSS var (`style={{ "--accent": "var(--accent,…)" }}`) — it infinite-loops happy-dom and hangs `bun test`. Use a concrete color.

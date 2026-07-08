@@ -27,12 +27,12 @@ interface LaunchFaceProps {
 // the sheen sweep. Motion is fully guarded. Applied to the <a>/<button>; the
 // glass layers + content live in the clipped <LaunchFace> below.
 const TILE_OUTER =
-	"group block w-full rounded-2xl text-left transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-8px_rgba(0,0,0,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none motion-reduce:hover:translate-y-0";
+	"group block w-full rounded-2xl text-left transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-8px_rgba(0,0,0,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none motion-reduce:hover:translate-y-0";
 
 /** The shared Liquid-Glass face: color field, frosted pane, sheen, and content. */
 function LaunchFace({ icon: Icon, title, subtitle }: LaunchFaceProps) {
 	return (
-		<span className="relative flex aspect-[4/3] w-full flex-col justify-between overflow-hidden rounded-2xl p-4 sm:p-5">
+		<span className="relative flex aspect-4/3 w-full flex-col justify-between overflow-hidden rounded-2xl p-4 sm:p-5">
 			{/* ── Color backdrop: a violet glow + base darkening for legibility ── */}
 			<span
 				aria-hidden="true"
@@ -40,23 +40,23 @@ function LaunchFace({ icon: Icon, title, subtitle }: LaunchFaceProps) {
 			/>
 			<span
 				aria-hidden="true"
-				className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/5 to-black/60"
+				className="absolute inset-0 bg-linear-to-b from-black/30 via-black/5 to-black/60"
 			/>
 
 			{/* ── Frosted glass pane: blur + film + bright top edge + inset depth ── */}
 			<span
 				aria-hidden="true"
-				className="absolute inset-0 rounded-2xl border border-white/10 bg-white/[0.05] shadow-[inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(0,0,0,0.35)] backdrop-blur-xl"
+				className="absolute inset-0 rounded-2xl border border-white/10 bg-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(0,0,0,0.35)] backdrop-blur-xl"
 			/>
 
 			{/* ── Specular sheen sweep on hover ── */}
 			<span
 				aria-hidden="true"
-				className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full motion-reduce:hidden"
+				className="pointer-events-none absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full motion-reduce:hidden"
 			/>
 
 			{/* ── Content: glass icon chip up top, title + subtitle at the base ── */}
-			<span className="relative z-10 flex size-11 items-center justify-center rounded-[var(--r-control)] border border-white/15 bg-white/[0.08] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+			<span className="relative z-10 flex size-11 items-center justify-center rounded-(--r-control) border border-white/15 bg-white/8 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
 				<Icon className="size-5" aria-hidden="true" />
 			</span>
 			<span className="relative z-10 flex flex-col gap-1">

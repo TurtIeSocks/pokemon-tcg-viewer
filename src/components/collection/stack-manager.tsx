@@ -42,7 +42,7 @@ export function StackManager({
 		<div className="flex flex-col gap-4">
 			{/* Header: stack count + prominent Add button */}
 			<div className="flex flex-wrap items-center justify-between gap-2">
-				<h3 className="flex items-center gap-2 font-display text-[19px] font-medium text-[var(--ink)]">
+				<h3 className="flex items-center gap-2 font-display text-[19px] font-medium text-(--ink)">
 					Your cards
 					<Badge variant="default" className="font-mono text-[11px]">
 						{stacks.length}
@@ -89,8 +89,8 @@ export function StackManager({
 
 			{/* Create-mode form — shown when Add stack is clicked */}
 			{addOpen && (
-				<div className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--glass)] p-4">
-					<p className="text-xs text-[var(--faint)] mb-3">New card</p>
+				<div className="rounded-lg border border-dashed border-(--border) bg-(--glass) p-4">
+					<p className="text-xs text-(--faint) mb-3">New card</p>
 					<StackEditForm
 						mode="create"
 						cardId={cardId}
@@ -104,7 +104,7 @@ export function StackManager({
 
 			{/* Stack tiles */}
 			{stacks.length === 0 && !addOpen ? (
-				<p className="text-sm text-[var(--ink-muted)] py-4 text-center">
+				<p className="text-sm text-(--ink-muted) py-4 text-center">
 					No cards yet. Add one above.
 				</p>
 			) : (

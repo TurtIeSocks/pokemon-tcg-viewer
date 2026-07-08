@@ -48,7 +48,7 @@ export function CardLightbox({
 	if (!open || typeof document === "undefined") return null;
 
 	return createPortal(
-		<div className="fixed inset-0 z-[120] flex cursor-zoom-out items-center justify-center p-2 animate-in fade-in-0 duration-150 motion-reduce:animate-none sm:p-4">
+		<div className="fixed inset-0 z-120 flex cursor-zoom-out items-center justify-center p-2 animate-in fade-in-0 duration-150 motion-reduce:animate-none sm:p-4">
 			{/* Blurred fullscreen backdrop; clicking off the card dismisses. */}
 			<button
 				type="button"
@@ -76,7 +76,7 @@ export function CardLightbox({
 				type="button"
 				aria-label="Close"
 				onClick={onClose}
-				className="absolute top-3 right-3 flex size-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.08] text-white/80 backdrop-blur-md transition-colors hover:bg-white/[0.16] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+				className="absolute top-3 right-3 flex size-9 items-center justify-center rounded-full border border-white/10 bg-white/8 text-white/80 backdrop-blur-md transition-colors hover:bg-white/16 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary)"
 			>
 				<X className="size-5" />
 			</button>

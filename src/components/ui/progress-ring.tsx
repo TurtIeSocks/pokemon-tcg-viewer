@@ -48,7 +48,7 @@ export function ProgressRing({
 					strokeLinecap="round"
 					strokeDasharray={circ}
 					strokeDashoffset={offset}
-					className="stroke-[var(--primary)] transition-[stroke-dashoffset] duration-500 ease-out"
+					className="stroke-(--primary) transition-[stroke-dashoffset] duration-500 ease-out"
 				/>
 			</svg>
 			<span className="relative z-10 flex items-center justify-center">

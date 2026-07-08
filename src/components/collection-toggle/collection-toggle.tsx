@@ -10,7 +10,7 @@ const BASE_CLASSES = [
 	"w-8 h-8 rounded-full",
 	"text-base font-bold text-white",
 	"border cursor-pointer",
-	"transition-[background,transform] duration-[120ms] ease-out",
+	"transition-[background,transform] duration-120 ease-out",
 	"hover:scale-[1.08] focus-visible:scale-[1.08] focus-visible:outline-none",
 ].join(" ");
 const OWNED_CLASSES =

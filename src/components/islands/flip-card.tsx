@@ -66,14 +66,14 @@ export function FlipCard({ imageUrl, children }: FlipCardProps) {
 	const showBack = phase === "back" || phase === "flipping";
 
 	return (
-		<div className="relative aspect-[5/7] w-full">
+		<div className="relative aspect-5/7 w-full">
 			{children}
 			{showBack && (
 				<div
 					aria-hidden="true"
 					onTransitionEnd={() => setPhase("done")}
 					className={cn(
-						"absolute inset-0 transition-opacity duration-500 ease-[var(--ease)] motion-reduce:transition-none",
+						"absolute inset-0 transition-opacity duration-500 ease-(--ease) motion-reduce:transition-none",
 						backOverlayClass(phase),
 					)}
 				>

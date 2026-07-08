@@ -20,12 +20,12 @@ function ScanPage() {
 	useEnsureCorpus();
 	return (
 		<div className="mx-auto w-full max-w-md px-4 py-6">
-			<h1 className="mb-4 font-display text-2xl text-[var(--ink)]">
+			<h1 className="mb-4 font-display text-2xl text-(--ink)">
 				Scan a card
 			</h1>
 			<Suspense
 				fallback={
-					<div className="text-[var(--ink-muted)]">Loading scanner…</div>
+					<div className="text-(--ink-muted)">Loading scanner…</div>
 				}
 			>
 				<ScanView />

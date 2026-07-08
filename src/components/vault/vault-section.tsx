@@ -17,9 +17,9 @@ interface VaultSectionProps {
  */
 export function VaultSection({ title, action, children }: VaultSectionProps) {
 	return (
-		<section className="mt-8 space-y-4 border-t border-[var(--hairline)] pt-8">
+		<section className="mt-8 space-y-4 border-t border-(--hairline) pt-8">
 			<div className="flex items-baseline justify-between gap-3">
-				<h2 className="font-display text-[21px] font-medium text-[var(--ink)]">
+				<h2 className="font-display text-[21px] font-medium text-(--ink)">
 					{title}
 				</h2>
 				{action}

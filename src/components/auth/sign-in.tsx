@@ -49,14 +49,14 @@ function SignInForm() {
 	if (sentTo !== null) {
 		return (
 			<div className="flex flex-col items-center gap-3 py-2 text-center">
-				<div className="grid size-11 place-items-center rounded-full bg-[var(--primary-wash)] text-[var(--primary)]">
+				<div className="grid size-11 place-items-center rounded-full bg-(--primary-wash) text-(--primary)">
 					<MailCheck className="size-5" />
 				</div>
 				<div className="space-y-1">
-					<p className="font-medium text-[var(--ink)]">Check your email</p>
-					<p className="text-sm text-[var(--ink-muted)]">
+					<p className="font-medium text-(--ink)">Check your email</p>
+					<p className="text-sm text-(--ink-muted)">
 						We sent a sign-in link to{" "}
-						<span className="font-medium text-[var(--ink)]">{sentTo}</span>.
+						<span className="font-medium text-(--ink)">{sentTo}</span>.
 						Open it on this device to finish signing in.
 					</p>
 				</div>
@@ -117,7 +117,7 @@ function SignInForm() {
 			/>
 
 			{submitError !== null && (
-				<p className="text-sm text-[var(--danger)]" role="alert">
+				<p className="text-sm text-(--danger)" role="alert">
 					{submitError}
 				</p>
 			)}

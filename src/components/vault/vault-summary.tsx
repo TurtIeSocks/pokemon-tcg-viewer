@@ -43,10 +43,10 @@ export function VaultSummaryHero() {
 					{/* Big completion ring */}
 					<ProgressRing pct={pct} size={88} stroke={8}>
 						<div className="flex flex-col items-center leading-none">
-							<span className="font-mono text-[21px] font-medium tabular-nums text-[var(--ink)]">
+							<span className="font-mono text-[21px] font-medium tabular-nums text-(--ink)">
 								{pct}%
 							</span>
-							<span className="mt-0.5 text-[9.5px] uppercase tracking-[0.10em] text-[var(--faint)]">
+							<span className="mt-0.5 text-[9.5px] uppercase tracking-widest text-(--faint)">
 								complete
 							</span>
 						</div>

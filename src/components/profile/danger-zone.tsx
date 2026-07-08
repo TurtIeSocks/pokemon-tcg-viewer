@@ -48,15 +48,15 @@ function DangerZonePanel({ email }: DangerZonePanelProps) {
 
 	return (
 		<section className="mt-8 space-y-3.5">
-			<h2 className="font-display text-[21px] font-medium text-[var(--ink)]">
+			<h2 className="font-display text-[21px] font-medium text-(--ink)">
 				Danger zone
 			</h2>
 			<GlassPanel className="flex flex-wrap items-center justify-between gap-4 p-5">
 				<div className="space-y-1">
-					<p className="text-sm font-medium text-[var(--ink)]">
+					<p className="text-sm font-medium text-(--ink)">
 						Export my data
 					</p>
-					<p className="text-sm text-[var(--ink-muted)]">
+					<p className="text-sm text-(--ink-muted)">
 						Download your full collection as a backup or CSV, any time.
 					</p>
 				</div>
@@ -66,10 +66,10 @@ function DangerZonePanel({ email }: DangerZonePanelProps) {
 			</GlassPanel>
 			<GlassPanel className="flex flex-wrap items-center justify-between gap-4 border-[color-mix(in_oklch,var(--danger)_35%,var(--border))] p-5">
 				<div className="space-y-1">
-					<p className="text-sm font-medium text-[var(--ink)]">
+					<p className="text-sm font-medium text-(--ink)">
 						Delete my account
 					</p>
-					<p className="text-sm text-[var(--ink-muted)]">
+					<p className="text-sm text-(--ink-muted)">
 						Cancels any active subscription and permanently deletes your account
 						and vault. This cannot be undone.
 					</p>
@@ -163,7 +163,7 @@ function DeleteAccountDialog({
 					aria-label="Type your email to confirm"
 					autoComplete="off"
 				/>
-				{error && <p className="text-sm text-[var(--danger)]">{error}</p>}
+				{error && <p className="text-sm text-(--danger)">{error}</p>}
 
 				<DialogFooter>
 					<Button

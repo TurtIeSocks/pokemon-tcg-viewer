@@ -52,12 +52,12 @@ interface RemovableChipProps {
 /** Pill chip with an inline × remove button; used for rule and manual-card chips. */
 function RemovableChip({ label, onRemove, removeLabel }: RemovableChipProps) {
 	return (
-		<span className="inline-flex items-center gap-1 rounded-[var(--r-control)] border border-[var(--hairline)] bg-[var(--glass)] px-3 py-1 text-sm text-[var(--ink)]">
+		<span className="inline-flex items-center gap-1 rounded-(--r-control) border border-(--hairline) bg-(--glass) px-3 py-1 text-sm text-(--ink)">
 			{label}
 			<button
 				type="button"
 				aria-label={removeLabel}
-				className="ml-1 text-[var(--ink-muted)] hover:text-[var(--danger)] leading-none"
+				className="ml-1 text-(--ink-muted) hover:text-(--danger) leading-none"
 				onClick={onRemove}
 			>
 				<span aria-hidden="true">×</span>
@@ -160,7 +160,7 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 			<Link
 				to="/vault/binders"
 				aria-label="Back to binders"
-				className="inline-flex items-center gap-1 text-sm text-[var(--ink-muted)] hover:text-[var(--ink)] transition-colors"
+				className="inline-flex items-center gap-1 text-sm text-(--ink-muted) hover:text-(--ink) transition-colors"
 			>
 				<ArrowLeft className="h-4 w-4" />
 				Binders
@@ -169,11 +169,11 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 			{/* Header */}
 			<div className="flex items-start gap-4">
 				<div className="flex-1 min-w-0">
-					<h1 className="font-display text-2xl font-bold truncate text-[var(--ink)]">
+					<h1 className="font-display text-2xl font-bold truncate text-(--ink)">
 						{binder.name}
 					</h1>
 					{binder.description && (
-						<p className="text-[var(--ink-muted)] mt-1">{binder.description}</p>
+						<p className="text-(--ink-muted) mt-1">{binder.description}</p>
 					)}
 				</div>
 				<div className="flex gap-2 shrink-0">
@@ -215,7 +215,7 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 						size="sm"
 						onClick={() => void handleDelete()}
 						aria-label="Delete binder"
-						className="text-[var(--danger)] hover:text-[var(--danger)] border-[var(--danger)]/30"
+						className="text-(--danger) hover:text-(--danger) border-(--danger)/30"
 					>
 						<Trash2 className="h-4 w-4 mr-1" />
 						Delete
@@ -225,17 +225,17 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 
 			{/* Progress summary */}
 			{progress ? (
-				<div className="rounded-[var(--r-panel)] border border-[var(--border)] bg-[var(--glass)] p-4 space-y-2 backdrop-blur-xl">
+				<div className="rounded-(--r-panel) border border-(--border) bg-(--glass) p-4 space-y-2 backdrop-blur-xl">
 					<div className="flex justify-between text-sm">
-						<span className="text-[10.5px] uppercase tracking-[0.18em] text-[var(--faint)] font-semibold self-center">
+						<span className="text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold self-center">
 							Progress
 						</span>
-						<span className="font-mono tabular-nums text-[var(--ink-muted)]">
+						<span className="font-mono tabular-nums text-(--ink-muted)">
 							<span
 								className={
 									progress.total > 0 && progress.owned === progress.total
-										? "text-[var(--success)]"
-										: "text-[var(--ink)]"
+										? "text-(--success)"
+										: "text-(--ink)"
 								}
 							>
 								{progress.owned}
@@ -253,10 +253,10 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 					/>
 					{value != null ? (
 						<div className="flex justify-between text-sm">
-							<span className="text-[10.5px] uppercase tracking-[0.18em] text-[var(--faint)] font-semibold self-center">
+							<span className="text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold self-center">
 								Market value
 							</span>
-							<span className="font-mono tabular-nums text-[var(--success)]">
+							<span className="font-mono tabular-nums text-(--success)">
 								{hidden ? "•••" : formatPrice(value, currency)}
 							</span>
 						</div>
@@ -267,7 +267,7 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 			{/* Rule chips */}
 			{binder.rules.length > 0 && (
 				<div>
-					<h2 className="text-[10.5px] uppercase tracking-[0.18em] text-[var(--faint)] font-semibold mb-2">
+					<h2 className="text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold mb-2">
 						Rules
 					</h2>
 					<div className="flex flex-wrap gap-2">
@@ -291,10 +291,10 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 
 			{/* Members grid */}
 			<div>
-				<h2 className="text-[10.5px] uppercase tracking-[0.18em] text-[var(--faint)] font-semibold mb-3">
+				<h2 className="text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold mb-3">
 					Members
 					{memberCards.length > 0 && (
-						<span className="ml-2 font-mono tabular-nums text-[var(--ink-muted)] normal-case tracking-normal text-sm">
+						<span className="ml-2 font-mono tabular-nums text-(--ink-muted) normal-case tracking-normal text-sm">
 							({memberCards.length})
 						</span>
 					)}

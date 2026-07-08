@@ -683,7 +683,7 @@ git commit -m "feat(pricing): real buildPriceLines (per-finish native prices + s
 - Consumes: `useCardPriceEntry`, `usePriceSourceDates`, `loadPrices`, `usePricesRuntime` (Task 2); `buildPriceLines` (Task 3); `FocusCardData`.
 - Produces: `<CardPrices card={card} />` renders live price lines + the attribution notice; loads the blob on mount. It no longer self-gates on `PRICING_ENABLED` (the Pricing tab controls visibility).
 
-**Design tokens:** source label `font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--faint)]`; price value `font-mono text-[13px] font-bold tabular-nums text-[var(--success)]`; finish/qualifier `font-mono text-[11px] text-[var(--ink-muted)]`; link `text-[var(--primary)]`. Notice `text-[10px] text-[var(--faint)]`. Wrap in `GlassPanel` (`@/components/ui/glass`).
+**Design tokens:** source label `font-mono text-[11px] uppercase tracking-[0.12em] text-(--faint)`; price value `font-mono text-[13px] font-bold tabular-nums text-(--success)`; finish/qualifier `font-mono text-[11px] text-(--ink-muted)`; link `text-(--primary)`. Notice `text-[10px] text-(--faint)`. Wrap in `GlassPanel` (`@/components/ui/glass`).
 
 - [ ] **Step 1: Write the failing test**
 
@@ -803,15 +803,15 @@ function PriceLines({ card }: { card: FocusCardData }) {
 						key={`${l.source}:${l.finish ?? ""}`}
 						className="flex items-center justify-between gap-3"
 					>
-						<span className="font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--faint)]">
+						<span className="font-mono text-[11px] uppercase tracking-[0.12em] text-(--faint)">
 							{l.source}
 						</span>
 						<div className="flex items-center gap-2">
-							<span className="font-mono text-[13px] font-bold tabular-nums text-[var(--success)]">
+							<span className="font-mono text-[13px] font-bold tabular-nums text-(--success)">
 								{l.priceLabel}
 							</span>
 							{l.finish ? (
-								<span className="font-mono text-[11px] text-[var(--ink-muted)]">
+								<span className="font-mono text-[11px] text-(--ink-muted)">
 									{l.finish}
 								</span>
 							) : null}
@@ -819,7 +819,7 @@ function PriceLines({ card }: { card: FocusCardData }) {
 								href={l.url}
 								target="_blank"
 								rel="noopener noreferrer"
-								className="font-mono text-[11px] text-[var(--primary)] no-underline transition-colors hover:opacity-80 focus-visible:outline-none focus-visible:opacity-80"
+								className="font-mono text-[11px] text-(--primary) no-underline transition-colors hover:opacity-80 focus-visible:outline-none focus-visible:opacity-80"
 							>
 								↗
 							</a>
@@ -828,7 +828,7 @@ function PriceLines({ card }: { card: FocusCardData }) {
 				))}
 			</div>
 			{hasTcgplayer ? (
-				<p className="mt-2.5 font-mono text-[10px] leading-tight text-[var(--faint)]">
+				<p className="mt-2.5 font-mono text-[10px] leading-tight text-(--faint)">
 					{TCGPLAYER_NOTICE}
 				</p>
 			) : null}

@@ -229,7 +229,7 @@ function AccountStatusBadge({
 		<span
 			aria-hidden
 			className={cn(
-				"absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full ring-2 ring-[var(--canvas)] motion-reduce:animate-none",
+				"absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full ring-2 ring-(--canvas) motion-reduce:animate-none",
 				dotClass,
 				className,
 			)}

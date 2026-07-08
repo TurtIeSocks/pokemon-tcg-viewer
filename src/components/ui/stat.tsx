@@ -13,15 +13,15 @@ export function Stat({ value, label, tone }: StatProps) {
 				className={cn(
 					"font-mono text-2xl font-medium tabular-nums",
 					tone === "up"
-						? "text-[var(--success)]"
+						? "text-(--success)"
 						: tone === "down"
-							? "text-[var(--danger)]"
-							: "text-[var(--ink)]",
+							? "text-(--danger)"
+							: "text-(--ink)",
 				)}
 			>
 				{value}
 			</div>
-			<div className="mt-0.5 text-[11px] uppercase tracking-wide text-[var(--faint)]">
+			<div className="mt-0.5 text-[11px] uppercase tracking-wide text-(--faint)">
 				{label}
 			</div>
 		</div>

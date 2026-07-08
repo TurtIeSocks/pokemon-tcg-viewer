@@ -673,7 +673,7 @@ test("renders no polyline for fewer than 2 points", () => {
 Run: `bun test src/components/ui/spark-line.test.tsx`
 Expected: FAIL — `Cannot find module './spark-line'`
 
-- [ ] **Step 3: Implement** a small SVG component: map each `[x, y]` to viewport coords (x by index or by the x value's range; y inverted, scaled to data min/max with a small padding), emit a `<polyline>` (violet `stroke-[var(--primary)]`, `fill="none"`) + an optional area `<polygon>` at low opacity; `aria-hidden` on the svg with an accessible label/summary on the wrapper. `<2` points → render an empty/placeholder (no polyline). Guard any transition with `motion-reduce:`.
+- [ ] **Step 3: Implement** a small SVG component: map each `[x, y]` to viewport coords (x by index or by the x value's range; y inverted, scaled to data min/max with a small padding), emit a `<polyline>` (violet `stroke-(--primary)`, `fill="none"`) + an optional area `<polygon>` at low opacity; `aria-hidden` on the svg with an accessible label/summary on the wrapper. `<2` points → render an empty/placeholder (no polyline). Guard any transition with `motion-reduce:`.
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -716,7 +716,7 @@ Expected: FAIL — `Cannot find module './card-history'`
 - Render `<SparkLine points={filtered.map(([d, v]) => [d, v ?? previous])} />` (skip/carry nulls sensibly — drop null-value points from the line).
 - Range toggle: small pill buttons (mirror an existing segmented control if present; else simple buttons) with `aria-pressed`.
 - Trend chips: from `useCardPriceEntry(card.id)?.cm` — compute 7d change = `(trend − avg7)/avg7` and 30d = `(trend − avg30)/avg30`, render as `+3.2%`/`−1.1%` with up/down color (reuse `--success`/`--danger`); omit a chip when its avg is null.
-- Sparse/empty (`!points || points.length < 2`) → a `text-[var(--faint)]` "Price history builds daily." note in place of the chart; trend chips still render if the cm tuple is present.
+- Sparse/empty (`!points || points.length < 2`) → a `text-(--faint)` "Price history builds daily." note in place of the chart; trend chips still render if the cm tuple is present.
 
 Then in `card-pricing-tab.tsx`: replace the `<GlassPanel>…Coming soon.</GlassPanel>` with `<CardHistory card={card} />` (keep the "Price history" section header).
 

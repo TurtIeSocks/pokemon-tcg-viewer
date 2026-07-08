@@ -15,7 +15,7 @@ export function CardHeading({ card }: { card: FocusCardData }) {
 	return (
 		<div className="flex min-w-0 flex-col gap-1">
 			<div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-				<h1 className="font-display text-lg font-semibold leading-tight text-[var(--ink)]">
+				<h1 className="font-display text-lg font-semibold leading-tight text-(--ink)">
 					{card.name}
 				</h1>
 				{card.rarity ? (
@@ -24,7 +24,7 @@ export function CardHeading({ card }: { card: FocusCardData }) {
 					</Badge>
 				) : null}
 			</div>
-			<div className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--ink-muted)]">
+			<div className="font-mono text-[11px] uppercase tracking-[0.14em] text-(--ink-muted)">
 				{card.supertype} · {card.setName} · #{card.cardNumber}
 			</div>
 		</div>
@@ -32,9 +32,9 @@ export function CardHeading({ card }: { card: FocusCardData }) {
 }
 
 const SECTION =
-	"mt-4 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--faint)]";
+	"mt-4 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-(--faint)";
 const CAPTION =
-	"mt-1.5 font-mono text-[11px] leading-relaxed text-[var(--ink-muted)]";
+	"mt-1.5 font-mono text-[11px] leading-relaxed text-(--ink-muted)";
 
 function EnergyRow({ cost, label }: { cost: string[]; label: string }) {
 	return (
@@ -59,7 +59,7 @@ function AbilityRow({
 	return (
 		<div className="border-t border-white/[0.07] py-3">
 			<div className="flex items-center gap-2">
-				<span className="rounded border border-[var(--primary)]/40 px-1.5 py-px font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--primary)]">
+				<span className="rounded border border-(--primary)/40 px-1.5 py-px font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-(--primary)">
 					{ability.type}
 				</span>
 				<span className="font-display text-base">{ability.name}</span>
@@ -84,7 +84,7 @@ function AttackRow({
 					) : null}
 				</span>
 				{attack.damage ? (
-					<span className="shrink-0 font-mono text-[17px] font-bold text-[color:var(--primary)]">
+					<span className="shrink-0 font-mono text-[17px] font-bold text-(--primary)">
 						{attack.damage}
 					</span>
 				) : null}
@@ -113,7 +113,7 @@ function StatTypes({
 					className="inline-flex items-center gap-1"
 				>
 					<EnergyIcon type={it.type} size={16} />
-					<b className="font-medium text-[var(--ink-muted)]">{it.value}</b>
+					<b className="font-medium text-(--ink-muted)">{it.value}</b>
 				</span>
 			))}
 		</span>
@@ -126,7 +126,7 @@ function StatStrip({ card }: { card: FocusCardData }) {
 	const hasRetreat = !!card.retreatCost?.length;
 	if (!hasWeak && !hasResist && !hasRetreat && !card.artist) return null;
 	return (
-		<div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.07] pt-3.5 font-mono text-[11px] uppercase tracking-[0.05em] text-[var(--ink-muted)]">
+		<div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.07] pt-3.5 font-mono text-[11px] uppercase tracking-wider text-(--ink-muted)">
 			{hasWeak && card.weaknesses ? (
 				<StatTypes label="Weak" items={card.weaknesses} />
 			) : null}
@@ -142,7 +142,7 @@ function StatStrip({ card }: { card: FocusCardData }) {
 			{card.artist ? (
 				<span>
 					Illus.{" "}
-					<b className="font-medium text-[var(--ink-muted)]">{card.artist}</b>
+					<b className="font-medium text-(--ink-muted)">{card.artist}</b>
 				</span>
 			) : null}
 		</div>
@@ -211,13 +211,13 @@ function CardMetaStrip({ card }: { card: FocusCardData }) {
 	}
 	if (!items.length && !printings.length) return null;
 	return (
-		<div className="flex flex-col gap-2.5 border-b border-white/[0.07] pb-3.5 font-mono text-[11px] uppercase tracking-[0.05em] text-[var(--ink-muted)]">
+		<div className="flex flex-col gap-2.5 border-b border-white/[0.07] pb-3.5 font-mono text-[11px] uppercase tracking-wider text-(--ink-muted)">
 			{items.length ? (
 				<div className="flex flex-wrap items-center gap-x-5 gap-y-2">
 					{items.map((it) => (
 						<span key={it.label}>
 							{it.label}{" "}
-							<b className="font-medium text-[var(--ink)]">{it.value}</b>
+							<b className="font-medium text-(--ink)">{it.value}</b>
 						</span>
 					))}
 				</div>
@@ -228,7 +228,7 @@ function CardMetaStrip({ card }: { card: FocusCardData }) {
 					{printings.map((p) => (
 						<span
 							key={p.id}
-							className="rounded-[var(--r-pill)] border border-white/10 bg-white/[0.05] px-2 py-0.5 tracking-[0.08em] text-[var(--ink)]"
+							className="rounded-(--r-pill) border border-white/10 bg-white/5 px-2 py-0.5 tracking-[0.08em] text-(--ink)"
 						>
 							{p.label}
 						</span>
@@ -260,7 +260,7 @@ export function CardInfo({
 	const hasRules = !!card.rules?.length;
 	const emptyBody = !hasAbilities && !hasAttacks && !hasRules;
 	return (
-		<div className="flex min-w-0 flex-1 flex-col text-[var(--ink)]">
+		<div className="flex min-w-0 flex-1 flex-col text-(--ink)">
 			<div className="flex-1">
 				<CardMetaStrip card={card} />
 				{hasAbilities ? (
@@ -297,7 +297,7 @@ export function CardInfo({
 				) : null}
 
 				{card.flavorText ? (
-					<p className="mt-4 border-t border-white/[0.07] pt-3 font-display text-[13px] italic leading-relaxed text-[var(--ink-muted)]">
+					<p className="mt-4 border-t border-white/[0.07] pt-3 font-display text-[13px] italic leading-relaxed text-(--ink-muted)">
 						{card.flavorText}
 					</p>
 				) : pending ? (

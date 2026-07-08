@@ -77,8 +77,8 @@ export function StackRow({ item, variants }: StackRowProps) {
 			className={[
 				"rounded-lg border p-3 flex flex-col gap-3 transition-colors duration-150",
 				item.isPrimary
-					? "border-[var(--primary)] bg-[var(--primary-wash)] shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--primary)_25%,transparent)]"
-					: "border-[var(--border)] bg-[var(--glass)]",
+					? "border-(--primary) bg-(--primary-wash) shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--primary)_25%,transparent)]"
+					: "border-(--border) bg-(--glass)",
 			].join(" ")}
 		>
 			{/* Tile header: badges + action row */}
@@ -86,7 +86,7 @@ export function StackRow({ item, variants }: StackRowProps) {
 				{/* Name + metadata */}
 				<div className="flex flex-1 flex-wrap items-center gap-x-2.5 gap-y-1 min-w-0">
 					{/* Display name: the user's label, or auto-derived from metadata */}
-					<span className="min-w-0 truncate font-medium text-[var(--ink)]">
+					<span className="min-w-0 truncate font-medium text-(--ink)">
 						{stackDisplayLabel(item)}
 					</span>
 					{item.quantity > 1 && (
@@ -98,7 +98,7 @@ export function StackRow({ item, variants }: StackRowProps) {
 						</Badge>
 					)}
 					{/* Acquired date */}
-					<span className="font-mono text-[11px] text-[var(--faint)]">
+					<span className="font-mono text-[11px] text-(--faint)">
 						acquired {dayMsToInput(item.acquiredAt)}
 					</span>
 					{/* When the user named the stack, surface key metadata as chips —
@@ -115,13 +115,13 @@ export function StackRow({ item, variants }: StackRowProps) {
 					)}
 					{/* Price paid — masked when the collector hides values */}
 					{item.pricePaid != null && (
-						<span className="font-mono text-[11px] text-[var(--ink-muted)]">
+						<span className="font-mono text-[11px] text-(--ink-muted)">
 							{hidden ? "•••" : formatPrice(item.pricePaid, item.currency)}
 						</span>
 					)}
 					{/* Market value + unrealized P&L — masked when the collector hides values */}
 					{market.marketValue != null && (
-						<span className="font-mono text-[11px] text-[var(--success)]">
+						<span className="font-mono text-[11px] text-(--success)">
 							{hidden ? (
 								"•••"
 							) : (
@@ -131,8 +131,8 @@ export function StackRow({ item, variants }: StackRowProps) {
 										<span
 											className={
 												market.pnl >= 0
-													? "text-[var(--success)]"
-													: "text-[var(--danger)]"
+													? "text-(--success)"
+													: "text-(--danger)"
 											}
 										>
 											{" "}
@@ -153,7 +153,7 @@ export function StackRow({ item, variants }: StackRowProps) {
 							role="img"
 							aria-label="Primary"
 							title="Primary"
-							className="inline-flex items-center justify-center h-8 w-8 text-[var(--primary)]"
+							className="inline-flex items-center justify-center h-8 w-8 text-(--primary)"
 						>
 							<Star className="h-4 w-4 fill-current" aria-hidden="true" />
 						</span>
@@ -162,7 +162,7 @@ export function StackRow({ item, variants }: StackRowProps) {
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="h-8 w-8 text-[var(--ink-muted)] hover:text-[var(--primary)] transition-colors duration-150"
+							className="h-8 w-8 text-(--ink-muted) hover:text-(--primary) transition-colors duration-150"
 							aria-label="Set as primary"
 							title="Set as primary"
 							onClick={handleSetPrimary}
@@ -219,7 +219,7 @@ export function StackRow({ item, variants }: StackRowProps) {
 			{/* Inline split panel — peel cards into a new stack */}
 			{splitOpen && (
 				<div className="border-t pt-3 flex items-end gap-2 flex-wrap">
-					<div className="flex flex-col gap-1 text-[11px] text-[var(--ink-muted)]">
+					<div className="flex flex-col gap-1 text-[11px] text-(--ink-muted)">
 						Quantity to split off
 						<Input
 							type="number"

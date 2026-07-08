@@ -14,7 +14,7 @@
 - **No em-dashes in user-facing copy** (meta text, UI labels). Use periods/commas.
 - **Reuse `getCardAccent(types)`** from `src/utils/card-colors.ts` for the type glow. Do NOT add a new type-color map.
 - Optional fields are **`null`, never `undefined`** (`PokedexRow.type` is `string | null`).
-- Style with Liquid Glass tokens (`--ink`, `--primary`, `bg-white/[0.05]`, inset highlight). Guard all motion with `motion-reduce:`.
+- Style with Liquid Glass tokens (`--ink`, `--primary`, `bg-white/5`, inset highlight). Guard all motion with `motion-reduce:`.
 - Display species names with `titleCaseSlug` from `src/lib/slug.ts` (PokéAPI names are lowercase-hyphenated).
 - Lint in the worktree with `bunx biome check --config-path=. --write <files>` (nested-config gotcha). Typecheck with `bunx tsc -b`.
 - Manual `useMemo`/`useState` are intentional (React Compiler on); keep them.
@@ -422,7 +422,7 @@ export function SpeciesTile({ row }: { row: PokedexRow }) {
 			to="/pokemon/$name"
 			params={{ name: row.name }}
 			search={LIST_SEARCH_DEFAULTS}
-			className="group block rounded-2xl border border-white/10 bg-white/[0.05] p-2.5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(0,0,0,0.35)] transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] motion-reduce:transition-none"
+			className="group block rounded-2xl border border-white/10 bg-white/5 p-2.5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(0,0,0,0.35)] transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) motion-reduce:transition-none"
 		>
 			<div className="relative flex h-24 items-center justify-center">
 				<span
@@ -440,13 +440,13 @@ export function SpeciesTile({ row }: { row: PokedexRow }) {
 					className="relative z-10 h-20 w-20 [image-rendering:pixelated]"
 				/>
 			</div>
-			<div className="truncate font-sans text-sm font-semibold text-[var(--ink)]">
+			<div className="truncate font-sans text-sm font-semibold text-(--ink)">
 				{titleCaseSlug(row.name)}
 			</div>
-			<div className="mt-0.5 font-mono text-[11px] text-[var(--ink-muted)] tabular-nums">
+			<div className="mt-0.5 font-mono text-[11px] text-(--ink-muted) tabular-nums">
 				#{String(row.dex).padStart(3, "0")}
 			</div>
-			<div className="mt-1.5 inline-block rounded-full border border-[var(--primary)]/25 bg-[var(--primary)]/10 px-2 font-mono text-[10px] text-[var(--primary)] tabular-nums">
+			<div className="mt-1.5 inline-block rounded-full border border-(--primary)/25 bg-(--primary)/10 px-2 font-mono text-[10px] text-(--primary) tabular-nums">
 				{row.count} {row.count === 1 ? "card" : "cards"}
 			</div>
 		</Link>
@@ -553,7 +553,7 @@ export const PokedexGrid = forwardRef<
 >(function PokedexGrid({ rows }, ref) {
 	if (rows.length === 0) {
 		return (
-			<p className="py-16 text-center font-sans text-sm text-[var(--ink-muted)]">
+			<p className="py-16 text-center font-sans text-sm text-(--ink-muted)">
 				No species match.
 			</p>
 		);
@@ -775,7 +775,7 @@ function PokedexPage() {
 					placeholder="Search species…"
 					value={query}
 					onChange={(e) => setQuery(e.target.value)}
-					className="w-full rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 font-sans text-sm text-[var(--ink)] placeholder:text-[var(--faint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+					className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-2 font-sans text-sm text-(--ink) placeholder:text-(--faint) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary)"
 				/>
 				<GenerationBar
 					rows={filtered}

@@ -33,7 +33,7 @@ export function CardLangSwitch({ cardId }: { cardId: string }) {
 				}
 			/>
 			{isFallback ? (
-				<span className="font-mono text-[11px] text-[var(--ink-muted)]">
+				<span className="font-mono text-[11px] text-(--ink-muted)">
 					Shown in English.
 				</span>
 			) : null}

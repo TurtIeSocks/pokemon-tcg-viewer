@@ -75,7 +75,7 @@ function EraTile({ series }: { series: NavTree[number] }) {
 			params={{ series: series.slug, set: target.slug }}
 			search={LIST_SEARCH_DEFAULTS}
 			aria-label={`Browse ${series.name}`}
-			className="group relative block aspect-[4/5] w-full overflow-hidden rounded-2xl transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-8px_rgba(0,0,0,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+			className="group relative block aspect-4/5 w-full overflow-hidden rounded-2xl transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-8px_rgba(0,0,0,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none motion-reduce:hover:translate-y-0"
 		>
 			{/* Backdrop: the era's newest set logo, blurred → per-era color field. */}
 			{logo ? (
@@ -88,15 +88,15 @@ function EraTile({ series }: { series: NavTree[number] }) {
 			) : null}
 			<span
 				aria-hidden="true"
-				className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/10 to-black/75"
+				className="absolute inset-0 bg-linear-to-b from-black/40 via-black/10 to-black/75"
 			/>
 			<span
 				aria-hidden="true"
-				className="absolute inset-0 rounded-2xl border border-white/10 bg-white/[0.05] shadow-[inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(0,0,0,0.35)] backdrop-blur-xl"
+				className="absolute inset-0 rounded-2xl border border-white/10 bg-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(0,0,0,0.35)] backdrop-blur-xl"
 			/>
 			<span
 				aria-hidden="true"
-				className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full motion-reduce:hidden"
+				className="pointer-events-none absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full motion-reduce:hidden"
 			/>
 			{/* Content: year up top, monogram badge centered, set count at the base. */}
 			<span className="relative z-10 flex h-full flex-col items-center justify-between gap-2 p-4">
@@ -132,9 +132,9 @@ function HomeSection({
 	return (
 		<section
 			id={id}
-			className="mt-8 scroll-mt-20 space-y-4 border-t border-[var(--hairline)] pt-8"
+			className="mt-8 scroll-mt-20 space-y-4 border-t border-(--hairline) pt-8"
 		>
-			<h2 className="text-center font-display text-[21px] font-medium text-[var(--ink)]">
+			<h2 className="text-center font-display text-[21px] font-medium text-(--ink)">
 				{title}
 			</h2>
 			{children}

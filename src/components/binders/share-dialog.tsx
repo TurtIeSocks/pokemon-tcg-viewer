@@ -102,7 +102,7 @@ export function ShareDialog({ open, onOpenChange, binder }: ShareDialogProps) {
 				<div className="flex flex-col gap-5">
 					{/* Scope control */}
 					<div className="flex flex-col gap-2">
-						<Label className="text-[10.5px] uppercase tracking-[0.18em] text-[var(--faint)] font-semibold">
+						<Label className="text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold">
 							What to share
 						</Label>
 						<RadioGroup
@@ -112,19 +112,19 @@ export function ShareDialog({ open, onOpenChange, binder }: ShareDialogProps) {
 						>
 							<div className="flex items-center gap-2">
 								<RadioGroupItem value="all" id="scope-all" />
-								<Label htmlFor="scope-all" className="text-[var(--ink)]">
+								<Label htmlFor="scope-all" className="text-(--ink)">
 									All
 								</Label>
 							</div>
 							<div className="flex items-center gap-2">
 								<RadioGroupItem value="owned" id="scope-owned" />
-								<Label htmlFor="scope-owned" className="text-[var(--ink)]">
+								<Label htmlFor="scope-owned" className="text-(--ink)">
 									Owned
 								</Label>
 							</div>
 							<div className="flex items-center gap-2">
 								<RadioGroupItem value="needed" id="scope-needed" />
-								<Label htmlFor="scope-needed" className="text-[var(--ink)]">
+								<Label htmlFor="scope-needed" className="text-(--ink)">
 									Needed
 								</Label>
 							</div>
@@ -139,18 +139,18 @@ export function ShareDialog({ open, onOpenChange, binder }: ShareDialogProps) {
 								checked={includeGrades}
 								onCheckedChange={setIncludeGrades}
 							/>
-							<Label htmlFor="include-grades" className="text-[var(--ink)]">
+							<Label htmlFor="include-grades" className="text-(--ink)">
 								Include condition &amp; grades
 							</Label>
 						</div>
-						<p className="text-xs text-[var(--ink-muted)] pl-0">
+						<p className="text-xs text-(--ink-muted) pl-0">
 							Your prices and notes are never shared.
 						</p>
 					</div>
 
 					{/* Generated link */}
 					<div className="flex flex-col gap-2">
-						<Label className="text-[10.5px] uppercase tracking-[0.18em] text-[var(--faint)] font-semibold">
+						<Label className="text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold">
 							Shareable link
 						</Label>
 						<div className="flex gap-2">
@@ -170,7 +170,7 @@ export function ShareDialog({ open, onOpenChange, binder }: ShareDialogProps) {
 							</Button>
 						</div>
 						{urlTooLong && (
-							<p role="alert" className="text-xs text-[var(--danger)]">
+							<p role="alert" className="text-xs text-(--danger)">
 								Link is very long. Try narrowing the scope to Owned or Needed to
 								reduce its size.
 							</p>
@@ -178,7 +178,7 @@ export function ShareDialog({ open, onOpenChange, binder }: ShareDialogProps) {
 					</div>
 
 					{/* Frozen-snapshot note */}
-					<p className="text-xs text-[var(--ink-muted)]">
+					<p className="text-xs text-(--ink-muted)">
 						This is a one-time snapshot of your binder as it is right now. It
 						won&apos;t update later.
 					</p>

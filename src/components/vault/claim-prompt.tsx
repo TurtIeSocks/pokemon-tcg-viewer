@@ -63,9 +63,9 @@ export function ClaimPromptBanner() {
 		<div
 			role="status"
 			aria-live="polite"
-			className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--r-panel)] border border-white/10 bg-white/[0.05] px-4 py-3 backdrop-blur-xl"
+			className="flex flex-wrap items-center justify-between gap-3 rounded-(--r-panel) border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-xl"
 		>
-			<p className="text-sm text-[var(--ink)]">
+			<p className="text-sm text-(--ink)">
 				You have{" "}
 				<span className="font-mono tabular-nums font-semibold">
 					{localOnlyCount}
@@ -78,14 +78,14 @@ export function ClaimPromptBanner() {
 					onClick={() => {
 						void handleImport(uid);
 					}}
-					className="rounded-[var(--r-pill)] bg-[var(--primary)] px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+					className="rounded-(--r-pill) bg-(--primary) px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary)"
 				>
 					Import
 				</button>
 				<button
 					type="button"
 					onClick={() => handleDismiss(uid)}
-					className="rounded-[var(--r-pill)] border border-white/10 px-3 py-1.5 text-xs font-medium text-[var(--ink-muted)] transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+					className="rounded-(--r-pill) border border-white/10 px-3 py-1.5 text-xs font-medium text-(--ink-muted) transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary)"
 				>
 					Dismiss
 				</button>

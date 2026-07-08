@@ -73,7 +73,7 @@ export function SharedBinderInner() {
 			{/* Snapshot banner — always visible */}
 			<div
 				role="note"
-				className="flex items-center gap-2 rounded-md border border-[color-mix(in_oklch,var(--warning)_40%,transparent)] bg-[color-mix(in_oklch,var(--warning)_12%,transparent)] px-4 py-3 text-[var(--warning)] text-sm font-medium"
+				className="flex items-center gap-2 rounded-md border border-[color-mix(in_oklch,var(--warning)_40%,transparent)] bg-[color-mix(in_oklch,var(--warning)_12%,transparent)] px-4 py-3 text-(--warning) text-sm font-medium"
 			>
 				<span aria-hidden="true">📸</span>
 				<span>Snapshot from {snapshotDate} · not live</span>

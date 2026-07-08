@@ -49,27 +49,27 @@ export function BinderCard({ binderId }: BinderCardProps) {
 			<div className="relative group">
 				<GlassPanel
 					interactive
-					className="block p-0 focus-within:ring-2 focus-within:ring-[var(--primary)]"
+					className="block p-0 focus-within:ring-2 focus-within:ring-(--primary)"
 				>
 					<Link
 						to="/vault/binders/$binderId"
 						params={{ binderId: binder.id }}
-						className="block p-5 rounded-[var(--r-panel)] outline-none"
+						className="block p-5 rounded-(--r-panel) outline-none"
 					>
 						{/* Name */}
-						<h3 className="font-semibold text-[var(--ink)] truncate pr-8 leading-snug">
+						<h3 className="font-semibold text-(--ink) truncate pr-8 leading-snug">
 							{binder.name}
 						</h3>
 
 						{/* Description */}
 						{binder.description && (
-							<p className="text-sm text-[var(--ink-muted)] mt-1 line-clamp-2">
+							<p className="text-sm text-(--ink-muted) mt-1 line-clamp-2">
 								{binder.description}
 							</p>
 						)}
 
 						{/* Meta: rules + card count */}
-						<p className="mt-2 font-mono text-[11px] text-[var(--faint)] tabular-nums">
+						<p className="mt-2 font-mono text-[11px] text-(--faint) tabular-nums">
 							{countLine}
 						</p>
 
@@ -80,15 +80,15 @@ export function BinderCard({ binderId }: BinderCardProps) {
 								total={progress?.total ?? 0}
 							/>
 							<div className="flex items-baseline justify-between">
-								<span className="text-[11px] text-[var(--faint)] uppercase tracking-wide">
+								<span className="text-[11px] text-(--faint) uppercase tracking-wide">
 									progress
 								</span>
-								<span className="font-mono text-xs tabular-nums text-[var(--ink)]">
+								<span className="font-mono text-xs tabular-nums text-(--ink)">
 									{progress ? (
 										<>
 											{progress.owned}/{progress.total}
 											{pct > 0 && (
-												<span className="ml-1.5 text-[var(--faint)]">
+												<span className="ml-1.5 text-(--faint)">
 													{pct}%
 												</span>
 											)}
@@ -106,7 +106,7 @@ export function BinderCard({ binderId }: BinderCardProps) {
 				<Button
 					variant="ghost"
 					size="icon"
-					className="absolute top-3.5 right-3.5 h-7 w-7 text-[var(--faint)] hover:text-[var(--ink)]"
+					className="absolute top-3.5 right-3.5 h-7 w-7 text-(--faint) hover:text-(--ink)"
 					aria-label="Share binder"
 					onClick={(e) => {
 						e.stopPropagation();
