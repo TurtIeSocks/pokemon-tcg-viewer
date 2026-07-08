@@ -38,6 +38,11 @@ export interface PrintPrefs {
 	/** Show a QR code linking to the card's /prices page; square, sized in mm. */
 	showQr: boolean;
 	qrSizeMm: number;
+	/** QR module color + backdrop. A transparent backdrop (alpha 0) drops the
+	 * white quiet-zone so the QR floats on the placeholder fill. Keep the modules
+	 * dark on a light backdrop or the code won't scan. */
+	qrColor: string;
+	qrBackground: string;
 }
 
 export const DEFAULT_PRINT_PREFS: PrintPrefs = {
@@ -62,6 +67,8 @@ export const DEFAULT_PRINT_PREFS: PrintPrefs = {
 	priceSizeMm: 2.8,
 	showQr: true,
 	qrSizeMm: 18,
+	qrColor: "oklch(0 0 0)",
+	qrBackground: "oklch(1 0 29.234)",
 };
 
 interface UiPrefsStore {

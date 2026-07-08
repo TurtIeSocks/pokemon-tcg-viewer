@@ -100,6 +100,8 @@ function PlaceholderExtras({
 	priceSizeMm,
 	showQr,
 	qrSizeMm,
+	qrColor,
+	qrBackground,
 	textScale,
 }: {
 	extra: PlaceholderExtra | undefined;
@@ -107,6 +109,8 @@ function PlaceholderExtras({
 	priceSizeMm: number;
 	showQr: boolean;
 	qrSizeMm: number;
+	qrColor: string;
+	qrBackground: string;
 	textScale: number;
 }) {
 	return (
@@ -137,9 +141,9 @@ function PlaceholderExtras({
 						y={0}
 						width={extra.qr.count}
 						height={extra.qr.count}
-						fill="#ffffff"
+						fill={qrBackground}
 					/>
-					<path d={extra.qr.path} fill="#000000" />
+					<path d={extra.qr.path} fill={qrColor} />
 				</svg>
 			) : null}
 		</>
@@ -197,6 +201,8 @@ function PrintSheet({
 		priceSizeMm,
 		showQr,
 		qrSizeMm,
+		qrColor,
+		qrBackground,
 	} = prefs;
 	const width = columns * cardWidthMm + Math.max(0, columns - 1) * gapMm;
 	// Inset the rect by half the stroke so the border isn't clipped by the viewBox.
@@ -299,6 +305,8 @@ function PrintSheet({
 							priceSizeMm={priceSizeMm}
 							showQr={showQr}
 							qrSizeMm={qrSizeMm}
+							qrColor={qrColor}
+							qrBackground={qrBackground}
 							textScale={textScale}
 						/>
 					</div>
@@ -497,6 +505,8 @@ export function PrintMissingDialog({
 		priceSizeMm,
 		showQr,
 		qrSizeMm,
+		qrColor,
+		qrBackground,
 	} = printPrefs;
 
 	// Card size + spacing drive the grid, so it re-fits as the user resizes.
@@ -566,7 +576,7 @@ export function PrintMissingDialog({
 					</p>
 				) : (
 					<div className="flex min-w-0 flex-col gap-4">
-						{/* Four control groups in a 2x2 grid, three inputs each. */}
+						{/* Four control groups in a 2x2 grid. */}
 						<div className="grid gap-3 sm:grid-cols-2">
 							<ControlGroup label="Colors">
 								<LabeledRow label="Background">
@@ -588,6 +598,20 @@ export function PrintMissingDialog({
 										value={borderColor}
 										mode="oklch"
 										onChange={(v) => setPrintPrefs({ borderColor: v })}
+									/>
+								</LabeledRow>
+								<LabeledRow label="QR color">
+									<ColorPicker
+										value={qrColor}
+										mode="oklch"
+										onChange={(v) => setPrintPrefs({ qrColor: v })}
+									/>
+								</LabeledRow>
+								<LabeledRow label="QR backdrop">
+									<ColorPicker
+										value={qrBackground}
+										mode="oklch"
+										onChange={(v) => setPrintPrefs({ qrBackground: v })}
 									/>
 								</LabeledRow>
 							</ControlGroup>
