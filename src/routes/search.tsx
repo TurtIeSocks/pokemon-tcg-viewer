@@ -5,6 +5,7 @@ import {
 	useNavigate,
 } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { m } from "@/paraglide/messages";
 import type { HoloCardData } from "../components/holo-card";
 import { CardGridIsland } from "../components/islands/card-grid-island";
 import { CardSelectionProvider } from "../components/islands/card-selection";
@@ -69,12 +70,12 @@ export const Route = createFileRoute("/search")({
 		meta: [
 			{
 				title: loaderData?.q
-					? `"${loaderData.q}" · Pokémon TCG search`
-					: "Search · Pokémon TCG",
+					? m.search_meta_title_query({ query: loaderData.q })
+					: m.search_meta_title_empty(),
 			},
 			{
 				name: "description",
-				content: `Search results for ${loaderData?.q ?? ""}.`,
+				content: m.search_meta_description({ query: loaderData?.q ?? "" }),
 			},
 		],
 	}),
@@ -188,7 +189,7 @@ function SearchPageInner({
 					value={search}
 					options={options}
 					onChange={onChange}
-					placeholder="Search all cards"
+					placeholder={m.search_placeholder()}
 					showYearFilter
 					showCardFilter
 				/>
