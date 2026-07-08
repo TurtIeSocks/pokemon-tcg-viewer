@@ -352,3 +352,35 @@
 		animation: none;
 	}
 }
+
+/* ---------------------------------------------------------------------------
+ * Print-missing placeholder sheet
+ *
+ * The "Print missing" binder modal renders the printable sheet into a
+ * body-level portal (.tcgv-print-portal) so it can escape the dialog's centered
+ * glass box. On screen the portal is hidden (the modal shows its own live
+ * preview). When printing, everything on the page is hidden EXCEPT that portal,
+ * so only the sheet of true-size placeholders reaches the paper.
+ *
+ * The `:has(> .tcgv-print-portal)` guard scopes the "hide the app" rule to pages
+ * where the portal is actually mounted (i.e. the modal is open) -- printing any
+ * other page of the app is unaffected.
+ * ------------------------------------------------------------------------- */
+.tcgv-print-portal {
+	display: none;
+}
+
+@media print {
+	/* Only the placeholder sheet prints; hide every other top-level node. */
+	body:has(> .tcgv-print-portal) > *:not(.tcgv-print-portal) {
+		display: none !important;
+	}
+
+	.tcgv-print-portal {
+		display: block !important;
+	}
+
+	@page {
+		margin: 10mm;
+	}
+}

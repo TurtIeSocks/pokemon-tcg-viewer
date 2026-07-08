@@ -369,6 +369,71 @@ test("clicking a missing member card's add button adds it to the collection", as
 	});
 });
 
+// --- print missing placeholders ---
+
+test("Print missing button opens the modal listing the missing cards", async () => {
+	const binder = await createBinder({ name: "Print Binder" });
+	// Set rule pulls both base1 cards; only Bulbasaur is owned, so Ivysaur is missing.
+	await addRuleToBinder(binder.id, {
+		text: null,
+		setId: "base1",
+		dexNumber: null,
+		types: [],
+		rarities: [],
+		supertypes: [],
+		subtypes: [],
+		yearMin: null,
+		yearMax: null,
+		mode: "fuzzy" as const,
+	});
+	const updated = useUserland.getState().binders[binder.id];
+
+	await renderDetail(updated);
+
+	const printBtn = await screen.findByRole("button", {
+		name: /print missing cards/i,
+	});
+	expect((printBtn as HTMLButtonElement).disabled).toBe(false);
+
+	await act(async () => {
+		fireEvent.click(printBtn);
+	});
+
+	// Exactly one missing card (Ivysaur); modal reports the count + a placeholder.
+	await waitFor(() => {
+		expect(screen.getByText("1 card to print")).toBeDefined();
+	});
+	const preview = screen.getByRole("region", { name: "Placeholder preview" });
+	expect(preview.querySelectorAll(".tcgv-placeholder")).toHaveLength(1);
+	expect(preview.textContent).toContain("Ivysaur");
+});
+
+test("Print missing button is disabled when nothing is missing", async () => {
+	// Own the second card too, so every base1 member is owned.
+	await addStack(missingCard.id);
+	const binder = await createBinder({ name: "Complete Binder" });
+	await addRuleToBinder(binder.id, {
+		text: null,
+		setId: "base1",
+		dexNumber: null,
+		types: [],
+		rarities: [],
+		supertypes: [],
+		subtypes: [],
+		yearMin: null,
+		yearMax: null,
+		mode: "fuzzy" as const,
+	});
+	const updated = useUserland.getState().binders[binder.id];
+
+	await renderDetail(updated);
+
+	const printBtn = await screen.findByRole("button", {
+		name: /print missing cards/i,
+	});
+	expect((printBtn as HTMLButtonElement).disabled).toBe(true);
+});
+
 // --- market value line ---
 
 test("shows Market value when the binder's owned members are priced", async () => {
