@@ -37,6 +37,7 @@ import type { NavTree } from "../lib/nav-tree";
 import { titleCaseSlug } from "../lib/slug";
 import { isCloudEnabled } from "../lib/supabase/client";
 import { LocaleBoundary } from "../lib/ui-locale";
+import { m } from "../paraglide/messages";
 import { getLocale } from "../paraglide/runtime";
 import { getNavTreeFn } from "../server/nav-tree";
 import { getSidebarStateFn } from "../server/sidebar-state";
@@ -66,7 +67,7 @@ export const Route = createRootRoute({
 		meta: [
 			{ charSet: "utf-8" },
 			{ name: "viewport", content: "width=device-width, initial-scale=1" },
-			{ title: "Cardstack: track your Pokémon TCG collection" },
+			{ title: m.root_meta_title() },
 			{ name: "theme-color", content: "#0d0a16" },
 			{ name: "apple-mobile-web-app-capable", content: "yes" },
 			{
@@ -75,12 +76,11 @@ export const Route = createRootRoute({
 			},
 			{
 				property: "og:title",
-				content: "Cardstack: track your Pokémon TCG collection",
+				content: m.root_meta_title(),
 			},
 			{
 				property: "og:description",
-				content:
-					"Browse the whole Pokémon TCG catalog free, then track every copy you own. Local-first and open-source, so your cards stay yours.",
+				content: m.root_meta_description(),
 			},
 			{ property: "og:type", content: "website" },
 			// Site-level OG url (homepage). Per-page routes can override in their own
@@ -128,19 +128,25 @@ export const Route = createRootRoute({
 function useBreadcrumb(tree: NavTree): string[] {
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
 	const parts = pathname.split("/").filter(Boolean);
-	if (parts.length === 0) return ["Browse"];
+	if (parts.length === 0) return [m.command_palette_nav_browse()];
 
 	if (parts[0] === "vault") {
 		const sub = parts[1];
-		if (sub === "sets") return ["Vault", "Sets"];
-		if (sub === "binders") return ["Vault", "Binders"];
-		if (sub) return ["Vault", sub.charAt(0).toUpperCase() + sub.slice(1)];
-		return ["Vault"];
+		if (sub === "sets") return [m.bottom_nav_vault(), m.sidebar_vault_sets()];
+		if (sub === "binders")
+			return [m.bottom_nav_vault(), m.command_palette_nav_binders()];
+		if (sub)
+			return [m.bottom_nav_vault(), sub.charAt(0).toUpperCase() + sub.slice(1)];
+		return [m.bottom_nav_vault()];
 	}
-	if (parts[0] === "search") return ["Search"];
+	if (parts[0] === "search") return [m.nav_search()];
 	// /pokemon/{name} — species page (not in the series/set nav tree).
 	if (parts[0] === "pokemon" && parts[1]) {
-		return ["Browse", "Pokémon", titleCaseSlug(parts[1])];
+		return [
+			m.command_palette_nav_browse(),
+			m.home_supertype_pokemon(),
+			titleCaseSlug(parts[1]),
+		];
 	}
 
 	// /{series}/{set}/{card?}
@@ -154,7 +160,7 @@ function useBreadcrumb(tree: NavTree): string[] {
 	// Unknown single segment (e.g. /profile) → just the capitalised label.
 	if (!series && parts.length === 1) return [capitalize(seriesSlug)];
 
-	const crumbs: string[] = ["Browse"];
+	const crumbs: string[] = [m.command_palette_nav_browse()];
 	if (series) crumbs.push(series.name);
 	if (set) crumbs.push(set.name);
 	if (cardSlug && cardSlug !== "manage") crumbs.push(cardSlug.toUpperCase());
@@ -206,8 +212,8 @@ function ShellHeader({ tree }: { tree: NavTree }) {
 				variant="ghost"
 				size="icon"
 				className="hidden md:inline-flex"
-				aria-label="Search and commands"
-				title="Search  ⌘K"
+				aria-label={m.root_search_and_commands_aria()}
+				title={m.root_search_shortcut_title()}
 				onClick={() => openPalette(true)}
 			>
 				<Search />
