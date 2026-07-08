@@ -24,6 +24,7 @@ import {
 	syncPrices,
 	usePricesRuntime,
 } from "@/store/corpus/prices-runtime";
+import { m } from "@/paraglide/messages";
 import { type PrintPrefs, useUiPrefs } from "@/store/ui-prefs";
 import type { HoloCardData } from "../holo-card/types";
 import { buildPlaceholderExtras, type PlaceholderExtra } from "./print-extras";
@@ -65,13 +66,14 @@ function warnIfOversized(axis: "width" | "height", value: number) {
 	if (value <= standard) return;
 	toast.warning(
 		axis === "width"
-			? "Wider than a standard card"
-			: "Taller than a standard card",
+			? m.binder_print_wider_title()
+			: m.binder_print_taller_title(),
 		{
 			id: `print-oversize-${axis}`,
-			description: `Standard ${axis} is ${standard}mm. Placeholders this ${
-				axis === "width" ? "wide" : "tall"
-			} may not fit in binder pockets.`,
+			description:
+				axis === "width"
+					? m.binder_print_oversize_width_desc({ standard })
+					: m.binder_print_oversize_height_desc({ standard }),
 		},
 	);
 }
@@ -455,11 +457,11 @@ function FontSizeField({
 					type="checkbox"
 					checked={shown}
 					onChange={(e) => onToggle(e.target.checked)}
-					aria-label={`Show ${label}`}
+					aria-label={m.binder_print_show_field({ field: label })}
 					className="size-4 shrink-0 cursor-pointer accent-primary"
 				/>
 				<NumberUnitInput
-					label={`${label} size`}
+					label={m.binder_print_field_font_size({ field: label })}
 					value={sizeMm}
 					spec={spec}
 					disabled={!shown}
@@ -568,38 +570,37 @@ export function PrintMissingDialog({
 			<DialogContent className="max-h-[95dvh] overflow-y-auto sm:max-w-3xl">
 				<DialogHeader>
 					<DialogTitle className="font-display">
-						Print missing cards
+						{m.binder_print_missing_cards()}
 					</DialogTitle>
 					<DialogDescription>
-						Print a placeholder for every card you are missing, then cut them
-						out and slot them into your binder as gap markers.
+						{m.binder_print_dialog_description()}
 					</DialogDescription>
 				</DialogHeader>
 
 				{count === 0 ? (
 					<p className="py-8 text-center text-sm text-(--ink-muted)">
-						You own every card in this binder. Nothing to print.
+						{m.binder_print_empty()}
 					</p>
 				) : (
 					<div className="flex min-w-0 flex-col gap-4">
 						{/* Four control groups in a 2x2 grid. */}
 						<div className="grid gap-3 sm:grid-cols-2">
-							<ControlGroup label="Colors">
-								<LabeledRow label="Background">
+							<ControlGroup label={m.binder_print_group_colors()}>
+								<LabeledRow label={m.binder_print_label_background()}>
 									<ColorPicker
 										value={background}
 										mode="oklch"
 										onChange={(v) => setPrintPrefs({ background: v })}
 									/>
 								</LabeledRow>
-								<LabeledRow label="Text">
+								<LabeledRow label={m.binder_print_label_text()}>
 									<ColorPicker
 										value={textColor}
 										mode="oklch"
 										onChange={(v) => setPrintPrefs({ textColor: v })}
 									/>
 								</LabeledRow>
-								<LabeledRow label="Border">
+								<LabeledRow label={m.binder_print_label_border()}>
 									<ColorPicker
 										value={borderColor}
 										mode="oklch"
@@ -622,9 +623,33 @@ export function PrintMissingDialog({
 								</LabeledRow>
 							</ControlGroup>
 
-							<ControlGroup label="Card size">
+							<ControlGroup label={m.binder_print_group_font_sizes()}>
+								<FontSizeField
+									label={m.binder_print_label_card_name()}
+									shown={showName}
+									onToggle={(on) => setPrintPrefs({ showName: on })}
+									sizeMm={nameSizeMm}
+									onSize={(n) => setPrintPrefs({ nameSizeMm: n })}
+								/>
+								<FontSizeField
+									label={m.binder_print_label_card_number()}
+									shown={showNumber}
+									onToggle={(on) => setPrintPrefs({ showNumber: on })}
+									sizeMm={numberSizeMm}
+									onSize={(n) => setPrintPrefs({ numberSizeMm: n })}
+								/>
+								<FontSizeField
+									label={m.binder_print_label_set_name()}
+									shown={showSetName}
+									onToggle={(on) => setPrintPrefs({ showSetName: on })}
+									sizeMm={setNameSizeMm}
+									onSize={(n) => setPrintPrefs({ setNameSizeMm: n })}
+								/>
+							</ControlGroup>
+
+							<ControlGroup label={m.binder_print_group_card_size()}>
 								<UnitField
-									label="Width"
+									label={m.binder_print_label_width()}
 									value={cardWidthMm}
 									spec={FIELD.cardWidth}
 									onCommit={(n) => {
@@ -633,7 +658,7 @@ export function PrintMissingDialog({
 									}}
 								/>
 								<UnitField
-									label="Height"
+									label={m.binder_print_label_height()}
 									value={cardHeightMm}
 									spec={FIELD.cardHeight}
 									onCommit={(n) => {
@@ -642,7 +667,7 @@ export function PrintMissingDialog({
 									}}
 								/>
 								<UnitField
-									label="Spacing"
+									label={m.binder_print_label_spacing()}
 									value={gapMm}
 									spec={FIELD.spacing}
 									onCommit={(n) => setPrintPrefs({ gapMm: n })}
@@ -686,21 +711,21 @@ export function PrintMissingDialog({
 								/>
 							</ControlGroup>
 
-							<ControlGroup label="Style">
+							<ControlGroup label={m.binder_print_group_style()}>
 								<UnitField
-									label="Corner radius"
+									label={m.binder_print_label_corner_radius()}
 									value={radiusMm}
 									spec={FIELD.radius}
 									onCommit={(n) => setPrintPrefs({ radiusMm: n })}
 								/>
 								<UnitField
-									label="Border width"
+									label={m.binder_print_label_border_width()}
 									value={borderMm}
 									spec={FIELD.border}
 									onCommit={(n) => setPrintPrefs({ borderMm: n })}
 								/>
 								<UnitField
-									label="Text size"
+									label={m.binder_print_label_text_size()}
 									value={textScale * 100}
 									spec={FIELD.textPct}
 									onCommit={(n) => setPrintPrefs({ textScale: n / 100 })}
@@ -722,18 +747,21 @@ export function PrintMissingDialog({
 								{printCountLabel(count)}
 							</p>
 							<p className="pt-0.5 font-mono text-xs tabular-nums text-(--faint)">
-								Fits {layout.perPage} per sheet ({layout.columns} ×{" "}
-								{layout.rows})
+								{m.binder_print_fits_per_sheet({
+									count: layout.perPage,
+									columns: layout.columns,
+									rows: layout.rows,
+								})}
 							</p>
 							<p className="text-xs text-(--ink-muted)">
-								About {pages} {pages === 1 ? "sheet" : "sheets"} of paper.
+								{m.binder_print_pages_of_paper({ pages })}
 							</p>
 						</div>
 
 						{/* On-screen live preview (scrolls; not the print target). min-w-0 +
 						    overflow keeps the true-size sheet inside the modal box. */}
 						<section
-							aria-label="Placeholder preview"
+							aria-label={m.binder_print_preview_aria()}
 							className="max-h-[55vh] min-w-0 overflow-auto rounded-(--r-panel) border border-(--hairline) bg-(--glass-2) p-4"
 						>
 							{sheet}
@@ -749,7 +777,7 @@ export function PrintMissingDialog({
 							onClick={() => resetPrintPrefs()}
 						>
 							<RotateCcw aria-hidden="true" />
-							Reset to defaults
+							{m.binder_print_reset_defaults()}
 						</Button>
 					) : null}
 					<div className="grow" />
@@ -758,7 +786,7 @@ export function PrintMissingDialog({
 						variant="ghost"
 						onClick={() => onOpenChange(false)}
 					>
-						Close
+						{m.binder_close()}
 					</Button>
 					<Button
 						type="button"
@@ -766,7 +794,7 @@ export function PrintMissingDialog({
 						onClick={() => window.print()}
 						disabled={count === 0}
 					>
-						Print
+						{m.binder_print_action()}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

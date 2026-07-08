@@ -8,6 +8,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { m } from "@/paraglide/messages";
 import type { Binder } from "../../store/userland/types";
 
 /** Props for {@link BinderPickerDialog}. */
@@ -58,7 +59,7 @@ export function BinderPickerDialog({
 				<div className="flex flex-col gap-1">
 					{binders.length === 0 ? (
 						<p className="px-1 py-2 text-sm text-(--ink-muted)">
-							No binders yet. Create one below.
+							{m.binder_picker_empty()}
 						</p>
 					) : (
 						binders.map((b) => (
@@ -85,12 +86,10 @@ export function BinderPickerDialog({
 							onOpenChange(false);
 						}}
 					>
-						＋ New binder…
+						{m.binder_picker_create_new()}
 					</Button>
 					{footnote ? (
-						<p className="px-1 pt-1 text-xs text-(--ink-muted)">
-							{footnote}
-						</p>
+						<p className="px-1 pt-1 text-xs text-(--ink-muted)">{footnote}</p>
 					) : null}
 				</div>
 			</DialogContent>

@@ -301,5 +301,115 @@
 	"vault_sort_ascending": "Sort ascending",
 	"vault_shared_not_found": "Couldn't read this shared binder. The link may be broken or incomplete.",
 	"vault_shared_snapshot_banner": "Snapshot from {date} · not live",
-	"vault_loading_shared_binder": "Loading shared binder…"
+	"vault_loading_shared_binder": "Loading shared binder…",
+
+	"binder_progress_label": "Progress",
+	"binder_rule_count": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} rule",
+				"countPlural=other": "{count} rules"
+			}
+		}
+	],
+	"binder_card_count": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} card",
+				"countPlural=other": "{count} cards"
+			}
+		}
+	],
+	"binder_share_aria": "Share binder",
+	"binder_edit_aria": "Edit binder",
+	"binder_edit_button": "Edit",
+	"binder_share_button": "Share",
+	"binder_delete_aria": "Delete binder",
+	"binder_delete_confirm": "Delete binder \"{name}\"? This cannot be undone.",
+	"binder_market_value_label": "Market value",
+	"binder_progress_of_total_cards": "/{total} cards",
+	"binder_rules_heading": "Rules",
+	"binder_remove_rule_aria": "Remove rule {label}",
+	"binder_members_heading": "Members",
+	"binder_remove_card_aria": "Remove {name} from binder",
+	"binder_form_edit_title": "Edit Binder",
+	"binder_form_new_title": "New Binder",
+	"binder_form_edit_description": "Rename this binder or tweak its description.",
+	"binder_form_new_description": "A binder to sort your cards however you like. Sets, types, the chase pile.",
+	"binder_form_name_label": "Name",
+	"binder_form_name_placeholder": "e.g. Base Set Complete",
+	"binder_form_description_label": "Description",
+	"binder_form_description_placeholder": "Optional notes about this binder",
+	"binder_form_create_button": "Create",
+	"binder_picker_empty": "No binders yet. Create one below.",
+	"binder_picker_create_new": "＋ New binder…",
+	"binder_share_dialog_title": "Share Binder",
+	"binder_share_dialog_description": "Generate a one-time shareable link for this binder.",
+	"binder_share_scope_label": "What to share",
+	"binder_share_scope_needed": "Needed",
+	"binder_share_include_grades_label": "Include condition & grades",
+	"binder_share_privacy_note": "Your prices and notes are never shared.",
+	"binder_share_link_label": "Shareable link",
+	"binder_share_link_aria": "shareable link",
+	"binder_share_copied": "Copied!",
+	"binder_share_copy": "Copy",
+	"binder_share_copy_link": "Copy link",
+	"binder_share_too_long": "Link is very long. Try narrowing the scope to Owned or Needed to reduce its size.",
+	"binder_share_snapshot_note": "This is a one-time snapshot of your binder as it is right now. It won't update later.",
+	"binder_close": "Close",
+	"binder_print_missing_cards": "Print missing cards",
+	"binder_print_disabled_title": "You own every card in this binder",
+	"binder_print_missing_button": "Print missing",
+	"binder_print_dialog_description": "Print a placeholder for every card you are missing, then cut them out and slot them into your binder as gap markers.",
+	"binder_print_empty": "You own every card in this binder. Nothing to print.",
+	"binder_print_wider_title": "Wider than a standard card",
+	"binder_print_taller_title": "Taller than a standard card",
+	"binder_print_oversize_width_desc": "Standard width is {standard}mm. Placeholders this wide may not fit in binder pockets.",
+	"binder_print_oversize_height_desc": "Standard height is {standard}mm. Placeholders this tall may not fit in binder pockets.",
+	"binder_print_group_colors": "Colors",
+	"binder_print_group_font_sizes": "Font sizes",
+	"binder_print_group_card_size": "Card size",
+	"binder_print_group_style": "Style",
+	"binder_print_label_background": "Background",
+	"binder_print_label_text": "Text",
+	"binder_print_label_border": "Border",
+	"binder_print_label_card_name": "Card name",
+	"binder_print_label_card_number": "Card #",
+	"binder_print_label_set_name": "Set name",
+	"binder_print_show_field": "Show {field}",
+	"binder_print_field_font_size": "{field} font size",
+	"binder_print_label_width": "Width",
+	"binder_print_label_height": "Height",
+	"binder_print_label_spacing": "Spacing",
+	"binder_print_label_corner_radius": "Corner radius",
+	"binder_print_label_border_width": "Border width",
+	"binder_print_label_text_size": "Text size",
+	"binder_print_count_label": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} card to print",
+				"countPlural=other": "{count} cards to print"
+			}
+		}
+	],
+	"binder_print_fits_per_sheet": "Fits {count} per sheet ({columns} × {rows})",
+	"binder_print_pages_of_paper": [
+		{
+			"declarations": ["input pages", "local pagesPlural = pages: plural"],
+			"selectors": ["pagesPlural"],
+			"match": {
+				"pagesPlural=one": "About {pages} sheet of paper.",
+				"pagesPlural=other": "About {pages} sheets of paper."
+			}
+		}
+	],
+	"binder_print_preview_aria": "Placeholder preview",
+	"binder_print_reset_defaults": "Reset to defaults",
+	"binder_print_action": "Print"
 }
