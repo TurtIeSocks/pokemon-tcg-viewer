@@ -141,6 +141,23 @@ export function cardModalLinkProps(
 }
 
 /**
+ * {@link cardModalLinkPropsFor} for a card whose route params are ALREADY
+ * resolved (e.g. server-side in a loader), skipping the slug-index lookup.
+ * Chooses the face language by the card's region + active display language,
+ * same as {@link cardModalLinkProps}. Lets a page emit correct overlay links in
+ * the first paint without waiting on the client corpus.
+ */
+export function cardModalLinkPropsForCard(
+	p: CardRouteParams,
+	card: { region?: Region },
+): LinkProps {
+	return cardModalLinkPropsFor(
+		p,
+		faceLanguageFor(card, activeLangOrNull() ?? "en"),
+	);
+}
+
+/**
  * In-app overlay navigation that opens the collection (manage) face over the
  * current page. Delegates to {@link cardTabLinkPropsFor} with `"collection"`,
  * which sets `cardTab: "collection"` in history state and masks the URL to

@@ -1,6 +1,8 @@
 import { gunzipSync } from "node:zlib";
 import type { HoloCardData } from "../components/holo-card";
+import type { CardRouteParams } from "../lib/card-route";
 import { REGION_BASE_LANGUAGE, type Region } from "../lib/languages";
+import { buildSlugIndex, type SlugIndex } from "../lib/slug";
 import {
 	buildIndex,
 	type CorpusIndex,
@@ -87,6 +89,50 @@ export async function queryCorpusServer(
 ): Promise<HoloCardData[]> {
 	const { index, setsById } = await getServerCorpus(region);
 	return queryCorpus(index, q, setsById);
+}
+
+// Memoize the full slug index per region alongside the corpus (same lifetime).
+// Built from the SAME (sets, cards) inputs as the client's slugIndexFor, so the
+// slugs are byte-identical to the client links + the $card route's resolution.
+const slugIndexCache = new Map<Region, Promise<SlugIndex>>();
+
+function getServerSlugIndex(region: Region): Promise<SlugIndex> {
+	let entry = slugIndexCache.get(region);
+	if (!entry) {
+		entry = getServerCorpus(region)
+			.then(({ index, setsById }) =>
+				buildSlugIndex([...setsById.values()], index.cards),
+			)
+			.catch((e) => {
+				slugIndexCache.delete(region); // mirror getServerCorpus: allow retry
+				throw e;
+			});
+		slugIndexCache.set(region, entry);
+	}
+	return entry;
+}
+
+/**
+ * Resolve the canonical `/$series/$set/$card` route params for a set of cards,
+ * server-side, from the region's full slug index. Cards whose set/id aren't in
+ * the index are omitted. Server-only; used by the pokemon-page loader so its
+ * card links are correct in the FIRST SSR paint. Previously those links were
+ * resolved client-side and returned null until the client corpus finished
+ * loading, leaving early clicks dead-linked to the same route.
+ */
+export async function resolveCardRoutes(
+	cards: { id: string; setId: string }[],
+	region: Region = "west",
+): Promise<Record<string, CardRouteParams>> {
+	const idx = await getServerSlugIndex(region);
+	const out: Record<string, CardRouteParams> = {};
+	for (const c of cards) {
+		const loc = idx.setSlugById.get(c.setId);
+		const cardSlug = idx.cardSlugById.get(c.id);
+		if (loc && cardSlug)
+			out[c.id] = { series: loc.seriesSlug, set: loc.setSlug, card: cardSlug };
+	}
+	return out;
 }
 
 /**

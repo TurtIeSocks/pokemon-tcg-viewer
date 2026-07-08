@@ -11,7 +11,10 @@ import {
 	validateListSearch,
 } from "../../lib/list-search";
 import { useCorpusCardHref } from "../../lib/use-corpus-card-href";
-import { getNamedCardsFn } from "../../server/corpus-server";
+import {
+	getNamedCardsFn,
+	resolveCardRoutesFn,
+} from "../../server/corpus-server";
 import { deriveFacets } from "../../server/set-facets";
 
 export const Route = createFileRoute("/trainer/$name")({
@@ -22,11 +25,18 @@ export const Route = createFileRoute("/trainer/$name")({
 			data: { supertype: "Trainer", name: params.name },
 		});
 		if (all.length === 0) throw notFound();
+		const cards = all.slice(0, 60);
+		// Resolve the seed cards' /$series/$set/$card links server-side so they work
+		// in the first paint (cards span many sets; the URL can't supply them).
+		const routes = await resolveCardRoutesFn({
+			data: { items: cards.map((c) => ({ id: c.id, setId: c.setId })) },
+		});
 		return {
 			display: all[0].name,
-			cards: all.slice(0, 60),
+			cards,
 			total: all.length,
 			facets: deriveFacets(all),
+			routes,
 		};
 	},
 	head: ({ loaderData }) => {
@@ -46,15 +56,14 @@ export const Route = createFileRoute("/trainer/$name")({
 });
 
 function TrainerNamePage() {
-	const { cards, total, facets } = Route.useLoaderData();
+	const { cards, total, facets, routes } = Route.useLoaderData();
 	const search = Route.useSearch();
 	const { name } = Route.useParams();
 	const navigate = useNavigate({ from: Route.fullPath });
-	const cardHref = useCorpusCardHref({
-		to: "/trainer/$name",
-		params: { name },
-		search,
-	});
+	const cardHref = useCorpusCardHref(
+		{ to: "/trainer/$name", params: { name }, search },
+		routes,
+	);
 	return (
 		<CardListPage
 			cards={cards}
