@@ -248,6 +248,7 @@ test("backup round-trips the profile via replace import", async () => {
 			avatarPreset: "violet",
 			favoriteSetId: "base1",
 			displayLanguage: "en",
+			uiLanguage: "en",
 			displayCurrency: "USD",
 			hideValue: false,
 			createdAt: 1,

@@ -70,6 +70,7 @@ export interface ProfileRow {
 	avatar_preset: string;
 	favorite_set_id: string | null;
 	display_language: string; // ISO 639-1 catalog render language (default "en")
+	ui_language: string; // ISO 639-1 site-chrome language, independent of display_language (default "en")
 	display_currency: string; // ISO 4217 display/portfolio currency (default "USD")
 	hide_value: boolean; // hide all monetary surfaces (default false)
 	created_at: string;
@@ -202,6 +203,7 @@ export function profileToRow(profile: Profile): ProfileRow {
 		avatar_preset: profile.avatarPreset,
 		favorite_set_id: profile.favoriteSetId,
 		display_language: profile.displayLanguage,
+		ui_language: profile.uiLanguage,
 		display_currency: profile.displayCurrency,
 		hide_value: profile.hideValue,
 		created_at: msToIso(profile.createdAt),
@@ -221,6 +223,10 @@ export function rowToProfile(row: ProfileRow): Profile {
 		// Additive column; rows written before it existed read back as "en".
 		displayLanguage:
 			typeof row.display_language === "string" ? row.display_language : "en",
+		// Additive column (site-chrome language); rows written before it existed
+		// read back as "en".
+		uiLanguage:
+			typeof row.ui_language === "string" ? row.ui_language : "en",
 		displayCurrency:
 			typeof row.display_currency === "string" ? row.display_currency : "USD",
 		hideValue: typeof row.hide_value === "boolean" ? row.hide_value : false,
