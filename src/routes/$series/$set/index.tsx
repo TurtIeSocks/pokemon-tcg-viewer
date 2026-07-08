@@ -160,6 +160,8 @@ function SetPageInner({
 	packOpen,
 	setPackOpen,
 }: SetPageInnerProps) {
+	// Live filtered total from the grid; falls back to the SSR seed count.
+	const [liveTotal, setLiveTotal] = useState<number | null>(null);
 	return (
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
 			<ClientOnly fallback={null}>
@@ -173,7 +175,7 @@ function SetPageInner({
 					/>
 				</div>
 			</ClientOnly>
-			<ResultsBar count={cards.length}>
+			<ResultsBar count={liveTotal ?? cards.length}>
 				<ClientOnly fallback={null}>
 					<SelectAndBulkAdd
 						cardIds={cards.map((c: HoloCardData) => c.id)}
@@ -222,6 +224,7 @@ function SetPageInner({
 						context={{ setId: set.id }}
 						seedCards={cards}
 						seedTotal={cards.length}
+						onTotalChange={setLiveTotal}
 						cardHref={(card) =>
 							cardModalLinkPropsFor({
 								series: params.series,

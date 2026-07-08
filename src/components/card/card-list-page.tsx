@@ -1,4 +1,5 @@
 import type { LinkProps } from "@tanstack/react-router";
+import { useState } from "react";
 import type { SetFacets } from "@/server/set-facets";
 import type { ListContext, ListSearch } from "../../lib/card-query";
 import type { listSearchToUrl } from "../../lib/list-search";
@@ -53,6 +54,9 @@ export function CardListPage({
 	showCardFilter = false,
 	gridKey,
 }: CardListPageProps) {
+	// Live filtered total from the grid; falls back to the loader total until the
+	// first client query resolves.
+	const [liveTotal, setLiveTotal] = useState<number | null>(null);
 	return (
 		<CardSelectionProvider>
 			<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
@@ -65,7 +69,7 @@ export function CardListPage({
 						showCardFilter={showCardFilter}
 					/>
 				</div>
-				<ResultsBar count={total}>
+				<ResultsBar count={liveTotal ?? total}>
 					<SelectAndBulkAdd
 						cardIds={cards.map((c) => c.id)}
 						ruleQuery={ruleQuery}
@@ -87,6 +91,7 @@ export function CardListPage({
 						seedCards={cards}
 						seedTotal={total}
 						cardHref={cardHref}
+						onTotalChange={setLiveTotal}
 					/>
 				</div>
 			</div>
