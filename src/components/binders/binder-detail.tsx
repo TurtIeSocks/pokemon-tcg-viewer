@@ -57,7 +57,7 @@ function RemovableChip({ label, onRemove, removeLabel }: RemovableChipProps) {
 			<button
 				type="button"
 				aria-label={removeLabel}
-				className="ml-1 text-(--ink-muted) hover:text-(--danger) leading-none"
+				className="ml-1 text-(--ink-muted) hover:text-danger leading-none"
 				onClick={onRemove}
 			>
 				<span aria-hidden="true">×</span>
@@ -215,7 +215,7 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 						size="sm"
 						onClick={() => void handleDelete()}
 						aria-label="Delete binder"
-						className="text-(--danger) hover:text-(--danger) border-(--danger)/30"
+						className="text-danger hover:text-danger border-(--danger)/30"
 					>
 						<Trash2 className="h-4 w-4 mr-1" />
 						Delete
@@ -225,7 +225,7 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 
 			{/* Progress summary */}
 			{progress ? (
-				<div className="rounded-(--r-panel) border border-(--border) bg-(--glass) p-4 space-y-2 backdrop-blur-xl">
+				<div className="rounded-(--r-panel) border border-border bg-(--glass) p-4 space-y-2 backdrop-blur-xl">
 					<div className="flex justify-between text-sm">
 						<span className="text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold self-center">
 							Progress
@@ -234,7 +234,7 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 							<span
 								className={
 									progress.total > 0 && progress.owned === progress.total
-										? "text-(--success)"
+										? "text-success"
 										: "text-(--ink)"
 								}
 							>
@@ -256,7 +256,7 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 							<span className="text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold self-center">
 								Market value
 							</span>
-							<span className="font-mono tabular-nums text-(--success)">
+							<span className="font-mono tabular-nums text-success">
 								{hidden ? "•••" : formatPrice(value, currency)}
 							</span>
 						</div>

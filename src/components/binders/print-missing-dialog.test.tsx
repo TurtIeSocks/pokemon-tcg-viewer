@@ -46,12 +46,14 @@ test("lists the correct 'N cards to print' count", () => {
 	expect(screen.getByText("3 cards to print")).toBeDefined();
 });
 
-test("renders one placeholder per missing card with name + set/number meta", () => {
+test("renders one placeholder per missing card with name, number, and set lines", () => {
 	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
 	const p = preview();
 	expect(p.querySelectorAll(".tcgv-placeholder")).toHaveLength(3);
 	expect(within(p).getByText("Bulbasaur")).toBeDefined();
-	expect(within(p).getByText("#1 / Base Set")).toBeDefined();
+	// Number and set name are now independent lines (not "#1 / Base Set").
+	expect(within(p).getByText("#1")).toBeDefined();
+	expect(within(p).getAllByText("Base Set").length).toBe(3);
 });
 
 test("exposes background, text, and border color controls", () => {
@@ -92,22 +94,48 @@ function setUnit(labelText: string, value: string) {
 	});
 }
 
-test("the text-size field (%) scales both lines by the same factor (ratio preserved)", () => {
+test("the text-size field (%) master-scales every line by the same factor", () => {
 	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
-	// Base 3.6mm name / 2.8mm meta, scaled by the 1.3x default → 4.68 / 3.64.
+	// Base 3.6mm name / 2.8mm number, scaled by the 1.3x default → 4.68 / 3.64.
 	expect(within(preview()).getByText("Bulbasaur").style.fontSize).toBe(
 		"4.68mm",
 	);
-	expect(within(preview()).getByText("#1 / Base Set").style.fontSize).toBe(
-		"3.64mm",
-	);
+	expect(within(preview()).getByText("#1").style.fontSize).toBe("3.64mm");
 
 	// 150% → 1.5x multiplier; ratio preserved (5.4 / 4.2 === 3.6 / 2.8).
 	setUnit("Text size", "150");
 	expect(within(preview()).getByText("Bulbasaur").style.fontSize).toBe("5.4mm");
-	expect(within(preview()).getByText("#1 / Base Set").style.fontSize).toBe(
-		"4.2mm",
-	);
+	expect(within(preview()).getByText("#1").style.fontSize).toBe("4.2mm");
+});
+
+test("a per-line font-size field sets that line's base size (x textScale)", () => {
+	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
+	setUnit("Card name font size", "6"); // 6mm base * 1.3 default scale = 7.8mm
+	expect(within(preview()).getByText("Bulbasaur").style.fontSize).toBe("7.8mm");
+});
+
+test("unchecking a font-size line hides it on every placeholder", () => {
+	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
+	expect(within(preview()).getByText("#1")).toBeDefined();
+	act(() => {
+		fireEvent.click(screen.getByLabelText("Show Card #"));
+	});
+	expect(within(preview()).queryByText("#1")).toBeNull();
+	// The line's size input is disabled while hidden.
+	expect(
+		(screen.getByLabelText("Card # font size") as HTMLInputElement).disabled,
+	).toBe(true);
+});
+
+test("spacing feeds both the grid gap and the auto-fit", () => {
+	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
+	const sheet = () =>
+		preview().querySelector(".tcgv-print-sheet") as HTMLElement;
+	expect(sheet().style.gap).toBe("5mm");
+	// Gap 0 → the 3rd column fits again (3 * 63 = 189 <= 190mm printable).
+	setUnit("Spacing", "0");
+	expect(sheet().style.gap).toBe("0mm");
+	expect(sheet().style.gridTemplateColumns).toBe("repeat(3, 63mm)");
 });
 
 test("the corner-radius field updates the placeholder rounding (SVG rect rx)", () => {

@@ -15,25 +15,42 @@ export interface PrintPrefs {
 	radiusMm: number;
 	/** Border thickness in millimetres (SVG stroke width). */
 	borderMm: number;
-	/** Multiplier applied to both text lines, preserving their ratio. */
+	/** Master multiplier applied to every text line, preserving their ratio. */
 	textScale: number;
 	/** Placeholder width in millimetres. Drives how many fit per row. */
 	cardWidthMm: number;
 	/** Placeholder height in millimetres. Drives how many fit per column. */
 	cardHeightMm: number;
+	/** Whitespace (mm) between placeholders, for scissor room. Drives the grid too. */
+	gapMm: number;
+	/** Per-line visibility + base font size (mm, before textScale). The card number
+	 * and set name are independent lines so each can be shown/hidden and sized. */
+	showName: boolean;
+	nameSizeMm: number;
+	showNumber: boolean;
+	numberSizeMm: number;
+	showSetName: boolean;
+	setNameSizeMm: number;
 }
 
 export const DEFAULT_PRINT_PREFS: PrintPrefs = {
-	background: "#000000",
-	textColor: "#ffffff",
+	background: "oklch(1 0 29.234 / 0%)",
+	textColor: "oklch(1 0 29.234)",
 	// Site accent violet, kept verbatim from --primary in app.css so they stay matched.
 	borderColor: "oklch(0.7 0.19 295)",
 	radiusMm: 3,
-	borderMm: 0.3,
+	borderMm: 1.0,
 	textScale: 1.3,
 	// Standard trading-card dimensions (mm); adjustable so the grid re-fits.
 	cardWidthMm: 63,
 	cardHeightMm: 88,
+	gapMm: 5,
+	showName: true,
+	nameSizeMm: 3.6,
+	showNumber: true,
+	numberSizeMm: 2.8,
+	showSetName: true,
+	setNameSizeMm: 2.8,
 };
 
 interface UiPrefsStore {
