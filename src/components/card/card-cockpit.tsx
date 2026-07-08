@@ -1,5 +1,10 @@
 import { ClientOnly, Link } from "@tanstack/react-router";
-import { type CSSProperties, useEffect, useState } from "react";
+import {
+	type CSSProperties,
+	type ReactNode,
+	useEffect,
+	useState,
+} from "react";
 import { cardImage } from "@/lib/card-image";
 import type { CardTab } from "../../lib/card-route";
 import { hasReverseVariant } from "../../lib/card-variants";
@@ -30,11 +35,21 @@ export function CardCockpit({
 	tab: rawTab,
 	onTabChange,
 	pending,
+	railHeader,
+	railFooter,
 }: {
 	card: FocusCardData;
 	tab: CardTab;
 	onTabChange: (t: CardTab) => void;
 	pending?: boolean;
+	// Modal-only slots that move the card's identity above the art and its
+	// cross-links to the bottom of the art column, so the modal is a balanced
+	// two-pane split instead of stacked title/body/footer bands with dead space.
+	// Their presence switches the row to stretch both columns to equal height
+	// (footer pinned via mt-auto, glass pane filled). The dedicated page leaves
+	// them off — its columns size to content with a sticky card.
+	railHeader?: ReactNode;
+	railFooter?: ReactNode;
 }) {
 	// When pricing is disabled the pricing tab is not rendered (CardTabs hides it).
 	// Coerce any incoming "pricing" tab to "details" so the /prices route shows
@@ -84,21 +99,34 @@ export function CardCockpit({
 		setShowReverse(false);
 		setZoomOpen(false);
 	}, [card.id]);
+	// Modal (framed) vs. page: framed stretches both columns to equal height so the
+	// rail footer pins to the bottom and the glass pane fills — no dead space.
+	const framed = Boolean(railHeader || railFooter);
+	// Shared card-width wrapper so the rail's identity + card + links line up.
+	const railColW = "mx-auto w-full max-w-80 @3xl:mx-0 @3xl:w-70 @3xl:max-w-none";
 	return (
-		<div
-			className="@container"
-			style={{ "--accent": accent } as CSSProperties}
-		>
-			{/* Persistent card-art rail + a folder: organizer tabs opening onto a
-			    pane of glass (the active tab's cap merges into the pane below).
-			    items-start (not stretch) lets each column keep its natural height so
-			    the taller of {card art, folder content} drives the row — which, via
-			    the modal's `max-h`, is what sizes the modal. */}
-			<div className="flex flex-col gap-6 p-2 @3xl:flex-row @3xl:items-start @3xl:gap-8">
-				{/* Rail (persistent art) — sticks to the top as the folder (or page)
-				    scrolls past when the content is taller than the viewport. */}
-				<div className="shrink-0 @3xl:sticky @3xl:top-6">
-					<div className="mx-auto flex w-full max-w-80 flex-col gap-4 @3xl:mx-0 @3xl:w-70 @3xl:max-w-none">
+		<div className="@container" style={{ "--accent": accent } as CSSProperties}>
+			{/* Card-art rail + a folder: organizer tabs opening onto a pane of glass
+			    (the active tab's cap merges into the pane below). framed → stretch the
+			    columns to equal height; otherwise each keeps its natural height and the
+			    taller of {art, folder} drives the row. */}
+			<div
+				className={`flex flex-col gap-6 p-2 @3xl:flex-row @3xl:gap-8 ${
+					framed ? "@3xl:items-stretch" : "@3xl:items-start"
+				}`}
+			>
+				{/* Rail — the card art, and (framed) the identity above + cross-links
+				    pinned to the bottom, together filling the column. Unframed it just
+				    holds the art and sticks to the top as the page scrolls. */}
+				<div
+					className={
+						framed
+							? "flex shrink-0 flex-col gap-4"
+							: "shrink-0 @3xl:sticky @3xl:top-6"
+					}
+				>
+					{railHeader ? <div className={railColW}>{railHeader}</div> : null}
+					<div className={`flex flex-col gap-4 ${railColW}`}>
 						<ClientOnly
 							fallback={
 								<img
@@ -153,20 +181,29 @@ export function CardCockpit({
 							</ClientOnly>
 						)}
 					</div>
+					{railFooter ? (
+						<div
+							className={`${railColW} border-t border-white/[0.07] pt-3 @3xl:mt-auto`}
+						>
+							{railFooter}
+						</div>
+					) : null}
 				</div>
 
-				{/* Folder: tabs (caps) + the pane (folder body) they open onto. The pane
-				    sizes to its own content and drives the row height, so the modal's
-				    `max-h` fits the tab content exactly (capping + scrolling the whole
-				    dialog body only when the content exceeds the viewport). */}
+				{/* Folder: tabs (caps) + the pane they open onto. framed → the inner
+				    column fills the row height and the pane flex-grows to match the rail
+				    (balanced panes); otherwise the pane sizes to its content and drives
+				    the row so the modal's `max-h` fits the tab content exactly. */}
 				<div className="min-w-0 flex-1">
-					<div className="flex flex-col">
+					<div className={`flex flex-col${framed ? " @3xl:h-full" : ""}`}>
 						<CardTabs tab={tab} onChange={onTabChange} idBase={ID_BASE} />
 						<div
 							role="tabpanel"
 							id={`${ID_BASE}-panel-${tab}`}
 							aria-labelledby={`${ID_BASE}-tab-${tab}`}
-							className="-mt-px min-w-0 rounded-tr-[var(--r-panel)] rounded-b-[var(--r-panel)] border border-white/12 bg-[var(--glass-2)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.10),inset_0_-1px_0_rgba(0,0,0,0.30)] backdrop-blur-xl"
+							className={`-mt-px min-w-0 rounded-tr-[var(--r-panel)] rounded-b-[var(--r-panel)] border border-white/12 bg-[var(--glass-2)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.10),inset_0_-1px_0_rgba(0,0,0,0.30)] backdrop-blur-xl${
+								framed ? " @3xl:min-h-0 @3xl:flex-1" : ""
+							}`}
 						>
 							{tab === "details" ? (
 								<CardInfo card={card} pending={pending} />

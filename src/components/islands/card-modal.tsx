@@ -1,11 +1,5 @@
 import { useRouter } from "@tanstack/react-router";
-import {
-	Dialog,
-	DialogContent,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
 	type CardTab,
 	cardRouteParams,
@@ -43,36 +37,34 @@ export function CardModal({
 
 	return (
 		<Dialog open onOpenChange={(o) => !o && onClose()}>
-			{/* Flex column that grows to its content but never past ~90dvh: the modal
-			    is exactly as tall as the tab content needs, and only once that would
-			    overflow the viewport does it cap and let the body scroll (header +
-			    footer stay fixed). Capping also keeps the header on-screen on mobile. */}
+			{/* Grows to its content but never past ~90dvh, then the body scrolls. No
+			    title/footer bands — the identity and cross-links live inside the card
+			    column (rail slots) so the modal is a balanced two-pane split with no
+			    dead space. Capping at the viewport keeps the header on-screen on
+			    mobile. */}
 			<DialogContent
 				aria-describedby={undefined}
-				className="flex max-h-[90dvh] max-w-4xl flex-col gap-4 sm:max-w-4xl"
+				className="flex max-h-[90dvh] max-w-4xl flex-col sm:max-w-4xl"
 			>
 				{/* Radix needs a DialogTitle for the dialog's accessible name; the
-				    visible identity is CardHeading (shared with the dedicated page). */}
+				    visible identity is the CardHeading rendered in the rail below. */}
 				<DialogTitle className="sr-only">
 					{card.name} · {card.setName}
 				</DialogTitle>
-				{/* Override the shadcn header's mobile `text-center`: the name row is a
-				    flex (always left) while the meta line obeys text-align, so centering
-				    splits them. Keep both left, matching desktop + the card page. */}
-				<DialogHeader className="shrink-0 pr-8 text-left">
-					<CardHeading card={card} />
-				</DialogHeader>
 				<div className="min-h-0 flex-1 overflow-y-auto">
 					<CardCockpit
 						card={card}
 						tab={tab}
 						onTabChange={onTabChange}
 						pending={pending}
+						railHeader={<CardHeading card={card} />}
+						railFooter={
+							crossLinks.length ? (
+								<CardCrossLinks links={crossLinks} />
+							) : undefined
+						}
 					/>
 				</div>
-				<DialogFooter className="shrink-0">
-					<CardCrossLinks links={crossLinks} />
-				</DialogFooter>
 			</DialogContent>
 		</Dialog>
 	);
