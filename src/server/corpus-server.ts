@@ -124,6 +124,66 @@ export const getDexCardsFn = createServerFn({ method: "GET" })
 		);
 	});
 
+/**
+ * Canonical `/$series/$set/$card` route params for every card of one dex number,
+ * keyed by card id. Lets the pokemon-page loader hand the grid correct card
+ * links in the first SSR paint (cards span many sets, so the page can't derive
+ * them from the URL like a single-set page does), instead of waiting on the
+ * client corpus to load and resolving them there.
+ */
+export const getDexCardRoutesFn = createServerFn({ method: "GET" })
+	.inputValidator((input: unknown) => {
+		if (typeof input === "number" || typeof input === "string")
+			return { dex: boundedInt(input, "dex", 1, MAX_DEX), lang: "en" };
+		const o = (input ?? {}) as { dex?: unknown; lang?: unknown };
+		return {
+			dex: boundedInt(o.dex, "dex", 1, MAX_DEX),
+			lang: optionalLang(o.lang),
+		};
+	})
+	.handler(async ({ data }) => {
+		const { queryCorpusServer, resolveCardRoutes } = await import(
+			"./corpus-loader"
+		);
+		const region = regionForLanguage(data.lang);
+		const cards = await queryCorpusServer(
+			{ dexNumbers: [data.dex], setId: null, relevance: false },
+			region,
+		);
+		return resolveCardRoutes(cards, region);
+	});
+
+// Cap the resolvable batch: callers pass a page's worth of seed cards (~40-60),
+// never more. A ceiling keeps a hostile/oversized payload bounded.
+const MAX_ROUTE_ITEMS = 500;
+
+/**
+ * Canonical `/$series/$set/$card` route params for an explicit list of already-
+ * fetched cards ({id, setId}), keyed by card id. Resolves WITHOUT re-running the
+ * source query — unlike getDexCardRoutesFn — so a loader that already holds its
+ * cards (trainer / energy / search, whose queries are pricey or per-keystroke)
+ * gets correct links in the first paint by passing its seed rather than paying
+ * for a second query.
+ */
+export const resolveCardRoutesFn = createServerFn({ method: "GET" })
+	.inputValidator((input: unknown) => {
+		const o = (input ?? {}) as { items?: unknown; lang?: unknown };
+		const raw = Array.isArray(o.items) ? o.items.slice(0, MAX_ROUTE_ITEMS) : [];
+		const items = raw.map((it) => {
+			const r = (it ?? {}) as { id?: unknown; setId?: unknown };
+			return {
+				id: nonEmptyString(r.id, "id"),
+				setId: nonEmptyString(r.setId, "setId"),
+			};
+		});
+		return { items, lang: optionalLang(o.lang) };
+	})
+	.handler(async ({ data }) => {
+		if (data.items.length === 0) return {};
+		const { resolveCardRoutes } = await import("./corpus-loader");
+		return resolveCardRoutes(data.items, regionForLanguage(data.lang));
+	});
+
 /** All cards of one supertype (Trainer/Energy category browse), across sets. */
 export const getSupertypeCardsFn = createServerFn({ method: "GET" })
 	.inputValidator((input: unknown) => {
