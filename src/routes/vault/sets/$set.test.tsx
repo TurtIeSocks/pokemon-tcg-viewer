@@ -106,17 +106,12 @@ test("renders set name and owned/total summary", async () => {
 test("All mode shows both cards", async () => {
 	await renderSetDetail("base1", [makeItem("c1", "base1-1")]);
 
-	await waitFor(() => {
-		// Both cards visible in All mode (default)
-		expect(screen.getByAltText("Bulbasaur")).toBeTruthy();
-		expect(screen.getByAltText("Ivysaur")).toBeTruthy();
-	});
-
-	// Owned card no grayscale, missing card has grayscale
-	const bulbasaur = screen.getByAltText("Bulbasaur");
-	const ivysaur = screen.getByAltText("Ivysaur");
-	expect(bulbasaur.className).not.toContain("grayscale");
-	expect(ivysaur.className).toContain("grayscale");
+	// Cards render as the unified HoloCard (name on the wrapper aria-label). Owned
+	// card is full color, missing card grayscale (driven by `.holo-card--owned`).
+	const bulbasaur = await screen.findByRole("button", { name: "Bulbasaur" });
+	const ivysaur = await screen.findByRole("button", { name: "Ivysaur" });
+	expect(bulbasaur.className).toContain("holo-card--owned");
+	expect(ivysaur.className).not.toContain("holo-card--owned");
 });
 
 test("Owned mode shows only owned card", async () => {
@@ -129,10 +124,8 @@ test("Owned mode shows only owned card", async () => {
 	const ownedBtn = screen.getByRole("button", { name: /owned/i });
 	fireEvent.click(ownedBtn);
 
-	await waitFor(() => {
-		expect(screen.getByAltText("Bulbasaur")).toBeTruthy();
-	});
-	expect(screen.queryByAltText("Ivysaur")).toBeNull();
+	expect(await screen.findByRole("button", { name: "Bulbasaur" })).toBeTruthy();
+	expect(screen.queryByRole("button", { name: "Ivysaur" })).toBeNull();
 });
 
 test("Missing mode shows only missing card", async () => {
@@ -145,10 +138,8 @@ test("Missing mode shows only missing card", async () => {
 	const missingBtn = screen.getByRole("button", { name: /missing/i });
 	fireEvent.click(missingBtn);
 
-	await waitFor(() => {
-		expect(screen.getByAltText("Ivysaur")).toBeTruthy();
-	});
-	expect(screen.queryByAltText("Bulbasaur")).toBeNull();
+	expect(await screen.findByRole("button", { name: "Ivysaur" })).toBeTruthy();
+	expect(screen.queryByRole("button", { name: "Bulbasaur" })).toBeNull();
 });
 
 test("bad set id shows not-found state", async () => {

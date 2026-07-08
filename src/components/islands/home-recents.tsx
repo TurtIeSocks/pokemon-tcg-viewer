@@ -2,14 +2,48 @@ import { ClientOnly, Link, type LinkProps } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { cardModalLinkProps } from "../../lib/card-route";
 import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
+import type { SlugIndex } from "../../lib/slug";
 import { useStore } from "../../store";
 import { loadCorpus, useSlugIndex } from "../../store/corpus/corpus-runtime";
 import { useRecentsStore } from "../../store/recents";
-import { holoCardProps } from "../holo-card";
+import { useIsOwned } from "../../store/userland/selectors";
+import { type HoloCardData, holoCardProps } from "../holo-card";
+import { CardMiniNav } from "../holo-card/card-mini-nav";
 import { HoloCardIsland } from "./holo-card-island";
 
 const LABEL_CLS =
 	"text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[var(--faint)]";
+
+/**
+ * One "recently viewed" tile. Subscribes to its own card's ownership (S3) so the
+ * unowned-grayscale signal + unified mini-nav match every other card grid. The
+ * tile is wide enough to seat the mini-nav pill in its lower third.
+ */
+function RecentCard({
+	card,
+	slugIndex,
+}: {
+	card: HoloCardData;
+	slugIndex: SlugIndex | null;
+}) {
+	const owned = useIsOwned(card.id);
+	// Real card-detail link once the slug index is ready; until then fall back to
+	// a name search so the tile is never a dead click.
+	const linkProps: LinkProps = (slugIndex &&
+		cardModalLinkProps(slugIndex, card)) || {
+		to: "/search",
+		search: { ...LIST_SEARCH_DEFAULTS, q: card.name },
+	};
+	return (
+		<Link {...linkProps} style={{ width: 128 }} className="shrink-0">
+			<HoloCardIsland
+				{...holoCardProps(card)}
+				owned={owned}
+				miniNav={<CardMiniNav card={card} />}
+			/>
+		</Link>
+	);
+}
 
 function RecentsInner() {
 	const recentSearches = useRecentsStore((s) => s.recentSearches);
@@ -70,25 +104,9 @@ function RecentsInner() {
 						</button>
 					</div>
 					<div className="flex gap-3 overflow-x-auto pb-2">
-						{recentlyViewed.map((card) => {
-							// Real card-detail link once the slug index is ready; until then
-							// fall back to a name search so the tile is never a dead click.
-							const linkProps: LinkProps = (slugIndex &&
-								cardModalLinkProps(slugIndex, card)) || {
-								to: "/search",
-								search: { ...LIST_SEARCH_DEFAULTS, q: card.name },
-							};
-							return (
-								<Link
-									key={card.id}
-									{...linkProps}
-									style={{ width: 96 }}
-									className="shrink-0"
-								>
-									<HoloCardIsland {...holoCardProps(card)} />
-								</Link>
-							);
-						})}
+						{recentlyViewed.map((card) => (
+							<RecentCard key={card.id} card={card} slugIndex={slugIndex} />
+						))}
 					</div>
 				</section>
 			)}

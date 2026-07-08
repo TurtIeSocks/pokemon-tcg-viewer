@@ -1,94 +1,130 @@
-import { expect, mock, test } from "bun:test";
-import { fireEvent, render, screen } from "@testing-library/react";
-import { makeCard } from "../../test-utils";
+import { beforeEach, expect, test } from "bun:test";
+import { screen } from "@testing-library/react";
+import type { PokemonSet } from "../../server/card-mappers";
+import { useStore } from "../../store/index";
+import {
+	makeCard,
+	makeCorpusCard,
+	renderInRouter,
+	seedCorpus,
+	setupUserlandTest,
+} from "../../test-utils";
 import { OwnedMissingGrid } from "./owned-missing-grid";
 
-const cardA = makeCard({ id: "base1-1", name: "Bulbasaur" });
-const cardB = makeCard({ id: "base1-2", name: "Ivysaur" });
+const cardA = makeCard({
+	id: "base1-1",
+	name: "Bulbasaur",
+	setId: "base1",
+	cardNumber: "1",
+});
+const cardB = makeCard({
+	id: "base1-2",
+	name: "Ivysaur",
+	setId: "base1",
+	cardNumber: "2",
+});
+
+const testSet: PokemonSet = {
+	id: "base1",
+	name: "Base Set",
+	series: "Base",
+	releaseDate: "1999-01-09",
+	total: 102,
+	images: { symbol: "", logo: "" },
+};
 
 // "base1-1" owned; "base1-2" missing
 const ownedSet = new Set(["base1-1"]);
 
-test("owned card is rendered without grayscale class", () => {
-	render(<OwnedMissingGrid cards={[cardA, cardB]} ownedCardIds={ownedSet} />);
-	const ownedImg = screen.getByAltText("Bulbasaur");
-	expect(ownedImg.className).not.toContain("grayscale");
+beforeEach(async () => {
+	await setupUserlandTest();
+	// Seed corpus + sets so the mini-nav + per-card modal link resolve, and
+	// loadCorpus() early-returns (no network).
+	seedCorpus([
+		makeCorpusCard({
+			id: "base1-1",
+			name: "Bulbasaur",
+			setId: "base1",
+			number: "1",
+		}),
+		makeCorpusCard({
+			id: "base1-2",
+			name: "Ivysaur",
+			setId: "base1",
+			number: "2",
+		}),
+	]);
+	useStore.setState({ sets: [testSet] });
 });
 
-test("missing card is rendered with grayscale class", () => {
-	render(<OwnedMissingGrid cards={[cardA, cardB]} ownedCardIds={ownedSet} />);
-	const missingImg = screen.getByAltText("Ivysaur");
-	expect(missingImg.className).toContain("grayscale");
+test("owned card renders in full color (holo-card--owned); missing card does not", async () => {
+	await renderInRouter(
+		<OwnedMissingGrid cards={[cardA, cardB]} ownedCardIds={ownedSet} />,
+	);
+	const ownedCard = await screen.findByRole("button", { name: "Bulbasaur" });
+	const missingCard = await screen.findByRole("button", { name: "Ivysaur" });
+	// Grayscale-when-unowned is driven by the `.holo-card--owned` class (CSS
+	// desaturates grid tiles that lack it).
+	expect(ownedCard.className).toContain("holo-card--owned");
+	expect(missingCard.className).not.toContain("holo-card--owned");
 });
 
-test("mode=owned hides missing cards", () => {
-	render(
+test("every card exposes the unified mini-nav (expand button)", async () => {
+	await renderInRouter(
+		<OwnedMissingGrid cards={[cardA, cardB]} ownedCardIds={ownedSet} />,
+	);
+	const expandButtons = await screen.findAllByRole("button", {
+		name: /expand/i,
+	});
+	expect(expandButtons).toHaveLength(2);
+});
+
+test("a missing card's mini-nav offers to add it to the collection", async () => {
+	await renderInRouter(
+		<OwnedMissingGrid cards={[cardB]} ownedCardIds={ownedSet} />,
+	);
+	expect(
+		await screen.findByRole("button", { name: /add ivysaur to collection/i }),
+	).toBeDefined();
+});
+
+test("each visible card links to its detail modal", async () => {
+	await renderInRouter(
+		<OwnedMissingGrid cards={[cardA, cardB]} ownedCardIds={ownedSet} />,
+	);
+	await screen.findByRole("button", { name: "Bulbasaur" });
+	expect(screen.getAllByRole("link")).toHaveLength(2);
+});
+
+test("mode=owned hides missing cards", async () => {
+	await renderInRouter(
 		<OwnedMissingGrid
 			cards={[cardA, cardB]}
 			ownedCardIds={ownedSet}
 			mode="owned"
 		/>,
 	);
-	expect(screen.getByAltText("Bulbasaur")).toBeDefined();
-	expect(screen.queryByAltText("Ivysaur")).toBeNull();
+	expect(
+		await screen.findByRole("button", { name: "Bulbasaur" }),
+	).toBeDefined();
+	expect(screen.queryByRole("button", { name: "Ivysaur" })).toBeNull();
 });
 
-test("mode=missing hides owned cards", () => {
-	render(
+test("mode=missing hides owned cards", async () => {
+	await renderInRouter(
 		<OwnedMissingGrid
 			cards={[cardA, cardB]}
 			ownedCardIds={ownedSet}
 			mode="missing"
 		/>,
 	);
-	expect(screen.queryByAltText("Bulbasaur")).toBeNull();
-	expect(screen.getByAltText("Ivysaur")).toBeDefined();
+	expect(await screen.findByRole("button", { name: "Ivysaur" })).toBeDefined();
+	expect(screen.queryByRole("button", { name: "Bulbasaur" })).toBeNull();
 });
 
-test("owned indicator dot has aria-label=owned", () => {
-	render(<OwnedMissingGrid cards={[cardA]} ownedCardIds={ownedSet} />);
-	expect(screen.getByLabelText("owned")).toBeDefined();
-});
-
-test("missing indicator dot has aria-label=missing", () => {
-	render(<OwnedMissingGrid cards={[cardB]} ownedCardIds={ownedSet} />);
-	expect(screen.getByLabelText("missing")).toBeDefined();
-});
-
-// --- onToggleOwned ---
-
-test("with onToggleOwned, clicking a card calls it with the cardId", () => {
-	const onToggle = mock(() => {});
-	render(
-		<OwnedMissingGrid
-			cards={[cardA, cardB]}
-			ownedCardIds={ownedSet}
-			onToggleOwned={onToggle}
-		/>,
+test("empty owned state shows the friendly message", async () => {
+	await renderInRouter(
+		<OwnedMissingGrid cards={[cardB]} ownedCardIds={new Set()} mode="owned" />,
 	);
-	// Each card should be a button; click the first one (Bulbasaur)
-	const btn = screen.getByRole("button", { name: /bulbasaur/i });
-	fireEvent.click(btn);
-	expect(onToggle).toHaveBeenCalledTimes(1);
-	expect(onToggle).toHaveBeenCalledWith("base1-1");
-});
-
-test("with onToggleOwned, clicking missing card calls it with the correct cardId", () => {
-	const onToggle = mock(() => {});
-	render(
-		<OwnedMissingGrid
-			cards={[cardA, cardB]}
-			ownedCardIds={ownedSet}
-			onToggleOwned={onToggle}
-		/>,
-	);
-	const btn = screen.getByRole("button", { name: /ivysaur/i });
-	fireEvent.click(btn);
-	expect(onToggle).toHaveBeenCalledWith("base1-2");
-});
-
-test("without onToggleOwned, cards are not buttons", () => {
-	render(<OwnedMissingGrid cards={[cardA, cardB]} ownedCardIds={ownedSet} />);
-	// No buttons rendered when prop is absent
-	expect(screen.queryAllByRole("button")).toHaveLength(0);
+	expect(screen.getByText(/don't own any cards/i)).toBeDefined();
 });

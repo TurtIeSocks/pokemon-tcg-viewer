@@ -7,12 +7,38 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { useIsOwned } from "../../store/userland/selectors";
 import { rollPack } from "../../utils/roll-pack";
 import { BoosterPack, type PackArt } from "../booster-pack/booster-pack";
-import { CollectionToggle } from "../collection-toggle";
 import { HoloCard, type HoloCardData, holoCardProps } from "../holo-card";
+import { CardMiniNav } from "../holo-card/card-mini-nav";
 
 const RIP_DURATION_MS = 320;
+
+/**
+ * One pulled-pack cell. Subscribes to its own card's ownership (S3) so adding a
+ * card via the mini-nav re-renders only that card, not the whole pack. Grayscale
+ * (unowned) + the unified mini-nav match every other card grid in the app.
+ */
+function PackCard({
+	card,
+	cardHref,
+}: {
+	card: HoloCardData;
+	cardHref: (card: HoloCardData) => LinkProps;
+}) {
+	const owned = useIsOwned(card.id);
+	return (
+		<Link {...cardHref(card)} className="block">
+			<HoloCard
+				{...holoCardProps(card)}
+				owned={owned}
+				miniNav={<CardMiniNav card={card} />}
+				style={{ width: "100%" }}
+			/>
+		</Link>
+	);
+}
 
 interface PackDialogProps {
 	open: boolean;
@@ -81,13 +107,7 @@ export function PackDialog({
 					<>
 						<div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
 							{pack.map((card) => (
-								<Link key={card.id} {...cardHref(card)} className="block">
-									<HoloCard
-										{...holoCardProps(card)}
-										hoverOverlay={<CollectionToggle card={card} />}
-										style={{ width: "100%" }}
-									/>
-								</Link>
+								<PackCard key={card.id} card={card} cardHref={cardHref} />
 							))}
 						</div>
 						<div className="flex justify-center pt-4">

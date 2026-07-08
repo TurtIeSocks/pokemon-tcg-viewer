@@ -6,6 +6,7 @@ import { useCardRouteParamsForRegion } from "../../store/corpus/corpus-runtime";
 import { useDisplayLanguage } from "../../store/corpus/i18n-active-hooks";
 import type { CardRow } from "../../store/userland/card-rows";
 import { holoCardProps } from "../holo-card";
+import { CardMiniNav } from "../holo-card/card-mini-nav";
 import { HoloCardIsland } from "../islands/holo-card-island";
 
 /** Props for {@link OwnedCardTile}. */
@@ -34,10 +35,14 @@ export function OwnedCardTile({ row }: OwnedCardTileProps) {
 	const inner = (
 		<>
 			{/* The tile shows the PRIMARY stack's printing — a collection of
-			    reverse holos renders as the reverse holos you actually own. */}
+			    reverse holos renders as the reverse holos you actually own. Always
+			    owned (full color, owned glow); the mini-nav owned button reads as
+			    "manage" and opens the stack manager, matching the tile's own link. */}
 			<HoloCardIsland
 				{...holoCardProps(row.card)}
+				owned
 				reverse={isReversePrinting(row.primary)}
+				miniNav={<CardMiniNav card={row.card} />}
 			/>
 			{row.count > 1 && (
 				<span className="absolute bottom-1 right-1 flex h-6 min-w-6 items-center justify-center rounded-[var(--r-pill)] bg-[var(--success)] px-1.5 text-xs font-bold text-[var(--primary-ink)]">

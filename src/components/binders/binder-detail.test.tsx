@@ -173,9 +173,9 @@ test("clicking rule × calls removeRuleFromBinder", async () => {
 	});
 });
 
-test("member grid shows owned card without grayscale and missing card with grayscale", async () => {
+test("member grid shows owned card in full color and missing card grayscale", async () => {
 	const binder = await createBinder({ name: "Members Binder" });
-	// Add both cards as explicit members via includeCardIds patch
+	// A set rule pulls both base1 cards in as members.
 	await addRuleToBinder(binder.id, {
 		text: null,
 		setId: "base1",
@@ -192,16 +192,14 @@ test("member grid shows owned card without grayscale and missing card with grays
 
 	await renderDetail(updated);
 
-	await waitFor(() => {
-		expect(screen.getByAltText("Bulbasaur")).toBeDefined();
-		expect(screen.getByAltText("Ivysaur")).toBeDefined();
-	});
+	// Cards render as the unified HoloCard (name on the wrapper's aria-label; the
+	// internal <img> is decorative alt=""). Grayscale-when-unowned is driven by
+	// the `.holo-card--owned` class, so assert on that rather than an img filter.
+	const ownedCard = await screen.findByRole("button", { name: "Bulbasaur" });
+	const missingCard = await screen.findByRole("button", { name: "Ivysaur" });
 
-	const ownedImg = screen.getByAltText("Bulbasaur");
-	const missingImg = screen.getByAltText("Ivysaur");
-
-	expect(ownedImg.className).not.toContain("grayscale");
-	expect(missingImg.className).toContain("grayscale");
+	expect(ownedCard.className).toContain("holo-card--owned");
+	expect(missingCard.className).not.toContain("holo-card--owned");
 });
 
 test("Edit button opens BinderFormDialog", async () => {
@@ -306,10 +304,10 @@ test("renders a back link with to=/vault/binders", async () => {
 	);
 });
 
-// --- click-to-toggle-owned ---
+// --- unified mini-nav ownership ---
 
-test("clicking a member card toggles ownership via toggleCardOwned", async () => {
-	const binder = await createBinder({ name: "Toggle Binder" });
+test("an owned member card's mini-nav surfaces the manage/owned state", async () => {
+	const binder = await createBinder({ name: "Owned State Binder" });
 	await addRuleToBinder(binder.id, {
 		text: null,
 		setId: "base1",
@@ -326,28 +324,16 @@ test("clicking a member card toggles ownership via toggleCardOwned", async () =>
 
 	await renderDetail(updated);
 
-	// Wait for member cards to render
-	await waitFor(() => {
-		expect(screen.getByAltText("Bulbasaur")).toBeDefined();
-	});
-
-	// Bulbasaur is owned (added in beforeEach); clicking it should remove it
-	const toggleBtn = screen.getByRole("button", { name: /remove bulbasaur/i });
-	expect(toggleBtn).toBeDefined();
-
-	await act(async () => {
-		fireEvent.click(toggleBtn);
-	});
-
-	await waitFor(() => {
-		const stacks = Object.values(useUserland.getState().items).filter(
-			(i) => i.cardId === ownedCard.id,
-		);
-		expect(stacks).toHaveLength(0);
-	});
+	// Bulbasaur is owned (added in beforeEach); the unified mini-nav collection
+	// button reads as "manage" (owned state), which opens the stack manager.
+	expect(
+		await screen.findByRole("button", {
+			name: /manage stacks of bulbasaur/i,
+		}),
+	).toBeDefined();
 });
 
-test("clicking an unowned member card adds it via toggleCardOwned", async () => {
+test("clicking a missing member card's add button adds it to the collection", async () => {
 	const binder = await createBinder({ name: "Toggle Add Binder" });
 	await addRuleToBinder(binder.id, {
 		text: null,
@@ -365,16 +351,14 @@ test("clicking an unowned member card adds it via toggleCardOwned", async () => 
 
 	await renderDetail(updated);
 
-	await waitFor(() => {
-		expect(screen.getByAltText("Ivysaur")).toBeDefined();
+	// Ivysaur is unowned; the mini-nav add button adds a copy via the shared
+	// collection-toggle store write (the same path every card grid uses).
+	const addBtn = await screen.findByRole("button", {
+		name: /add ivysaur to collection/i,
 	});
 
-	// Ivysaur is unowned; clicking should add it
-	const toggleBtn = screen.getByRole("button", { name: /add ivysaur/i });
-	expect(toggleBtn).toBeDefined();
-
 	await act(async () => {
-		fireEvent.click(toggleBtn);
+		fireEvent.click(addBtn);
 	});
 
 	await waitFor(() => {

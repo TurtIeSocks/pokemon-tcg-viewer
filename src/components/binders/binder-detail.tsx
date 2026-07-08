@@ -30,7 +30,6 @@ import {
 	removeBinder,
 	removeCardFromBinder,
 	removeRuleFromBinder,
-	toggleCardOwned,
 } from "../../store/userland/userland-store";
 import {
 	useBinderValue,
@@ -293,11 +292,7 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 					</div>
 				)}
 
-				<OwnedMissingGrid
-					cards={memberCards}
-					ownedCardIds={ownedCardIds}
-					onToggleOwned={(id) => void toggleCardOwned(id)}
-				/>
+				<OwnedMissingGrid cards={memberCards} ownedCardIds={ownedCardIds} />
 			</div>
 
 			<BinderFormDialog
