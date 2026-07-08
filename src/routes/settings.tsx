@@ -3,7 +3,6 @@ import { ChevronDown, Languages } from "lucide-react";
 import { LanguageRadioMenu } from "@/components/islands/card-language-control";
 import { CardDatabaseSetting } from "@/components/settings/card-database-setting";
 import { CardMotionSetting } from "@/components/settings/card-motion-setting";
-import { CorpusDatabaseSetting } from "@/components/settings/corpus-database-setting";
 import { ImageCacheSetting } from "@/components/settings/image-cache-setting";
 import { Button } from "@/components/ui/button";
 import {
@@ -74,7 +73,6 @@ function SettingsPage() {
 					Caching &amp; Offline
 				</h2>
 				<CardDatabaseSetting />
-				<CorpusDatabaseSetting />
 				<ImageCacheSetting />
 			</ClientOnly>
 		</div>
