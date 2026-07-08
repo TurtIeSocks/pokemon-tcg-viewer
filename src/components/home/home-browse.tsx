@@ -6,7 +6,6 @@ import { Eyebrow } from "@/components/ui/eyebrow";
 import { Stagger } from "@/components/ui/motion";
 import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import type { NavTree } from "../../lib/nav-tree";
-import { POKEDEX_FILTER_DEFAULTS } from "../../lib/pokedex";
 import {
 	loadCorpus,
 	useCorpusRuntime,
@@ -71,8 +70,9 @@ export function HomeBrowse({ tree }: { tree: NavTree }) {
 					</p>
 				</div>
 
-				{/* Browse by era — one pill per series, linking to its newest set. */}
-				<HomeSection title="Browse by era">
+				{/* Browse by era — one pill per series, linking to its newest set.
+				    Anchored: the home launch pad's "Browse by era" card scrolls here. */}
+				<HomeSection id="browse-by-era" title="Browse by era">
 					<div className="flex flex-wrap justify-center gap-2">
 						{tree.map((series) => {
 							const target = series.sets.at(-1);
@@ -89,27 +89,6 @@ export function HomeBrowse({ tree }: { tree: NavTree }) {
 								</Button>
 							);
 						})}
-					</div>
-				</HomeSection>
-
-				{/* Browse by card type — the non-Pokémon supertypes get their own pages. */}
-				<HomeSection title="Browse by card type">
-					<div className="flex flex-wrap justify-center gap-2">
-						<Button variant="soft" size="sm" asChild>
-							<Link to="/pokemon" search={POKEDEX_FILTER_DEFAULTS}>
-								Pokémon
-							</Link>
-						</Button>
-						<Button variant="soft" size="sm" asChild>
-							<Link to="/trainer" search={LIST_SEARCH_DEFAULTS}>
-								Trainers
-							</Link>
-						</Button>
-						<Button variant="soft" size="sm" asChild>
-							<Link to="/energy" search={LIST_SEARCH_DEFAULTS}>
-								Energy
-							</Link>
-						</Button>
 					</div>
 				</HomeSection>
 
@@ -131,14 +110,19 @@ export function HomeBrowse({ tree }: { tree: NavTree }) {
  * match the centered hero above (Vault sections left-align under a page header).
  */
 function HomeSection({
+	id,
 	title,
 	children,
 }: {
+	id?: string;
 	title: string;
 	children: ReactNode;
 }) {
 	return (
-		<section className="mt-8 space-y-4 border-t border-[var(--hairline)] pt-8">
+		<section
+			id={id}
+			className="mt-8 scroll-mt-20 space-y-4 border-t border-[var(--hairline)] pt-8"
+		>
 			<h2 className="text-center font-display text-[21px] font-medium text-[var(--ink)]">
 				{title}
 			</h2>

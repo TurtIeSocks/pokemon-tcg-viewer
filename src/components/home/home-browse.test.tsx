@@ -33,7 +33,7 @@ test("HomeBrowse renders the proof line, an era pill per series, and set tiles",
 	// per the project's test-isolation gotcha.
 	useCorpusRuntime.setState({ index: buildIndex([]) });
 
-	const { container, getByText } = await renderInRouter(
+	const { container, getByText, queryByText } = await renderInRouter(
 		<HomeBrowse tree={TREE} />,
 	);
 
@@ -42,26 +42,23 @@ test("HomeBrowse renders the proof line, an era pill per series, and set tiles",
 	expect(getByText(/3 eras/)).toBeTruthy();
 	expect(getByText(/always free/)).toBeTruthy();
 
-	// Section headings + one era pill per series (soft-variant button links).
-	// Exclude the card-type pills (which are also soft-variant links).
-	expect(getByText("Browse by era")).toBeTruthy();
+	// One era pill per series — the card-type pills moved to the home launch pad,
+	// so every soft-variant link here is now an era pill (no filtering needed).
 	expect(getByText("Latest sets")).toBeTruthy();
-	const softPills = [...container.querySelectorAll('a[data-variant="soft"]')];
-	const eraPills = softPills.filter((a) => {
-		const href = a.getAttribute("href") ?? "";
-		return (
-			!href.startsWith("/pokemon") &&
-			!href.startsWith("/trainer") &&
-			!href.startsWith("/energy")
-		);
-	});
+	const eraPills = [...container.querySelectorAll('a[data-variant="soft"]')];
 	expect(eraPills.length).toBe(3);
 
-	// Browse-by-card-type section links to the Pokémon + Trainer + Energy pages.
-	expect(getByText("Browse by card type")).toBeTruthy();
-	expect(container.querySelector('a[href^="/pokemon"]')).toBeTruthy();
-	expect(container.querySelector('a[href^="/trainer"]')).toBeTruthy();
-	expect(container.querySelector('a[href^="/energy"]')).toBeTruthy();
+	// The era section is anchored so the launch pad's "Browse by era" card can
+	// scroll to it, and its heading is present.
+	const eraSection = container.querySelector("#browse-by-era");
+	expect(eraSection).toBeTruthy();
+	expect(eraSection?.textContent).toContain("Browse by era");
+
+	// The card-type pills are gone (superseded by the home launch cards).
+	expect(queryByText("Browse by card type")).toBeNull();
+	expect(container.querySelector('a[href^="/pokemon"]')).toBeNull();
+	expect(container.querySelector('a[href^="/trainer"]')).toBeNull();
+	expect(container.querySelector('a[href^="/energy"]')).toBeNull();
 
 	// Browse-variant set tiles (link to /$series/$set, never /vault).
 	const tiles = container.querySelectorAll('a[aria-label^="Browse"]');
