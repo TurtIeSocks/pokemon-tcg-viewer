@@ -1,6 +1,10 @@
 import { beforeEach, expect, spyOn, test } from "bun:test";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { toast } from "sonner";
+import {
+	setPricesFetchersForTests,
+	usePricesRuntime,
+} from "@/store/corpus/prices-runtime";
 import { DEFAULT_PRINT_PREFS, useUiPrefs } from "@/store/ui-prefs";
 import type { HoloCardData } from "../holo-card/types";
 import { PrintMissingDialog } from "./print-missing-dialog";
@@ -9,6 +13,17 @@ import { PrintMissingDialog } from "./print-missing-dialog";
 // every test — otherwise one test's slider change leaks into the next.
 beforeEach(() => {
 	useUiPrefs.setState({ printPrefs: { ...DEFAULT_PRINT_PREFS } });
+	// The dialog loads prices when it opens; stub the fetchers so tests never hit
+	// the wire, and start from a "ready" (empty) cache so loadPrices early-returns.
+	setPricesFetchersForTests({
+		fetchVersion: async () => {
+			throw Object.assign(new Error("unavailable"), { status: 503 });
+		},
+		fetchBlob: async () => {
+			throw Object.assign(new Error("unavailable"), { status: 503 });
+		},
+	});
+	usePricesRuntime.setState({ byId: new Map(), meta: null, status: "ready" });
 });
 
 function card(overrides: Partial<HoloCardData> = {}): HoloCardData {
@@ -107,7 +122,7 @@ test("the text-size field (%) master-scales every line by the same factor", () =
 
 test("a per-line font-size field sets that line's base size (x textScale)", () => {
 	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
-	setUnit("Card name font size", "6"); // 6mm base * 1.3 default scale = 7.8mm
+	setUnit("Card name size", "6"); // 6mm base * 1.3 default scale = 7.8mm
 	expect(within(preview()).getByText("Bulbasaur").style.fontSize).toBe("7.8mm");
 });
 
@@ -120,7 +135,7 @@ test("unchecking a font-size line hides it on every placeholder", () => {
 	expect(within(preview()).queryByText("#1")).toBeNull();
 	// The line's size input is disabled while hidden.
 	expect(
-		(screen.getByLabelText("Card # font size") as HTMLInputElement).disabled,
+		(screen.getByLabelText("Card # size") as HTMLInputElement).disabled,
 	).toBe(true);
 });
 
@@ -274,4 +289,30 @@ test("empty state: shows a nothing-to-print message and disables Print", () => {
 	expect(
 		screen.queryByRole("region", { name: "Placeholder preview" }),
 	).toBeNull();
+});
+
+test("shows a market price line for a priced card and hides it when toggled off", () => {
+	usePricesRuntime.setState({
+		byId: new Map([["a", { tp: { N: [420, 300] } }]]),
+		meta: {
+			date: "2026-07-03",
+			sources: { tp: "2026-07-03", cm: null },
+			fx: { base: "EUR", date: "2026-07-03", rates: { USD: 1.09 } },
+		},
+		status: "ready",
+	});
+	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
+	// Card "a" (Bulbasaur) is priced at 420 cents → $4.20; b/c are unpriced.
+	expect(within(preview()).getByText("$4.20")).toBeDefined();
+
+	act(() => {
+		fireEvent.click(screen.getByLabelText("Show Price"));
+	});
+	expect(within(preview()).queryByText("$4.20")).toBeNull();
+});
+
+test("exposes a QR-code toggle, on by default", () => {
+	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
+	const qr = screen.getByLabelText("Show QR code") as HTMLInputElement;
+	expect(qr.checked).toBe(true);
 });
