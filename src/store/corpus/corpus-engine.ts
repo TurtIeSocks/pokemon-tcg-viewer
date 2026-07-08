@@ -29,6 +29,13 @@ export interface CorpusQuery {
 	setId?: string | null;
 	/** National dex numbers (species multi-select). A card matches when ANY of these is in its `nationalPokedexNumbers`. Empty/undefined → no species filter. */
 	dexNumbers?: number[];
+	/**
+	 * Card "name" filter (multi-select). Mixed keys: a dex number (as a string)
+	 * for Pokémon, or a card name for Trainers/Energy (which have no dex). A card
+	 * matches when ANY selected id is one of its keys — its `nationalPokedexNumbers`
+	 * (stringified) if it has them, else its `name`. Empty/undefined → no filter.
+	 */
+	ids?: string[];
 	/** Slug of a single card name (e.g. "rare-candy"). Keeps only printings whose slugified name matches. */
 	nameSlug?: string | null;
 	/** Order results by release date (then number) instead of plain number order — for cross-set views. */
@@ -213,6 +220,16 @@ export function queryCorpus(
 			!q.dexNumbers.some((d) => card.nationalPokedexNumbers?.includes(d))
 		)
 			continue;
+		// Card "name" filter: match on the card's identity keys — its dex numbers
+		// (Pokémon) or its name (Trainer/Energy). Mirrors deriveIds's keying.
+		if (q.ids?.length) {
+			const keys = card.nationalPokedexNumbers?.length
+				? card.nationalPokedexNumbers.map(String)
+				: card.name
+					? [card.name]
+					: [];
+			if (!keys.some((k) => q.ids?.includes(k))) continue;
+		}
 		// Name-anchored views (Trainer/Energy per-name pages) group by slugified
 		// name across sets — no dex exists for non-Pokémon cards. Slugify on the fly
 		// (only when nameSlug is set) to avoid bloating the index for every query.

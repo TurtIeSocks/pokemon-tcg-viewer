@@ -13,7 +13,7 @@ const defaultValue: ListSearch = {
 	owned: "all",
 	yearMin: null,
 	yearMax: null,
-	pokemon: [],
+	ids: [],
 	mode: "fuzzy" as const,
 	sort: "default",
 	dir: "asc",
@@ -25,27 +25,29 @@ const options = {
 	subtypes: ["Basic", "Stage 1", "GX"],
 	rarities: ["Common", "Rare Holo"],
 	types: ["fire", "water"],
-	pokemon: [
-		{ dex: 6, name: "Charizard" },
-		{ dex: 25, name: "Pikachu" },
+	// A mix: Pokémon keyed by dex id, a Trainer keyed by name.
+	ids: [
+		{ id: "6", label: "Charizard" },
+		{ id: "25", label: "Pikachu" },
+		{ id: "Barry", label: "Barry" },
 	],
 };
 
 /**
  * Render `<SearchControls>` with the shared `options` and a no-op `onChange`.
- * Override `value`, `onChange`, `showYearFilter`, or `showPokemonFilter` per
+ * Override `value`, `onChange`, `showYearFilter`, or `showCardFilter` per
  * test as needed.
  */
 function renderControls({
 	value = defaultValue,
 	onChange = () => {},
 	showYearFilter = false,
-	showPokemonFilter = false,
+	showCardFilter = false,
 }: {
 	value?: ListSearch;
 	onChange?: (patch: Partial<ListSearch>) => void;
 	showYearFilter?: boolean;
-	showPokemonFilter?: boolean;
+	showCardFilter?: boolean;
 } = {}) {
 	return render(
 		<SearchControls
@@ -53,7 +55,7 @@ function renderControls({
 			options={options}
 			onChange={onChange}
 			showYearFilter={showYearFilter}
-			showPokemonFilter={showPokemonFilter}
+			showCardFilter={showCardFilter}
 		/>,
 	);
 }
@@ -137,77 +139,87 @@ test("existing controls (q input + filter selects + owned) still render", () => 
 	expect(screen.getByRole("searchbox")).toBeDefined();
 });
 
-// ─── Pokémon (species) multi-select filter ────────────────────────────────────
+// ─── Card ("name") multi-select filter (dex ids + trainer names) ──────────────
 
-test("Pokémon filter NOT rendered by default (showPokemonFilter omitted)", () => {
+test("Card filter NOT rendered by default (showCardFilter omitted)", () => {
 	renderControls();
-	expect(screen.queryByRole("button", { name: /Pokémon/i })).toBeNull();
+	expect(screen.queryByRole("button", { name: /^All Cards$/ })).toBeNull();
 });
 
-test("renders the Pokémon multi-select when showPokemonFilter={true}", () => {
-	renderControls({ showPokemonFilter: true });
-	expect(screen.getByRole("button", { name: /Pokémon/i })).toBeDefined();
+test("renders the Card multi-select when showCardFilter={true}", () => {
+	renderControls({ showCardFilter: true });
+	expect(screen.getByRole("button", { name: /^All Cards$/ })).toBeDefined();
 });
 
-test("empty Pokémon trigger shows the 'All Pokémon' placeholder", () => {
-	renderControls({ showPokemonFilter: true });
-	expect(screen.getByText("All Pokémon")).toBeDefined();
+test("empty Card trigger shows the 'All Cards' placeholder", () => {
+	renderControls({ showCardFilter: true });
+	expect(screen.getByText("All Cards")).toBeDefined();
 });
 
-test("a single selected species shows that species' name as the trigger label", () => {
+test("a single selected id shows that card's label as the trigger", () => {
 	renderControls({
-		value: { ...defaultValue, pokemon: [25] },
-		showPokemonFilter: true,
+		value: { ...defaultValue, ids: ["25"] },
+		showCardFilter: true,
 	});
-	const trigger = screen.getByRole("button", { name: /Pokémon/i });
+	const trigger = screen.getByRole("button", { name: /^Card:/ });
 	expect(trigger.textContent).toContain("Pikachu");
 });
 
-test("two selected species show an 'N selected' summary", () => {
+test("two selected ids show an 'N selected' summary", () => {
 	renderControls({
-		value: { ...defaultValue, pokemon: [6, 25] },
-		showPokemonFilter: true,
+		value: { ...defaultValue, ids: ["6", "25"] },
+		showCardFilter: true,
 	});
-	const trigger = screen.getByRole("button", { name: /Pokémon/i });
+	const trigger = screen.getByRole("button", { name: /^Card:/ });
 	expect(trigger.textContent).toContain("2 selected");
 });
 
-test("selecting a species emits a 1-element dex array (empty → one)", async () => {
+test("selecting a Pokémon emits its dex id (empty → one)", async () => {
 	const onChange = mock(() => {});
-	renderControls({ onChange, showPokemonFilter: true });
-	openFilter(/Pokémon/i);
+	renderControls({ onChange, showCardFilter: true });
+	openFilter(/^All Cards$/);
 	fireEvent.click(
 		await screen.findByRole("menuitemcheckbox", { name: "Charizard" }),
 	);
-	expect(onChange).toHaveBeenCalledWith({ pokemon: [6] });
+	expect(onChange).toHaveBeenCalledWith({ ids: ["6"] });
 });
 
-test("selecting a second species emits the full 2-element dex array", async () => {
+test("selecting a Trainer emits its name as the id (the dex/name mix)", async () => {
+	const onChange = mock(() => {});
+	renderControls({ onChange, showCardFilter: true });
+	openFilter(/^All Cards$/);
+	fireEvent.click(
+		await screen.findByRole("menuitemcheckbox", { name: "Barry" }),
+	);
+	expect(onChange).toHaveBeenCalledWith({ ids: ["Barry"] });
+});
+
+test("selecting a second card emits the full 2-element id array", async () => {
 	const onChange = mock(() => {});
 	renderControls({
-		value: { ...defaultValue, pokemon: [6] },
+		value: { ...defaultValue, ids: ["6"] },
 		onChange,
-		showPokemonFilter: true,
+		showCardFilter: true,
 	});
-	openFilter(/Pokémon/i);
+	openFilter(/^Card:/);
 	fireEvent.click(
 		await screen.findByRole("menuitemcheckbox", { name: "Pikachu" }),
 	);
-	expect(onChange).toHaveBeenCalledWith({ pokemon: [6, 25] });
+	expect(onChange).toHaveBeenCalledWith({ ids: ["6", "25"] });
 });
 
-test("toggling an already-selected species removes its dex from the array", async () => {
+test("toggling an already-selected card removes its id from the array", async () => {
 	const onChange = mock(() => {});
 	renderControls({
-		value: { ...defaultValue, pokemon: [6, 25] },
+		value: { ...defaultValue, ids: ["6", "25"] },
 		onChange,
-		showPokemonFilter: true,
+		showCardFilter: true,
 	});
-	openFilter(/Pokémon/i);
+	openFilter(/^Card:/);
 	fireEvent.click(
 		await screen.findByRole("menuitemcheckbox", { name: "Charizard" }),
 	);
-	expect(onChange).toHaveBeenCalledWith({ pokemon: [25] });
+	expect(onChange).toHaveBeenCalledWith({ ids: ["25"] });
 });
 
 // ─── Search-mode menu (ButtonGroup-fused 3-mode picker) ───────────────────────
@@ -380,13 +392,13 @@ test("Clear filters resets every filter dimension in one patch", () => {
 			rarity: ["Rare Holo"],
 			types: ["fire"],
 			owned: "owned",
-			pokemon: [25],
+			ids: ["25"],
 			yearMin: 2020,
 			yearMax: 2023,
 		},
 		onChange,
 		showYearFilter: true,
-		showPokemonFilter: true,
+		showCardFilter: true,
 	});
 	fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
 	expect(onChange).toHaveBeenCalledTimes(1);
@@ -396,7 +408,7 @@ test("Clear filters resets every filter dimension in one patch", () => {
 		rarity: [],
 		types: [],
 		owned: "all",
-		pokemon: [],
+		ids: [],
 		yearMin: null,
 		yearMax: null,
 	});

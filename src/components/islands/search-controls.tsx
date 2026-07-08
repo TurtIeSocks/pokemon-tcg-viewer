@@ -23,7 +23,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { PokemonFacet, SetFacets } from "@/server/set-facets";
+import type { IdFacet, SetFacets } from "@/server/set-facets";
 import { useUiPrefs } from "@/store/ui-prefs";
 import type { ListSearch, OwnedMode } from "../../lib/card-query";
 import { SearchModeMenu } from "./search-mode-menu";
@@ -50,8 +50,8 @@ interface SearchControlsProps {
 	placeholder?: string;
 	/** When true, renders the Release-year From/To inputs. Defaults to false. */
 	showYearFilter?: boolean;
-	/** When true, renders the Pokémon (species) filter select. Defaults to false. */
-	showPokemonFilter?: boolean;
+	/** When true, renders the card "name" filter (Pokémon + Trainers). Defaults to false. */
+	showCardFilter?: boolean;
 	/** When true, hides the Card Type (supertype) dropdown — the page locks it. */
 	lockSupertype?: boolean;
 }
@@ -167,37 +167,35 @@ function YearSelect({
 	);
 }
 
-// A MULTI-select over the species facet, mirroring FilterMultiSelect but keyed by
-// national dex number over a number[] value: a DropdownMenu of checkbox items,
-// each toggling its dex in/out of the array. The trigger reads "All Pokémon"
-// (none), the single species name (one), or an "N selected" summary (more); the
-// accessible name always carries the "Pokémon" dimension label.
-function PokemonMultiSelect({
+// A MULTI-select over the card "name" facet (IdFacet): Pokémon keyed by dex id,
+// Trainers/Energy by name, over a string[] value. A DropdownMenu of checkbox items
+// toggling each id in/out of the array. The trigger reads "All Cards" (none), the
+// single option label (one), or an "N selected" summary (more); the accessible
+// name always carries the "Card" dimension label.
+function CardMultiSelect({
 	value,
 	options,
 	onChange,
 }: {
-	value: number[];
-	options: PokemonFacet[];
-	onChange: (v: number[]) => void;
+	value: string[];
+	options: IdFacet[];
+	onChange: (v: string[]) => void;
 }) {
 	const selected = new Set(value);
 	// Toggle keeps the caller's selection order stable (append on add, filter on remove).
-	const toggle = (dex: number) =>
-		onChange(
-			selected.has(dex) ? value.filter((d) => d !== dex) : [...value, dex],
-		);
+	const toggle = (id: string) =>
+		onChange(selected.has(id) ? value.filter((v) => v !== id) : [...value, id]);
 
-	const nameByDex = new Map(options.map((p) => [p.dex, p.name]));
+	const labelById = new Map(options.map((o) => [o.id, o.label]));
 	const summary =
 		value.length === 0
-			? "All Pokémon"
+			? "All Cards"
 			: value.length === 1
-				? (nameByDex.get(value[0]) ?? `#${value[0]}`)
+				? (labelById.get(value[0]) ?? value[0])
 				: `${value.length} selected`;
 	// Accessible name always carries the dimension label (the empty summary already
 	// includes it), so the control is queryable/announced regardless of selection.
-	const ariaLabel = value.length === 0 ? summary : `Pokémon: ${summary}`;
+	const ariaLabel = value.length === 0 ? summary : `Card: ${summary}`;
 
 	return (
 		<DropdownMenu>
@@ -216,15 +214,15 @@ function PokemonMultiSelect({
 				align="start"
 				className="max-h-72 w-(--radix-dropdown-menu-trigger-width) min-w-40"
 			>
-				{options.map((p) => (
+				{options.map((o) => (
 					<DropdownMenuCheckboxItem
-						key={p.dex}
-						checked={selected.has(p.dex)}
-						// Keep the menu open across toggles so several species can be picked at once.
+						key={o.id}
+						checked={selected.has(o.id)}
+						// Keep the menu open across toggles so several cards can be picked at once.
 						onSelect={(e) => e.preventDefault()}
-						onCheckedChange={() => toggle(p.dex)}
+						onCheckedChange={() => toggle(o.id)}
 					>
-						{p.name}
+						{o.label}
 					</DropdownMenuCheckboxItem>
 				))}
 			</DropdownMenuContent>
@@ -238,7 +236,7 @@ export function SearchControls({
 	onChange,
 	placeholder = "Search cards by name",
 	showYearFilter = false,
-	showPokemonFilter = false,
+	showCardFilter = false,
 	lockSupertype = false,
 }: SearchControlsProps) {
 	// Count of active filter dimensions (q lives in the always-visible search box,
@@ -251,7 +249,7 @@ export function SearchControls({
 		value.rarity.length +
 		value.types.length +
 		(value.owned !== "all" ? 1 : 0) +
-		(showPokemonFilter ? value.pokemon.length : 0) +
+		(showCardFilter ? value.ids.length : 0) +
 		(showYearFilter && value.yearMin != null ? 1 : 0) +
 		(showYearFilter && value.yearMax != null ? 1 : 0);
 
@@ -265,7 +263,7 @@ export function SearchControls({
 			rarity: [],
 			types: [],
 			owned: "all",
-			pokemon: [],
+			ids: [],
 			yearMin: null,
 			yearMax: null,
 		});
@@ -289,7 +287,7 @@ export function SearchControls({
 		3 +
 		(lockSupertype ? 0 : 1) +
 		(showEnergyType ? 1 : 0) +
-		(showPokemonFilter ? 1 : 0);
+		(showCardFilter ? 1 : 0);
 	const gridColsClass = {
 		3: "sm:grid-cols-3",
 		4: "sm:grid-cols-4",
@@ -391,11 +389,11 @@ export function SearchControls({
 								onChange={(v) => onChange({ types: v })}
 							/>
 						)}
-						{showPokemonFilter && (
-							<PokemonMultiSelect
-								value={value.pokemon}
-								options={options.pokemon}
-								onChange={(pokemon) => onChange({ pokemon })}
+						{showCardFilter && (
+							<CardMultiSelect
+								value={value.ids}
+								options={options.ids}
+								onChange={(ids) => onChange({ ids })}
 							/>
 						)}
 						<Select
@@ -406,7 +404,7 @@ export function SearchControls({
 								<SelectValue placeholder="Collection" />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="all">All cards</SelectItem>
+								<SelectItem value="all">Ownership</SelectItem>
 								<SelectItem value="owned">Owned</SelectItem>
 								<SelectItem value="missing">Missing</SelectItem>
 							</SelectContent>

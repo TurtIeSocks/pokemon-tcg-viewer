@@ -169,7 +169,7 @@ function SetPageInner({
 						options={facets}
 						onChange={onChange}
 						placeholder={`Search ${set.name} cards`}
-						showPokemonFilter
+						showCardFilter
 					/>
 				</div>
 			</ClientOnly>

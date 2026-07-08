@@ -164,6 +164,53 @@ test("pokedex: an empty dexNumbers array applies no species filter", () => {
 	expect(r.length).toBe(3);
 });
 
+// --- ids (card "name" filter: dex ids for Pokémon, names for dex-less Trainers) ---
+
+const mixedCorpus = buildIndex([
+	card({
+		id: "m-6",
+		name: "Charizard",
+		setId: "base1",
+		number: "1",
+		nationalPokedexNumbers: [6],
+	}),
+	// Trainers have no national dex, so they key on their name.
+	card({ id: "m-barry", name: "Barry", setId: "base1", number: "2" }),
+	card({ id: "m-acerola", name: "Acerola", setId: "base1", number: "3" }),
+]);
+
+test("ids: a dex id matches the Pokémon with that national dex number", () => {
+	const r = queryCorpus(
+		mixedCorpus,
+		{ ids: ["6"], relevance: false },
+		setsById,
+	);
+	expect(r.map((c) => c.id)).toEqual(["m-6"]);
+});
+
+test("ids: a card name matches a dex-less Trainer by name", () => {
+	const r = queryCorpus(
+		mixedCorpus,
+		{ ids: ["Barry"], relevance: false },
+		setsById,
+	);
+	expect(r.map((c) => c.id)).toEqual(["m-barry"]);
+});
+
+test("ids: a mix of a dex id and a trainer name matches both", () => {
+	const r = queryCorpus(
+		mixedCorpus,
+		{ ids: ["6", "Acerola"], relevance: false },
+		setsById,
+	);
+	expect(r.map((c) => c.id).sort()).toEqual(["m-6", "m-acerola"]);
+});
+
+test("ids: an empty array applies no filter", () => {
+	const r = queryCorpus(mixedCorpus, { ids: [], relevance: false }, setsById);
+	expect(r.length).toBe(3);
+});
+
 // --- nameSlug (Trainer/Energy per-name pages) ---
 
 const namedIndex = buildIndex([

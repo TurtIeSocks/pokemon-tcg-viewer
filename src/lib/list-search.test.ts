@@ -68,39 +68,31 @@ test("yearMin/yearMax: rejects non-finite values (Infinity, overflow)", () => {
 	expect(validateListSearch({ yearMin: "1e999" }).yearMin).toBeNull();
 });
 
-test("pokemon: defaults to an empty array", () => {
-	expect(LIST_SEARCH_DEFAULTS.pokemon).toEqual([]);
+test("ids: defaults to an empty array", () => {
+	expect(LIST_SEARCH_DEFAULTS.ids).toEqual([]);
 });
 
-test("pokemon: validates dex numbers from a CSV string, array, or number", () => {
-	expect(validateListSearch({ pokemon: "112" }).pokemon).toEqual([112]);
-	expect(validateListSearch({ pokemon: 112 }).pokemon).toEqual([112]);
-	expect(validateListSearch({ pokemon: "25,6" }).pokemon).toEqual([25, 6]);
-	expect(validateListSearch({ pokemon: [25, 6] }).pokemon).toEqual([25, 6]);
-});
-
-test("pokemon: drops out-of-range / non-integer / junk entries", () => {
-	expect(validateListSearch({ pokemon: "0" }).pokemon).toEqual([]);
-	expect(validateListSearch({ pokemon: "9999" }).pokemon).toEqual([]);
-	expect(validateListSearch({ pokemon: "abc" }).pokemon).toEqual([]);
-	expect(validateListSearch({ pokemon: "1.5" }).pokemon).toEqual([]);
-	// Mixed CSV: keeps the two valid dex numbers, drops junk/out-of-range/zero.
-	expect(validateListSearch({ pokemon: "25,foo,9999,0,6" }).pokemon).toEqual([
-		25, 6,
+test("ids: parses a mix of dex-number strings and card names (CSV or array)", () => {
+	// Opaque strings — dex ids ("6") and trainer names ("Barry") both pass through.
+	expect(validateListSearch({ ids: "6,Barry" }).ids).toEqual(["6", "Barry"]);
+	expect(validateListSearch({ ids: ["25", "Acerola"] }).ids).toEqual([
+		"25",
+		"Acerola",
 	]);
-	expect(validateListSearch({}).pokemon).toEqual([]);
+	expect(validateListSearch({ ids: "" }).ids).toEqual([]);
+	expect(validateListSearch({}).ids).toEqual([]);
 });
 
-test("pokemon: serializes to a CSV of dex numbers, omits when empty", () => {
-	expect(listSearchToUrl({ pokemon: [112] }).pokemon).toBe("112");
-	expect(listSearchToUrl({ pokemon: [25, 6] }).pokemon).toBe("25,6");
-	expect(listSearchToUrl({ pokemon: [] }).pokemon).toBeUndefined();
+test("ids: serializes to CSV, omits when empty", () => {
+	expect(listSearchToUrl({ ids: ["112"] }).ids).toBe("112");
+	expect(listSearchToUrl({ ids: ["25", "Barry"] }).ids).toBe("25,Barry");
+	expect(listSearchToUrl({ ids: [] }).ids).toBeUndefined();
 });
 
-test("pokemon: full round-trip serialize → parse (CSV of dex numbers)", () => {
+test("ids: full round-trip serialize → parse", () => {
 	expect(
-		validateListSearch(listSearchToUrl({ pokemon: [25, 6] })).pokemon,
-	).toEqual([25, 6]);
+		validateListSearch(listSearchToUrl({ ids: ["6", "Acerola"] })).ids,
+	).toEqual(["6", "Acerola"]);
 });
 
 test("mode: defaults to 'fuzzy'", () => {

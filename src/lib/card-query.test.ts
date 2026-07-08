@@ -81,28 +81,29 @@ describe("buildCorpusQuery", () => {
 		).toBe("exact");
 	});
 
-	test("pokemon filter sets dexNumbers in the global branch", () => {
-		expect(
-			buildCorpusQuery({ ...empty, pokemon: [112] }, {}).dexNumbers,
-		).toEqual([112]);
+	test("card filter sets ids in the global branch", () => {
+		expect(buildCorpusQuery({ ...empty, ids: ["112"] }, {}).ids).toEqual([
+			"112",
+		]);
 	});
-	test("pokemon filter sets dexNumbers within a set", () => {
-		const q = buildCorpusQuery({ ...empty, pokemon: [25] }, { setId: "swsh9" });
+	test("card filter sets ids within a set", () => {
+		const q = buildCorpusQuery({ ...empty, ids: ["25"] }, { setId: "swsh9" });
 		expect(q.setId).toBe("swsh9");
-		expect(q.dexNumbers).toEqual([25]);
+		expect(q.ids).toEqual(["25"]);
 	});
-	test("pokemon filter forwards multiple selected dex numbers", () => {
+	test("card filter forwards multiple selected ids (dex + trainer name)", () => {
 		expect(
-			buildCorpusQuery({ ...empty, pokemon: [25, 6] }, {}).dexNumbers,
-		).toEqual([25, 6]);
+			buildCorpusQuery({ ...empty, ids: ["25", "Barry"] }, {}).ids,
+		).toEqual(["25", "Barry"]);
 	});
-	test("dex context wins over the pokemon filter", () => {
-		const q = buildCorpusQuery({ ...empty, pokemon: [25] }, { dexNumber: 6 });
+	test("dex page context ignores the ids filter (dexNumbers wins)", () => {
+		const q = buildCorpusQuery({ ...empty, ids: ["25"] }, { dexNumber: 6 });
 		expect(q.dexNumbers).toEqual([6]);
+		expect(q.ids).toBeUndefined();
 	});
-	test("no pokemon filter → empty dexNumbers in global + set branches", () => {
-		expect(buildCorpusQuery(empty, {}).dexNumbers).toEqual([]);
-		expect(buildCorpusQuery(empty, { setId: "swsh9" }).dexNumbers).toEqual([]);
+	test("no card filter → undefined ids in global + set branches", () => {
+		expect(buildCorpusQuery(empty, {}).ids).toBeUndefined();
+		expect(buildCorpusQuery(empty, { setId: "swsh9" }).ids).toBeUndefined();
 	});
 
 	test("supertype context → locked supertype, chronological, no query relevance", () => {

@@ -187,7 +187,7 @@ function SearchPageInner({
 					onChange={onChange}
 					placeholder="Search all cards"
 					showYearFilter
-					showPokemonFilter
+					showCardFilter
 				/>
 			</div>
 			<ResultsBar count={q ? total : null}>

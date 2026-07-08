@@ -12,7 +12,7 @@ const baseSearch = (): ListSearch => ({
 	owned: "all",
 	yearMin: null,
 	yearMax: null,
-	pokemon: [],
+	ids: [],
 	mode: "fuzzy",
 	sort: "default",
 	dir: "asc",
@@ -58,21 +58,27 @@ describe("toSerializedQuery", () => {
 		expect(q.dexNumber).toBeNull();
 	});
 
-	it("captures a single selected species into dexNumber", () => {
+	it("captures a single selected dex id into dexNumber", () => {
 		const s = baseSearch();
-		s.pokemon = [112];
+		s.ids = ["112"];
 		expect(toSerializedQuery(s, {}).dexNumber).toBe(112);
 	});
 
-	it("multiple selected species give no single dex context", () => {
+	it("a single non-dex id (trainer name) captures no dex context", () => {
 		const s = baseSearch();
-		s.pokemon = [112, 6];
+		s.ids = ["Barry"];
 		expect(toSerializedQuery(s, {}).dexNumber).toBeNull();
 	});
 
-	it("dex context wins over the pokemon filter", () => {
+	it("multiple selected ids give no single dex context", () => {
 		const s = baseSearch();
-		s.pokemon = [112];
+		s.ids = ["112", "6"];
+		expect(toSerializedQuery(s, {}).dexNumber).toBeNull();
+	});
+
+	it("dex context wins over the ids filter", () => {
+		const s = baseSearch();
+		s.ids = ["112"];
 		expect(toSerializedQuery(s, { dexNumber: 6 }).dexNumber).toBe(6);
 	});
 
