@@ -8,6 +8,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { m } from "@/paraglide/messages";
 import {
 	clearImages,
 	refreshStats,
@@ -15,12 +16,14 @@ import {
 	useImageCache,
 } from "@/store/offline-images/images-runtime";
 
+/** Cap presets. `label` is a thunk (not called at module scope) so it always
+ *  reads the active locale at render time. */
 const PRESETS = [
-	{ cap: 0, label: "Off" },
-	{ cap: 500, label: "500 thumbnails (~12 MB)" },
-	{ cap: 1000, label: "1000 thumbnails (~25 MB)" },
-	{ cap: 2000, label: "2000 thumbnails (~50 MB)" },
-	{ cap: 4000, label: "4000 thumbnails (~100 MB)" },
+	{ cap: 0, label: () => m.settings_image_cache_preset_off() },
+	{ cap: 500, label: () => m.settings_image_cache_preset_500() },
+	{ cap: 1000, label: () => m.settings_image_cache_preset_1000() },
+	{ cap: 2000, label: () => m.settings_image_cache_preset_2000() },
+	{ cap: 4000, label: () => m.settings_image_cache_preset_4000() },
 ];
 
 function mb(bytes: number): string {
@@ -52,11 +55,17 @@ export function ImageCacheSetting() {
 	return (
 		<GlassPanel className="flex flex-col gap-3 p-5">
 			<div className="flex flex-col gap-1">
-				<h2 className="font-display text-lg">Image cache</h2>
+				<h2 className="font-display text-lg">
+					{m.settings_image_cache_title()}
+				</h2>
 				<p className="font-mono text-[12px] text-(--ink-muted)">
 					{clearing
-						? "Clearing cache..."
-						: `Cards you view are kept on this device so they load instantly and work offline. ${thumbs} thumbnails and ${hires} full images cached (${mb(bytes)}).`}
+						? m.settings_image_cache_clearing()
+						: m.settings_image_cache_description({
+								thumbs,
+								hires,
+								size: mb(bytes),
+							})}
 				</p>
 			</div>
 			<div className="flex flex-wrap items-center gap-3">
@@ -71,7 +80,7 @@ export function ImageCacheSetting() {
 					<SelectContent>
 						{PRESETS.map((p) => (
 							<SelectItem key={p.cap} value={String(p.cap)}>
-								{p.label}
+								{p.label()}
 							</SelectItem>
 						))}
 					</SelectContent>
@@ -81,14 +90,14 @@ export function ImageCacheSetting() {
 					onClick={() => void refreshStats()}
 					disabled={clearing}
 				>
-					Refresh
+					{m.settings_refresh()}
 				</Button>
 				<Button
 					variant="ghost"
 					onClick={() => void clearImages()}
 					disabled={clearing}
 				>
-					Clear cache
+					{m.settings_image_cache_clear()}
 				</Button>
 			</div>
 		</GlassPanel>
