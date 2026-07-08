@@ -34,7 +34,7 @@ export function StackManager({
 		new Set(stacks.map(stackIdentityKey)).size < stacks.length;
 
 	function handleRemoveAll() {
-		if (!window.confirm("Remove all stacks of this card?")) return;
+		if (!window.confirm("Remove all copies of this card?")) return;
 		void removeAllStacksOfCard(cardId);
 	}
 
@@ -43,7 +43,7 @@ export function StackManager({
 			{/* Header: stack count + prominent Add button */}
 			<div className="flex flex-wrap items-center justify-between gap-2">
 				<h3 className="flex items-center gap-2 font-display text-[19px] font-medium text-[var(--ink)]">
-					Your stacks
+					Your cards
 					<Badge variant="default" className="font-mono text-[11px]">
 						{stacks.length}
 					</Badge>
@@ -55,7 +55,7 @@ export function StackManager({
 							size="sm"
 							onClick={() => void mergeDuplicateStacks(cardId)}
 							className="gap-1.5"
-							aria-label="Merge duplicate stacks"
+							aria-label="Merge duplicates"
 						>
 							<Combine className="h-4 w-4" aria-hidden="true" />
 							Merge dupes
@@ -67,7 +67,7 @@ export function StackManager({
 							size="sm"
 							onClick={handleRemoveAll}
 							className="gap-1.5"
-							aria-label="Remove all stacks"
+							aria-label="Remove all"
 						>
 							<Trash2 className="h-4 w-4" aria-hidden="true" />
 							Remove all
@@ -78,10 +78,10 @@ export function StackManager({
 							size="sm"
 							onClick={() => setAddOpen(true)}
 							className="gap-1.5"
-							aria-label="Add stack"
+							aria-label="Add card"
 						>
 							<Plus className="h-4 w-4" aria-hidden="true" />
-							Add stack
+							Add card
 						</Button>
 					)}
 				</div>
@@ -90,7 +90,7 @@ export function StackManager({
 			{/* Create-mode form — shown when Add stack is clicked */}
 			{addOpen && (
 				<div className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--glass)] p-4">
-					<p className="text-xs text-[var(--faint)] mb-3">New stack</p>
+					<p className="text-xs text-[var(--faint)] mb-3">New card</p>
 					<StackEditForm
 						mode="create"
 						cardId={cardId}
@@ -105,7 +105,7 @@ export function StackManager({
 			{/* Stack tiles */}
 			{stacks.length === 0 && !addOpen ? (
 				<p className="text-sm text-[var(--ink-muted)] py-4 text-center">
-					No stacks yet. Add one above.
+					No cards yet. Add one above.
 				</p>
 			) : (
 				<div className="flex flex-col gap-2">

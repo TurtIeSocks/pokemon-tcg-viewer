@@ -7,6 +7,12 @@ import { Button } from "@/components/ui/button";
 import { BezelPanel } from "@/components/ui/glass";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { Stat } from "@/components/ui/stat";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { ImportDialog } from "@/components/vault/import-dialog";
 import { PortfolioChart } from "@/components/vault/portfolio-chart";
 import { ValueStats } from "@/components/vault/value-stats";
@@ -68,19 +74,29 @@ export function VaultSummaryHero() {
 						>
 							Import
 						</Button>
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							aria-label={hidden ? "Show values" : "Hide values"}
-							title={hidden ? "Show values" : "Hide values"}
-							onClick={() => updateProfile({ hideValue: !hidden })}
-						>
-							{hidden ? (
-								<EyeOff className="size-4" />
-							) : (
-								<Eye className="size-4" />
-							)}
-						</Button>
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										aria-label={hidden ? "Show values" : "Hide values"}
+										onClick={() => updateProfile({ hideValue: !hidden })}
+									>
+										{hidden ? (
+											<EyeOff className="size-4" />
+										) : (
+											<Eye className="size-4" />
+										)}
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									{hidden
+										? "Show monetary values"
+										: "Hide monetary values (for screenshots)"}
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
 					</div>
 				</div>
 

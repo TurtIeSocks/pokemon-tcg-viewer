@@ -14,7 +14,7 @@ test("Merge dupes button appears for identical stacks and merges them", async ()
 	await addStack("c", { quantity: 3, condition: "NM" });
 	render(<StackManager cardId="c" />);
 	const btn = await screen.findByRole("button", {
-		name: /merge duplicate stacks/i,
+		name: /merge duplicates/i,
 	});
 	fireEvent.click(btn);
 	await waitFor(() => {
@@ -26,12 +26,12 @@ test("Merge dupes button appears for identical stacks and merges them", async ()
 	});
 });
 
-test("Add stack button opens create-mode form (does NOT immediately create a stack)", async () => {
+test("Add card button opens create-mode form (does NOT immediately create a stack)", async () => {
 	render(<StackManager cardId="c" />);
 	const before = Object.values(useUserland.getState().items).filter(
 		(i) => i.cardId === "c",
 	).length;
-	fireEvent.click(screen.getByRole("button", { name: /add stack/i }));
+	fireEvent.click(screen.getByRole("button", { name: /add card/i }));
 	// form should appear (Save button visible) but store is still empty
 	await waitFor(() =>
 		expect(screen.getByRole("button", { name: /save/i })).toBeDefined(),
@@ -42,9 +42,9 @@ test("Add stack button opens create-mode form (does NOT immediately create a sta
 	).toBe(before);
 });
 
-test("Add stack → fill → Save creates the stack and collapses form", async () => {
+test("Add card → fill → Save creates the stack and collapses form", async () => {
 	render(<StackManager cardId="c" />);
-	fireEvent.click(screen.getByRole("button", { name: /add stack/i }));
+	fireEvent.click(screen.getByRole("button", { name: /add card/i }));
 	await screen.findByRole("button", { name: /save/i });
 	// fill in a price so the form is valid (date has a default)
 	const price = screen.getByLabelText(/price paid/i);
@@ -63,9 +63,9 @@ test("Add stack → fill → Save creates the stack and collapses form", async (
 	);
 });
 
-test("Add stack → Cancel adds nothing", async () => {
+test("Add card → Cancel adds nothing", async () => {
 	render(<StackManager cardId="c" />);
-	fireEvent.click(screen.getByRole("button", { name: /add stack/i }));
+	fireEvent.click(screen.getByRole("button", { name: /add card/i }));
 	await screen.findByRole("button", { name: /cancel/i });
 	fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
 	expect(

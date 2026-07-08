@@ -55,7 +55,7 @@ export function StackRow({ item, variants }: StackRowProps) {
 
 	function handleDelete() {
 		if (hasNonNullOptional(item)) {
-			if (!window.confirm("Delete this stack?")) return;
+			if (!window.confirm("Delete this card?")) return;
 		}
 		void removeStack(item.id);
 	}
@@ -151,8 +151,8 @@ export function StackRow({ item, variants }: StackRowProps) {
 					{item.isPrimary ? (
 						<span
 							role="img"
-							aria-label="Primary stack"
-							title="Primary stack"
+							aria-label="Primary"
+							title="Primary"
 							className="inline-flex items-center justify-center h-8 w-8 text-[var(--primary)]"
 						>
 							<Star className="h-4 w-4 fill-current" aria-hidden="true" />
@@ -178,9 +178,9 @@ export function StackRow({ item, variants }: StackRowProps) {
 							variant="ghost"
 							size="icon"
 							className="h-8 w-8"
-							aria-label="Split stack"
+							aria-label="Split"
 							aria-expanded={splitOpen}
-							title="Split stack"
+							title="Split"
 							onClick={() => setSplitOpen((o) => !o)}
 						>
 							<Split className="h-4 w-4" aria-hidden="true" />
@@ -195,7 +195,7 @@ export function StackRow({ item, variants }: StackRowProps) {
 						className="h-8 w-8"
 						aria-label={editOpen ? "Close editor" : "Edit"}
 						aria-expanded={editOpen}
-						title="Edit stack details"
+						title="Edit details"
 						onClick={() => setEditOpen((o) => !o)}
 					>
 						<Pencil className="h-4 w-4" aria-hidden="true" />
@@ -208,7 +208,7 @@ export function StackRow({ item, variants }: StackRowProps) {
 						size="icon"
 						className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors duration-150"
 						aria-label="Delete"
-						title="Delete this stack"
+						title="Delete"
 						onClick={handleDelete}
 					>
 						<Trash2 className="h-4 w-4" aria-hidden="true" />

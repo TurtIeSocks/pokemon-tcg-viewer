@@ -52,12 +52,23 @@ export function conditionMultiplier(
 	return stack.condition ? CONDITION_MULTIPLIER[stack.condition] : 1;
 }
 
-/** Finish fallback order: resolved printing finish, then Holofoil, then Normal. */
+/**
+ * Finish fallback order: the resolved printing finish first, then a conservative
+ * base-before-premium fallback for unresolved printings — Normal ('N') before
+ * Holofoil ('H'), and 1st-edition Normal ('1N') before 1st-edition Holofoil
+ * ('1H'). Every quick-add / scan / CSV / legacy stack has `printing: null`, so
+ * `finishForPrinting` returns null and this fallback decides the value. Holofoil
+ * often prices ~10x the Normal a collector actually owns, so preferring H first
+ * inflated those stacks ~10x — hence Normal leads. The list still falls through
+ * to whatever finish DOES have a price, so a holo-only vintage card (no Normal
+ * entry) still resolves to H.
+ */
 function finishOrder(printing: CardVariant | null): FinishCode[] {
 	const order: FinishCode[] = [];
 	const resolved = finishForPrinting(printing);
 	if (resolved) order.push(resolved);
-	for (const f of ["H", "N"] as const) if (!order.includes(f)) order.push(f);
+	for (const f of ["N", "H", "1N", "1H"] as const)
+		if (!order.includes(f)) order.push(f);
 	return order;
 }
 
