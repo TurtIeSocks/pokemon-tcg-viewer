@@ -15,6 +15,7 @@ import {
 import { getCardAccent, getReadableAccent } from "../../utils/card-colors";
 import { StackManager } from "../collection/stack-manager";
 import { HoloCard, type HoloCardData, holoCardProps } from "../holo-card";
+import { ensureTiltPermission } from "../holo-card/use-tilt-effect";
 import { CardCrossLinks, type CrossLink } from "../islands/cross-links";
 import { CardHeading, CardInfo } from "./card-info";
 import { CardLightbox } from "./card-lightbox";
@@ -105,7 +106,13 @@ export function CardCockpit({
 								reverse={canReverse && showReverse}
 								size="focus"
 								className="w-full cursor-zoom-in"
-								onClick={() => setZoomOpen(true)}
+								onClick={() => {
+									// Request device-tilt permission on the opening tap (iOS
+									// only allows it from a gesture); the lightbox then tilts
+									// to the gyroscope.
+									ensureTiltPermission();
+									setZoomOpen(true);
+								}}
 							/>
 						</ClientOnly>
 						{canReverse && (

@@ -138,7 +138,9 @@ export function HoloCard({
 	// prefers-reduced-motion further force-disables it inside the hook.
 	const cardMotion = useUiPrefs((s) => s.cardMotion);
 	const { ref } = useHoloEffect(forceFoil, cardMotion);
-	useTiltEffect({ ref, enabled: tilt });
+	// Device-orientation tilt (mobile gyroscope) shares the cardMotion pref +
+	// reduced-motion guard so it honors the same "calmer, still view" setting.
+	useTiltEffect({ ref, enabled: tilt && cardMotion });
 	const holo = holoPresentation({
 		rarity,
 		series,

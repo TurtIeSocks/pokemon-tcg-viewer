@@ -58,6 +58,10 @@ export function CardLightbox({
 				{...holoCardProps(card)}
 				reverse={reverse}
 				size="focus"
+				// Fullscreen inspection: turn ON device-orientation tilt (mobile
+				// gyroscope drives the foil). Desktop keeps its pointer tilt; both
+				// are gated by the cardMotion pref inside HoloCard.
+				tilt
 				className="relative animate-in zoom-in-95 duration-150 motion-reduce:animate-none"
 				style={{ width: LIGHTBOX_WIDTH } as CSSProperties}
 			/>

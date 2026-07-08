@@ -39,9 +39,33 @@ export interface UseTiltEffectOptions {
  * deltas and write the same CSS vars as the pointer hook. When disabled,
  * the element re-centers.
  */
+/**
+ * iOS 13+ gates DeviceOrientationEvent behind a permission that can ONLY be
+ * requested from a user gesture. Call this from the tap that opens the tilt view
+ * (e.g. the lightbox); it is a no-op where no permission is required (Android,
+ * desktop) or the API is absent. Errors (denied, insecure context) are swallowed.
+ */
+export function ensureTiltPermission(): void {
+	const D =
+		typeof DeviceOrientationEvent !== "undefined"
+			? (DeviceOrientationEvent as unknown as {
+					requestPermission?: () => Promise<PermissionState>;
+				})
+			: undefined;
+	if (typeof D?.requestPermission === "function") {
+		void D.requestPermission().catch(() => {});
+	}
+}
+
 export function useTiltEffect({ ref, enabled }: UseTiltEffectOptions): void {
 	useEffect(() => {
 		if (!enabled) return;
+		// Honor the OS reduced-motion setting even when cardMotion is on.
+		if (
+			typeof window !== "undefined" &&
+			window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+		)
+			return;
 		const el = ref.current;
 		if (!el) return;
 
