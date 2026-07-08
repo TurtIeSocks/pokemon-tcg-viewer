@@ -45,6 +45,34 @@ const KBD =
  * groups are computed here — live corpus cards, recents, nav, and set jumps —
  * rather than cmdk's built-in substring filter, so each source ranks its own way.
  */
+/**
+ * A CommandGroup heading with a right-aligned "Clear" button that wipes the
+ * group's source list. `onMouseDown`/preventDefault keeps the palette input
+ * focused (cmdk would otherwise blur to the button and lose keyboard nav).
+ */
+function ClearableHeading({
+	label,
+	onClear,
+}: {
+	label: string;
+	onClear: () => void;
+}) {
+	return (
+		<span className="flex items-center justify-between gap-2">
+			{label}
+			<button
+				type="button"
+				aria-label={`Clear ${label.toLowerCase()}`}
+				onMouseDown={(e) => e.preventDefault()}
+				onClick={onClear}
+				className="rounded px-1 tracking-normal text-[var(--faint)] normal-case transition-colors hover:text-[var(--ink)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--primary)]"
+			>
+				Clear
+			</button>
+		</span>
+	);
+}
+
 export function CommandPalette({ tree }: { tree: NavTree }) {
 	const open = useCommandPalette((s) => s.open);
 	const setOpen = useCommandPalette((s) => s.setOpen);
@@ -69,6 +97,8 @@ export function CommandPalette({ tree }: { tree: NavTree }) {
 	const recentSearches = useRecentsStore((s) => s.recentSearches);
 	const recentlyViewed = useRecentsStore((s) => s.recentlyViewed);
 	const addRecentSearch = useRecentsStore((s) => s.addRecentSearch);
+	const clearRecentSearches = useRecentsStore((s) => s.clearRecentSearches);
+	const clearRecentlyViewed = useRecentsStore((s) => s.clearRecentlyViewed);
 	const navigate = useNavigate();
 
 	// Global ⌘K / Ctrl+K — mirrors the sidebar's Cmd+B handler.
@@ -229,7 +259,14 @@ export function CommandPalette({ tree }: { tree: NavTree }) {
 				)}
 
 				{!trimmed && recentSearches.length > 0 && (
-					<CommandGroup heading="Recent searches">
+					<CommandGroup
+						heading={
+							<ClearableHeading
+								label="Recent searches"
+								onClear={clearRecentSearches}
+							/>
+						}
+					>
 						{recentSearches.map((s) => (
 							<CommandItem
 								key={s}
@@ -244,7 +281,14 @@ export function CommandPalette({ tree }: { tree: NavTree }) {
 				)}
 
 				{!trimmed && recentlyViewed.length > 0 && (
-					<CommandGroup heading="Recently viewed">
+					<CommandGroup
+						heading={
+							<ClearableHeading
+								label="Recently viewed"
+								onClear={clearRecentlyViewed}
+							/>
+						}
+					>
 						{recentlyViewed.slice(0, 6).map((card) => (
 							<CommandItem
 								key={card.id}
