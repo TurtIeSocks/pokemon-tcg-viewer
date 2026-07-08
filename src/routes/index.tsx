@@ -10,6 +10,7 @@ import { Eyebrow } from "../components/ui/eyebrow";
 import { Stagger } from "../components/ui/motion";
 import { LIST_SEARCH_DEFAULTS } from "../lib/list-search";
 import { POKEDEX_FILTER_DEFAULTS } from "../lib/pokedex";
+import { m } from "../paraglide/messages";
 import { useCommandPalette } from "../store/command-palette";
 import { loadCorpus, useCorpusRuntime } from "../store/corpus/corpus-runtime";
 import { useActiveRegionNavTree } from "../store/corpus/region-nav-tree";
@@ -80,38 +81,41 @@ export function HomeHero() {
 					<Stagger className="relative flex flex-col items-center gap-0">
 						<img src="/logo-64.png" alt="" className="size-14" />
 
-						<Eyebrow className="mt-6">Browse · Collect · Own it</Eyebrow>
+						<Eyebrow className="mt-6">{m.home_eyebrow()}</Eyebrow>
 
 						<h1
 							className="mt-5 text-5xl font-semibold tracking-[-0.01em] text-balance md:text-6xl"
 							style={{ fontFamily: "var(--font-display)" }}
 						>
-							{/* ponytail: placeholder wordmark; real hero headline TBD (workshop) */}
+							{/* ponytail: placeholder wordmark; real hero headline TBD (workshop).
+							    Brand name — not translated, like any other wordmark. */}
 							Cardstack
 						</h1>
 
 						<p className="mt-4 max-w-md text-base text-(--ink-muted)">
-							Track your whole Pokémon TCG collection. Local-first and
-							open-source, so it's actually yours. No account to start, no
-							judgment about the fourth Charizard.
+							{m.home_tagline()}
 						</p>
 
-						{/* Catalog scale + the free/no-account promise. */}
+						{/* Catalog scale + the free/no-account promise. Plain interpolation
+						    (not ICU plural) for the three counts — index.test.tsx pins the
+						    existing "1 sets"/"1 eras" (ungrammatical but tested) output. */}
 						<p className="mt-5 flex flex-wrap justify-center gap-x-2 font-mono text-sm tabular-nums text-(--ink-muted)">
-							<span>{cardCount.toLocaleString()} cards</span>
+							<span>
+								{m.home_stat_cards({ count: cardCount.toLocaleString() })}
+							</span>
 							<span aria-hidden="true" className="text-(--faint)">
 								·
 							</span>
-							<span>{setCount} sets</span>
+							<span>{m.home_stat_sets({ count: setCount })}</span>
 							<span aria-hidden="true" className="text-(--faint)">
 								·
 							</span>
-							<span>{eraCount} eras</span>
+							<span>{m.home_stat_eras({ count: eraCount })}</span>
 							<span aria-hidden="true" className="text-(--faint)">
 								·
 							</span>
 							<span className="text-(--primary)">
-								always free, no account
+								{m.home_stat_free_no_account()}
 							</span>
 						</p>
 					</Stagger>
@@ -121,47 +125,47 @@ export function HomeHero() {
 				    2 columns on mobile, 3 on desktop. Top row = Search / era-browse /
 				    Vault; bottom row = the card-type trio (Pokémon, Trainers, Energy). */}
 				<nav
-					aria-label="Explore"
+					aria-label={m.home_explore_nav()}
 					className="grid w-full max-w-3xl grid-cols-2 gap-3.5 sm:grid-cols-3"
 				>
 					<LaunchTileButton
 						icon={Search}
-						title="Search"
-						subtitle="Find any card. ⌘K"
+						title={m.nav_search()}
+						subtitle={m.home_search_subtitle()}
 						onClick={() => openPalette(true)}
 					/>
 					<LaunchTileButton
 						icon={Layers}
-						title="Browse by era"
-						subtitle="From Base Set to the latest."
+						title={m.home_browse_by_era()}
+						subtitle={m.home_browse_by_era_subtitle()}
 						onClick={scrollToEras}
 					/>
 					<LaunchTileLink
 						to="/vault"
 						icon={Library}
-						title="Your Vault"
-						subtitle="Your collection and binders."
+						title={m.nav_vault()}
+						subtitle={m.home_vault_subtitle()}
 					/>
 					<LaunchTileLink
 						to="/pokemon"
 						search={POKEDEX_FILTER_DEFAULTS}
 						icon={Sparkles}
-						title="Pokémon"
-						subtitle="Browse every Pokémon card."
+						title={m.home_supertype_pokemon()}
+						subtitle={m.home_pokemon_subtitle()}
 					/>
 					<LaunchTileLink
 						to="/trainer"
 						search={LIST_SEARCH_DEFAULTS}
 						icon={Users}
-						title="Trainers"
-						subtitle="Supporters, items, and stadiums."
+						title={m.home_supertype_trainers()}
+						subtitle={m.home_trainers_subtitle()}
 					/>
 					<LaunchTileLink
 						to="/energy"
 						search={LIST_SEARCH_DEFAULTS}
 						icon={Zap}
-						title="Energy"
-						subtitle="Basic and special Energy."
+						title={m.home_supertype_energy()}
+						subtitle={m.home_energy_subtitle()}
 					/>
 				</nav>
 
@@ -175,12 +179,11 @@ export const Route = createFileRoute("/")({
 	head: () => ({
 		meta: [
 			{
-				title: "Cardstack: track your Pokémon TCG collection, local-first",
+				title: m.home_meta_title(),
 			},
 			{
 				name: "description",
-				content:
-					"Cardstack tracks your whole Pokémon TCG collection. Local-first and open-source, so your data stays yours. Browse the full catalog free, no account needed.",
+				content: m.home_meta_description(),
 			},
 		],
 	}),

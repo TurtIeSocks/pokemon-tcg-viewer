@@ -31,5 +31,37 @@
 
 	"sidebar_mobile_title": "Sidebar",
 	"sidebar_mobile_description": "Displays the mobile sidebar.",
-	"sidebar_toggle": "Toggle Sidebar"
+	"sidebar_toggle": "Toggle Sidebar",
+
+	"home_eyebrow": "Browse · Collect · Own it",
+	"home_tagline": "Track your whole Pokémon TCG collection. Local-first and open-source, so it's actually yours. No account to start, no judgment about the fourth Charizard.",
+	"home_stat_cards": "{count} cards",
+	"home_stat_sets": "{count} sets",
+	"home_stat_eras": "{count} eras",
+	"home_stat_free_no_account": "always free, no account",
+	"home_explore_nav": "Explore",
+	"home_search_subtitle": "Find any card. ⌘K",
+	"home_browse_by_era": "Browse by era",
+	"home_browse_by_era_subtitle": "From Base Set to the latest.",
+	"home_vault_subtitle": "Your collection and binders.",
+	"home_supertype_pokemon": "Pokémon",
+	"home_pokemon_subtitle": "Browse every Pokémon card.",
+	"home_supertype_trainers": "Trainers",
+	"home_trainers_subtitle": "Supporters, items, and stadiums.",
+	"home_supertype_energy": "Energy",
+	"home_energy_subtitle": "Basic and special Energy.",
+	"home_meta_title": "Cardstack: track your Pokémon TCG collection, local-first",
+	"home_meta_description": "Cardstack tracks your whole Pokémon TCG collection. Local-first and open-source, so your data stays yours. Browse the full catalog free, no account needed.",
+	"home_latest_sets": "Latest sets",
+	"home_browse_aria": "Browse {name}",
+	"home_set_count": [
+		{
+			"declarations": ["input count", "local countPlural = count: plural"],
+			"selectors": ["countPlural"],
+			"match": {
+				"countPlural=one": "{count} set",
+				"countPlural=other": "{count} sets"
+			}
+		}
+	]
 }
