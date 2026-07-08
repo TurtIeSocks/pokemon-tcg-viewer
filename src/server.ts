@@ -26,16 +26,22 @@ import {
 	createStartHandler,
 	defaultStreamHandler,
 } from "@tanstack/react-start/server";
+import { paraglideMiddleware } from "./paraglide/server.js";
 
 const handler = createStartHandler(defaultStreamHandler);
 
 export default {
 	async fetch(request: Request, opts?: unknown) {
-		const res = await handler(request, opts as never);
-		const contentType = res.headers.get("content-type") ?? "";
-		if (contentType.includes("text/html")) {
-			res.headers.set("Cache-Control", "no-cache, must-revalidate");
-		}
-		return res;
+		return paraglideMiddleware(
+			request,
+			async ({ request: localizedRequest }) => {
+				const res = await handler(localizedRequest, opts as never);
+				const contentType = res.headers.get("content-type") ?? "";
+				if (contentType.includes("text/html")) {
+					res.headers.set("Cache-Control", "no-cache, must-revalidate");
+				}
+				return res;
+			},
+		);
 	},
 };
