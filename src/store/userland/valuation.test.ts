@@ -55,17 +55,23 @@ test("conditionMultiplier: raw scale; graded values at raw NM (1)", () => {
 	).toBe(1);
 });
 
-test("unitMarketValueUsdCents resolves the finish, falls back H→N", () => {
+test("unitMarketValueUsdCents resolves the finish, falls back N→H (conservative base)", () => {
 	const entry: CardPriceEntry = { tp: { N: [700, 400], H: [72034, 53499] } };
-	// reverse printing not present → fall back to H, then N.
+	// Unresolved printing (this card has no reverse finish) → conservative
+	// Normal ($7), NOT the ~100x Holofoil premium ($720). This is the
+	// ~10x-inflation fix: a null / unknown-printing stack (every quick-add, scan,
+	// CSV, and legacy stack defaults printing to null) must value at the base
+	// Normal price the collector most likely owns, not the holo price.
 	expect(
 		unitMarketValueUsdCents(
 			{ printing: printing({ type: "reverse" }) },
 			entry,
 			fx,
 		),
-	).toBe(72034);
-	// holo printing present → H.
+	).toBe(700);
+	// Unknown printing (null) → same conservative Normal fallback.
+	expect(unitMarketValueUsdCents({ printing: null }, entry, fx)).toBe(700);
+	// holo printing present → H (explicit resolution still wins).
 	expect(
 		unitMarketValueUsdCents(
 			{ printing: printing({ type: "holo" }) },
@@ -81,6 +87,22 @@ test("unitMarketValueUsdCents resolves the finish, falls back H→N", () => {
 			fx,
 		),
 	).toBe(700);
+});
+
+test("unitMarketValueUsdCents fallthrough: holo-only card still resolves to H when Normal is absent", () => {
+	// Vintage holo-only card: no Normal price exists. An unresolved / null
+	// printing must still fall THROUGH to the Holofoil price rather than
+	// returning null — the N-before-H reorder only reprioritizes the finish
+	// fallback, it does not drop any finish that actually has a price.
+	const entry: CardPriceEntry = { tp: { H: [72034, 53499] } };
+	expect(
+		unitMarketValueUsdCents(
+			{ printing: printing({ type: "reverse" }) },
+			entry,
+			fx,
+		),
+	).toBe(72034);
+	expect(unitMarketValueUsdCents({ printing: null }, entry, fx)).toBe(72034);
 });
 
 test("unitMarketValueUsdCents falls back to cardmarket trend converted EUR→USD", () => {

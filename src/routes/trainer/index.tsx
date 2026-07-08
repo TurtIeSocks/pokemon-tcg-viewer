@@ -64,6 +64,7 @@ function TrainersPage() {
 				supertypes: ["Trainer"],
 			}}
 			lockSupertype
+			showCardFilter
 			gridKey="Trainer"
 		/>
 	);

@@ -5,6 +5,7 @@ import {
 	type Region,
 	toSupportedLanguage,
 } from "../../lib/languages";
+import { rarityRank } from "../../lib/rarity-order";
 import { slugify } from "../../lib/slug";
 import type { SortDir } from "../../lib/sort";
 import type { PokemonSet } from "../../server/card-mappers";
@@ -27,7 +28,22 @@ export interface CorpusQuery {
 	/** Free-text name search. Empty/undefined → no name filter. */
 	query?: string;
 	setId?: string | null;
-	dexNumber?: number | null;
+	/** National dex numbers (species multi-select). A card matches when ANY of these is in its `nationalPokedexNumbers`. Empty/undefined → no species filter. */
+	dexNumbers?: number[];
+	/**
+	 * Card "name" filter (multi-select). Mixed keys: a dex number (as a string)
+	 * for Pokémon, or a card name for Trainers/Energy (which have no dex). A card
+	 * matches when ANY selected id is one of its keys — its `nationalPokedexNumbers`
+	 * (stringified) if it has them, else its `name`. Empty/undefined → no filter.
+	 */
+	ids?: string[];
+	/**
+	 * Drop cards carrying a national dex number. A real Trainer/Energy never has
+	 * one, so this filters out Pokémon that the upstream data mislabeled as
+	 * Trainer/Energy (they'd otherwise pass a `supertype: Trainer` filter). Set on
+	 * the Trainer/Energy browse views only.
+	 */
+	excludeDexCards?: boolean;
 	/** Slug of a single card name (e.g. "rare-candy"). Keeps only printings whose slugified name matches. */
 	nameSlug?: string | null;
 	/** Order results by release date (then number) instead of plain number order — for cross-set views. */
@@ -44,7 +60,7 @@ export interface CorpusQuery {
 	 * release-date / number). Union kept inline (must match CardSortMode in
 	 * src/lib/card-query.ts) to avoid a type cycle with that module.
 	 */
-	sort?: "default" | "dex" | "number" | "name" | "released";
+	sort?: "default" | "dex" | "number" | "name" | "rarity" | "released";
 	dir?: SortDir;
 	/** True for global name search (relevance order); false for set/dex (natural order). */
 	relevance: boolean;
@@ -207,11 +223,24 @@ export function queryCorpus(
 	for (let i = 0; i < index.cards.length; i++) {
 		const card = index.cards[i];
 		if (q.setId && card.setId !== q.setId) continue;
+		// Guard against upstream mislabels: a card with a national dex is a Pokémon,
+		// so it can never be a real Trainer/Energy — drop it on those browse views.
+		if (q.excludeDexCards && card.nationalPokedexNumbers?.length) continue;
 		if (
-			q.dexNumber != null &&
-			!card.nationalPokedexNumbers?.includes(q.dexNumber)
+			q.dexNumbers?.length &&
+			!q.dexNumbers.some((d) => card.nationalPokedexNumbers?.includes(d))
 		)
 			continue;
+		// Card "name" filter: match on the card's identity keys — its dex numbers
+		// (Pokémon) or its name (Trainer/Energy). Mirrors deriveIds's keying.
+		if (q.ids?.length) {
+			const keys = card.nationalPokedexNumbers?.length
+				? card.nationalPokedexNumbers.map(String)
+				: card.name
+					? [card.name]
+					: [];
+			if (!keys.some((k) => q.ids?.includes(k))) continue;
+		}
 		// Name-anchored views (Trainer/Energy per-name pages) group by slugified
 		// name across sets — no dex exists for non-Pokémon cards. Slugify on the fly
 		// (only when nameSlug is set) to avoid bloating the index for every query.
@@ -256,6 +285,8 @@ export function queryCorpus(
 				c =
 					(a.card.nationalPokedexNumbers?.[0] ?? DEX_LAST) -
 					(b.card.nationalPokedexNumbers?.[0] ?? DEX_LAST);
+			else if (q.sort === "rarity")
+				c = rarityRank(a.card.rarity) - rarityRank(b.card.rarity);
 			if (c !== 0) return sign * c;
 			// Stable, direction-independent tie-break.
 			return compareCardNumber(a.card.number, b.card.number);
@@ -269,7 +300,7 @@ export function queryCorpus(
 		}
 		const ra = relAt(a.card.setId);
 		const rb = relAt(b.card.setId);
-		if (q.dexNumber != null || q.relevance || q.chronological) {
+		if (q.dexNumbers?.length || q.relevance || q.chronological) {
 			if (ra !== rb) return ra.localeCompare(rb);
 		}
 		return compareCardNumber(a.card.number, b.card.number);

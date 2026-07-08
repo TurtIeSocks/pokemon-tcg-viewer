@@ -11,7 +11,11 @@ import {
 	type BinderSnapshot,
 	encodeSnapshot,
 } from "../../store/userland/share";
-import { makeCorpusCard, seedCorpus } from "../../test-utils";
+import {
+	makeCorpusCard,
+	seedCorpus,
+	setupUserlandTest,
+} from "../../test-utils";
 import { SharedBinderInner } from "./shared";
 
 // ---------------------------------------------------------------------------
@@ -60,7 +64,10 @@ async function renderInner() {
 // Setup
 // ---------------------------------------------------------------------------
 
-beforeEach(() => {
+beforeEach(async () => {
+	// The unified card mini-nav reads the userland store (binders + ownership),
+	// so give each test a clean, hydrated userland.
+	await setupUserlandTest();
 	useStore.setState({ sets: [oneSet] });
 	seedCorpus(cards);
 });
@@ -95,32 +102,21 @@ test("renders snapshot banner with date and 'not live'", async () => {
 	expect(banner.textContent).toContain(expectedDate);
 });
 
-test("owned card renders in color (no grayscale), missing card renders greyscale", async () => {
+test("snapshot-owned card renders in full color, missing card renders grayscale", async () => {
 	const snapshot = makeSnapshot();
 	const encoded = encodeSnapshot(snapshot);
 	window.location.hash = `#b=${encoded}`;
 
 	await renderInner();
 
-	// OwnedMissingGrid uses aria-label "owned"/"missing" on indicator dots
-	const ownedDots = screen.getAllByLabelText("owned");
-	const missingDots = screen.getAllByLabelText("missing");
+	// The snapshot marks Bulbasaur owned and Ivysaur missing. Cards render as the
+	// unified HoloCard: name on the wrapper aria-label, grayscale driven by the
+	// `.holo-card--owned` class (present for the frozen snapshot's owned cards).
+	const ownedCard = await screen.findByRole("button", { name: "Bulbasaur" });
+	const missingCard = await screen.findByRole("button", { name: "Ivysaur" });
 
-	expect(ownedDots.length).toBeGreaterThanOrEqual(1);
-	expect(missingDots.length).toBeGreaterThanOrEqual(1);
-
-	// Owned card image should NOT have grayscale class
-	const imgs = screen.getAllByRole("img");
-	const bulbasaur = imgs.find((img) => img.getAttribute("alt") === "Bulbasaur");
-	const ivysaur = imgs.find((img) => img.getAttribute("alt") === "Ivysaur");
-
-	expect(bulbasaur).toBeTruthy();
-	expect(ivysaur).toBeTruthy();
-
-	// Owned card: no grayscale
-	expect(bulbasaur?.className ?? "").not.toContain("grayscale");
-	// Missing card: has grayscale
-	expect(ivysaur?.className ?? "").toContain("grayscale");
+	expect(ownedCard.className).toContain("holo-card--owned");
+	expect(missingCard.className).not.toContain("holo-card--owned");
 });
 
 test("garbage hash renders friendly error state", async () => {
@@ -185,5 +181,9 @@ test("resolves a card from a snapshot whose set only lives under an asia region 
 
 	await renderInner();
 
-	expect(screen.getByAltText("Pikachu ex")).toBeTruthy();
+	// Card name lives on the unified HoloCard wrapper's aria-label (role=button);
+	// the internal <img> is decorative (alt="").
+	expect(
+		await screen.findByRole("button", { name: "Pikachu ex" }),
+	).toBeTruthy();
 });

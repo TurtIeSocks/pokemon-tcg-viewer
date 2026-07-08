@@ -1,20 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { type ReactNode, useEffect } from "react";
+import type { ReactNode } from "react";
 import { SetTile } from "@/components/shell/set-tile";
-import { Button } from "@/components/ui/button";
-import { Eyebrow } from "@/components/ui/eyebrow";
 import { Stagger } from "@/components/ui/motion";
 import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import type { NavTree } from "../../lib/nav-tree";
-import { POKEDEX_FILTER_DEFAULTS } from "../../lib/pokedex";
-import {
-	loadCorpus,
-	useCorpusRuntime,
-} from "../../store/corpus/corpus-runtime";
 
-// SSR fallback for the catalog card count; swapped for the live corpus count
-// once it loads on the client. Kept roughly in sync with the deployed corpus.
-const CARD_COUNT_FALLBACK = 20359;
 const LATEST_COUNT = 8;
 
 // Series that aren't the physical, "core" TCG. Their sets stay in the sidebar +
@@ -24,28 +14,17 @@ const LATEST_COUNT = 8;
 const NON_CORE_SERIES = new Set(["pokemon-tcg-pocket"]);
 
 /**
- * Evergreen "explore the catalog" body below the home hero — a credibility stat
- * line, a browse-by-era pill cloud, and a grid of the newest sets. Always present
+ * Evergreen "explore the catalog" body below the home hero — a browse-by-era
+ * pill cloud and a grid of the newest sets. Always present
  * and server-rendered (nav tree comes from the root loader), so the home page has
  * a real body in every state, recents or not. Distinct from the Vault Overview:
  * this is all-sets *discovery* (browse links), not owned-set completion.
  */
 export function HomeBrowse({ tree }: { tree: NavTree }) {
-	// The card count is the only corpus-dependent value; everything else is
-	// tree-derived + SSR'd. Load the corpus lazily (idempotent, IDB-cached).
-	useEffect(() => {
-		void loadCorpus();
-	}, []);
-	const cardCount =
-		useCorpusRuntime((s) => s.index)?.cards.length ?? CARD_COUNT_FALLBACK;
-
-	const setCount = tree.reduce((n, s) => n + s.sets.length, 0);
-	const eraCount = tree.length;
-
 	// Newest sets: flatten the whole tree and sort by era year desc, so the grid
 	// is always full even when the most recent series has only a set or two.
 	// Non-core series (TCG Pocket) are dropped here only — they remain in the
-	// sidebar + Browse-by-era pills below.
+	// sidebar + the Browse-by-era cards below.
 	const latest = tree
 		.filter((series) => !NON_CORE_SERIES.has(series.slug))
 		.flatMap((series) => series.sets.map((set) => ({ series, set })))
@@ -55,69 +34,21 @@ export function HomeBrowse({ tree }: { tree: NavTree }) {
 	return (
 		<div className="w-full">
 			<Stagger className="space-y-0">
-				{/* Proof strip — catalog scale + the free/no-account promise. */}
-				<div className="flex flex-col items-center border-t border-[var(--hairline)] pt-8 text-center">
-					<Eyebrow>Explore the catalog</Eyebrow>
-					<p className="mt-3 flex flex-wrap justify-center gap-x-2 font-mono text-sm tabular-nums text-[var(--ink-muted)]">
-						<span>{cardCount.toLocaleString()} cards</span>
-						<Dot />
-						<span>{setCount} sets</span>
-						<Dot />
-						<span>{eraCount} eras</span>
-						<Dot />
-						<span className="text-[var(--primary)]">
-							always free, no account
-						</span>
-					</p>
-				</div>
-
-				{/* Browse by era — one pill per series, linking to its newest set. */}
-				<HomeSection title="Browse by era">
-					<div className="flex flex-wrap justify-center gap-2">
-						{tree.map((series) => {
-							const target = series.sets.at(-1);
-							if (!target) return null;
-							return (
-								<Button key={series.slug} variant="soft" size="sm" asChild>
-									<Link
-										to="/$series/$set"
-										params={{ series: series.slug, set: target.slug }}
-										search={LIST_SEARCH_DEFAULTS}
-									>
-										{series.name}
-									</Link>
-								</Button>
-							);
-						})}
-					</div>
-				</HomeSection>
-
-				{/* Browse by card type — the non-Pokémon supertypes get their own pages. */}
-				<HomeSection title="Browse by card type">
-					<div className="flex flex-wrap justify-center gap-2">
-						<Button variant="soft" size="sm" asChild>
-							<Link to="/pokemon" search={POKEDEX_FILTER_DEFAULTS}>
-								Pokémon
-							</Link>
-						</Button>
-						<Button variant="soft" size="sm" asChild>
-							<Link to="/trainer" search={LIST_SEARCH_DEFAULTS}>
-								Trainers
-							</Link>
-						</Button>
-						<Button variant="soft" size="sm" asChild>
-							<Link to="/energy" search={LIST_SEARCH_DEFAULTS}>
-								Energy
-							</Link>
-						</Button>
-					</div>
-				</HomeSection>
-
 				{/* Latest sets — the newest releases as browse-variant tiles. */}
 				<HomeSection title="Latest sets">
 					<div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4">
 						{latest.map(({ series, set }) => (
 							<SetTile key={set.id} seriesSlug={series.slug} set={set} />
+						))}
+					</div>
+				</HomeSection>
+
+				{/* Browse by era — a glass launch card per series, linking to its newest
+				    set. Anchored: the launch pad's "Browse by era" card scrolls here. */}
+				<HomeSection id="browse-by-era" title="Browse by era">
+					<div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4">
+						{tree.map((series) => (
+							<EraTile key={series.slug} series={series} />
 						))}
 					</div>
 				</HomeSection>
@@ -127,31 +58,86 @@ export function HomeBrowse({ tree }: { tree: NavTree }) {
 }
 
 /**
+ * A "browse by era" tile: the SetTile glass treatment (blurred backdrop, frosted
+ * pane, hover sheen) with era content — the release year up top, the full series
+ * name front and center (dramatic drop shadow so it pops off the glass), and the
+ * set count along the bottom. Links to the era's newest set; backdrop reuses that
+ * set's logo for a per-era color field.
+ */
+function EraTile({ series }: { series: NavTree[number] }) {
+	const target = series.sets.at(-1);
+	if (!target) return null;
+	const count = series.sets.length;
+	const logo = target.logo || undefined;
+	return (
+		<Link
+			to="/$series/$set"
+			params={{ series: series.slug, set: target.slug }}
+			search={LIST_SEARCH_DEFAULTS}
+			aria-label={`Browse ${series.name}`}
+			className="group relative block aspect-[4/5] w-full overflow-hidden rounded-2xl transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-8px_rgba(0,0,0,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+		>
+			{/* Backdrop: the era's newest set logo, blurred → per-era color field. */}
+			{logo ? (
+				<img
+					src={logo}
+					alt=""
+					aria-hidden="true"
+					className="absolute inset-0 h-full w-full scale-[1.7] object-contain opacity-40 blur-2xl saturate-150 transition-opacity duration-300 group-hover:opacity-60"
+				/>
+			) : null}
+			<span
+				aria-hidden="true"
+				className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/10 to-black/75"
+			/>
+			<span
+				aria-hidden="true"
+				className="absolute inset-0 rounded-2xl border border-white/10 bg-white/[0.05] shadow-[inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(0,0,0,0.35)] backdrop-blur-xl"
+			/>
+			<span
+				aria-hidden="true"
+				className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full motion-reduce:hidden"
+			/>
+			{/* Content: year up top, monogram badge centered, set count at the base. */}
+			<span className="relative z-10 flex h-full flex-col items-center justify-between gap-2 p-4">
+				<span className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-white/65 tabular-nums drop-shadow-[0_1px_6px_rgba(0,0,0,0.5)]">
+					{series.year}
+				</span>
+				<span className="flex flex-1 items-center justify-center px-1">
+					<span className="text-balance text-center font-display text-xl font-bold text-white drop-shadow-[0_3px_20px_rgba(0,0,0,0.95)]">
+						{series.name}
+					</span>
+				</span>
+				<span className="text-sm font-medium text-white/80 drop-shadow-[0_1px_6px_rgba(0,0,0,0.5)]">
+					{count} {count === 1 ? "set" : "sets"}
+				</span>
+			</span>
+		</Link>
+	);
+}
+
+/**
  * A titled home-browse shelf — like the Vault's section, but center-aligned to
  * match the centered hero above (Vault sections left-align under a page header).
  */
 function HomeSection({
+	id,
 	title,
 	children,
 }: {
+	id?: string;
 	title: string;
 	children: ReactNode;
 }) {
 	return (
-		<section className="mt-8 space-y-4 border-t border-[var(--hairline)] pt-8">
+		<section
+			id={id}
+			className="mt-8 scroll-mt-20 space-y-4 border-t border-[var(--hairline)] pt-8"
+		>
 			<h2 className="text-center font-display text-[21px] font-medium text-[var(--ink)]">
 				{title}
 			</h2>
 			{children}
 		</section>
-	);
-}
-
-/** Faint middot separator for the proof strip. */
-function Dot() {
-	return (
-		<span aria-hidden="true" className="text-[var(--faint)]">
-			·
-		</span>
 	);
 }

@@ -1,5 +1,5 @@
 import { ClientOnly, Link } from "@tanstack/react-router";
-import { type CSSProperties, useEffect, useState } from "react";
+import { type CSSProperties, type ReactNode, useEffect, useState } from "react";
 import { cardImage } from "@/lib/card-image";
 import type { CardTab } from "../../lib/card-route";
 import { hasReverseVariant } from "../../lib/card-variants";
@@ -15,8 +15,10 @@ import {
 import { getCardAccent, getReadableAccent } from "../../utils/card-colors";
 import { StackManager } from "../collection/stack-manager";
 import { HoloCard, type HoloCardData, holoCardProps } from "../holo-card";
+import { ensureTiltPermission } from "../holo-card/use-tilt-effect";
 import { CardCrossLinks, type CrossLink } from "../islands/cross-links";
 import { CardHeading, CardInfo } from "./card-info";
+import { CardLightbox } from "./card-lightbox";
 import { CardPricingTab } from "./card-pricing-tab";
 import { CardTabs } from "./card-tabs";
 import { toHoloCardData } from "./to-holo";
@@ -28,11 +30,21 @@ export function CardCockpit({
 	tab: rawTab,
 	onTabChange,
 	pending,
+	railHeader,
+	railFooter,
 }: {
 	card: FocusCardData;
 	tab: CardTab;
 	onTabChange: (t: CardTab) => void;
 	pending?: boolean;
+	// Modal-only slots that move the card's identity above the art and its
+	// cross-links to the bottom of the art column, so the modal is a balanced
+	// two-pane split instead of stacked title/body/footer bands with dead space.
+	// Their presence switches the row to stretch both columns to equal height
+	// (footer pinned via mt-auto, glass pane filled). The dedicated page leaves
+	// them off — its columns size to content with a sticky card.
+	railHeader?: ReactNode;
+	railFooter?: ReactNode;
 }) {
 	// When pricing is disabled the pricing tab is not rendered (CardTabs hides it).
 	// Coerce any incoming "pricing" tab to "details" so the /prices route shows
@@ -74,16 +86,46 @@ export function CardCockpit({
 	// reset when the modal swipes to another card.
 	const canReverse = hasReverseVariant(variants);
 	const [showReverse, setShowReverse] = useState(false);
+	// Click-to-enlarge: the focus card opens a full-bleed hi-res zoom for close
+	// inspection. Reset both view-state flags when the modal swipes to another card.
+	const [zoomOpen, setZoomOpen] = useState(false);
 	// biome-ignore lint/correctness/useExhaustiveDependencies: card.id is the intended reset trigger.
-	useEffect(() => setShowReverse(false), [card.id]);
+	useEffect(() => {
+		setShowReverse(false);
+		setZoomOpen(false);
+	}, [card.id]);
+	// Modal (framed) vs. page: framed stretches both columns to equal height so the
+	// rail footer pins to the bottom and the glass pane fills — no dead space.
+	const framed = Boolean(railHeader || railFooter);
+	// Shared card-width wrapper so the rail's identity + card + links line up.
+	const railColW =
+		"mx-auto w-full max-w-80 @3xl:mx-0 @3xl:w-70 @3xl:max-w-none";
 	return (
 		<div className="@container" style={{ "--accent": accent } as CSSProperties}>
-			{/* Persistent card-art rail + a folder: organizer tabs opening onto a
-			    pane of glass (the active tab's cap merges into the pane below). */}
-			<div className="flex flex-col gap-6 p-2 @3xl:flex-row @3xl:items-stretch @3xl:gap-8">
-				{/* Rail (persistent art) */}
-				<div className="shrink-0 @3xl:sticky @3xl:top-6">
-					<div className="mx-auto flex w-full max-w-80 flex-col gap-4 @3xl:mx-0 @3xl:w-70 @3xl:max-w-none">
+			{/* Card-art rail + a folder: organizer tabs opening onto a pane of glass
+			    (the active tab's cap merges into the pane below). framed → stretch the
+			    columns to equal height; otherwise each keeps its natural height and the
+			    taller of {art, folder} drives the row. */}
+			<div
+				className={`flex flex-col gap-6 p-2 @3xl:flex-row @3xl:gap-8 ${
+					framed ? "@3xl:items-stretch" : "@3xl:items-start"
+				}`}
+			>
+				{/* Rail — the card art, and (framed) the identity above + cross-links
+				    pinned to the bottom, together filling the column. Unframed it just
+				    holds the art and sticks to the top as the page scrolls. */}
+				<div
+					className={
+						framed
+							? "flex shrink-0 flex-col gap-4"
+							: "shrink-0 @3xl:sticky @3xl:top-6"
+					}
+				>
+					{railHeader ? <div className={railColW}>{railHeader}</div> : null}
+					{/* framed: grow + center the art between the header and footer. */}
+					<div
+						className={`flex flex-col gap-4 ${railColW} @3xl:flex-1 @3xl:justify-center`}
+					>
 						<ClientOnly
 							fallback={
 								<img
@@ -97,15 +139,21 @@ export function CardCockpit({
 								{...holoCardProps(holo)}
 								reverse={canReverse && showReverse}
 								size="focus"
-								className="w-full"
+								className="w-full cursor-zoom-in"
+								onClick={() => {
+									// Request device-tilt permission on the opening tap (iOS
+									// only allows it from a gesture); the lightbox then tilts
+									// to the gyroscope.
+									ensureTiltPermission();
+									setZoomOpen(true);
+								}}
 							/>
 						</ClientOnly>
 						{canReverse && (
 							<ClientOnly fallback={null}>
-								<div
-									role="group"
+								<fieldset
 									aria-label="Printing"
-									className="inline-flex self-center rounded-[var(--r-pill)] border border-white/10 bg-white/[0.05] p-0.5 backdrop-blur-sm"
+									className="m-0 inline-flex min-w-0 self-center rounded-[var(--r-pill)] border border-white/10 bg-white/[0.05] p-0.5 backdrop-blur-sm"
 								>
 									{(
 										[
@@ -127,25 +175,36 @@ export function CardCockpit({
 											{label}
 										</button>
 									))}
-								</div>
+								</fieldset>
 							</ClientOnly>
 						)}
 					</div>
+					{railFooter ? (
+						<div className={`${railColW} border-t border-white/[0.07] pt-3`}>
+							{railFooter}
+						</div>
+					) : null}
 				</div>
 
-				{/* Folder: tabs (caps) + the pane (folder body) they open onto. At
-				    @3xl the folder fills the card-art height exactly — the column is
-				    stretched to the row (whose only height contributor is the art),
-				    its contents are absolutely positioned so they never drive that
-				    height, and the pane flex-fills + scrolls within it. */}
-				<div className="min-w-0 flex-1 @3xl:relative">
-					<div className="flex flex-col @3xl:absolute @3xl:inset-0">
+				{/* Folder: tabs (caps) + the pane they open onto. framed → the inner
+				    column fills the row height and the pane flex-grows to match the rail
+				    (balanced panes); otherwise the pane sizes to its content and drives
+				    the row so the modal's `max-h` fits the tab content exactly. */}
+				<div className="min-w-0 flex-1">
+					<div className={`flex flex-col${framed ? " @3xl:h-full" : ""}`}>
 						<CardTabs tab={tab} onChange={onTabChange} idBase={ID_BASE} />
+						{/* Seamless cap→pane: no top edge on the pane (border-t-0, no inset TOP
+						    highlight) and no -mt overlap. Any of those would read as a line
+						    under the active cap — it shares the same translucent glass, so a
+						    brighter border/highlight bleeds through and a 1px overlap doubles
+						    the glass into a hairline. Keep only the bottom depth shadow. */}
 						<div
 							role="tabpanel"
 							id={`${ID_BASE}-panel-${tab}`}
 							aria-labelledby={`${ID_BASE}-tab-${tab}`}
-							className="-mt-px min-w-0 rounded-tr-[var(--r-panel)] rounded-b-[var(--r-panel)] border border-white/12 bg-[var(--glass-2)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.10),inset_0_-1px_0_rgba(0,0,0,0.30)] backdrop-blur-xl @3xl:min-h-0 @3xl:flex-1 @3xl:overflow-y-auto"
+							className={`min-w-0 rounded-tr-[var(--r-panel)] rounded-b-[var(--r-panel)] border border-t-0 border-white/12 bg-[var(--glass-2)] p-5 shadow-[inset_0_-1px_0_rgba(0,0,0,0.30)] backdrop-blur-xl${
+								framed ? " @3xl:min-h-0 @3xl:flex-1" : ""
+							}`}
 						>
 							{tab === "details" ? (
 								<CardInfo card={card} pending={pending} />
@@ -162,6 +221,14 @@ export function CardCockpit({
 					</div>
 				</div>
 			</div>
+			<ClientOnly fallback={null}>
+				<CardLightbox
+					open={zoomOpen}
+					onClose={() => setZoomOpen(false)}
+					card={holo}
+					reverse={canReverse && showReverse}
+				/>
+			</ClientOnly>
 		</div>
 	);
 }

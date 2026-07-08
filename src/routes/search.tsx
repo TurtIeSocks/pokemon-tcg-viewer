@@ -4,7 +4,7 @@ import {
 	stripSearchParams,
 	useNavigate,
 } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { HoloCardData } from "../components/holo-card";
 import { CardGridIsland } from "../components/islands/card-grid-island";
 import { CardSelectionProvider } from "../components/islands/card-selection";
@@ -178,6 +178,9 @@ function SearchPageInner({
 	bulkCardIds,
 	cardHref,
 }: SearchPageInnerProps) {
+	// Live filtered total from the grid; falls back to the loader total (only shown
+	// when a query is present).
+	const [liveTotal, setLiveTotal] = useState<number | null>(null);
 	return (
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
 			<div className="mb-3 shrink-0">
@@ -187,10 +190,10 @@ function SearchPageInner({
 					onChange={onChange}
 					placeholder="Search all cards"
 					showYearFilter
-					showPokemonFilter
+					showCardFilter
 				/>
 			</div>
-			<ResultsBar count={q ? total : null}>
+			<ResultsBar count={q ? (liveTotal ?? total) : null}>
 				{q ? (
 					<SelectAndBulkAdd
 						cardIds={bulkCardIds}
@@ -211,6 +214,7 @@ function SearchPageInner({
 					seedCards={cards}
 					seedTotal={total}
 					cardHref={cardHref}
+					onTotalChange={setLiveTotal}
 				/>
 			</div>
 		</div>

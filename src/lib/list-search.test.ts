@@ -68,30 +68,31 @@ test("yearMin/yearMax: rejects non-finite values (Infinity, overflow)", () => {
 	expect(validateListSearch({ yearMin: "1e999" }).yearMin).toBeNull();
 });
 
-test("pokemon: defaults to null", () => {
-	expect(LIST_SEARCH_DEFAULTS.pokemon).toBeNull();
+test("ids: defaults to an empty array", () => {
+	expect(LIST_SEARCH_DEFAULTS.ids).toEqual([]);
 });
 
-test("pokemon: validates a dex number from number or string", () => {
-	expect(validateListSearch({ pokemon: 112 }).pokemon).toBe(112);
-	expect(validateListSearch({ pokemon: "112" }).pokemon).toBe(112);
+test("ids: parses a mix of dex-number strings and card names (CSV or array)", () => {
+	// Opaque strings — dex ids ("6") and trainer names ("Barry") both pass through.
+	expect(validateListSearch({ ids: "6,Barry" }).ids).toEqual(["6", "Barry"]);
+	expect(validateListSearch({ ids: ["25", "Acerola"] }).ids).toEqual([
+		"25",
+		"Acerola",
+	]);
+	expect(validateListSearch({ ids: "" }).ids).toEqual([]);
+	expect(validateListSearch({}).ids).toEqual([]);
 });
 
-test("pokemon: rejects out-of-range / junk → null", () => {
-	expect(validateListSearch({ pokemon: 0 }).pokemon).toBeNull();
-	expect(validateListSearch({ pokemon: 9999 }).pokemon).toBeNull();
-	expect(validateListSearch({ pokemon: "abc" }).pokemon).toBeNull();
-	expect(validateListSearch({ pokemon: 1.5 }).pokemon).toBeNull();
-	expect(validateListSearch({}).pokemon).toBeNull();
+test("ids: serializes to CSV, omits when empty", () => {
+	expect(listSearchToUrl({ ids: ["112"] }).ids).toBe("112");
+	expect(listSearchToUrl({ ids: ["25", "Barry"] }).ids).toBe("25,Barry");
+	expect(listSearchToUrl({ ids: [] }).ids).toBeUndefined();
 });
 
-test("pokemon: serializes to URL string, omits when null", () => {
-	expect(listSearchToUrl({ pokemon: 112 }).pokemon).toBe("112");
-	expect(listSearchToUrl({ pokemon: null }).pokemon).toBeUndefined();
-});
-
-test("pokemon: full round-trip serialize → parse", () => {
-	expect(validateListSearch(listSearchToUrl({ pokemon: 6 })).pokemon).toBe(6);
+test("ids: full round-trip serialize → parse", () => {
+	expect(
+		validateListSearch(listSearchToUrl({ ids: ["6", "Acerola"] })).ids,
+	).toEqual(["6", "Acerola"]);
 });
 
 test("mode: defaults to 'fuzzy'", () => {

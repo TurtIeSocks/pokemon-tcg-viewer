@@ -1,7 +1,7 @@
 import { Link, type LinkProps } from "@tanstack/react-router";
 import { useIsOwned } from "../../store/userland/selectors";
-import { CollectionToggle } from "../collection-toggle";
 import { HoloCard, type HoloCardData, holoCardProps } from "../holo-card";
+import { CardMiniNav } from "../holo-card/card-mini-nav";
 import { groupCardsByEra } from "../pokemon-timeline/group-cards-by-era";
 import "../pokemon-timeline/pokemon-timeline.css";
 
@@ -29,7 +29,7 @@ function TimelineCard({
 			<HoloCard
 				{...holoCardProps(card)}
 				owned={owned}
-				hoverOverlay={<CollectionToggle card={card} />}
+				miniNav={<CardMiniNav card={card} />}
 				style={{ width: 300 }}
 			/>
 		</Link>

@@ -1,4 +1,5 @@
 import type { LinkProps } from "@tanstack/react-router";
+import { useState } from "react";
 import type { SetFacets } from "@/server/set-facets";
 import type { ListContext, ListSearch } from "../../lib/card-query";
 import type { listSearchToUrl } from "../../lib/list-search";
@@ -29,6 +30,8 @@ interface CardListPageProps {
 	ruleQuery?: SerializedQuery | null;
 	/** Hide the Card Type dropdown when the page locks the supertype. */
 	lockSupertype?: boolean;
+	/** Render the card "name" filter (Pokémon + Trainers). Defaults to false. */
+	showCardFilter?: boolean;
 	/** Remounts the grid (resets pagination) when the anchored entity changes. */
 	gridKey: string | number;
 }
@@ -48,8 +51,12 @@ export function CardListPage({
 	cardHref,
 	ruleQuery = null,
 	lockSupertype = false,
+	showCardFilter = false,
 	gridKey,
 }: CardListPageProps) {
+	// Live filtered total from the grid; falls back to the loader total until the
+	// first client query resolves.
+	const [liveTotal, setLiveTotal] = useState<number | null>(null);
 	return (
 		<CardSelectionProvider>
 			<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
@@ -59,9 +66,10 @@ export function CardListPage({
 						options={options}
 						onChange={onChange}
 						lockSupertype={lockSupertype}
+						showCardFilter={showCardFilter}
 					/>
 				</div>
-				<ResultsBar count={total}>
+				<ResultsBar count={liveTotal ?? total}>
 					<SelectAndBulkAdd
 						cardIds={cards.map((c) => c.id)}
 						ruleQuery={ruleQuery}
@@ -83,6 +91,7 @@ export function CardListPage({
 						seedCards={cards}
 						seedTotal={total}
 						cardHref={cardHref}
+						onTotalChange={setLiveTotal}
 					/>
 				</div>
 			</div>

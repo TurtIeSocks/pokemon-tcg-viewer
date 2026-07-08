@@ -168,13 +168,13 @@ test("split: a stack with quantity > 1 shows a ×N badge and a Split button", as
 	const item = await addStack("c", { quantity: 5 });
 	render(<StackRow item={useUserland.getState().items[item.id]} />);
 	expect(screen.getByText("×5")).toBeDefined();
-	expect(screen.getByRole("button", { name: /split stack/i })).toBeDefined();
+	expect(screen.getByRole("button", { name: /^split$/i })).toBeDefined();
 });
 
 test("split: peeling 2 off a stack of 5 → original 3 + sibling 2 (fields copied)", async () => {
 	const item = await addStack("c", { quantity: 5, condition: "NM" });
 	render(<StackRow item={useUserland.getState().items[item.id]} />);
-	fireEvent.click(screen.getByRole("button", { name: /split stack/i }));
+	fireEvent.click(screen.getByRole("button", { name: /^split$/i }));
 	const input = await screen.findByLabelText(/quantity to split off/i);
 	fireEvent.change(input, { target: { value: "2" } });
 	fireEvent.click(screen.getByRole("button", { name: /split off/i }));
@@ -193,7 +193,7 @@ test("split: peeling 2 off a stack of 5 → original 3 + sibling 2 (fields copie
 test("split: no Split button for a single-card stack (quantity 1)", async () => {
 	const item = await addStack("c");
 	render(<StackRow item={useUserland.getState().items[item.id]} />);
-	expect(screen.queryByRole("button", { name: /split stack/i })).toBeNull();
+	expect(screen.queryByRole("button", { name: /^split$/i })).toBeNull();
 });
 
 test("renders market value + P&L when the card is priced", async () => {

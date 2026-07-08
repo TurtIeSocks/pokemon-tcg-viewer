@@ -1,7 +1,7 @@
 "use client";
 
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Pencil, Share2, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil, Printer, Share2, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/ui/progress-bar";
@@ -30,13 +30,14 @@ import {
 	removeBinder,
 	removeCardFromBinder,
 	removeRuleFromBinder,
-	toggleCardOwned,
 } from "../../store/userland/userland-store";
 import {
 	useBinderValue,
 	useHideValue,
 } from "../../store/userland/valuation-hooks";
 import { BinderFormDialog } from "./binder-form-dialog";
+import { missingCardViews } from "./print-missing";
+import { PrintMissingDialog } from "./print-missing-dialog";
 import { ShareDialog } from "./share-dialog";
 
 interface RemovableChipProps {
@@ -76,6 +77,7 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 	const navigate = useNavigate();
 	const [editOpen, setEditOpen] = useState(false);
 	const [shareOpen, setShareOpen] = useState(false);
+	const [printOpen, setPrintOpen] = useState(false);
 
 	const progress = useBinderProgress(binder.id);
 	const memberIds = useBinderMembers(binder.id);
@@ -135,6 +137,14 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 			.filter((c): c is NonNullable<typeof c> => c !== null);
 	}, [memberIds, indices, setById, i18n]);
 
+	// Cards the collector is missing from this binder: hydrated members minus
+	// owned. Drives both the "Print missing" button's enabled state and the
+	// placeholders laid out in the modal.
+	const missingCards = useMemo(
+		() => missingCardViews(memberCards, ownedCardIds),
+		[memberCards, ownedCardIds],
+	);
+
 	async function handleDelete() {
 		if (
 			!window.confirm(`Delete binder "${binder.name}"? This cannot be undone.`)
@@ -184,6 +194,21 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 					>
 						<Share2 className="h-4 w-4 mr-1" />
 						Share
+					</Button>
+					<Button
+						variant="ghost"
+						size="sm"
+						onClick={() => setPrintOpen(true)}
+						aria-label="Print missing cards"
+						disabled={missingCards.length === 0}
+						title={
+							missingCards.length === 0
+								? "You own every card in this binder"
+								: undefined
+						}
+					>
+						<Printer className="h-4 w-4 mr-1" />
+						Print missing
 					</Button>
 					<Button
 						variant="ghost"
@@ -293,11 +318,7 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 					</div>
 				)}
 
-				<OwnedMissingGrid
-					cards={memberCards}
-					ownedCardIds={ownedCardIds}
-					onToggleOwned={(id) => void toggleCardOwned(id)}
-				/>
+				<OwnedMissingGrid cards={memberCards} ownedCardIds={ownedCardIds} />
 			</div>
 
 			<BinderFormDialog
@@ -309,6 +330,11 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 				open={shareOpen}
 				onOpenChange={setShareOpen}
 				binder={binder}
+			/>
+			<PrintMissingDialog
+				open={printOpen}
+				onOpenChange={setPrintOpen}
+				cards={missingCards}
 			/>
 		</div>
 	);

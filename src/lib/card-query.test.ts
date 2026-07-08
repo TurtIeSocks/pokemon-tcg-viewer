@@ -25,7 +25,7 @@ describe("buildCorpusQuery", () => {
 	});
 	test("dex context → dex-scoped natural order", () => {
 		const q = buildCorpusQuery(empty, { dexNumber: 6 });
-		expect(q.dexNumber).toBe(6);
+		expect(q.dexNumbers).toEqual([6]);
 		expect(q.relevance).toBe(false);
 	});
 	test("filters pass through; empty arrays omitted", () => {
@@ -81,25 +81,29 @@ describe("buildCorpusQuery", () => {
 		).toBe("exact");
 	});
 
-	test("pokemon filter sets dexNumber in the global branch", () => {
-		expect(buildCorpusQuery({ ...empty, pokemon: 112 }, {}).dexNumber).toBe(
-			112,
-		);
+	test("card filter sets ids in the global branch", () => {
+		expect(buildCorpusQuery({ ...empty, ids: ["112"] }, {}).ids).toEqual([
+			"112",
+		]);
 	});
-	test("pokemon filter sets dexNumber within a set", () => {
-		const q = buildCorpusQuery({ ...empty, pokemon: 25 }, { setId: "swsh9" });
+	test("card filter sets ids within a set", () => {
+		const q = buildCorpusQuery({ ...empty, ids: ["25"] }, { setId: "swsh9" });
 		expect(q.setId).toBe("swsh9");
-		expect(q.dexNumber).toBe(25);
+		expect(q.ids).toEqual(["25"]);
 	});
-	test("dex context wins over the pokemon filter", () => {
-		const q = buildCorpusQuery({ ...empty, pokemon: 25 }, { dexNumber: 6 });
-		expect(q.dexNumber).toBe(6);
-	});
-	test("no pokemon filter → dexNumber undefined in global + set branches", () => {
-		expect(buildCorpusQuery(empty, {}).dexNumber).toBeUndefined();
+	test("card filter forwards multiple selected ids (dex + trainer name)", () => {
 		expect(
-			buildCorpusQuery(empty, { setId: "swsh9" }).dexNumber,
-		).toBeUndefined();
+			buildCorpusQuery({ ...empty, ids: ["25", "Barry"] }, {}).ids,
+		).toEqual(["25", "Barry"]);
+	});
+	test("dex page context ignores the ids filter (dexNumbers wins)", () => {
+		const q = buildCorpusQuery({ ...empty, ids: ["25"] }, { dexNumber: 6 });
+		expect(q.dexNumbers).toEqual([6]);
+		expect(q.ids).toBeUndefined();
+	});
+	test("no card filter → undefined ids in global + set branches", () => {
+		expect(buildCorpusQuery(empty, {}).ids).toBeUndefined();
+		expect(buildCorpusQuery(empty, { setId: "swsh9" }).ids).toBeUndefined();
 	});
 
 	test("supertype context → locked supertype, chronological, no query relevance", () => {
@@ -109,6 +113,22 @@ describe("buildCorpusQuery", () => {
 		expect(q.chronological).toBe(true);
 		expect(q.nameSlug).toBeUndefined();
 		expect(q.relevance).toBe(false);
+	});
+	test("supertype (Trainer/Energy) context sets excludeDexCards", () => {
+		expect(
+			buildCorpusQuery(empty, { supertype: "Trainer" }).excludeDexCards,
+		).toBe(true);
+		expect(
+			buildCorpusQuery(empty, { supertype: "Energy" }).excludeDexCards,
+		).toBe(true);
+	});
+	test("card filter (ids) applies on a supertype-anchored page (Trainer/Energy)", () => {
+		const q = buildCorpusQuery(
+			{ ...empty, ids: ["Barry"] },
+			{ supertype: "Trainer" },
+		);
+		expect(q.ids).toEqual(["Barry"]);
+		expect(q.filters?.supertypes).toEqual(["Trainer"]);
 	});
 	test("supertype + nameSlug context → name-anchored", () => {
 		const q = buildCorpusQuery(empty, {

@@ -104,9 +104,184 @@ test("type filter: OR within dimension, AND across", () => {
 	expect(r.map((c) => c.id)).toEqual(["base1-2"]);
 });
 
-test("pokedex: filters by national dex number", () => {
-	const r = queryCorpus(index, { dexNumber: 25, relevance: false }, setsById);
+test("pokedex: filters by a single national dex number", () => {
+	const r = queryCorpus(
+		index,
+		{ dexNumbers: [25], relevance: false },
+		setsById,
+	);
 	expect(r.map((c) => c.id)).toEqual(["base1-58"]);
+});
+
+const dexCorpus = buildIndex([
+	card({
+		id: "d-25",
+		name: "Pikachu",
+		setId: "base1",
+		number: "1",
+		nationalPokedexNumbers: [25],
+	}),
+	card({
+		id: "d-6",
+		name: "Charizard",
+		setId: "base1",
+		number: "2",
+		nationalPokedexNumbers: [6],
+	}),
+	card({
+		id: "d-9",
+		name: "Blastoise",
+		setId: "base1",
+		number: "3",
+		nationalPokedexNumbers: [9],
+	}),
+]);
+
+test("pokedex: matches a card when ANY selected dex is in its list", () => {
+	const r = queryCorpus(
+		dexCorpus,
+		{ dexNumbers: [25, 6], relevance: false },
+		setsById,
+	);
+	expect(r.map((c) => c.id).sort()).toEqual(["d-25", "d-6"]);
+});
+
+test("pokedex: excludes every card when none of the selected dex match", () => {
+	const r = queryCorpus(
+		dexCorpus,
+		{ dexNumbers: [151], relevance: false },
+		setsById,
+	);
+	expect(r).toEqual([]);
+});
+
+test("pokedex: an empty dexNumbers array applies no species filter", () => {
+	const r = queryCorpus(
+		dexCorpus,
+		{ dexNumbers: [], relevance: false },
+		setsById,
+	);
+	expect(r.length).toBe(3);
+});
+
+// --- ids (card "name" filter: dex ids for Pokémon, names for dex-less Trainers) ---
+
+const mixedCorpus = buildIndex([
+	card({
+		id: "m-6",
+		name: "Charizard",
+		setId: "base1",
+		number: "1",
+		nationalPokedexNumbers: [6],
+	}),
+	// Trainers have no national dex, so they key on their name.
+	card({ id: "m-barry", name: "Barry", setId: "base1", number: "2" }),
+	card({ id: "m-acerola", name: "Acerola", setId: "base1", number: "3" }),
+]);
+
+test("ids: a dex id matches the Pokémon with that national dex number", () => {
+	const r = queryCorpus(
+		mixedCorpus,
+		{ ids: ["6"], relevance: false },
+		setsById,
+	);
+	expect(r.map((c) => c.id)).toEqual(["m-6"]);
+});
+
+test("ids: a card name matches a dex-less Trainer by name", () => {
+	const r = queryCorpus(
+		mixedCorpus,
+		{ ids: ["Barry"], relevance: false },
+		setsById,
+	);
+	expect(r.map((c) => c.id)).toEqual(["m-barry"]);
+});
+
+test("ids: a mix of a dex id and a trainer name matches both", () => {
+	const r = queryCorpus(
+		mixedCorpus,
+		{ ids: ["6", "Acerola"], relevance: false },
+		setsById,
+	);
+	expect(r.map((c) => c.id).sort()).toEqual(["m-6", "m-acerola"]);
+});
+
+test("ids: an empty array applies no filter", () => {
+	const r = queryCorpus(mixedCorpus, { ids: [], relevance: false }, setsById);
+	expect(r.length).toBe(3);
+});
+
+// --- excludeDexCards (guard against upstream Pokémon mislabeled as Trainer/Energy) ---
+
+test("excludeDexCards drops dex-bearing cards from a Trainer view", () => {
+	const c = buildIndex([
+		card({
+			id: "real-potion",
+			name: "Potion",
+			setId: "base1",
+			number: "1",
+			supertype: "Trainer",
+		}),
+		// Upstream mislabel: supertype Trainer but carries a national dex (a Pokémon).
+		card({
+			id: "fake-combusken",
+			name: "Combusken",
+			setId: "base1",
+			number: "2",
+			supertype: "Trainer",
+			nationalPokedexNumbers: [256],
+		}),
+	]);
+	const r = queryCorpus(
+		c,
+		{
+			filters: { supertypes: ["Trainer"] },
+			excludeDexCards: true,
+			relevance: false,
+		},
+		setsById,
+	);
+	expect(r.map((x) => x.id)).toEqual(["real-potion"]);
+});
+
+// --- sort=rarity (orders by rarity level, not alphabetically) ---
+
+test("sort=rarity orders cards by rarity level", () => {
+	const c = buildIndex([
+		card({
+			id: "s",
+			name: "S",
+			setId: "base1",
+			number: "1",
+			rarity: "Rare Secret",
+		}),
+		card({ id: "c", name: "C", setId: "base1", number: "2", rarity: "Common" }),
+		card({
+			id: "h",
+			name: "H",
+			setId: "base1",
+			number: "3",
+			rarity: "Rare Holo",
+		}),
+		card({
+			id: "u",
+			name: "U",
+			setId: "base1",
+			number: "4",
+			rarity: "Uncommon",
+		}),
+	]);
+	const r = queryCorpus(
+		c,
+		{ sort: "rarity", dir: "asc", relevance: false },
+		setsById,
+	);
+	expect(r.map((x) => x.rarity)).toEqual([
+		"Common",
+		"Uncommon",
+		"Rare Holo",
+		"Rare Secret",
+	]);
 });
 
 // --- nameSlug (Trainer/Energy per-name pages) ---

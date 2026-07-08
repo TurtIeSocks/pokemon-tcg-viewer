@@ -5,7 +5,7 @@ import {
 	stripSearchParams,
 	useNavigate,
 } from "@tanstack/react-router";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import type { HoloCardData } from "../../components/holo-card";
 import { CardGridIsland } from "../../components/islands/card-grid-island";
 import { CardSelectionProvider } from "../../components/islands/card-selection";
@@ -119,12 +119,14 @@ function PokemonPageInner({
 	options,
 	cardHref,
 }: PokemonPageInnerProps) {
+	// Live filtered total from the grid; falls back to the loader total.
+	const [liveTotal, setLiveTotal] = useState<number | null>(null);
 	return (
 		<div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 py-5">
 			<div className="mb-3 shrink-0">
 				<SearchControls value={search} options={options} onChange={onChange} />
 			</div>
-			<ResultsBar count={total}>
+			<ResultsBar count={liveTotal ?? total}>
 				<SelectAndBulkAdd
 					cardIds={cards.map((c) => c.id)}
 					ruleQuery={toSerializedQuery(search, { dexNumber: dex })}
@@ -146,6 +148,7 @@ function PokemonPageInner({
 					seedCards={cards}
 					seedTotal={total}
 					cardHref={cardHref}
+					onTotalChange={setLiveTotal}
 				/>
 			</div>
 		</div>

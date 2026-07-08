@@ -1,6 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/ui/glass";
+import type { Region } from "@/lib/languages";
+import { loadCorpus } from "@/store/corpus/corpus-runtime";
+import { useCorpusRuntime } from "@/store/corpus/corpus-runtime-store";
+import { clearCorpus } from "@/store/corpus/corpus-store";
 import {
 	checkStale,
 	disableOffline,
@@ -21,46 +25,94 @@ function relativeTime(ms: number): string {
 	return rtf.format(-Math.round(hr / 24), "day");
 }
 
-/** Settings card for the offline card-detail database (L1). */
+/**
+ * Settings card for the on-device card data. Unifies two caches that used to be
+ * separate cards (confusingly, the old "Refresh card database" sat under "Card
+ * database" but refreshed a DIFFERENT store): the always-loaded browse CATALOG
+ * (the corpus) and the OPT-IN offline detail DB (L1: battle data, rules, flavor).
+ *
+ * - "Download for offline" toggles the detail DB (enable/disable).
+ * - "Refresh" revalidates the catalog (wipe local corpus + conditional re-fetch,
+ *   adopting a newer build if one shipped) AND re-syncs the detail DB when it is
+ *   enabled, so one button refreshes everything this card owns. The refresh reads
+ *   the corpus runtime imperatively (getState), so there is no re-render coupling.
+ */
 export function CardDatabaseSetting() {
 	// S3: per-field selectors.
 	const status = useDetailRuntime((s) => s.status);
 	const syncedAt = useDetailRuntime((s) => s.syncedAt);
+	const [refreshing, setRefreshing] = useState(false);
+
 	// Staleness check on mount (this is L1's check, moved off the dropdown).
 	useEffect(() => {
 		void checkStale();
 	}, []);
 
-	const busy = status === "downloading" || status === "loading";
+	const offlineOn = status === "ready" || status === "stale";
+	const detailBusy = status === "downloading" || status === "loading";
+	const busy = detailBusy || refreshing;
+
+	async function refresh(): Promise<void> {
+		setRefreshing(true);
+		try {
+			const runtime = useCorpusRuntime.getState();
+			// Refresh every region currently held in memory; fall back to the active
+			// region on a cold visit where nothing has loaded yet.
+			const loaded = Object.keys(runtime.indices) as Region[];
+			const regions = loaded.length > 0 ? loaded : [runtime.activeRegion];
+			// 1. Wipe each region's IndexedDB blob + meta.
+			await Promise.all(regions.map((region) => clearCorpus(region)));
+			// 2. Drop the in-memory indices so loadCorpus won't early-return.
+			runtime.reset();
+			// 3. Re-fetch each region (conditional GET; adopts any newer build).
+			await Promise.all(regions.map((region) => loadCorpus(region)));
+			// 4. If offline details are on, re-sync those too so Refresh refreshes
+			//    everything this card represents, not just the catalog.
+			if (offlineOn) await syncDetail();
+		} finally {
+			setRefreshing(false);
+		}
+	}
+
+	const description = refreshing
+		? "Refreshing card database..."
+		: status === "ready" && syncedAt
+			? `Full card details saved for offline. Synced ${relativeTime(syncedAt)}.`
+			: status === "stale"
+				? "Card details updated. Refresh to re-sync."
+				: status === "error"
+					? "Download failed."
+					: `Card names, sets, and browse data live on this device. Download full card details (battle data, rules, flavor text) for instant offline viewing (${SIZE}).`;
+
 	return (
 		<GlassPanel className="flex flex-col gap-3 p-5">
 			<div className="flex flex-col gap-1">
 				<h2 className="font-display text-lg">Card database</h2>
 				<p className="font-mono text-[12px] text-(--ink-muted)">
-					{status === "ready" && syncedAt
-						? `Saved on this device. Synced ${relativeTime(syncedAt)}.`
-						: status === "stale"
-							? "Card data updated. Re-sync to refresh."
-							: status === "error"
-								? "Download failed."
-								: `Battle data, rules, and flavor text for instant, offline card views (${SIZE}).`}
+					{description}
 				</p>
 			</div>
 			<div className="flex flex-wrap gap-2">
 				{status === "off" || status === "error" ? (
 					<Button onClick={() => void enableOffline()} disabled={busy}>
-						{status === "error" ? "Retry download" : `Download (${SIZE})`}
+						{status === "error"
+							? "Retry download"
+							: `Download for offline (${SIZE})`}
 					</Button>
 				) : null}
-				{busy ? <Button disabled>Downloading...</Button> : null}
-				{status === "stale" ? (
-					<Button onClick={() => void syncDetail()}>Re-sync ({SIZE})</Button>
-				) : null}
-				{(status === "ready" || status === "stale") && (
-					<Button variant="ghost" onClick={() => void disableOffline()}>
-						Remove
+				{detailBusy ? <Button disabled>Downloading...</Button> : null}
+				{offlineOn ? (
+					<Button
+						variant="ghost"
+						onClick={() => void disableOffline()}
+						disabled={busy}
+					>
+						Remove offline copy
 					</Button>
-				)}
+				) : null}
+				<Button variant="ghost" onClick={() => void refresh()} disabled={busy}>
+					{refreshing ? "Refreshing..." : "Refresh"}
+				</Button>
 			</div>
 		</GlassPanel>
 	);

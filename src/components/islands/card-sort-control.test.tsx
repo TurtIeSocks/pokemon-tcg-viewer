@@ -46,6 +46,17 @@ test("toggling direction fires onChange with dir", () => {
 	expect(onChange).toHaveBeenCalledWith({ dir: "desc" });
 });
 
+test("labels the default sort mode 'Recommended' (not 'Default')", async () => {
+	renderControl({ sort: "default" });
+	const trigger = screen.getByRole("button", { name: "Sort by" });
+	expect(trigger.textContent).toContain("Recommended");
+	expect(trigger.textContent).not.toContain("Default");
+	fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
+	expect(
+		await screen.findByRole("menuitemradio", { name: "Recommended" }),
+	).toBeDefined();
+});
+
 test("the direction toggle is disabled for the Default mode", () => {
 	renderControl({ sort: "default" });
 	expect(

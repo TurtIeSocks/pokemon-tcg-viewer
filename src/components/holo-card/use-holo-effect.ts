@@ -52,6 +52,15 @@ function tickSpring(
 	return true;
 }
 
+/** True when the user has asked the OS to minimize non-essential motion. */
+function prefersReducedMotion(): boolean {
+	return (
+		typeof window !== "undefined" &&
+		typeof window.matchMedia === "function" &&
+		window.matchMedia("(prefers-reduced-motion: reduce)").matches
+	);
+}
+
 /**
  * Pointer-tracking hook for the holo card. Runs simey's spring physics
  * (ported from svelte/motion) through a requestAnimationFrame loop and writes
@@ -60,13 +69,26 @@ function tickSpring(
  * the virtualized grid which mounts dozens of cards simultaneously. The loop
  * only runs while the springs are settling, then stops, so idle cards cost
  * nothing.
+ *
+ * `enabled` gates the whole effect behind the user's `cardMotion` preference.
+ * When it (or `prefers-reduced-motion`) is off, the card is painted in its
+ * static centered/hidden state and no pointer listeners or rAF loop are
+ * attached — the tilt + foil simply don't run. `forceFoil` (dev tooling) still
+ * overrides everything.
  */
-export function useHoloEffect(forceFoil = false) {
+export function useHoloEffect(forceFoil = false, enabled = true) {
 	const ref = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		const el = ref.current;
 		if (!el) return;
+
+		// Motion disabled (pref off or reduced-motion): centre + hide the foil and
+		// bail before wiring any listeners. forceFoil bypasses (debug contact sheet).
+		if (!forceFoil && (!enabled || prefersReducedMotion())) {
+			setHoloVars(el, DEFAULT_POINTER, DEFAULT_POINTER, 0);
+			return;
+		}
 
 		const x = field(DEFAULT_POINTER);
 		const y = field(DEFAULT_POINTER);
@@ -174,7 +196,7 @@ export function useHoloEffect(forceFoil = false) {
 			if (releaseTimer !== null) clearTimeout(releaseTimer);
 			if (rafId !== null) cancelAnimationFrame(rafId);
 		};
-	}, [forceFoil]);
+	}, [forceFoil, enabled]);
 
 	return { ref };
 }

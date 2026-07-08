@@ -1,7 +1,5 @@
-import { afterEach, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 import type { NavSet, NavTree } from "../../lib/nav-tree";
-import { buildIndex } from "../../store/corpus/corpus-engine";
-import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
 import { renderInRouter } from "../../test-utils";
 import { HomeBrowse } from "./home-browse";
 
@@ -25,46 +23,48 @@ const TREE: NavTree = [
 	},
 ];
 
-// The corpus runtime is a module singleton; leave it null for other test files.
-afterEach(() => useCorpusRuntime.setState({ index: null }));
+/** SetTiles and EraTiles both aria-label "Browse …"; the era cards live in the
+ * #browse-by-era section, so filter them out to count the Latest-sets tiles. */
+function setTilesOf(container: HTMLElement) {
+	return [...container.querySelectorAll('a[aria-label^="Browse"]')].filter(
+		(a) => !a.closest("#browse-by-era"),
+	);
+}
 
-test("HomeBrowse renders the proof line, an era pill per series, and set tiles", async () => {
-	// Pre-seed an empty corpus index so loadCorpus() early-returns (no network),
-	// per the project's test-isolation gotcha.
-	useCorpusRuntime.setState({ index: buildIndex([]) });
-
-	const { container, getByText } = await renderInRouter(
+test("HomeBrowse renders a glass era card per series and the newest set tiles", async () => {
+	const { container, queryByText } = await renderInRouter(
 		<HomeBrowse tree={TREE} />,
 	);
 
-	// Tree-derived counts: 4 sets across 3 eras.
-	expect(getByText(/4 sets/)).toBeTruthy();
-	expect(getByText(/3 eras/)).toBeTruthy();
-	expect(getByText(/always free/)).toBeTruthy();
+	// Latest sets is now the first section (moved above Browse by era).
+	expect(container.textContent).toContain("Latest sets");
 
-	// Section headings + one era pill per series (soft-variant button links).
-	// Exclude the card-type pills (which are also soft-variant links).
-	expect(getByText("Browse by era")).toBeTruthy();
-	expect(getByText("Latest sets")).toBeTruthy();
-	const softPills = [...container.querySelectorAll('a[data-variant="soft"]')];
-	const eraPills = softPills.filter((a) => {
-		const href = a.getAttribute("href") ?? "";
-		return (
-			!href.startsWith("/pokemon") &&
-			!href.startsWith("/trainer") &&
-			!href.startsWith("/energy")
-		);
-	});
-	expect(eraPills.length).toBe(3);
+	// Browse by era — one glass EraTile per series (pills → SetTile-style cards),
+	// in the anchored section the launch pad's "Browse by era" card scrolls to.
+	const eraSection = container.querySelector("#browse-by-era");
+	expect(eraSection).toBeTruthy();
+	expect(eraSection?.textContent).toContain("Browse by era");
+	const eraCards = [...(eraSection?.querySelectorAll("a") ?? [])];
+	expect(eraCards.length).toBe(3);
+	// Each era card links to its series' set page; the series name is the a11y name.
+	expect(eraCards[0].getAttribute("href")).toMatch(/^\/base\//);
+	expect(eraCards[0].getAttribute("aria-label")).toBe("Browse Base");
+	// The full series name + year + set count are shown (no monogram badge).
+	expect(eraCards[0].textContent).toContain("Base");
+	expect(eraCards[0].textContent).toContain("1999");
 
-	// Browse-by-card-type section links to the Pokémon + Trainer + Energy pages.
-	expect(getByText("Browse by card type")).toBeTruthy();
-	expect(container.querySelector('a[href^="/pokemon"]')).toBeTruthy();
-	expect(container.querySelector('a[href^="/trainer"]')).toBeTruthy();
-	expect(container.querySelector('a[href^="/energy"]')).toBeTruthy();
+	// The card-type pills are gone; the era cards never link to /pokemon etc.
+	expect(queryByText("Browse by card type")).toBeNull();
+	expect(container.querySelector('a[href^="/pokemon"]')).toBeNull();
+	expect(container.querySelector('a[href^="/trainer"]')).toBeNull();
+	expect(container.querySelector('a[href^="/energy"]')).toBeNull();
 
-	// Browse-variant set tiles (link to /$series/$set, never /vault).
-	const tiles = container.querySelectorAll('a[aria-label^="Browse"]');
+	// The catalog stat line moved to the home hero, so it is NOT rendered here.
+	expect(queryByText(/always free/)).toBeNull();
+	expect(queryByText(/Explore the catalog/i)).toBeNull();
+
+	// Browse-variant Latest-set tiles (link to /$series/$set, never /vault).
+	const tiles = setTilesOf(container);
 	expect(tiles.length).toBe(4);
 	for (const t of tiles) {
 		expect(t.getAttribute("href")?.startsWith("/vault")).toBe(false);
@@ -72,15 +72,13 @@ test("HomeBrowse renders the proof line, an era pill per series, and set tiles",
 });
 
 test("Latest sets are newest-era-first even when the newest series is short", async () => {
-	useCorpusRuntime.setState({ index: buildIndex([]) });
 	const { container } = await renderInRouter(<HomeBrowse tree={TREE} />);
-	const tiles = [...container.querySelectorAll('a[aria-label^="Browse"]')];
+	const tiles = setTilesOf(container);
 	// Sorted by series year desc: the 2023 SV sets come before the 1999/2000 ones.
 	expect(tiles[0].getAttribute("aria-label")).toMatch(/SV Base|Paldea/);
 });
 
 test("non-core series (TCG Pocket) are hidden from Latest sets but kept in Browse-by-era", async () => {
-	useCorpusRuntime.setState({ index: buildIndex([]) });
 	const tree: NavTree = [
 		{ name: "Base", slug: "base", year: 1999, sets: [set("base", "Base Set")] },
 		{
@@ -93,11 +91,13 @@ test("non-core series (TCG Pocket) are hidden from Latest sets but kept in Brows
 	];
 	const { container } = await renderInRouter(<HomeBrowse tree={tree} />);
 
-	// Era pill for TCG Pocket is still present (browsable from the pill cloud).
-	const eraPill = [
-		...container.querySelectorAll('a[data-variant="soft"]'),
-	].find((a) => a.textContent === "Pokémon TCG Pocket");
-	expect(eraPill).toBeTruthy();
+	// Era card for TCG Pocket is still present (browsable from the era grid),
+	// found by its accessible name (the card shows the monogram, not the name).
+	expect(
+		container.querySelector(
+			'#browse-by-era a[aria-label="Browse Pokémon TCG Pocket"]',
+		),
+	).toBeTruthy();
 
 	// ...but its set has no tile in Latest sets, while the core set does.
 	expect(

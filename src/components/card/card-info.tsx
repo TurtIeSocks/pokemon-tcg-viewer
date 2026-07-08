@@ -94,6 +94,32 @@ function AttackRow({
 	);
 }
 
+/** A stat term (Weak / Resist) rendered as its type glyph(s) + value, matching
+ * the energy-icon language used everywhere else instead of spelling the type. */
+function StatTypes({
+	label,
+	items,
+}: {
+	label: string;
+	items: { type: string; value: string }[];
+}) {
+	return (
+		<span className="inline-flex items-center gap-1.5">
+			{label}
+			{items.map((it, i) => (
+				<span
+					// biome-ignore lint/suspicious/noArrayIndexKey: static read-only list that may repeat a type
+					key={`${it.type}-${i}`}
+					className="inline-flex items-center gap-1"
+				>
+					<EnergyIcon type={it.type} size={16} />
+					<b className="font-medium text-[var(--ink-muted)]">{it.value}</b>
+				</span>
+			))}
+		</span>
+	);
+}
+
 function StatStrip({ card }: { card: FocusCardData }) {
 	const hasWeak = !!card.weaknesses?.length;
 	const hasResist = !!card.resistances?.length;
@@ -101,21 +127,11 @@ function StatStrip({ card }: { card: FocusCardData }) {
 	if (!hasWeak && !hasResist && !hasRetreat && !card.artist) return null;
 	return (
 		<div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.07] pt-3.5 font-mono text-[11px] uppercase tracking-[0.05em] text-[var(--ink-muted)]">
-			{hasWeak ? (
-				<span>
-					Weak{" "}
-					<b className="font-medium text-[var(--ink-muted)]">
-						{card.weaknesses?.map((w) => `${w.type} ${w.value}`).join(", ")}
-					</b>
-				</span>
+			{hasWeak && card.weaknesses ? (
+				<StatTypes label="Weak" items={card.weaknesses} />
 			) : null}
-			{hasResist ? (
-				<span>
-					Resist{" "}
-					<b className="font-medium text-[var(--ink-muted)]">
-						{card.resistances?.map((r) => `${r.type} ${r.value}`).join(", ")}
-					</b>
-				</span>
+			{hasResist && card.resistances ? (
+				<StatTypes label="Resist" items={card.resistances} />
 			) : null}
 			{hasRetreat && card.retreatCost ? (
 				<span className="inline-flex items-center">
@@ -181,19 +197,44 @@ function CardMetaStrip({ card }: { card: FocusCardData }) {
 		items.push({ label: "Type", value: card.types.join(" / ") });
 	if (card.evolvesFrom)
 		items.push({ label: "Evolves from", value: card.evolvesFrom });
-	if (card.variantsDetailed?.length)
-		items.push({
-			label: "Printings",
-			value: card.variantsDetailed.map(variantLabel).join(" · "),
-		});
-	if (!items.length) return null;
+	// Each printing is its own record (edition/stamp/subtype differ), so render one
+	// chip per printing — a flat " · " join erased the boundaries and made the
+	// shared "Holo" type read as a duplicate. Collapse only printings that humanize
+	// to the exact same label (genuine dupes).
+	const seen = new Set<string>();
+	const printings: { id: string; label: string }[] = [];
+	for (const v of card.variantsDetailed ?? []) {
+		const label = variantLabel(v);
+		if (seen.has(label)) continue;
+		seen.add(label);
+		printings.push({ id: v.variantId, label });
+	}
+	if (!items.length && !printings.length) return null;
 	return (
-		<div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-white/[0.07] pb-3.5 font-mono text-[11px] uppercase tracking-[0.05em] text-[var(--ink-muted)]">
-			{items.map((it) => (
-				<span key={it.label}>
-					{it.label} <b className="font-medium text-[var(--ink)]">{it.value}</b>
-				</span>
-			))}
+		<div className="flex flex-col gap-2.5 border-b border-white/[0.07] pb-3.5 font-mono text-[11px] uppercase tracking-[0.05em] text-[var(--ink-muted)]">
+			{items.length ? (
+				<div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+					{items.map((it) => (
+						<span key={it.label}>
+							{it.label}{" "}
+							<b className="font-medium text-[var(--ink)]">{it.value}</b>
+						</span>
+					))}
+				</div>
+			) : null}
+			{printings.length ? (
+				<div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+					<span>Printings</span>
+					{printings.map((p) => (
+						<span
+							key={p.id}
+							className="rounded-[var(--r-pill)] border border-white/10 bg-white/[0.05] px-2 py-0.5 tracking-[0.08em] text-[var(--ink)]"
+						>
+							{p.label}
+						</span>
+					))}
+				</div>
+			) : null}
 		</div>
 	);
 }

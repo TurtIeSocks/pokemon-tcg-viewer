@@ -93,6 +93,39 @@ describe("<HoloCard />", () => {
 		expect(container.querySelector(".holo-card-glare")).not.toBeNull();
 	});
 
+	test("does NOT render the holo shine/glare over the missing-image placeholder", () => {
+		const { container } = render(
+			<HoloCard
+				imageUrl=""
+				imageUrlSmall=""
+				name="Charizard"
+				cardNumber="4"
+				series="Base"
+				rarity="Rare Holo"
+				size="grid"
+			/>,
+		);
+		// hasImage is false → the identity placeholder shows, and the foil layers
+		// must be gated off so the shine/glare never paint over bare text.
+		expect(container.querySelector(".holo-card-empty")).not.toBeNull();
+		expect(container.querySelector(".holo-card-shine")).toBeNull();
+		expect(container.querySelector(".holo-card-glare")).toBeNull();
+	});
+
+	test("renders the holo shine/glare again once an image errors back into view is avoided (image present keeps them)", () => {
+		const { container } = render(
+			<HoloCard {...baseProps} rarity="Rare Holo" size="grid" />,
+		);
+		// With a real image, the foil layers are present.
+		expect(container.querySelector(".holo-card-shine")).not.toBeNull();
+		// After the image 404s to the empty state, the foil layers are gated off.
+		fireEvent.error(
+			container.querySelector("img.holo-card-image") as HTMLImageElement,
+		);
+		expect(container.querySelector(".holo-card-shine")).toBeNull();
+		expect(container.querySelector(".holo-card-glare")).toBeNull();
+	});
+
 	test("emits effective rarity + card identity data attrs (CardProxy pipeline)", () => {
 		const { container } = render(
 			<HoloCard

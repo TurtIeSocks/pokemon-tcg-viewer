@@ -81,7 +81,7 @@ export function CardTabs({
 							"relative rounded-t-[var(--r-control)] border px-4 py-2 font-mono text-[11px] uppercase tracking-[0.12em] transition-all duration-200 ease-[var(--ease)]",
 							"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--primary)]",
 							active
-								? "z-10 border-b-0 border-white/12 bg-[var(--glass-2)] text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.22)]"
+								? "z-10 border-b-0 border-white/12 bg-[var(--glass-2)] text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.22)] backdrop-blur-xl"
 								: "translate-y-px border-transparent bg-white/[0.02] text-[var(--faint)] hover:bg-white/[0.05] hover:text-[var(--ink-muted)] motion-reduce:translate-y-0",
 						)}
 					>

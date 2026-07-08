@@ -35,16 +35,23 @@ export function CardPricingTab({
 	pending?: boolean;
 }) {
 	return (
-		<div className="flex flex-col gap-5">
+		// h-full: when the folder pane is tall (modal two-pane), the history section
+		// flex-grows so its glass panel fills the space beneath the market prices
+		// instead of leaving it empty. On the page/mobile the pane is content-sized,
+		// so h-full is a no-op and everything keeps its natural height.
+		<div className="flex h-full flex-col gap-5">
 			<section aria-label="Market prices">
 				<div className={SECTION}>Market prices</div>
 				<div className="mt-2">
 					{pending ? <PriceGhost /> : <CardPrices card={card} />}
 				</div>
 			</section>
-			<section aria-label="Price history">
+			<section
+				aria-label="Price history"
+				className="flex min-h-0 flex-1 flex-col"
+			>
 				<div className={SECTION}>Price history</div>
-				<GlassPanel className="mt-2 p-4">
+				<GlassPanel className="mt-2 flex flex-1 flex-col p-4">
 					<CardHistory card={card} />
 				</GlassPanel>
 			</section>

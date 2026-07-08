@@ -13,7 +13,7 @@ const defaultValue: ListSearch = {
 	owned: "all",
 	yearMin: null,
 	yearMax: null,
-	pokemon: null,
+	ids: [],
 	mode: "fuzzy" as const,
 	sort: "default",
 	dir: "asc",
@@ -25,27 +25,29 @@ const options = {
 	subtypes: ["Basic", "Stage 1", "GX"],
 	rarities: ["Common", "Rare Holo"],
 	types: ["fire", "water"],
-	pokemon: [
-		{ dex: 6, name: "Charizard" },
-		{ dex: 25, name: "Pikachu" },
+	// A mix: Pokémon keyed by dex id, a Trainer keyed by name.
+	ids: [
+		{ id: "6", label: "Charizard", group: "Pokémon" },
+		{ id: "25", label: "Pikachu", group: "Pokémon" },
+		{ id: "Barry", label: "Barry", group: "Trainer" },
 	],
 };
 
 /**
  * Render `<SearchControls>` with the shared `options` and a no-op `onChange`.
- * Override `value`, `onChange`, `showYearFilter`, or `showPokemonFilter` per
+ * Override `value`, `onChange`, `showYearFilter`, or `showCardFilter` per
  * test as needed.
  */
 function renderControls({
 	value = defaultValue,
 	onChange = () => {},
 	showYearFilter = false,
-	showPokemonFilter = false,
+	showCardFilter = false,
 }: {
 	value?: ListSearch;
 	onChange?: (patch: Partial<ListSearch>) => void;
 	showYearFilter?: boolean;
-	showPokemonFilter?: boolean;
+	showCardFilter?: boolean;
 } = {}) {
 	return render(
 		<SearchControls
@@ -53,7 +55,7 @@ function renderControls({
 			options={options}
 			onChange={onChange}
 			showYearFilter={showYearFilter}
-			showPokemonFilter={showPokemonFilter}
+			showCardFilter={showCardFilter}
 		/>,
 	);
 }
@@ -137,53 +139,99 @@ test("existing controls (q input + filter selects + owned) still render", () => 
 	expect(screen.getByRole("searchbox")).toBeDefined();
 });
 
-// ─── Pokémon (species) filter ─────────────────────────────────────────────────
+// ─── Card ("name") multi-select filter (dex ids + trainer names) ──────────────
 
-test("Pokémon select NOT rendered by default (showPokemonFilter omitted)", () => {
+test("Card filter NOT rendered by default (showCardFilter omitted)", () => {
 	renderControls();
-	expect(screen.queryByRole("combobox", { name: "Pokémon" })).toBeNull();
+	expect(screen.queryByRole("button", { name: /^All Cards$/ })).toBeNull();
 });
 
-test("renders the Pokémon select when showPokemonFilter={true}", () => {
-	renderControls({ showPokemonFilter: true });
-	expect(screen.getByRole("combobox", { name: "Pokémon" })).toBeDefined();
+test("renders the Card multi-select when showCardFilter={true}", () => {
+	renderControls({ showCardFilter: true });
+	expect(screen.getByRole("button", { name: /^All Cards$/ })).toBeDefined();
 });
 
-test("Pokémon select shows its label when no species is selected", () => {
-	renderControls({ showPokemonFilter: true });
-	expect(
-		screen.getByRole("combobox", { name: "Pokémon" }).textContent,
-	).toContain("Pokémon");
+test("empty Card trigger shows the 'All Cards' placeholder", () => {
+	renderControls({ showCardFilter: true });
+	expect(screen.getByText("All Cards")).toBeDefined();
 });
 
-test("selecting a species fires onChange with its dex number", async () => {
+test("a single selected id shows that card's label as the trigger", () => {
+	renderControls({
+		value: { ...defaultValue, ids: ["25"] },
+		showCardFilter: true,
+	});
+	const trigger = screen.getByRole("button", { name: /^Card:/ });
+	expect(trigger.textContent).toContain("Pikachu");
+});
+
+test("two selected ids show an 'N selected' summary", () => {
+	renderControls({
+		value: { ...defaultValue, ids: ["6", "25"] },
+		showCardFilter: true,
+	});
+	const trigger = screen.getByRole("button", { name: /^Card:/ });
+	expect(trigger.textContent).toContain("2 selected");
+});
+
+test("selecting a Pokémon emits its dex id (empty → one)", async () => {
 	const onChange = mock(() => {});
-	renderControls({ onChange, showPokemonFilter: true });
-	fireEvent.click(screen.getByRole("combobox", { name: "Pokémon" }));
-	fireEvent.click(await screen.findByRole("option", { name: "Charizard" }));
-	expect(onChange).toHaveBeenCalledWith({ pokemon: 6 });
+	renderControls({ onChange, showCardFilter: true });
+	openFilter(/^All Cards$/);
+	fireEvent.click(
+		await screen.findByRole("menuitemcheckbox", { name: "Charizard" }),
+	);
+	expect(onChange).toHaveBeenCalledWith({ ids: ["6"] });
 });
 
-test("clearing the species (All Pokémon sentinel) fires onChange with null", async () => {
+test("selecting a Trainer emits its name as the id (the dex/name mix)", async () => {
+	const onChange = mock(() => {});
+	renderControls({ onChange, showCardFilter: true });
+	openFilter(/^All Cards$/);
+	fireEvent.click(
+		await screen.findByRole("menuitemcheckbox", { name: "Barry" }),
+	);
+	expect(onChange).toHaveBeenCalledWith({ ids: ["Barry"] });
+});
+
+test("selecting a second card emits the full 2-element id array", async () => {
 	const onChange = mock(() => {});
 	renderControls({
-		value: { ...defaultValue, pokemon: 6 },
+		value: { ...defaultValue, ids: ["6"] },
 		onChange,
-		showPokemonFilter: true,
+		showCardFilter: true,
 	});
-	fireEvent.click(screen.getByRole("combobox", { name: "Pokémon" }));
-	fireEvent.click(await screen.findByRole("option", { name: "All Pokémon" }));
-	expect(onChange).toHaveBeenCalledWith({ pokemon: null });
+	openFilter(/^Card:/);
+	fireEvent.click(
+		await screen.findByRole("menuitemcheckbox", { name: "Pikachu" }),
+	);
+	expect(onChange).toHaveBeenCalledWith({ ids: ["6", "25"] });
 });
 
-test("selected species label reflects the prop value", () => {
+test("toggling an already-selected card removes its id from the array", async () => {
+	const onChange = mock(() => {});
 	renderControls({
-		value: { ...defaultValue, pokemon: 25 },
-		showPokemonFilter: true,
+		value: { ...defaultValue, ids: ["6", "25"] },
+		onChange,
+		showCardFilter: true,
 	});
-	expect(
-		screen.getByRole("combobox", { name: "Pokémon" }).textContent,
-	).toContain("Pikachu");
+	openFilter(/^Card:/);
+	fireEvent.click(
+		await screen.findByRole("menuitemcheckbox", { name: "Charizard" }),
+	);
+	expect(onChange).toHaveBeenCalledWith({ ids: ["25"] });
+});
+
+test("groups the card options by card type (Pokémon before Trainer) when mixed", async () => {
+	renderControls({ showCardFilter: true });
+	openFilter(/^All Cards$/);
+	const menu = await screen.findByRole("menu");
+	const text = menu.textContent ?? "";
+	expect(text).toContain("Pokémon");
+	expect(text).toContain("Trainer");
+	// Pokémon section (Charizard, Pikachu) renders before the Trainer section (Barry).
+	expect(text.indexOf("Pokémon")).toBeLessThan(text.indexOf("Trainer"));
+	expect(screen.getByRole("menuitemcheckbox", { name: "Barry" })).toBeDefined();
 });
 
 // ─── Search-mode menu (ButtonGroup-fused 3-mode picker) ───────────────────────
@@ -258,7 +306,8 @@ test("Energy Type filter is hidden when no energy types are in the facet (Traine
 			lockSupertype
 		/>,
 	);
-	// FilterSelect triggers expose their label as visible text, not an aria-label.
+	// An empty multi-select trigger shows its "All <label>" text, so a hidden
+	// Energy filter means no "Energy Types" text is present anywhere.
 	expect(screen.queryByText(/Energy Types/)).toBeNull();
 	// other filters still render
 	expect(screen.getByText(/Rarities/)).toBeDefined();
@@ -271,11 +320,127 @@ test("Energy Type filter is shown when energy types are present", () => {
 
 // ─── Grouped Subtypes facet ───────────────────────────────────────────────────
 
+// Radix DropdownMenu opens on pointerDown (not click) under happy-dom; the
+// multi-select filters render their values as role="menuitemcheckbox".
+function openFilter(name: RegExp) {
+	fireEvent.pointerDown(screen.getByRole("button", { name }), {
+		button: 0,
+		ctrlKey: false,
+	});
+}
+
 test("subtype facet renders grouped section headings", async () => {
 	renderControls({});
-	fireEvent.click(screen.getByRole("combobox", { name: /Subtypes/i }));
-	// SelectLabel headings are non-interactive text in the open listbox
+	openFilter(/Subtypes/i);
+	// DropdownMenuLabel headings are non-interactive text in the open menu
 	expect(await screen.findByText("Stage")).toBeDefined();
 	expect(screen.getByText("Pokémon Mechanic")).toBeDefined();
-	expect(screen.getByRole("option", { name: "All Subtypes" })).toBeDefined();
+	expect(screen.getByRole("menuitemcheckbox", { name: "GX" })).toBeDefined();
+});
+
+// ─── Multi-select filters (item #18) ──────────────────────────────────────────
+
+test("empty filter trigger shows the 'All <label>' placeholder", () => {
+	renderControls();
+	expect(screen.getByText("All Rarities")).toBeDefined();
+});
+
+test("single selected value shows that value as the trigger label", () => {
+	renderControls({ value: { ...defaultValue, rarity: ["Rare Holo"] } });
+	const trigger = screen.getByRole("button", { name: /Rarities/i });
+	expect(trigger.textContent).toContain("Rare Holo");
+});
+
+test("multiple selected values show an 'N selected' summary", () => {
+	renderControls({
+		value: { ...defaultValue, rarity: ["Common", "Rare Holo"] },
+	});
+	const trigger = screen.getByRole("button", { name: /Rarities/i });
+	expect(trigger.textContent).toContain("2 selected");
+});
+
+test("selecting a second value emits the full 2-element array (multi-select)", async () => {
+	const onChange = mock(() => {});
+	renderControls({ value: { ...defaultValue, rarity: ["Common"] }, onChange });
+	openFilter(/Rarities/i);
+	fireEvent.click(
+		await screen.findByRole("menuitemcheckbox", { name: "Rare Holo" }),
+	);
+	expect(onChange).toHaveBeenCalledWith({ rarity: ["Common", "Rare Holo"] });
+});
+
+test("toggling an already-selected value removes it from the array", async () => {
+	const onChange = mock(() => {});
+	renderControls({
+		value: { ...defaultValue, rarity: ["Common", "Rare Holo"] },
+		onChange,
+	});
+	openFilter(/Rarities/i);
+	fireEvent.click(
+		await screen.findByRole("menuitemcheckbox", { name: "Common" }),
+	);
+	expect(onChange).toHaveBeenCalledWith({ rarity: ["Rare Holo"] });
+});
+
+// ─── Clear all filters (item #17) ─────────────────────────────────────────────
+
+test("Clear filters button is hidden when no filters are active", () => {
+	renderControls();
+	expect(screen.queryByRole("button", { name: "Clear filters" })).toBeNull();
+});
+
+test("Clear filters button appears when a filter is active", () => {
+	renderControls({ value: { ...defaultValue, rarity: ["Rare Holo"] } });
+	expect(screen.getByRole("button", { name: "Clear filters" })).toBeDefined();
+});
+
+test("Clear filters resets every filter dimension in one patch", () => {
+	const onChange = mock(() => {});
+	renderControls({
+		value: {
+			...defaultValue,
+			supertype: ["Pokémon"],
+			subtypes: ["GX"],
+			rarity: ["Rare Holo"],
+			types: ["fire"],
+			owned: "owned",
+			ids: ["25"],
+			yearMin: 2020,
+			yearMax: 2023,
+		},
+		onChange,
+		showYearFilter: true,
+		showCardFilter: true,
+	});
+	fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+	expect(onChange).toHaveBeenCalledTimes(1);
+	expect(onChange).toHaveBeenCalledWith({
+		supertype: [],
+		subtypes: [],
+		rarity: [],
+		types: [],
+		owned: "all",
+		ids: [],
+		yearMin: null,
+		yearMax: null,
+	});
+});
+
+test("Clear filters does NOT touch q, search mode, or sort", () => {
+	const onChange = mock((_patch: Partial<ListSearch>) => {});
+	renderControls({
+		value: {
+			...defaultValue,
+			q: "pikachu",
+			mode: "exact",
+			sort: "name",
+			rarity: ["Rare Holo"],
+		},
+		onChange,
+	});
+	fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+	const patch = onChange.mock.calls[0][0];
+	expect(patch).not.toHaveProperty("q");
+	expect(patch).not.toHaveProperty("mode");
+	expect(patch).not.toHaveProperty("sort");
 });

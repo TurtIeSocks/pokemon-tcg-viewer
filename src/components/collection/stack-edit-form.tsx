@@ -431,7 +431,7 @@ export function StackEditForm({
 					<TextField
 						field={field}
 						label="Label"
-						placeholder="Name this stack (optional)"
+						placeholder="Name this card (optional)"
 					/>
 				)}
 			/>

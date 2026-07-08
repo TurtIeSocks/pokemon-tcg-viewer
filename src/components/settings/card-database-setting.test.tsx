@@ -13,21 +13,31 @@ afterEach(() => {
 	});
 });
 
-test("shows the download CTA when off", () => {
+test("shows a download-for-offline CTA when offline details are off", () => {
 	useDetailRuntime.setState({ status: "off", enabled: false });
 	render(<CardDatabaseSetting />);
-	expect(screen.getByText(/download/i)).toBeTruthy();
+	expect(
+		screen.getByRole("button", { name: /download for offline/i }),
+	).toBeTruthy();
 });
 
-test("shows saved + a re-sync/remove when ready", () => {
+test("always offers a Refresh action (the merged catalog + details refresh)", () => {
+	useDetailRuntime.setState({ status: "off", enabled: false });
+	render(<CardDatabaseSetting />);
+	expect(screen.getByRole("button", { name: /^refresh$/i })).toBeTruthy();
+});
+
+test("shows saved + a remove action when offline details are ready", () => {
 	useDetailRuntime.setState({ status: "ready", enabled: true, syncedAt: 1 });
 	render(<CardDatabaseSetting />);
-	expect(screen.getByText(/saved/i)).toBeTruthy();
-	expect(screen.getByText(/remove/i)).toBeTruthy();
+	expect(screen.getByText(/saved for offline/i)).toBeTruthy();
+	expect(
+		screen.getByRole("button", { name: /remove offline copy/i }),
+	).toBeTruthy();
 });
 
-test("shows update available when stale", () => {
+test("prompts a refresh when offline details are stale", () => {
 	useDetailRuntime.setState({ status: "stale", enabled: true });
 	render(<CardDatabaseSetting />);
-	expect(screen.getAllByText(/update|re-?sync/i).length).toBeGreaterThan(0);
+	expect(screen.getByText(/refresh to re-?sync/i)).toBeTruthy();
 });

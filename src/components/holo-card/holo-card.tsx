@@ -1,6 +1,7 @@
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { useUiPrefs } from "../../store/ui-prefs";
 import "./holo-card.css";
 import "./rarity-styles.css";
 import { cdnImage } from "./cdn-image";
@@ -72,6 +73,12 @@ export interface HoloCardProps {
 	variants?: string[];
 	cardNumber?: string;
 	owned?: boolean;
+	/**
+	 * Dim (grayscale) this card when it is NOT owned. Only collection views (the
+	 * missing-card grids) set this; browse grids stay full color so the catalog
+	 * doesn't render dark/muted when you own few of the cards on screen.
+	 */
+	dimUnowned?: boolean;
 	tilt?: boolean;
 	/**
 	 * Render this card's REVERSE HOLO printing — foil on the body, plain art
@@ -85,7 +92,14 @@ export interface HoloCardProps {
 	onClick?: (e: React.MouseEvent | React.KeyboardEvent) => void;
 	/** Fired on hover/focus — used to warm the card-detail fetch + focus image. */
 	onPrefetch?: () => void;
+	/** Legacy top-right hover slot (retained for grids not yet on the mini-nav). */
 	hoverOverlay?: React.ReactNode;
+	/**
+	 * Unified glass mini-nav bar (owned / expand / binder), rendered centered in
+	 * the card's lower third. Fades/scales in on hover, always shown on touch.
+	 * The consistent interaction surface replacing the old top-right pill.
+	 */
+	miniNav?: React.ReactNode;
 	size?: "grid" | "focus";
 
 	className?: string;
@@ -107,18 +121,26 @@ export function HoloCard({
 	variants,
 	cardNumber,
 	owned = false,
+	dimUnowned = false,
 	tilt = false,
 	reverse = false,
 	forceFoil = false,
 	onClick,
 	onPrefetch,
 	hoverOverlay,
+	miniNav,
 	size = "grid",
 	className,
 	style,
 }: HoloCardProps) {
-	const { ref } = useHoloEffect(forceFoil);
-	useTiltEffect({ ref, enabled: tilt });
+	// The pointer-tracking tilt + foil is gated behind the user's cardMotion pref
+	// (S3: a per-field primitive selector in the component that consumes it).
+	// prefers-reduced-motion further force-disables it inside the hook.
+	const cardMotion = useUiPrefs((s) => s.cardMotion);
+	const { ref } = useHoloEffect(forceFoil, cardMotion);
+	// Device-orientation tilt (mobile gyroscope) shares the cardMotion pref +
+	// reduced-motion guard so it honors the same "calmer, still view" setting.
+	useTiltEffect({ ref, enabled: tilt && cardMotion });
 	const holo = holoPresentation({
 		rarity,
 		series,
@@ -170,6 +192,10 @@ export function HoloCard({
 		...(types ?? []).map((t) => t.toLowerCase()),
 		foil.masked ? "masked" : null,
 		owned ? "holo-card--owned" : null,
+		dimUnowned ? "holo-card--dim-unowned" : null,
+		// Motion off → CSS drops the tilt/foil transitions and swaps in a plain
+		// hover lift (the effect hook is already inert; this styles the fallback).
+		cardMotion ? null : "holo-card--static",
 		className,
 	]
 		.filter(Boolean)
@@ -243,7 +269,7 @@ export function HoloCard({
 			className={classes}
 			style={{ ...foil.vars, ...style }}
 			role="button"
-			tabIndex={onClick || hoverOverlay ? 0 : -1}
+			tabIndex={onClick || hoverOverlay || miniNav ? 0 : -1}
 			onClick={onClick}
 			onPointerEnter={onPrefetch}
 			onFocus={onPrefetch}
@@ -282,6 +308,11 @@ export function HoloCard({
 							hdLoaded && "is-loaded",
 						)}
 						src={cdnImage(focusUrl as string, { w: 300 })}
+						// CORS mode so the SW browse-cache stores a non-opaque response
+						// (the wsrv.nl CDN sends access-control-allow-origin: *). Without
+						// it the request is no-cors, the cache put is skipped, and the
+						// image-cache counts stay at zero.
+						crossOrigin="anonymous"
 						alt=""
 						aria-hidden="true"
 					/>
@@ -298,6 +329,7 @@ export function HoloCard({
 								hdLoaded && "is-loaded",
 							)}
 							src={focusUrl}
+							crossOrigin="anonymous"
 							alt=""
 							loading="eager"
 							decoding="async"
@@ -321,6 +353,9 @@ export function HoloCard({
 					<img
 						className="holo-card-image"
 						src={gridUrl}
+						// CORS mode so the SW browse-cache can store a non-opaque
+						// response (see the focus branch above for the full rationale).
+						crossOrigin="anonymous"
 						alt=""
 						loading="lazy"
 						decoding="async"
@@ -352,19 +387,16 @@ export function HoloCard({
 			{/* Foil layer stack, 1:1 with simey's DOM: .card__shine → shine div
 			    (+ ::before/::after sub-layers), .card__glare → glare div
 			    (+ ::after). Real elements — CSS can't chain pseudo-elements, and
-			    the recipes need all five compositing layers. */}
-			<div className="holo-card-shine" aria-hidden="true" />
-			<div className="holo-card-glare" aria-hidden="true" />
-			<div className="holo-card-overlay">{hoverOverlay}</div>
-			{owned && (
-				<span
-					className="holo-card-owned-badge"
-					role="img"
-					aria-label="In your collection"
-				>
-					✓
-				</span>
+			    the recipes need all five compositing layers. Gated on hasImage so
+			    the foil never renders over the missing-image identity placeholder. */}
+			{hasImage && (
+				<>
+					<div className="holo-card-shine" aria-hidden="true" />
+					<div className="holo-card-glare" aria-hidden="true" />
+				</>
 			)}
+			<div className="holo-card-overlay">{hoverOverlay}</div>
+			{miniNav && <div className="holo-card-mininav">{miniNav}</div>}
 		</div>
 	);
 }

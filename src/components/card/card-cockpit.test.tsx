@@ -69,7 +69,7 @@ test("Collection tab shows the StackManager; details body hidden", async () => {
 	await renderInRouter(
 		<CardCockpit card={CARD} tab="collection" onTabChange={() => {}} />,
 	);
-	expect(screen.getByRole("button", { name: /add stack/i })).toBeDefined();
+	expect(screen.getByRole("button", { name: /add card/i })).toBeDefined();
 	// Attacks (the Details body) are not shown on the Collection tab.
 	expect(screen.queryByText("Fire Spin")).toBeNull();
 });

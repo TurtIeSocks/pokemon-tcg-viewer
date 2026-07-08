@@ -1,0 +1,31 @@
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { useUiPrefs } from "./ui-prefs";
+
+// ui-prefs is a persisted singleton; mutating it (esp. filtersOpen) leaks across
+// test FILES in the shared happy-dom process and collapses the filter panel in
+// later search/pokedex control tests. Reset to defaults before AND after each
+// test so this file never pollutes another.
+const resetPrefs = () =>
+	useUiPrefs.setState({ filtersOpen: null, cardMotion: true });
+
+describe("ui-prefs cardMotion", () => {
+	beforeEach(resetPrefs);
+	afterEach(resetPrefs);
+
+	test("defaults to true (motion on)", () => {
+		expect(useUiPrefs.getState().cardMotion).toBe(true);
+	});
+
+	test("setCardMotion flips the pref both ways", () => {
+		useUiPrefs.getState().setCardMotion(false);
+		expect(useUiPrefs.getState().cardMotion).toBe(false);
+		useUiPrefs.getState().setCardMotion(true);
+		expect(useUiPrefs.getState().cardMotion).toBe(true);
+	});
+
+	test("leaves filtersOpen untouched when toggling card motion", () => {
+		useUiPrefs.setState({ filtersOpen: false });
+		useUiPrefs.getState().setCardMotion(false);
+		expect(useUiPrefs.getState().filtersOpen).toBe(false);
+	});
+});

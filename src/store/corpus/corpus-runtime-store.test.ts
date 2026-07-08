@@ -75,6 +75,30 @@ test("back-compat setState({ index }) shim writes through to indices.west", () =
 	expect(useCorpusRuntime.getState().index).toBe(west);
 });
 
+test("reset clears indices + loading so loadCorpus refetches (keeps activeRegion)", () => {
+	const west = fakeIndex("west-1");
+	const asia = fakeIndex("asia-1");
+	useCorpusRuntime.getState().setIndex("west", west);
+	useCorpusRuntime.getState().setIndex("asia", asia);
+	useCorpusRuntime.getState().setActiveRegion("asia");
+	useCorpusRuntime.getState().setLoading("west", true);
+
+	useCorpusRuntime.getState().reset();
+
+	// Every region's index is gone. loadCorpus early-returns while
+	// indices[region] is populated (corpus-runtime.ts:68), so an empty map is
+	// exactly what lets the next loadCorpus(region) refetch.
+	expect(useCorpusRuntime.getState().indices).toEqual({});
+	expect(useCorpusRuntime.getState().indices.west).toBeUndefined();
+	expect(useCorpusRuntime.getState().indices.asia).toBeUndefined();
+	// Derived back-compat `index` follows the now-empty map.
+	expect(useCorpusRuntime.getState().index).toBeNull();
+	// Region "in flight" flags cleared too.
+	expect(useCorpusRuntime.getState().loading).toEqual({});
+	// activeRegion preserved so the refetch targets the current catalog.
+	expect(useCorpusRuntime.getState().activeRegion).toBe("asia");
+});
+
 test("setLoading sets a single region's flag without touching others", () => {
 	useCorpusRuntime.getState().setLoading("asia", true);
 	expect(useCorpusRuntime.getState().loading.asia).toBe(true);

@@ -5,7 +5,11 @@ const HIRES_CAP = 100;
 let thumbCap = 2000; // set by the page via postMessage; default until told
 
 self.addEventListener("message", (e) => {
-	if (e.data && e.data.type === "setThumbCap" && typeof e.data.cap === "number") {
+	if (
+		e.data &&
+		e.data.type === "setThumbCap" &&
+		typeof e.data.cap === "number"
+	) {
 		thumbCap = e.data.cap;
 	}
 });
@@ -24,7 +28,14 @@ self.addEventListener("fetch", (e) => {
 			const cache = await caches.open(name);
 			const hit = await cache.match(e.request);
 			if (hit) return hit;
-			const res = await fetch(e.request);
+			// Fetch in CORS mode so the response is NON-opaque: res.ok is readable
+			// (true), the body is cacheable, and content-length is present so the
+			// settings image-cache byte count is accurate. The wsrv.nl CDN sends
+			// access-control-allow-origin: *, so this succeeds. A plain
+			// fetch(e.request) of a no-cors <img> request yields an opaque response
+			// (status 0, res.ok false), which skips the cache.put — the bug that
+			// kept the cache empty and the counts at zero.
+			const res = await fetch(url.href, { mode: "cors" });
 			if (res.ok) {
 				await cache.put(e.request, res.clone());
 				const keys = await cache.keys();

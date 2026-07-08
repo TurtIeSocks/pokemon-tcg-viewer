@@ -33,7 +33,8 @@ describe("deriveFacets", () => {
 			}),
 		]);
 		expect(f.supertypes).toEqual(["Pokémon", "Trainer"]);
-		expect(f.rarities).toEqual(["Rare", "Uncommon"]);
+		// Rarities are ordered by level (Uncommon < Rare), not alphabetically.
+		expect(f.rarities).toEqual(["Uncommon", "Rare"]);
 		expect(f.subtypes).toEqual(["Item", "Stage 2", "VSTAR"]);
 		expect(f.types).toEqual(["Fire", "Water"]);
 	});
@@ -45,11 +46,11 @@ describe("deriveFacets", () => {
 	});
 });
 
-describe("deriveFacets pokemon", () => {
+describe("deriveFacets ids", () => {
 	const dexName = (n: number): string | null =>
 		({ 6: "charizard", 25: "pikachu", 112: "rhydon" })[n] ?? null;
 
-	test("distinct species from cards, alphabetized, labeled via resolver", () => {
+	test("Pokémon key by dex id (string), labeled via resolver, alphabetized", () => {
 		const f = deriveFacets(
 			[
 				c({ name: "Brock's Rhydon", nationalPokedexNumbers: [112] }),
@@ -58,36 +59,43 @@ describe("deriveFacets pokemon", () => {
 			],
 			dexName,
 		);
-		expect(f.pokemon).toEqual([
-			{ dex: 6, name: "Charizard" },
-			{ dex: 112, name: "Rhydon" },
+		expect(f.ids).toEqual([
+			{ id: "6", label: "Charizard", group: "Pokémon" },
+			{ id: "112", label: "Rhydon", group: "Pokémon" },
 		]);
 	});
 
-	test("cards without a dex contribute no species option", () => {
+	test("cards without a dex (Trainers) key by name — a mix of dex + names, grouped by supertype", () => {
 		const f = deriveFacets(
-			[c({ name: "Potion", supertype: "Trainer" })],
+			[
+				c({ name: "Charizard", nationalPokedexNumbers: [6] }),
+				c({ name: "Acerola", supertype: "Trainer" }),
+				c({ name: "Barry", supertype: "Trainer" }),
+			],
 			dexName,
 		);
-		expect(f.pokemon).toEqual([]);
+		expect(f.ids).toEqual([
+			{ id: "Acerola", label: "Acerola", group: "Trainer" },
+			{ id: "Barry", label: "Barry", group: "Trainer" },
+			{ id: "6", label: "Charizard", group: "Pokémon" },
+		]);
 	});
 
-	test("multi-dex card contributes an option per species", () => {
+	test("multi-dex card contributes an id per species", () => {
 		const f = deriveFacets(
 			[c({ name: "Pikachu & Zekrom", nationalPokedexNumbers: [25, 644] })],
 			dexName,
 		);
-		expect(f.pokemon.map((p) => p.dex).sort((a, b) => a - b)).toEqual([
-			25, 644,
-		]);
-		expect(f.pokemon.find((p) => p.dex === 25)?.name).toBe("Pikachu");
-		expect(f.pokemon.find((p) => p.dex === 644)?.name).toBe("#644");
+		expect(f.ids.map((o) => o.id).sort()).toEqual(["25", "644"]);
+		expect(f.ids.find((o) => o.id === "25")?.label).toBe("Pikachu");
+		// No resolver entry for 644 → falls back to the card name.
+		expect(f.ids.find((o) => o.id === "644")?.label).toBe("Pikachu & Zekrom");
 	});
 
-	test("no resolver → #<dex> labels", () => {
+	test("no resolver → card-name label fallback for a dex id", () => {
 		const f = deriveFacets([
 			c({ name: "Rhydon", nationalPokedexNumbers: [112] }),
 		]);
-		expect(f.pokemon).toEqual([{ dex: 112, name: "#112" }]);
+		expect(f.ids).toEqual([{ id: "112", label: "Rhydon", group: "Pokémon" }]);
 	});
 });

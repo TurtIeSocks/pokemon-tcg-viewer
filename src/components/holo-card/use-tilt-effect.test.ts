@@ -1,5 +1,16 @@
 import { describe, expect, test } from "bun:test";
-import { computeTiltVars, TILT_MAX_DEG } from "./use-tilt-effect";
+import {
+	computeTiltVars,
+	ensureTiltPermission,
+	TILT_MAX_DEG,
+} from "./use-tilt-effect";
+
+describe("ensureTiltPermission", () => {
+	test("is a safe no-op where DeviceOrientationEvent.requestPermission is absent", () => {
+		// Non-iOS / desktop / test env: no requestPermission API. Must not throw.
+		expect(() => ensureTiltPermission()).not.toThrow();
+	});
+});
 
 describe("computeTiltVars", () => {
 	test("returns centered (50, 50) when reading equals neutral", () => {

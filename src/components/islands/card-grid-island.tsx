@@ -25,8 +25,8 @@ import {
 } from "../../store/corpus/i18n-active-hooks";
 import { setsForRegion } from "../../store/sets-slice";
 import { useOwnedCardIdSet } from "../../store/userland/selectors";
-import { CollectionToggle } from "../collection-toggle";
 import { cardThumbSrc, type HoloCardData, holoCardProps } from "../holo-card";
+import { CardMiniNav } from "../holo-card/card-mini-nav";
 import { useCardSelection } from "./card-selection";
 import { FlipCard } from "./flip-card";
 import { HoloCardIsland } from "./holo-card-island";
@@ -44,6 +44,8 @@ interface CardGridIslandProps {
 	seedTotal: number;
 	/** Build the card-route link props for a card (per-page slug scheme). */
 	cardHref: (card: HoloCardData) => LinkProps;
+	/** Lifts the live (filtered) total up to the parent's results-bar count. */
+	onTotalChange?: (total: number) => void;
 }
 
 const PAGE = 40;
@@ -54,6 +56,7 @@ export function CardGridIsland({
 	seedCards,
 	seedTotal,
 	cardHref,
+	onTotalChange,
 }: CardGridIslandProps) {
 	const corpusReady = useCorpusRuntime((s) => s.index !== null);
 	const activeRegion = useCorpusRuntime((s) => s.activeRegion);
@@ -72,6 +75,15 @@ export function CardGridIsland({
 	const [total, setTotal] = useState(seedTotal);
 	const pageRef = useRef(1);
 	const loadingMoreRef = useRef(false);
+
+	// Lift the live (filtered) total to the parent's results-bar count. A ref keeps
+	// an inline callback from re-running the effect; fires on mount (seedTotal) and
+	// whenever a (re)query updates the total.
+	const onTotalChangeRef = useRef(onTotalChange);
+	onTotalChangeRef.current = onTotalChange;
+	useEffect(() => {
+		onTotalChangeRef.current?.(total);
+	}, [total]);
 
 	const slugIndex = useSlugIndex();
 	const ownedCardIds = useOwnedCardIdSet();
@@ -186,10 +198,9 @@ export function CardGridIsland({
 			<FlipCard imageUrl={cardThumbSrc(card)}>
 				<HoloCardIsland
 					{...holoCardProps(card)}
+					owned={ownedCardIds.has(card.id)}
 					onPrefetch={onPrefetch}
-					hoverOverlay={
-						selectActive ? undefined : <CollectionToggle card={card} />
-					}
+					miniNav={selectActive ? undefined : <CardMiniNav card={card} />}
 				/>
 				{selectActive && (
 					<div

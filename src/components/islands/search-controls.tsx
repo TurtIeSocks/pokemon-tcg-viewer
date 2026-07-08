@@ -1,22 +1,29 @@
-import { ChevronDown, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, FilterX, SlidersHorizontal } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+	DropdownMenu,
+	DropdownMenuCheckboxItem,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuLabel,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
-	SelectGroup,
 	SelectItem,
-	SelectLabel,
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { PokemonFacet, SetFacets } from "@/server/set-facets";
+import type { IdFacet, SetFacets } from "@/server/set-facets";
 import { useUiPrefs } from "@/store/ui-prefs";
 import type { ListSearch, OwnedMode } from "../../lib/card-query";
 import { SearchModeMenu } from "./search-mode-menu";
@@ -43,15 +50,17 @@ interface SearchControlsProps {
 	placeholder?: string;
 	/** When true, renders the Release-year From/To inputs. Defaults to false. */
 	showYearFilter?: boolean;
-	/** When true, renders the Pokémon (species) filter select. Defaults to false. */
-	showPokemonFilter?: boolean;
+	/** When true, renders the card "name" filter (Pokémon + Trainers). Defaults to false. */
+	showCardFilter?: boolean;
 	/** When true, hides the Card Type (supertype) dropdown — the page locks it. */
 	lockSupertype?: boolean;
 }
 
-// A single-select that maps to a string[] param (one active value at a time —
-// matches the main filter UX; multi was never exposed). "" clears the dimension.
-function FilterSelect({
+// A real MULTI-select over a string[] param: a DropdownMenu of checkbox items,
+// each toggling its value in/out of the array (the full updated array is emitted).
+// The trigger reads "All <label>" when empty, the single value when one is picked,
+// and an "N selected" summary beyond that. Grouped rendering (Subtypes) is kept.
+function FilterMultiSelect({
 	label,
 	value,
 	options,
@@ -64,37 +73,63 @@ function FilterSelect({
 	onChange: (v: string[]) => void;
 	grouped?: boolean;
 }) {
-	// Radix Select forbids an empty-string item value, so use a sentinel for "clear".
-	const ALL = "__all__";
+	const selected = new Set(value);
+	// Toggle keeps the caller's option order stable (append on add, filter on remove).
+	const toggle = (o: string) =>
+		onChange(selected.has(o) ? value.filter((v) => v !== o) : [...value, o]);
+
+	const summary =
+		value.length === 0
+			? `All ${label}`
+			: value.length === 1
+				? value[0]
+				: `${value.length} selected`;
+	// Accessible name always carries the dimension label so it's queryable/announced
+	// regardless of the current selection state (empty summary already includes it).
+	const ariaLabel = value.length === 0 ? summary : `${label}: ${summary}`;
+
 	const groups = grouped ? groupSubtypes(options) : null;
-	return (
-		<Select
-			value={value[0] ?? ALL}
-			onValueChange={(v) => onChange(v === ALL ? [] : [v])}
+	const renderItem = (o: string) => (
+		<DropdownMenuCheckboxItem
+			key={o}
+			checked={selected.has(o)}
+			// Keep the menu open across toggles so several values can be picked at once.
+			onSelect={(e) => e.preventDefault()}
+			onCheckedChange={() => toggle(o)}
 		>
-			<SelectTrigger className="text-sm w-full" aria-label={label}>
-				<SelectValue placeholder={label} />
-			</SelectTrigger>
-			<SelectContent>
-				<SelectItem value={ALL}>{`All ${label}`}</SelectItem>
+			{o}
+		</DropdownMenuCheckboxItem>
+	);
+
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Button
+					type="button"
+					variant="outline"
+					aria-label={ariaLabel}
+					className="w-full justify-between rounded-[var(--r-control)] border-[var(--border)] bg-white/[0.04] px-3 font-normal text-[var(--ink)] hover:bg-white/[0.07]"
+				>
+					<span className="truncate">{summary}</span>
+					<ChevronDown className="size-4 shrink-0 opacity-50" />
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent
+				align="start"
+				className="max-h-72 w-(--radix-dropdown-menu-trigger-width) min-w-40"
+			>
 				{groups
 					? groups.map((g) => (
-							<SelectGroup key={g.label}>
-								<SelectLabel>{g.label}</SelectLabel>
-								{g.items.map((o) => (
-									<SelectItem key={o} value={o}>
-										{o}
-									</SelectItem>
-								))}
-							</SelectGroup>
+							<DropdownMenuGroup key={g.label}>
+								<DropdownMenuLabel className="text-xs text-[var(--ink-muted)]">
+									{g.label}
+								</DropdownMenuLabel>
+								{g.items.map(renderItem)}
+							</DropdownMenuGroup>
 						))
-					: options.map((o) => (
-							<SelectItem key={o} value={o}>
-								{o}
-							</SelectItem>
-						))}
-			</SelectContent>
-		</Select>
+					: options.map(renderItem)}
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }
 
@@ -132,36 +167,104 @@ function YearSelect({
 	);
 }
 
-// Single-select species filter. Value is a national dex number; the "__all__"
-// sentinel clears it (Radix Select forbids an empty-string item value). Options
-// are the species present in the current cards, labeled + sorted upstream.
-function PokemonFilterSelect({
+// Card-type group order for the card filter's sections; unknown groups sort last.
+const CARD_GROUP_ORDER = ["Pokémon", "Trainer", "Energy"];
+
+/** Bucket card-filter options by their supertype, in Pokémon→Trainer→Energy order. */
+function groupCardIds(
+	options: IdFacet[],
+): { label: string; items: IdFacet[] }[] {
+	const byGroup = new Map<string, IdFacet[]>();
+	for (const o of options) {
+		const arr = byGroup.get(o.group);
+		if (arr) arr.push(o);
+		else byGroup.set(o.group, [o]);
+	}
+	const rank = (g: string) => {
+		const i = CARD_GROUP_ORDER.indexOf(g);
+		return i === -1 ? CARD_GROUP_ORDER.length : i;
+	};
+	return [...byGroup.entries()]
+		.sort((a, b) => rank(a[0]) - rank(b[0]) || a[0].localeCompare(b[0]))
+		.map(([label, items]) => ({ label, items }));
+}
+
+// A MULTI-select over the card "name" facet (IdFacet): Pokémon keyed by dex id,
+// Trainers/Energy by name, over a string[] value. A DropdownMenu of checkbox items
+// toggling each id in/out of the array, grouped by card type (Pokémon / Trainer /
+// Energy) when more than one type is present. The trigger reads "All Cards" (none),
+// the single option label (one), or an "N selected" summary (more); the accessible
+// name always carries the "Card" dimension label.
+function CardMultiSelect({
 	value,
 	options,
 	onChange,
 }: {
-	value: number | null;
-	options: PokemonFacet[];
-	onChange: (v: number | null) => void;
+	value: string[];
+	options: IdFacet[];
+	onChange: (v: string[]) => void;
 }) {
-	const ALL = "__all__";
-	return (
-		<Select
-			value={value != null ? String(value) : ALL}
-			onValueChange={(v) => onChange(v === ALL ? null : Number(v))}
+	const selected = new Set(value);
+	// Toggle keeps the caller's selection order stable (append on add, filter on remove).
+	const toggle = (id: string) =>
+		onChange(selected.has(id) ? value.filter((v) => v !== id) : [...value, id]);
+
+	const labelById = new Map(options.map((o) => [o.id, o.label]));
+	const summary =
+		value.length === 0
+			? "All Cards"
+			: value.length === 1
+				? (labelById.get(value[0]) ?? value[0])
+				: `${value.length} selected`;
+	// Accessible name always carries the dimension label (the empty summary already
+	// includes it), so the control is queryable/announced regardless of selection.
+	const ariaLabel = value.length === 0 ? summary : `Card: ${summary}`;
+
+	const renderItem = (o: IdFacet) => (
+		<DropdownMenuCheckboxItem
+			key={o.id}
+			checked={selected.has(o.id)}
+			// Keep the menu open across toggles so several cards can be picked at once.
+			onSelect={(e) => e.preventDefault()}
+			onCheckedChange={() => toggle(o.id)}
 		>
-			<SelectTrigger className="text-sm w-full" aria-label="Pokémon">
-				<SelectValue placeholder="Pokémon" />
-			</SelectTrigger>
-			<SelectContent>
-				<SelectItem value={ALL}>All Pokémon</SelectItem>
-				{options.map((p) => (
-					<SelectItem key={p.dex} value={String(p.dex)}>
-						{p.name}
-					</SelectItem>
-				))}
-			</SelectContent>
-		</Select>
+			{o.label}
+		</DropdownMenuCheckboxItem>
+	);
+
+	// Group by card type only when the page mixes types (a supertype-locked page —
+	// /trainer, /energy — is one group, so render it flat, no redundant heading).
+	const groups = groupCardIds(options);
+
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Button
+					type="button"
+					variant="outline"
+					aria-label={ariaLabel}
+					className="w-full justify-between rounded-[var(--r-control)] border-[var(--border)] bg-white/[0.04] px-3 font-normal text-[var(--ink)] hover:bg-white/[0.07]"
+				>
+					<span className="truncate">{summary}</span>
+					<ChevronDown className="size-4 shrink-0 opacity-50" />
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent
+				align="start"
+				className="max-h-72 w-(--radix-dropdown-menu-trigger-width) min-w-40"
+			>
+				{groups.length > 1
+					? groups.map((g) => (
+							<DropdownMenuGroup key={g.label}>
+								<DropdownMenuLabel className="text-xs text-[var(--ink-muted)]">
+									{g.label}
+								</DropdownMenuLabel>
+								{g.items.map(renderItem)}
+							</DropdownMenuGroup>
+						))
+					: options.map(renderItem)}
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }
 
@@ -171,7 +274,7 @@ export function SearchControls({
 	onChange,
 	placeholder = "Search cards by name",
 	showYearFilter = false,
-	showPokemonFilter = false,
+	showCardFilter = false,
 	lockSupertype = false,
 }: SearchControlsProps) {
 	// Count of active filter dimensions (q lives in the always-visible search box,
@@ -184,9 +287,24 @@ export function SearchControls({
 		value.rarity.length +
 		value.types.length +
 		(value.owned !== "all" ? 1 : 0) +
-		(showPokemonFilter && value.pokemon != null ? 1 : 0) +
+		(showCardFilter ? value.ids.length : 0) +
 		(showYearFilter && value.yearMin != null ? 1 : 0) +
 		(showYearFilter && value.yearMax != null ? 1 : 0);
+
+	// Reset every filter dimension to its default in ONE patch (applied immediately,
+	// not debounced — the search route only debounces a lone `q` change). Leaves the
+	// search text, search mode, and sort untouched.
+	const clearFilters = () =>
+		onChange({
+			supertype: [],
+			subtypes: [],
+			rarity: [],
+			types: [],
+			owned: "all",
+			ids: [],
+			yearMin: null,
+			yearMax: null,
+		});
 
 	// Collapsed by default on mobile (where the filter grid eats vertical space),
 	// expanded on desktop. `useIsMobile` is SSR-safe (server snapshot = desktop).
@@ -207,7 +325,7 @@ export function SearchControls({
 		3 +
 		(lockSupertype ? 0 : 1) +
 		(showEnergyType ? 1 : 0) +
-		(showPokemonFilter ? 1 : 0);
+		(showCardFilter ? 1 : 0);
 	const gridColsClass = {
 		3: "sm:grid-cols-3",
 		4: "sm:grid-cols-4",
@@ -238,6 +356,20 @@ export function SearchControls({
 						onChange={(mode) => onChange({ mode })}
 					/>
 				)}
+				{/* Reset all filters. Shown only when something is filtered so the bar
+				    stays clean otherwise; sits before the toggle so the toggle keeps the
+				    group's right rounding (rounded-r). */}
+				{activeFilters > 0 && (
+					<button
+						type="button"
+						aria-label="Clear filters"
+						title="Clear filters"
+						onClick={clearFilters}
+						className="flex items-center border border-[var(--border)] bg-[var(--glass)] px-3 text-sm text-[var(--ink-muted)] cursor-pointer transition-colors hover:text-[var(--ink)] outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-[var(--primary)] [&_svg]:pointer-events-none"
+					>
+						<FilterX className="size-4" />
+					</button>
+				)}
 				<CollapsibleTrigger
 					aria-label="Toggle filters"
 					className="group flex items-center gap-1.5 rounded-r-[var(--r-control)] border border-[var(--border)] bg-[var(--glass)] px-3 text-sm text-[var(--ink-muted)] cursor-pointer transition-colors hover:text-[var(--ink)] outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-[var(--primary)] [&_svg]:pointer-events-none"
@@ -267,39 +399,39 @@ export function SearchControls({
 					)}
 					<div className={`grid grid-cols-2 gap-2 ${gridColsClass}`}>
 						{!lockSupertype && (
-							<FilterSelect
+							<FilterMultiSelect
 								label="Card Types"
 								value={value.supertype}
 								options={options.supertypes}
 								onChange={(v) => onChange({ supertype: v })}
 							/>
 						)}
-						<FilterSelect
+						<FilterMultiSelect
 							label="Subtypes"
 							grouped
 							value={value.subtypes}
 							options={options.subtypes}
 							onChange={(v) => onChange({ subtypes: v })}
 						/>
-						<FilterSelect
+						<FilterMultiSelect
 							label="Rarities"
 							value={value.rarity}
 							options={options.rarities}
 							onChange={(v) => onChange({ rarity: v })}
 						/>
 						{showEnergyType && (
-							<FilterSelect
+							<FilterMultiSelect
 								label="Energy Types"
 								value={value.types}
 								options={options.types}
 								onChange={(v) => onChange({ types: v })}
 							/>
 						)}
-						{showPokemonFilter && (
-							<PokemonFilterSelect
-								value={value.pokemon}
-								options={options.pokemon}
-								onChange={(pokemon) => onChange({ pokemon })}
+						{showCardFilter && (
+							<CardMultiSelect
+								value={value.ids}
+								options={options.ids}
+								onChange={(ids) => onChange({ ids })}
 							/>
 						)}
 						<Select
@@ -310,7 +442,7 @@ export function SearchControls({
 								<SelectValue placeholder="Collection" />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="all">All cards</SelectItem>
+								<SelectItem value="all">Any</SelectItem>
 								<SelectItem value="owned">Owned</SelectItem>
 								<SelectItem value="missing">Missing</SelectItem>
 							</SelectContent>

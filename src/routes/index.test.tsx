@@ -4,8 +4,9 @@ import {
 	createRouter,
 	RouterProvider,
 } from "@tanstack/react-router";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { NavTree } from "../lib/nav-tree";
+import { useCommandPalette } from "../store/command-palette";
 import { buildIndex } from "../store/corpus/corpus-engine";
 import { useCorpusRuntime } from "../store/corpus/corpus-runtime";
 import { HomeHero } from "./index";
@@ -30,11 +31,9 @@ const TREE: NavTree = [
 	},
 ];
 
-// Pre-seed an empty corpus so HomeBrowse's loadCorpus() early-returns (no
-// network); reset after so the singleton doesn't leak to other test files.
-afterEach(() => useCorpusRuntime.setState({ index: null }));
-
-test("HomeHero renders the title and a search input", async () => {
+async function renderHome() {
+	// Pre-seed an empty corpus so HomeBrowse's loadCorpus() early-returns (no
+	// network); the singleton is reset in afterEach so it doesn't leak.
 	useCorpusRuntime.setState({ index: buildIndex([]) });
 	const rootRoute = createRootRoute({
 		loader: () => TREE,
@@ -42,12 +41,49 @@ test("HomeHero renders the title and a search input", async () => {
 	});
 	const router = createRouter({ routeTree: rootRoute });
 	await router.load();
-	render(<RouterProvider router={router} />);
+	return render(<RouterProvider router={router} />);
+}
 
+afterEach(() => {
+	useCorpusRuntime.setState({ index: null });
+	useCommandPalette.setState({ open: false });
+});
+
+test("HomeHero renders the Cardstack title", async () => {
+	await renderHome();
 	expect(screen.getByRole("heading", { level: 1 }).textContent).toContain(
 		"Cardstack",
 	);
-	expect(
-		screen.getByRole("searchbox", { name: /search any card/i }),
-	).toBeDefined();
+});
+
+test("the old search-bar form and quick-search input are gone", async () => {
+	const { container } = await renderHome();
+	// The launch pad replaces the pill search bar — no <form>, no searchbox.
+	expect(container.querySelector("form")).toBeNull();
+	expect(screen.queryByRole("searchbox")).toBeNull();
+});
+
+test("the Search launch card opens the command palette", async () => {
+	await renderHome();
+	expect(useCommandPalette.getState().open).toBe(false);
+	// The Search card is a button; its accessible name folds in the subtitle.
+	fireEvent.click(screen.getByRole("button", { name: /find any card/i }));
+	expect(useCommandPalette.getState().open).toBe(true);
+});
+
+test("the hero shows the catalog stat line (moved out of the browse body)", async () => {
+	await renderHome();
+	// TREE has one series with one set -> 1 set, 1 era; plus the free promise.
+	expect(screen.getByText(/1 sets/)).toBeTruthy();
+	expect(screen.getByText(/1 eras/)).toBeTruthy();
+	expect(screen.getByText(/always free/)).toBeTruthy();
+});
+
+test("the card-type launch cards link to /pokemon, /trainer, and /energy", async () => {
+	const { container } = await renderHome();
+	expect(container.querySelector('a[href^="/pokemon"]')).toBeTruthy();
+	expect(container.querySelector('a[href^="/trainer"]')).toBeTruthy();
+	expect(container.querySelector('a[href^="/energy"]')).toBeTruthy();
+	// ...and a Vault card links to the collection hub.
+	expect(container.querySelector('a[href^="/vault"]')).toBeTruthy();
 });

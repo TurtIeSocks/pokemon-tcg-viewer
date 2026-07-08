@@ -1,11 +1,5 @@
-import { useRouter } from "@tanstack/react-router";
-import { cardManageLinkPropsFor, cardRouteParams } from "../../lib/card-route";
-import { faceLanguageFor } from "../../lib/languages";
-import { useSlugIndex } from "../../store/corpus/corpus-runtime";
-import { useDisplayLanguage } from "../../store/corpus/i18n-active-hooks";
-import { useIsOwned, useOwnedCount } from "../../store/userland/selectors";
-import { addStack } from "../../store/userland/userland-store";
 import type { HoloCardData } from "../holo-card";
+import { useCollectionToggle } from "./use-collection-toggle";
 
 interface CollectionToggleProps {
 	card: HoloCardData;
@@ -25,33 +19,16 @@ const UNOWNED_CLASSES =
 	"bg-[rgba(0,0,0,0.6)] border-[rgba(255,255,255,0.3)] hover:bg-[rgba(0,0,0,0.85)] focus-visible:bg-[rgba(0,0,0,0.85)]";
 
 export function CollectionToggle({ card }: CollectionToggleProps) {
-	const owned = useIsOwned(card.id);
-	const count = useOwnedCount(card.id);
-	const router = useRouter();
-	const slugIndex = useSlugIndex();
-	const displayLanguage = useDisplayLanguage();
-	// A Japanese-lineage card has no English face (and vice versa) -- resolve
-	// the link's language by the card's region, not blindly by the active
-	// display language, so an owned asia card opens in its own face.
-	const linkLanguage = faceLanguageFor(card, displayLanguage);
+	const { owned, count, activate } = useCollectionToggle(card);
 
 	if (owned) {
-		const p = slugIndex ? cardRouteParams(slugIndex, card) : null;
-
 		return (
 			<button
 				type="button"
 				className={`${BASE_CLASSES} ${OWNED_CLASSES}`}
 				aria-label={`Manage stacks of ${card.name}`}
 				aria-pressed={true}
-				onClick={(e) => {
-					e.preventDefault();
-					if (p) {
-						void router.navigate({
-							...cardManageLinkPropsFor(p, linkLanguage),
-						});
-					}
-				}}
+				onClick={activate}
 			>
 				✓{count}
 			</button>
@@ -64,10 +41,7 @@ export function CollectionToggle({ card }: CollectionToggleProps) {
 			className={`${BASE_CLASSES} ${UNOWNED_CLASSES}`}
 			aria-label={`Add ${card.name} to Vault`}
 			aria-pressed={false}
-			onClick={(e) => {
-				e.preventDefault();
-				void addStack(card.id);
-			}}
+			onClick={activate}
 		>
 			+
 		</button>

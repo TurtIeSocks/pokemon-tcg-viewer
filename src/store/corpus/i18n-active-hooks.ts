@@ -6,6 +6,7 @@ import {
 	type SupportedLanguage,
 	toSupportedLanguage,
 } from "../../lib/languages";
+import { writeLangCookie } from "../../lib/loader-region";
 import { useStore } from "../index";
 import { loadUserland, useUserland } from "../userland/userland-store";
 import type { I18nOverlay } from "./corpus-engine";
@@ -100,6 +101,10 @@ export function useEnsureI18n(): void {
 		typeof urlLang === "string" && isSupportedLanguage(urlLang)
 			? urlLang
 			: profileLang;
+	// Narrow primitive subscription (S3): the RAW saved language, undefined until
+	// the profile hydrates, so we can distinguish "not loaded yet" from a real
+	// value and avoid clobbering the cookie with a premature "en".
+	const savedLang = useUserland((s) => s.profile?.displayLanguage);
 	// Hydrate the profile so the persisted displayLanguage drives this hook on
 	// boot. On a non-vault catalog page nothing else triggers loadUserland, so
 	// without this the profile stays null → useDisplayLanguage falls back to "en"
@@ -109,6 +114,14 @@ export function useEnsureI18n(): void {
 	useEffect(() => {
 		void loadUserland();
 	}, []);
+	// Mirror the persisted display language into the locale cookie once the profile
+	// loads, so existing users (who chose their language before the cookie existed)
+	// get one, and a cold SSR load can pick the catalog region before this client
+	// store hydrates. Synced from the PROFILE language, not the URL `?lang` (which
+	// is a shareable per-link override, not the saved preference).
+	useEffect(() => {
+		if (savedLang) writeLangCookie(savedLang);
+	}, [savedLang]);
 	useEffect(() => {
 		void loadI18n(lang);
 		// Activate the base corpus region the language belongs to. loadCorpus and

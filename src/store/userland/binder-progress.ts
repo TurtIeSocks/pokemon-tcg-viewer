@@ -15,7 +15,8 @@ export function toCorpusQuery(q: SerializedQuery): CorpusQuery {
 	return {
 		query: q.text ?? undefined,
 		setId: q.setId ?? undefined,
-		dexNumber: q.dexNumber ?? undefined,
+		// A rule stores a single dex; the engine takes a species array (OR-matched).
+		dexNumbers: q.dexNumber != null ? [q.dexNumber] : undefined,
 		filters: {
 			types: q.types,
 			rarities: q.rarities,

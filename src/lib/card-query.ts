@@ -9,14 +9,21 @@ export type OwnedMode = "all" | "owned" | "missing";
 
 // NOTE: this union must stay in sync with the inline `sort` union on CorpusQuery
 // in src/store/corpus/corpus-engine.ts (kept inline there to avoid a type cycle).
-export type CardSortMode = "default" | "dex" | "number" | "name" | "released";
+export type CardSortMode =
+	| "default"
+	| "dex"
+	| "number"
+	| "name"
+	| "rarity"
+	| "released";
 
 /** Sort modes offered by the card pages' SortControl. */
 export const CARD_SORT_OPTIONS: SortOption<CardSortMode>[] = [
-	{ value: "default", label: "Default" },
+	{ value: "default", label: "Recommended" },
 	{ value: "dex", label: "Dex #" },
 	{ value: "number", label: "Card #" },
 	{ value: "name", label: "Name" },
+	{ value: "rarity", label: "Rarity" },
 	{ value: "released", label: "Release date" },
 ];
 
@@ -38,8 +45,12 @@ export interface ListSearch {
 	yearMin: number | null;
 	/** Inclusive upper bound on release year (YYYY). Null → no upper bound. */
 	yearMax: number | null;
-	/** National Pokédex number of the selected species. Null → no species filter. */
-	pokemon: number | null;
+	/**
+	 * Selected card-filter ids (multi-select). Mixed keys: a dex number (as a
+	 * string) for Pokémon species, or a card name for Trainers/Energy (no dex).
+	 * A card matches when ANY selected id is one of its keys. Empty → no filter.
+	 */
+	ids: string[];
 	/** Search mode: "exact" (whole name), "contains" (prefix+substring), or "fuzzy" (default). */
 	mode: SearchMode;
 	/** Explicit sort; "default" keeps the context order (relevance/release/number). */
@@ -91,7 +102,7 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 	if (ctx.setId != null) {
 		return {
 			setId: ctx.setId,
-			dexNumber: s.pokemon ?? undefined,
+			ids: orUndef(s.ids),
 			query,
 			filters,
 			yearMin,
@@ -104,7 +115,7 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 	}
 	if (ctx.dexNumber != null) {
 		return {
-			dexNumber: ctx.dexNumber,
+			dexNumbers: [ctx.dexNumber],
 			query,
 			filters,
 			yearMin,
@@ -121,6 +132,9 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 		return {
 			setId: null,
 			nameSlug: ctx.nameSlug,
+			ids: orUndef(s.ids),
+			// Trainer/Energy views: drop dex-bearing cards (upstream-mislabeled Pokémon).
+			excludeDexCards: ctx.supertype !== "Pokémon",
 			chronological: true,
 			query,
 			filters,
@@ -134,7 +148,7 @@ export function buildCorpusQuery(s: ListSearch, ctx: ListContext): CorpusQuery {
 	}
 	return {
 		setId: null,
-		dexNumber: s.pokemon ?? undefined,
+		ids: orUndef(s.ids),
 		query,
 		filters,
 		yearMin,

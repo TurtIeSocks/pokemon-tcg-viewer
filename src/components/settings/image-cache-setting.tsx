@@ -39,7 +39,12 @@ export function ImageCacheSetting() {
 	useEffect(() => {
 		// refreshStats() touches Cache Storage, which is absent in non-browser envs
 		// (SSR, happy-dom tests). Swallow the error; pre-seeded state is fine.
-		void refreshStats().catch(() => undefined);
+		const poll = () => void refreshStats().catch(() => undefined);
+		poll();
+		// Re-poll on window focus so the count reflects images the SW cached while
+		// the user was browsing away from this panel.
+		window.addEventListener("focus", poll);
+		return () => window.removeEventListener("focus", poll);
 	}, []);
 
 	const clearing = status === "clearing";
@@ -71,6 +76,13 @@ export function ImageCacheSetting() {
 						))}
 					</SelectContent>
 				</Select>
+				<Button
+					variant="ghost"
+					onClick={() => void refreshStats()}
+					disabled={clearing}
+				>
+					Refresh
+				</Button>
 				<Button
 					variant="ghost"
 					onClick={() => void clearImages()}

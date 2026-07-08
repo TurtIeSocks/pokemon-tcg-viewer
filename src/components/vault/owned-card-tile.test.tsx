@@ -80,6 +80,18 @@ test("shows ×2 badge when count=2", async () => {
 	expect(screen.getByText("×2")).toBeDefined();
 });
 
+test("renders in full color (owned) with the unified mini-nav", async () => {
+	await renderInRouter(<OwnedCardTile row={makeRow(1)} />);
+	// Vault owned tiles are always owned → full color (holo-card--owned), never
+	// grayscale.
+	const card = await screen.findByRole("button", { name: "Charizard" });
+	expect(card.className).toContain("holo-card--owned");
+	// The unified glass mini-nav is present (expand opens the detail modal).
+	expect(
+		await screen.findByRole("button", { name: /expand charizard/i }),
+	).toBeDefined();
+});
+
 test("renders a link targeting the manage face (href contains /manage)", async () => {
 	await renderInRouter(<OwnedCardTile row={makeRow(1)} />);
 	const link = screen.getByRole("link", {

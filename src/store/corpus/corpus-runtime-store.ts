@@ -46,6 +46,14 @@ export interface CorpusRuntimeState {
 	setActiveRegion(region: Region): void;
 	/** Set (or clear) the loading flag for a single region without touching others. */
 	setLoading(region: Region, loading: boolean): void;
+	/**
+	 * Purge every region's in-memory index and loading ("in flight") flag, keeping
+	 * `activeRegion`. Backs the "Refresh card database" settings control: `loadCorpus`
+	 * early-returns while `indices[region]` is populated (corpus-runtime.ts), so
+	 * dropping the indices here is what lets the next `loadCorpus(region)` hit the
+	 * network again for a fresh conditional GET.
+	 */
+	reset(): void;
 }
 
 /**
@@ -105,6 +113,13 @@ const corpusRuntimeStore = create<CorpusRuntimeState>((set, get) => ({
 	},
 	setLoading: (region, loading) => {
 		set({ loading: { ...get().loading, [region]: loading } });
+	},
+	reset: () => {
+		// indices -> {} drops the per-region early-return guard in loadCorpus;
+		// index -> null mirrors deriveIndex over the now-empty map; loading -> {}
+		// clears the region "in flight" flags. activeRegion is intentionally
+		// preserved so the UI stays on the current catalog and the refetch targets it.
+		set({ indices: {}, index: null, loading: {} });
 	},
 }));
 

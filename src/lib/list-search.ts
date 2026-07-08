@@ -25,7 +25,7 @@ export const LIST_SEARCH_DEFAULTS: ListSearch = {
 	owned: "all",
 	yearMin: null,
 	yearMax: null,
-	pokemon: null,
+	ids: [],
 	mode: "fuzzy",
 	sort: "default",
 	dir: "asc",
@@ -37,6 +37,7 @@ const VALID_SEARCH_PARAMS = [
 	"rarity",
 	"supertype",
 	"subtypes",
+	"ids",
 ] as const;
 
 const csv = (v: unknown): string[] => {
@@ -65,14 +66,6 @@ export function validateListSearch(
 		return v !== "" && Number.isFinite(n) ? n : null;
 	};
 
-	// National dex number (1..1025, the species-list fetch limit). Accept the
-	// string form too (in-page merge) and reject non-integers / out-of-range.
-	const toDex = (v: unknown): number | null => {
-		if (typeof v !== "string" && typeof v !== "number") return null;
-		const n = Number(v);
-		return v !== "" && Number.isInteger(n) && n >= 1 && n <= 1025 ? n : null;
-	};
-
 	return {
 		q: typeof search.q === "string" ? search.q : "",
 		types: csv(search.types),
@@ -83,7 +76,9 @@ export function validateListSearch(
 		owned,
 		yearMin: toYear(search.yearMin),
 		yearMax: toYear(search.yearMax),
-		pokemon: toDex(search.pokemon),
+		// Mixed ids (dex-number strings for Pokémon, card names for Trainers);
+		// parse like the other CSV array filters — opaque strings, no validation.
+		ids: csv(search.ids),
 		// URL param is "mode"; enum-guard to the three valid values, else "fuzzy".
 		mode: ((): SearchMode => {
 			const m = search.mode;
@@ -92,7 +87,11 @@ export function validateListSearch(
 		})(),
 		sort: ((): CardSortMode => {
 			const s = search.sort;
-			return s === "dex" || s === "number" || s === "name" || s === "released"
+			return s === "dex" ||
+				s === "number" ||
+				s === "name" ||
+				s === "rarity" ||
+				s === "released"
 				? s
 				: "default";
 		})(),
@@ -122,8 +121,6 @@ export function listSearchToUrl(
 		out.yearMin = s.yearMin != null ? String(s.yearMin) : undefined;
 	if (s.yearMax !== undefined)
 		out.yearMax = s.yearMax != null ? String(s.yearMax) : undefined;
-	if (s.pokemon !== undefined)
-		out.pokemon = s.pokemon != null ? String(s.pokemon) : undefined;
 	// Omit "mode" from URL when it's the default ("fuzzy") to keep URLs clean.
 	if (s.mode !== undefined) out.mode = s.mode !== "fuzzy" ? s.mode : undefined;
 	// Omit "default"/"asc" so crawlable URLs stay clean.

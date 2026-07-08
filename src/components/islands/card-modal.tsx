@@ -1,11 +1,5 @@
 import { useRouter } from "@tanstack/react-router";
-import {
-	Dialog,
-	DialogContent,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
 	type CardTab,
 	cardRouteParams,
@@ -43,29 +37,34 @@ export function CardModal({
 
 	return (
 		<Dialog open onOpenChange={(o) => !o && onClose()}>
+			{/* Grows to its content but never past ~90dvh, then the body scrolls. No
+			    title/footer bands — the identity and cross-links live inside the card
+			    column (rail slots) so the modal is a balanced two-pane split with no
+			    dead space. Capping at the viewport keeps the header on-screen on
+			    mobile. */}
 			<DialogContent
 				aria-describedby={undefined}
-				className="max-w-4xl sm:max-w-4xl"
+				className="flex max-h-[90dvh] max-w-4xl flex-col sm:max-w-4xl"
 			>
 				{/* Radix needs a DialogTitle for the dialog's accessible name; the
-				    visible identity is CardHeading (shared with the dedicated page). */}
+				    visible identity is the CardHeading rendered in the rail below. */}
 				<DialogTitle className="sr-only">
 					{card.name} · {card.setName}
 				</DialogTitle>
-				<DialogHeader>
-					<CardHeading card={card} />
-				</DialogHeader>
-				<div className="max-h-[90vh] overflow-y-auto">
+				<div className="min-h-0 flex-1 overflow-y-auto">
 					<CardCockpit
 						card={card}
 						tab={tab}
 						onTabChange={onTabChange}
 						pending={pending}
+						railHeader={<CardHeading card={card} />}
+						railFooter={
+							crossLinks.length ? (
+								<CardCrossLinks links={crossLinks} />
+							) : undefined
+						}
 					/>
 				</div>
-				<DialogFooter>
-					<CardCrossLinks links={crossLinks} />
-				</DialogFooter>
 			</DialogContent>
 		</Dialog>
 	);
