@@ -193,15 +193,16 @@ export function CardCockpit({
 				<div className="min-w-0 flex-1">
 					<div className={`flex flex-col${framed ? " @3xl:h-full" : ""}`}>
 						<CardTabs tab={tab} onChange={onTabChange} idBase={ID_BASE} />
-						{/* border-t-0: the active cap and the pane share the same glass, so a
-						    hard top border only reads as a seam under the cap (the translucent
-						    cap can't hide it). Drop it — the inset top highlight carries the
-						    exposed edge to the right of the tabs, glass-style. */}
+						{/* Seamless cap→pane: no top edge on the pane (border-t-0, no inset TOP
+						    highlight) and no -mt overlap. Any of those would read as a line
+						    under the active cap — it shares the same translucent glass, so a
+						    brighter border/highlight bleeds through and a 1px overlap doubles
+						    the glass into a hairline. Keep only the bottom depth shadow. */}
 						<div
 							role="tabpanel"
 							id={`${ID_BASE}-panel-${tab}`}
 							aria-labelledby={`${ID_BASE}-tab-${tab}`}
-							className={`-mt-px min-w-0 rounded-tr-[var(--r-panel)] rounded-b-[var(--r-panel)] border border-t-0 border-white/12 bg-[var(--glass-2)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.14),inset_0_-1px_0_rgba(0,0,0,0.30)] backdrop-blur-xl${
+							className={`min-w-0 rounded-tr-[var(--r-panel)] rounded-b-[var(--r-panel)] border border-t-0 border-white/12 bg-[var(--glass-2)] p-5 shadow-[inset_0_-1px_0_rgba(0,0,0,0.30)] backdrop-blur-xl${
 								framed ? " @3xl:min-h-0 @3xl:flex-1" : ""
 							}`}
 						>
