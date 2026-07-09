@@ -17,6 +17,7 @@ import {
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { UnitInput } from "@/components/ui/unit-input";
 import { isSupportedLanguage } from "@/lib/languages";
+import { m } from "@/paraglide/messages";
 import { useSlugIndex } from "@/store/corpus/corpus-runtime";
 import { getActiveI18nLang } from "@/store/corpus/i18n-active";
 import {
@@ -24,7 +25,6 @@ import {
 	syncPrices,
 	usePricesRuntime,
 } from "@/store/corpus/prices-runtime";
-import { m } from "@/paraglide/messages";
 import { type PrintPrefs, useUiPrefs } from "@/store/ui-prefs";
 import type { HoloCardData } from "../holo-card/types";
 import { buildPlaceholderExtras, type PlaceholderExtra } from "./print-extras";
@@ -461,7 +461,7 @@ function FontSizeField({
 					className="size-4 shrink-0 cursor-pointer accent-primary"
 				/>
 				<NumberUnitInput
-					label={m.binder_print_field_font_size({ field: label })}
+					label={m.binder_print_field_size({ field: label })}
 					value={sizeMm}
 					spec={spec}
 					disabled={!shown}
@@ -607,44 +607,20 @@ export function PrintMissingDialog({
 										onChange={(v) => setPrintPrefs({ borderColor: v })}
 									/>
 								</LabeledRow>
-								<LabeledRow label="QR color">
+								<LabeledRow label={m.binder_print_label_qr_color()}>
 									<ColorPicker
 										value={qrColor}
 										mode="oklch"
 										onChange={(v) => setPrintPrefs({ qrColor: v })}
 									/>
 								</LabeledRow>
-								<LabeledRow label="QR backdrop">
+								<LabeledRow label={m.binder_print_label_qr_backdrop()}>
 									<ColorPicker
 										value={qrBackground}
 										mode="oklch"
 										onChange={(v) => setPrintPrefs({ qrBackground: v })}
 									/>
 								</LabeledRow>
-							</ControlGroup>
-
-							<ControlGroup label={m.binder_print_group_font_sizes()}>
-								<FontSizeField
-									label={m.binder_print_label_card_name()}
-									shown={showName}
-									onToggle={(on) => setPrintPrefs({ showName: on })}
-									sizeMm={nameSizeMm}
-									onSize={(n) => setPrintPrefs({ nameSizeMm: n })}
-								/>
-								<FontSizeField
-									label={m.binder_print_label_card_number()}
-									shown={showNumber}
-									onToggle={(on) => setPrintPrefs({ showNumber: on })}
-									sizeMm={numberSizeMm}
-									onSize={(n) => setPrintPrefs({ numberSizeMm: n })}
-								/>
-								<FontSizeField
-									label={m.binder_print_label_set_name()}
-									shown={showSetName}
-									onToggle={(on) => setPrintPrefs({ showSetName: on })}
-									sizeMm={setNameSizeMm}
-									onSize={(n) => setPrintPrefs({ setNameSizeMm: n })}
-								/>
 							</ControlGroup>
 
 							<ControlGroup label={m.binder_print_group_card_size()}>
@@ -673,37 +649,37 @@ export function PrintMissingDialog({
 									onCommit={(n) => setPrintPrefs({ gapMm: n })}
 								/>
 								<UnitField
-									label="Row gap"
+									label={m.binder_print_label_row_gap()}
 									value={lineGapMm}
 									spec={FIELD.lineGap}
 									onCommit={(n) => setPrintPrefs({ lineGapMm: n })}
 								/>
 							</ControlGroup>
 
-							<ControlGroup label="Font sizes">
+							<ControlGroup label={m.binder_print_group_font_sizes()}>
 								<FontSizeField
-									label="Card name"
+									label={m.binder_print_label_card_name()}
 									shown={showName}
 									onToggle={(on) => setPrintPrefs({ showName: on })}
 									sizeMm={nameSizeMm}
 									onSize={(n) => setPrintPrefs({ nameSizeMm: n })}
 								/>
 								<FontSizeField
-									label="Card #"
+									label={m.binder_print_label_card_number()}
 									shown={showNumber}
 									onToggle={(on) => setPrintPrefs({ showNumber: on })}
 									sizeMm={numberSizeMm}
 									onSize={(n) => setPrintPrefs({ numberSizeMm: n })}
 								/>
 								<FontSizeField
-									label="Set name"
+									label={m.binder_print_label_set_name()}
 									shown={showSetName}
 									onToggle={(on) => setPrintPrefs({ showSetName: on })}
 									sizeMm={setNameSizeMm}
 									onSize={(n) => setPrintPrefs({ setNameSizeMm: n })}
 								/>
 								<FontSizeField
-									label="Price"
+									label={m.binder_print_label_price()}
 									shown={showPrice}
 									onToggle={(on) => setPrintPrefs({ showPrice: on })}
 									sizeMm={priceSizeMm}
@@ -731,7 +707,7 @@ export function PrintMissingDialog({
 									onCommit={(n) => setPrintPrefs({ textScale: n / 100 })}
 								/>
 								<FontSizeField
-									label="QR code"
+									label={m.binder_print_label_qr_code()}
 									spec={FIELD.qrSize}
 									shown={showQr}
 									onToggle={(on) => setPrintPrefs({ showQr: on })}
