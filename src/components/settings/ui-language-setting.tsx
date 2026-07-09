@@ -1,4 +1,4 @@
-import { ChevronDown, Languages } from "lucide-react";
+import { ChevronDown, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -52,7 +52,7 @@ export function UiLanguageSetting() {
 							variant="outline"
 							aria-label={m.settings_interface_language()}
 						>
-							<Languages className="size-4 opacity-70" />
+							<Globe className="size-4 opacity-70" />
 							<span>{UI_LANGUAGE_LABELS[current]}</span>
 							<ChevronDown className="size-4 opacity-70" />
 						</Button>

@@ -1,4 +1,5 @@
-import { ChevronDown, Languages } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import { CardGlyph } from "@/components/ui/card-glyph";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
@@ -119,7 +120,7 @@ export function CardLanguageControl({
 						})}
 						className={TRIGGER_CLASS}
 					>
-						<Languages className="size-4 opacity-70" />
+						<CardGlyph className="size-4 opacity-70" />
 						<span>{LANGUAGE_LABELS[effective]}</span>
 						<ChevronDown className="size-4 opacity-70" />
 					</Button>

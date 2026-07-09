@@ -1,5 +1,6 @@
 import { ClientOnly, createFileRoute } from "@tanstack/react-router";
-import { ChevronDown, Languages } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import { CardGlyph } from "@/components/ui/card-glyph";
 import { LanguageRadioMenu } from "@/components/islands/card-language-control";
 import { CardDatabaseSetting } from "@/components/settings/card-database-setting";
 import { CardMotionSetting } from "@/components/settings/card-motion-setting";
@@ -48,7 +49,7 @@ function CatalogLanguageSetting() {
 							variant="outline"
 							aria-label={m.settings_catalog_language_title()}
 						>
-							<Languages className="size-4 opacity-70" />
+							<CardGlyph className="size-4 opacity-70" />
 							<span>{LANGUAGE_LABELS[lang]}</span>
 							<ChevronDown className="size-4 opacity-70" />
 						</Button>
