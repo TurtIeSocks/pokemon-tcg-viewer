@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { getLocale } from "../paraglide/runtime";
+import { getLocale, setLocale } from "../paraglide/runtime";
+import { resetUserlandForTests } from "../store/userland/userland-store";
 import { setupUserlandTest } from "../test-utils";
 import { setUiLanguage } from "./ui-locale";
 
@@ -16,6 +17,10 @@ beforeAll(() => {
 	globalThis.happyDOM.setURL("http://localhost/");
 });
 afterAll(() => {
+	// Restore shared module state for later test files in this preloaded process:
+	// this test switches the global Paraglide locale + userland store to "ja".
+	setLocale("en", { reload: false });
+	resetUserlandForTests();
 	// @ts-expect-error happy-dom-only global, not in lib.dom.d.ts
 	globalThis.happyDOM.setURL(originalUrl);
 });

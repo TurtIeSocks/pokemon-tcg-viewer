@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { setLocale } from "../paraglide/runtime";
 import { updateProfile, useUserland } from "../store/userland/userland-store";
 import { bcp47 } from "./bcp47";
-import type { SupportedLanguage } from "./languages";
+import type { UiLanguage } from "./languages";
 
 /**
  * Switch the site-UI language. Persists to profile (which mirrors the ui-lang
@@ -11,7 +11,7 @@ import type { SupportedLanguage } from "./languages";
  * runtime's `setLocale(newLocale, options?: { reload?: boolean })`).
  * `<LocaleBoundary>` re-renders the tree once the profile change lands.
  */
-export async function setUiLanguage(lang: SupportedLanguage): Promise<void> {
+export async function setUiLanguage(lang: UiLanguage): Promise<void> {
 	await updateProfile({ uiLanguage: lang });
 	setLocale(lang, { reload: false });
 	if (typeof document !== "undefined") {

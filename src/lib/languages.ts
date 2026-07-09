@@ -122,6 +122,39 @@ export function toSupportedLanguage(
 }
 
 /**
+ * UI-chrome-only languages: the app interface is fully translated into these,
+ * but they are NOT card-catalog languages (TCGdex has no card data for them, and
+ * there is no catalog region for them). Kept separate from SUPPORTED_LANGUAGES so
+ * the card-language pickers stay on the catalog set while the interface-language
+ * picker can offer a wider list.
+ */
+export const UI_ONLY_LANGUAGES = ["pl", "sl"] as const;
+
+/** All site-UI (interface) languages: the catalog languages plus UI-only additions. */
+export const UI_LANGUAGES = [
+	...SUPPORTED_LANGUAGES,
+	...UI_ONLY_LANGUAGES,
+] as const;
+
+export type UiLanguage = (typeof UI_LANGUAGES)[number];
+
+/** Endonym label for each UI language (extends LANGUAGE_LABELS with the UI-only ones). */
+export const UI_LANGUAGE_LABELS: Record<UiLanguage, string> = {
+	...LANGUAGE_LABELS,
+	pl: "Polski",
+	sl: "Slovenščina",
+};
+
+export function isUiLanguage(lang: string): lang is UiLanguage {
+	return (UI_LANGUAGES as readonly string[]).includes(lang);
+}
+
+/** Normalize an arbitrary recorded language to a supported UI language (fallback "en"). */
+export function toUiLanguage(lang: string | null | undefined): UiLanguage {
+	return lang && isUiLanguage(lang) ? lang : "en";
+}
+
+/**
  * Resolve which language "face" of a card to render: there is no English face
  * for a Japanese-lineage card and no Japanese face for a Western card, so the
  * face language is chosen by the card's region, not blindly by the active

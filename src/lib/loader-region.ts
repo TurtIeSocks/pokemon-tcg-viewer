@@ -1,6 +1,7 @@
 import { useCorpusRuntime } from "../store/corpus/corpus-runtime-store";
 import {
 	isSupportedLanguage,
+	isUiLanguage,
 	REGION_BASE_LANGUAGE,
 	type Region,
 	regionForLanguage,
@@ -48,7 +49,7 @@ export const UI_LANG_COOKIE = "ui-lang";
  */
 export function writeUiLangCookie(lang: string | null | undefined): void {
 	if (typeof document === "undefined") return;
-	if (lang && isSupportedLanguage(lang)) {
+	if (lang && isUiLanguage(lang)) {
 		// biome-ignore lint/suspicious/noDocumentCookie: necessary
 		document.cookie = `${UI_LANG_COOKIE}=${lang}; path=/; max-age=${LANG_COOKIE_MAX_AGE}; SameSite=Lax`;
 	}

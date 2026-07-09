@@ -9,9 +9,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { GlassPanel } from "@/components/ui/glass";
 import {
-	LANGUAGE_LABELS,
-	SUPPORTED_LANGUAGES,
-	toSupportedLanguage,
+	toUiLanguage,
+	UI_LANGUAGE_LABELS,
+	UI_LANGUAGES,
 } from "@/lib/languages";
 import { setUiLanguage } from "@/lib/ui-locale";
 import { m } from "@/paraglide/messages";
@@ -33,7 +33,7 @@ import { useUserland } from "@/store/userland/userland-store";
  */
 export function UiLanguageSetting() {
 	const uiLanguage = useUserland((s) => s.profile?.uiLanguage);
-	const current = toSupportedLanguage(uiLanguage);
+	const current = toUiLanguage(uiLanguage);
 
 	return (
 		<GlassPanel className="flex flex-col gap-3 p-5">
@@ -53,18 +53,18 @@ export function UiLanguageSetting() {
 							aria-label={m.settings_interface_language()}
 						>
 							<Languages className="size-4 opacity-70" />
-							<span>{LANGUAGE_LABELS[current]}</span>
+							<span>{UI_LANGUAGE_LABELS[current]}</span>
 							<ChevronDown className="size-4 opacity-70" />
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="start">
 						<DropdownMenuRadioGroup
 							value={current}
-							onValueChange={(v) => void setUiLanguage(toSupportedLanguage(v))}
+							onValueChange={(v) => void setUiLanguage(toUiLanguage(v))}
 						>
-							{SUPPORTED_LANGUAGES.map((lang) => (
+							{UI_LANGUAGES.map((lang) => (
 								<DropdownMenuRadioItem key={lang} value={lang}>
-									{LANGUAGE_LABELS[lang]}
+									{UI_LANGUAGE_LABELS[lang]}
 								</DropdownMenuRadioItem>
 							))}
 						</DropdownMenuRadioGroup>

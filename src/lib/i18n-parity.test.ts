@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import en from "../../messages/en.json";
-import { SUPPORTED_LANGUAGES } from "./languages";
+import { UI_LANGUAGES } from "./languages";
 
 // Every non-English locale must fully mirror en.json: same key set, same
 // interpolation placeholders per key, and the same string-vs-structured shape.
@@ -8,7 +8,7 @@ import { SUPPORTED_LANGUAGES } from "./languages";
 // CLDR set (ja/ko/zh/th/id collapse to "other"), so those are NOT compared —
 // only the interpolation variables and the structural shape are.
 
-const NON_EN = SUPPORTED_LANGUAGES.filter((l) => l !== "en");
+const NON_EN = UI_LANGUAGES.filter((l) => l !== "en");
 
 type MsgValue = string | Array<{ match?: Record<string, unknown> }>;
 

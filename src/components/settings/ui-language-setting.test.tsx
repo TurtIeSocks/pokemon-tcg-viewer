@@ -1,6 +1,15 @@
-import { expect, test } from "bun:test";
+import { beforeEach, expect, test } from "bun:test";
 import { fireEvent, render, screen } from "@testing-library/react";
+import { setLocale } from "@/paraglide/runtime";
+import { resetUserlandForTests } from "@/store/userland/userland-store";
 import { UiLanguageSetting } from "./ui-language-setting";
+
+// Start from a clean store + base locale so a prior test file (e.g. ui-locale.test,
+// which switches to "ja") can't leak the active locale into these assertions.
+beforeEach(() => {
+	resetUserlandForTests();
+	setLocale("en", { reload: false });
+});
 
 function openMenu() {
 	fireEvent.pointerDown(
