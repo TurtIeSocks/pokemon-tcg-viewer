@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { setLocale } from "../paraglide/runtime";
+import { createElement, Fragment, type ReactNode } from "react";
+import { getLocale, setLocale } from "../paraglide/runtime";
 import { updateProfile, useUserland } from "../store/userland/userland-store";
 import { bcp47 } from "./bcp47";
 import type { UiLanguage } from "./languages";
@@ -20,10 +20,16 @@ export async function setUiLanguage(lang: UiLanguage): Promise<void> {
 }
 
 /**
- * Re-renders its subtree whenever `profile.uiLanguage` changes so every m.*()
- * call re-evaluates in the new locale. Subscribes to the narrowest primitive
- * selector (S3 pattern) so this boundary only re-renders on an actual
- * uiLanguage change, not on unrelated profile/store updates.
+ * Re-localizes the whole app UI in place when the language changes, without a
+ * full page reload. Subscribes to `profile.uiLanguage` (narrow S3 selector) so a
+ * switch re-renders this boundary, then KEYS the subtree on the active locale so
+ * it remounts. The remount is what forces every `m.*()` call to re-evaluate:
+ * plain React re-rendering bails out on the unchanged `children` element (and
+ * React Compiler's auto-memoization bails on any subtree whose props are
+ * unchanged), so without the key the text stays stale until a reload. Remount is
+ * lighter than Paraglide's default full-page reload and preserves the
+ * module-level Zustand stores + TanStack Router state, which live above this
+ * boundary.
  */
 export function LocaleBoundary({
 	children,
@@ -31,5 +37,5 @@ export function LocaleBoundary({
 	children: ReactNode;
 }): ReactNode {
 	useUserland((s) => s.profile?.uiLanguage);
-	return children;
+	return createElement(Fragment, { key: getLocale() }, children);
 }
