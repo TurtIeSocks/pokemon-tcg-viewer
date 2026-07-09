@@ -128,7 +128,7 @@ export function toSupportedLanguage(
  * the card-language pickers stay on the catalog set while the interface-language
  * picker can offer a wider list.
  */
-export const UI_ONLY_LANGUAGES = ["pl", "sl"] as const;
+export const UI_ONLY_LANGUAGES = ["pl", "sl", "nl"] as const;
 
 /** All site-UI (interface) languages: the catalog languages plus UI-only additions. */
 export const UI_LANGUAGES = [
@@ -143,6 +143,7 @@ export const UI_LANGUAGE_LABELS: Record<UiLanguage, string> = {
 	...LANGUAGE_LABELS,
 	pl: "Polski",
 	sl: "Slovenščina",
+	nl: "Nederlands",
 };
 
 export function isUiLanguage(lang: string): lang is UiLanguage {
