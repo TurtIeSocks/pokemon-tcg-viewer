@@ -1,4 +1,5 @@
 import { Stat } from "@/components/ui/stat";
+import { m } from "@/paraglide/messages";
 import { formatPrice, formatSignedPrice } from "@/store/userland/money";
 import type { CollectionStats } from "@/store/userland/stats";
 import { useCollectionStats } from "@/store/userland/stats";
@@ -6,7 +7,6 @@ import { useHideValue } from "@/store/userland/valuation-hooks";
 
 const MASK = "•••";
 const DASH = "—";
-const MIXED_HINT = "Mixed currencies — total needs conversion (coming soon)";
 
 /**
  * The three money stats (market value, cost basis, unrealized P&L), shared by
@@ -38,20 +38,26 @@ export function ValueStats({ stats }: { stats?: CollectionStats }) {
 
 	return (
 		<>
-			<Stat value={hidden ? MASK : market} label="market value" />
+			<Stat
+				value={hidden ? MASK : market}
+				label={m.vault_value_stats_market()}
+			/>
 			{costMixed && !hidden ? (
-				<span title={MIXED_HINT} role="note">
-					<Stat value={DASH} label="cost basis" />
+				<span title={m.vault_value_stats_mixed_hint()} role="note">
+					<Stat value={DASH} label={m.vault_value_stats_cost_basis()} />
 				</span>
 			) : (
-				<Stat value={hidden ? MASK : cost} label="cost basis" />
+				<Stat
+					value={hidden ? MASK : cost}
+					label={m.vault_value_stats_cost_basis()}
+				/>
 			)}
 			{s.unrealizedPnL != null && (
 				<Stat
 					value={
 						hidden ? MASK : formatSignedPrice(s.unrealizedPnL, s.valueCurrency)
 					}
-					label="unrealized p&l"
+					label={m.vault_value_stats_pnl()}
 					tone={hidden ? undefined : pnlTone}
 				/>
 			)}

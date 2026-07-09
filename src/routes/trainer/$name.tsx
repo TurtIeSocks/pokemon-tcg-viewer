@@ -11,6 +11,7 @@ import {
 	validateListSearch,
 } from "../../lib/list-search";
 import { useCorpusCardHref } from "../../lib/use-corpus-card-href";
+import { m } from "../../paraglide/messages";
 import {
 	getNamedCardsFn,
 	resolveCardRoutesFn,
@@ -40,15 +41,21 @@ export const Route = createFileRoute("/trainer/$name")({
 		};
 	},
 	head: ({ loaderData }) => {
-		const d = loaderData?.display ?? "Trainer";
+		const d = loaderData?.display ?? m.trainer_name_fallback();
 		return {
 			meta: [
-				{ title: `${d} · every Pokémon TCG card` },
+				{ title: m.trainer_name_meta_title({ name: d }) },
 				{
 					name: "description",
-					content: `Browse all ${loaderData?.total ?? ""} printings of the ${d} Trainer card across every set.`,
+					content: m.trainer_name_meta_description({
+						count: loaderData?.total ?? "",
+						name: d,
+					}),
 				},
-				{ property: "og:title", content: `${d} · Pokémon TCG cards` },
+				{
+					property: "og:title",
+					content: m.trainer_name_meta_og_title({ name: d }),
+				},
 			],
 		};
 	},

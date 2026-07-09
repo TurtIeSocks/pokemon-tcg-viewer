@@ -20,16 +20,24 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { fieldErrorText } from "@/lib/field-error";
+import { m } from "@/paraglide/messages";
 import type { Binder } from "../../store/userland/types";
 import {
 	createBinder,
 	updateBinder,
 } from "../../store/userland/userland-store";
 
-const binderFormSchema = z.object({
-	name: z.string().min(1, "Name is required"),
-	description: z.string(),
-});
+/**
+ * A factory, not a module-scope constant: the `.min()` message calls `m.*()`,
+ * which reads the ACTIVE locale when called — building this at module-eval
+ * time would freeze it to the base locale forever.
+ */
+function makeBinderFormSchema() {
+	return z.object({
+		name: z.string().min(1, m.binder_form_name_required()),
+		description: z.string(),
+	});
+}
 
 /** Props for {@link BinderFormDialog}. */
 interface BinderFormDialogProps {
@@ -51,6 +59,9 @@ export function BinderFormDialog({
 	onSaved,
 }: BinderFormDialogProps) {
 	const isEdit = !!binder;
+	// Built at render time (not module scope) so its message resolves against
+	// the active locale — see makeBinderFormSchema's doc comment.
+	const binderFormSchema = makeBinderFormSchema();
 
 	const form = useForm({
 		defaultValues: {
@@ -87,12 +98,12 @@ export function BinderFormDialog({
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle className="font-display">
-						{isEdit ? "Edit Binder" : "New Binder"}
+						{isEdit ? m.binder_form_edit_title() : m.binder_form_new_title()}
 					</DialogTitle>
 					<DialogDescription>
 						{isEdit
-							? "Rename this binder or tweak its description."
-							: "A binder to sort your cards however you like. Sets, types, the chase pile."}
+							? m.binder_form_edit_description()
+							: m.binder_form_new_description()}
 					</DialogDescription>
 				</DialogHeader>
 
@@ -116,14 +127,16 @@ export function BinderFormDialog({
 									field.state.meta.isTouched && !field.state.meta.isValid;
 								return (
 									<Field data-invalid={isInvalid}>
-										<FieldLabel htmlFor={field.name}>Name</FieldLabel>
+										<FieldLabel htmlFor={field.name}>
+											{m.binder_form_name_label()}
+										</FieldLabel>
 										<Input
 											id={field.name}
 											aria-invalid={isInvalid}
 											value={field.state.value}
 											onBlur={field.handleBlur}
 											onChange={(e) => field.handleChange(e.target.value)}
-											placeholder="e.g. Base Set Complete"
+											placeholder={m.binder_form_name_placeholder()}
 										/>
 										{isInvalid && field.state.meta.errors.length > 0 && (
 											<FieldError>
@@ -141,13 +154,15 @@ export function BinderFormDialog({
 							// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 							children={(field) => (
 								<Field>
-									<FieldLabel htmlFor={field.name}>Description</FieldLabel>
+									<FieldLabel htmlFor={field.name}>
+										{m.binder_form_description_label()}
+									</FieldLabel>
 									<Textarea
 										id={field.name}
 										value={field.state.value}
 										onBlur={field.handleBlur}
 										onChange={(e) => field.handleChange(e.target.value)}
-										placeholder="Optional notes about this binder"
+										placeholder={m.binder_form_description_placeholder()}
 										rows={3}
 									/>
 								</Field>
@@ -169,10 +184,14 @@ export function BinderFormDialog({
 										variant="ghost"
 										onClick={() => onOpenChange(false)}
 									>
-										Cancel
+										{m.form_cancel()}
 									</Button>
 									<Button type="submit" disabled={!canSubmit || isSubmitting}>
-										{isSubmitting ? "Saving…" : isEdit ? "Save" : "Create"}
+										{isSubmitting
+											? m.form_saving()
+											: isEdit
+												? m.form_save()
+												: m.binder_form_create_button()}
 									</Button>
 								</>
 							)}

@@ -1,5 +1,6 @@
 import { GlassPanel } from "@/components/ui/glass";
 import { Switch } from "@/components/ui/switch";
+import { m } from "@/paraglide/messages";
 import { useUiPrefs } from "@/store/ui-prefs";
 
 /**
@@ -16,18 +17,18 @@ export function CardMotionSetting() {
 	return (
 		<GlassPanel className="flex items-start justify-between gap-4 p-5">
 			<label htmlFor="card-motion" className="flex flex-col gap-1">
-				<span className="font-display text-lg">Card motion</span>
+				<span className="font-display text-lg">
+					{m.settings_card_motion_title()}
+				</span>
 				<span className="font-mono text-[12px] text-(--ink-muted)">
-					Cards tilt in 3D and catch the light as you point at them. Turn this
-					off for a calmer, still view. Your device's reduce-motion setting
-					always turns it off.
+					{m.settings_card_motion_description()}
 				</span>
 			</label>
 			<Switch
 				id="card-motion"
 				checked={cardMotion}
 				onCheckedChange={setCardMotion}
-				aria-label="Card motion"
+				aria-label={m.settings_card_motion_title()}
 			/>
 		</GlassPanel>
 	);

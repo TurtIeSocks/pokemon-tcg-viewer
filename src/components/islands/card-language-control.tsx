@@ -1,4 +1,5 @@
-import { ChevronDown, Languages } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import { CardGlyph } from "@/components/ui/card-glyph";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
@@ -18,6 +19,7 @@ import {
 	SUPPORTED_LANGUAGES,
 	type SupportedLanguage,
 } from "@/lib/languages";
+import { m } from "@/paraglide/messages";
 import { useDisplayLanguage } from "@/store/corpus/i18n-active-hooks";
 
 const TRIGGER_CLASS =
@@ -71,14 +73,14 @@ export function LanguageRadioMenu({
 				value={value}
 				onValueChange={(v) => onValueChange(v as SupportedLanguage)}
 			>
-				<DropdownMenuLabel>Western catalog</DropdownMenuLabel>
+				<DropdownMenuLabel>{m.catalog_western_label()}</DropdownMenuLabel>
 				{WESTERN_LANGUAGES.map((lang) => (
 					<LanguageRadioItem key={lang} lang={lang} />
 				))}
 				<DropdownMenuSeparator />
-				<DropdownMenuLabel>Asian catalog</DropdownMenuLabel>
+				<DropdownMenuLabel>{m.catalog_asian_label()}</DropdownMenuLabel>
 				<p className="px-2 pb-1.5 text-[11px] text-(--ink-muted)">
-					Switches to the Asian catalog, a separate set of sets.
+					{m.catalog_asian_switch_note()}
 				</p>
 				{ASIAN_LANGUAGES.map((lang) => (
 					<LanguageRadioItem key={lang} lang={lang} />
@@ -112,11 +114,13 @@ export function CardLanguageControl({
 						type="button"
 						variant="outline"
 						size="sm"
-						aria-label="Catalog language"
-						title={`Catalog language: ${LANGUAGE_LABELS[effective]}`}
+						aria-label={m.settings_catalog_language_title()}
+						title={m.catalog_language_title_with_value({
+							language: LANGUAGE_LABELS[effective],
+						})}
 						className={TRIGGER_CLASS}
 					>
-						<Languages className="size-4 opacity-70" />
+						<CardGlyph className="size-4 opacity-70" />
 						<span>{LANGUAGE_LABELS[effective]}</span>
 						<ChevronDown className="size-4 opacity-70" />
 					</Button>

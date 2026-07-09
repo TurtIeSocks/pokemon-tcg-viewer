@@ -372,6 +372,7 @@ export function createCacheRepos(uid: string): UserlandRepos {
 							avatarPreset: patch.avatarPreset ?? DEFAULT_AVATAR_PRESET_ID,
 							favoriteSetId: patch.favoriteSetId ?? null,
 							displayLanguage: patch.displayLanguage ?? "en",
+							uiLanguage: patch.uiLanguage ?? "en",
 							displayCurrency: patch.displayCurrency ?? "USD",
 							hideValue: patch.hideValue ?? false,
 							createdAt: now,

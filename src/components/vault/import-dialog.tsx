@@ -8,6 +8,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { m } from "../../paraglide/messages";
 import { parseSnapshot } from "../../store/userland/backup";
 import { parseCsv } from "../../store/userland/csv";
 import type { UserDataSnapshot } from "../../store/userland/types";
@@ -57,7 +58,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 				setSnapshot(parseSnapshot(text));
 			}
 		} catch (err) {
-			setError(err instanceof Error ? err.message : "Import failed");
+			setError(err instanceof Error ? err.message : m.vault_import_failed());
 		}
 	}
 
@@ -69,9 +70,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 
 	async function onReplace() {
 		if (!snapshot) return;
-		const ok = window.confirm(
-			"Replace your entire collection + binders with this backup?",
-		);
+		const ok = window.confirm(m.vault_import_replace_confirm());
 		if (!ok) return;
 		await importUserData(snapshot, "replace");
 		handleOpenChange(false);
@@ -81,20 +80,20 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle className="font-display">Import Backup</DialogTitle>
-					<DialogDescription>
-						Choose a JSON backup (restore) or a CSV file (add matched cards).
-					</DialogDescription>
+					<DialogTitle className="font-display">
+						{m.vault_import_title()}
+					</DialogTitle>
+					<DialogDescription>{m.vault_import_description()}</DialogDescription>
 				</DialogHeader>
 
 				<div className="flex flex-col gap-3">
 					{/* Dropzone / file picker */}
 					<label className="flex flex-col items-center justify-center gap-2 rounded-(--r-panel) border border-dashed border-(--border) bg-(--glass) px-4 py-6 cursor-pointer text-center hover:border-(--primary) transition-colors">
 						<span className="text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold">
-							JSON or CSV file
+							{m.vault_import_dropzone_hint()}
 						</span>
 						<span className="text-sm text-(--ink-muted)">
-							Click to browse or drop a file here
+							{m.vault_import_dropzone_action()}
 						</span>
 						<input
 							ref={fileRef}
@@ -109,15 +108,11 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 
 					{snapshot && (
 						<p className="text-sm font-mono tabular-nums text-(--ink-muted)">
-							<span className="text-(--ink)">
-								{snapshot.collection.length}
-							</span>{" "}
-							cards
+							<span className="text-(--ink)">{snapshot.collection.length}</span>{" "}
+							{m.vault_import_cards_label()}
 							{" · "}
-							<span className="text-(--ink)">
-								{snapshot.binders.length}
-							</span>{" "}
-							binders
+							<span className="text-(--ink)">{snapshot.binders.length}</span>{" "}
+							{m.vault_import_binders_label()}
 						</p>
 					)}
 
@@ -133,10 +128,10 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 				{snapshot && (
 					<DialogFooter>
 						<Button variant="ghost" onClick={onMerge}>
-							Merge
+							{m.vault_import_merge()}
 						</Button>
 						<Button variant="destructive" onClick={onReplace}>
-							Replace
+							{m.vault_import_replace()}
 						</Button>
 					</DialogFooter>
 				)}

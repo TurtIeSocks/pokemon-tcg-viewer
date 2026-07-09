@@ -10,12 +10,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { m } from "@/paraglide/messages";
 import type { SyncStatus } from "@/store/userland/sync/sync-status";
 import { syncStatus } from "@/store/userland/sync/sync-status-singleton";
 
 /** Presentation data for a single sync status. */
 export interface SyncStatusDisplay {
-	label: string;
+	/** Thunk, not a plain string — see {@link NavDestination.label} in command-palette-data.ts. */
+	label: () => string;
 	/** Tailwind classes for the status dot fill (+ optional animation). */
 	dotClass: string;
 }
@@ -23,23 +25,23 @@ export interface SyncStatusDisplay {
 /** Status → label + dot styling. */
 export const SYNC_STATUS_DISPLAY: Record<SyncStatus, SyncStatusDisplay> = {
 	synced: {
-		label: "Synced",
+		label: () => m.sync_status_synced(),
 		dotClass: "bg-(--success)",
 	},
 	syncing: {
-		label: "Syncing…",
+		label: () => m.sync_status_syncing(),
 		dotClass: "bg-(--primary) animate-pulse",
 	},
 	offline: {
-		label: "Offline",
+		label: () => m.sync_status_offline(),
 		dotClass: "bg-(--ink-muted)",
 	},
 	error: {
-		label: "Sync error",
+		label: () => m.sync_status_error(),
 		dotClass: "bg-amber-400",
 	},
 	needs_upgrade: {
-		label: "Upgrade to sync",
+		label: () => m.shell_upgrade_to_sync(),
 		dotClass: "bg-(--primary)",
 	},
 };
@@ -50,7 +52,7 @@ export const SYNC_STATUS_DISPLAY: Record<SyncStatus, SyncStatusDisplay> = {
  * active/offline states — a gentle nudge toward signing in to sync.
  */
 export const LOCAL_ONLY_DISPLAY: SyncStatusDisplay = {
-	label: "Local only",
+	label: () => m.sync_status_local_only(),
 	dotClass: "border border-(--ink-muted) bg-transparent",
 };
 

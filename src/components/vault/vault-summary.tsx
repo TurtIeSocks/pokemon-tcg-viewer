@@ -16,6 +16,9 @@ import {
 import { ImportDialog } from "@/components/vault/import-dialog";
 import { PortfolioChart } from "@/components/vault/portfolio-chart";
 import { ValueStats } from "@/components/vault/value-stats";
+import { bcp47 } from "@/lib/bcp47";
+import { m } from "@/paraglide/messages";
+import { getLocale } from "@/paraglide/runtime";
 import { useEnsurePrices } from "@/store/corpus/prices-runtime";
 import { useCaptureSnapshot } from "../../store/userland/snapshot-capture";
 import { useCollectionStats } from "../../store/userland/stats";
@@ -47,32 +50,42 @@ export function VaultSummaryHero() {
 								{pct}%
 							</span>
 							<span className="mt-0.5 text-[9.5px] uppercase tracking-widest text-(--faint)">
-								complete
+								{m.vault_complete_label()}
 							</span>
 						</div>
 					</ProgressRing>
 
 					{/* Stats row */}
 					<div className="flex flex-1 flex-wrap gap-8">
-						<Stat value={cardsOwned.toLocaleString()} label="cards owned" />
-						<Stat value={setsTouched.toLocaleString()} label="sets touched" />
+						<Stat
+							value={cardsOwned.toLocaleString(bcp47(getLocale()))}
+							label={m.vault_cards_owned_label()}
+						/>
+						<Stat
+							value={setsTouched.toLocaleString(bcp47(getLocale()))}
+							label={m.vault_sets_touched_label()}
+						/>
 						<ValueStats />
 						{thisWeek > 0 && (
-							<Stat value={`+${thisWeek}`} label="this week" tone="up" />
+							<Stat
+								value={`+${thisWeek}`}
+								label={m.vault_this_week_label()}
+								tone="up"
+							/>
 						)}
 					</div>
 
 					{/* Actions */}
 					<div className="flex flex-wrap gap-2">
 						<Button asChild size="sm">
-							<Link to="/vault/cards">Add cards</Link>
+							<Link to="/vault/cards">{m.vault_add_cards()}</Link>
 						</Button>
 						<Button
 							variant="ghost"
 							size="sm"
 							onClick={() => setImportOpen(true)}
 						>
-							Import
+							{m.vault_import_action()}
 						</Button>
 						<TooltipProvider>
 							<Tooltip>
@@ -80,7 +93,9 @@ export function VaultSummaryHero() {
 									<Button
 										variant="ghost"
 										size="icon-sm"
-										aria-label={hidden ? "Show values" : "Hide values"}
+										aria-label={
+											hidden ? m.vault_show_values() : m.vault_hide_values()
+										}
 										onClick={() => updateProfile({ hideValue: !hidden })}
 									>
 										{hidden ? (
@@ -92,8 +107,8 @@ export function VaultSummaryHero() {
 								</TooltipTrigger>
 								<TooltipContent>
 									{hidden
-										? "Show monetary values"
-										: "Hide monetary values (for screenshots)"}
+										? m.vault_show_monetary_values()
+										: m.vault_hide_monetary_values()}
 								</TooltipContent>
 							</Tooltip>
 						</TooltipProvider>

@@ -5,6 +5,7 @@ import { POST_SIGN_IN_PATH } from "@/components/auth/auth-actions";
 import { Button } from "@/components/ui/button";
 import { BezelPanel } from "@/components/ui/glass";
 import { getBrowserClient, isCloudEnabled } from "@/lib/supabase/client";
+import { m } from "@/paraglide/messages";
 
 /**
  * Search params on the magic-link return URL. Supabase delivers EITHER:
@@ -34,7 +35,7 @@ export const Route = createFileRoute("/auth/callback")({
 				? search.error_description
 				: undefined,
 	}),
-	head: () => ({ meta: [{ title: "Signing in… · Cardstack" }] }),
+	head: () => ({ meta: [{ title: m.auth_callback_meta_title() }] }),
 	component: AuthCallback,
 });
 
@@ -84,7 +85,7 @@ function AuthCallback() {
 
 		async function run() {
 			if (!isCloudEnabled()) {
-				fail("Cloud sync is off in this build. Your cards still work locally.");
+				fail(m.auth_cloud_off_message());
 				return;
 			}
 			// Provider rejected the link (expired, already used, etc.).
@@ -115,15 +116,11 @@ function AuthCallback() {
 				// param was present. Only fail if no session lands.
 				const session = await waitForSession(auth);
 				if (!session) {
-					return fail(
-						"This link is expired or already used. Ask for a fresh one and you're back in.",
-					);
+					return fail(m.auth_link_expired_message());
 				}
 			} catch (e) {
 				return fail(
-					e instanceof Error
-						? e.message
-						: "Sign-in hit a snag. Try the link again.",
+					e instanceof Error ? e.message : m.auth_signin_snag_message(),
 				);
 			}
 
@@ -145,22 +142,22 @@ function AuthCallback() {
 				{phase === "exchanging" ? (
 					<div className="space-y-2 py-4">
 						<p className="font-display text-lg font-semibold text-(--ink)">
-							Signing you in…
+							{m.auth_signing_you_in()}
 						</p>
 						<p className="text-sm text-(--ink-muted)">
-							Checking your magic link. One sec.
+							{m.auth_checking_magic_link()}
 						</p>
 					</div>
 				) : (
 					<div className="space-y-4 py-4">
 						<div className="space-y-1.5">
 							<p className="font-display text-lg font-semibold text-(--ink)">
-								That link didn't work
+								{m.auth_link_failed_title()}
 							</p>
 							<p className="text-sm text-(--ink-muted)">{message}</p>
 						</div>
 						<Button asChild variant="soft" size="sm">
-							<Link to="/vault">Back to your Vault</Link>
+							<Link to="/vault">{m.auth_back_to_vault()}</Link>
 						</Button>
 					</div>
 				)}

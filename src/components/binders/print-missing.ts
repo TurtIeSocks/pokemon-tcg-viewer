@@ -1,3 +1,4 @@
+import { m } from "@/paraglide/messages";
 import type { HoloCardData } from "../holo-card/types";
 
 /**
@@ -77,7 +78,7 @@ export function missingCardViews(
 
 /** "N cards to print" (singular "1 card to print"). No em-dashes in copy. */
 export function printCountLabel(count: number): string {
-	return `${count} ${count === 1 ? "card" : "cards"} to print`;
+	return m.binder_print_count_label({ count });
 }
 
 /**

@@ -1,12 +1,14 @@
 import { useEffect, useRef } from "react";
 import { PRICING_ENABLED } from "@/lib/pricing-flag";
 import { cn } from "@/lib/utils";
+import { m } from "@/paraglide/messages";
 import type { CardTab } from "../../lib/card-route";
 
-const ALL_TABS: { value: CardTab; label: string }[] = [
-	{ value: "details", label: "Details" },
-	{ value: "collection", label: "Collection" },
-	{ value: "pricing", label: "Pricing" },
+/** Thunk labels, not plain strings — see {@link NavDestination.label} in command-palette-data.ts. */
+const ALL_TABS: { value: CardTab; label: () => string }[] = [
+	{ value: "details", label: () => m.card_tab_details() },
+	{ value: "collection", label: () => m.card_tab_collection() },
+	{ value: "pricing", label: () => m.card_tab_pricing() },
 ];
 
 const TABS = ALL_TABS.filter((t) => t.value !== "pricing" || PRICING_ENABLED);
@@ -53,7 +55,7 @@ export function CardTabs({
 		<div
 			ref={listRef}
 			role="tablist"
-			aria-label="Card views"
+			aria-label={m.card_tabs_aria()}
 			className="relative z-10 flex items-end gap-1"
 		>
 			{TABS.map((t) => {
@@ -85,7 +87,7 @@ export function CardTabs({
 								: "translate-y-px border-transparent bg-white/2 text-(--faint) hover:bg-white/5 hover:text-(--ink-muted) motion-reduce:translate-y-0",
 						)}
 					>
-						{t.label}
+						{t.label()}
 					</button>
 				);
 			})}

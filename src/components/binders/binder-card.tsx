@@ -2,10 +2,11 @@
 
 import { Link } from "@tanstack/react-router";
 import { Share2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/ui/glass";
 import { ProgressBar } from "@/components/ui/progress-bar";
+import { m } from "@/paraglide/messages";
 import { useBinderProgress } from "../../store/userland/selectors";
 import { useUserland } from "../../store/userland/userland-store";
 import { ShareDialog } from "./share-dialog";
@@ -26,13 +27,12 @@ export function BinderCard({ binderId }: BinderCardProps) {
 	const binder = useUserland((s) => s.binders[binderId]);
 	const progress = useBinderProgress(binderId);
 
-	const countLine = useMemo(
-		() =>
-			binder
-				? `${binder.rules.length} ${binder.rules.length === 1 ? "rule" : "rules"} · ${binder.includeCardIds.length} ${binder.includeCardIds.length === 1 ? "card" : "cards"}`
-				: "",
-		[binder],
-	);
+	// Not memoized (unlike a pure data derivation): m.*() reads the active
+	// locale at call time, so this must recompute on every render to react to
+	// locale switches, not just binder changes.
+	const countLine = binder
+		? `${m.binder_rule_count({ count: binder.rules.length })} · ${m.binder_card_count({ count: binder.includeCardIds.length })}`
+		: "";
 
 	const pct =
 		progress && progress.total > 0
@@ -81,16 +81,14 @@ export function BinderCard({ binderId }: BinderCardProps) {
 							/>
 							<div className="flex items-baseline justify-between">
 								<span className="text-[11px] text-(--faint) uppercase tracking-wide">
-									progress
+									{m.binder_progress_label()}
 								</span>
 								<span className="font-mono text-xs tabular-nums text-(--ink)">
 									{progress ? (
 										<>
 											{progress.owned}/{progress.total}
 											{pct > 0 && (
-												<span className="ml-1.5 text-(--faint)">
-													{pct}%
-												</span>
+												<span className="ml-1.5 text-(--faint)">{pct}%</span>
 											)}
 										</>
 									) : (
@@ -107,7 +105,7 @@ export function BinderCard({ binderId }: BinderCardProps) {
 					variant="ghost"
 					size="icon"
 					className="absolute top-3.5 right-3.5 h-7 w-7 text-(--faint) hover:text-(--ink)"
-					aria-label="Share binder"
+					aria-label={m.binder_share_aria()}
 					onClick={(e) => {
 						e.stopPropagation();
 						setShareOpen(true);

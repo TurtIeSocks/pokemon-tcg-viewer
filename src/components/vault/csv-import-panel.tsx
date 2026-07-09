@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { m } from "@/paraglide/messages";
 import type { PokemonSet } from "../../server/card-mappers";
 import { useStore } from "../../store";
 import {
@@ -30,6 +31,53 @@ interface CsvImportPanelProps {
 	onClose: () => void;
 }
 
+/** Human-readable label for a CSV_COLUMNS field. Reads the active locale at
+ *  call time (invoked from render, not module scope). */
+function csvFieldLabel(field: (typeof CSV_COLUMNS)[number]): string {
+	switch (field) {
+		case "card_id":
+			return m.vault_csv_field_card_id();
+		case "card_name":
+			return m.vault_csv_field_card_name();
+		case "set_id":
+			return m.vault_csv_field_set_id();
+		case "set_name":
+			return m.vault_csv_field_set_name();
+		case "number":
+			return m.vault_csv_field_number();
+		case "language":
+			return m.vault_csv_field_language();
+		case "variant":
+			return m.vault_csv_field_variant();
+		case "quantity":
+			return m.vault_csv_field_quantity();
+		case "condition":
+			return m.vault_csv_field_condition();
+		case "grading_company":
+			return m.vault_csv_field_grading_company();
+		case "grading_grade":
+			return m.vault_csv_field_grading_grade();
+		case "grading_cert":
+			return m.vault_csv_field_grading_cert();
+		case "price_paid_unit":
+			return m.vault_csv_field_price_paid_unit();
+		case "currency":
+			return m.vault_csv_field_currency();
+		case "acquired_at":
+			return m.vault_csv_field_acquired_at();
+		case "source":
+			return m.vault_csv_field_source();
+		case "storage_location":
+			return m.vault_csv_field_storage_location();
+		case "label":
+			return m.vault_csv_field_label();
+		case "notes":
+			return m.vault_csv_field_notes();
+		default:
+			return field;
+	}
+}
+
 /** A single unmatched row: shows its CSV identity + a corpus search to pick the right card. */
 function ReviewRow({
 	row,
@@ -57,15 +105,15 @@ function ReviewRow({
 	return (
 		<div className="rounded-(--r-control) border border-(--border) bg-(--glass) p-2 flex flex-col gap-1.5">
 			<div className="text-xs text-(--ink-muted)">
-				{row.card_name || "(no name)"}
+				{row.card_name || m.vault_csv_no_name()}
 				{row.set_name ? ` · ${row.set_name}` : ""}
 				{row.number ? ` #${row.number}` : ""}
 			</div>
 			<Input
 				value={q}
 				onChange={(e) => setQ(e.target.value)}
-				aria-label={`Search a card for row ${index + 1}`}
-				placeholder="Search a card…"
+				aria-label={m.vault_csv_search_row_aria({ n: index + 1 })}
+				placeholder={m.vault_csv_search_placeholder()}
 				className="text-sm"
 			/>
 			{candidates.length > 0 && (
@@ -148,26 +196,24 @@ export function CsvImportPanel({ rows, onClose }: CsvImportPanelProps) {
 	return (
 		<div className="flex flex-col gap-3">
 			<p className="text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold">
-				Column mapping
+				{m.vault_csv_column_mapping()}
 			</p>
 			<div className="grid grid-cols-2 gap-x-3 gap-y-2 max-h-44 overflow-y-auto pr-1">
 				{CSV_COLUMNS.map((field) => (
 					<label key={field} className="flex flex-col gap-1 text-xs">
-						<span className="text-(--ink-muted)">
-							{field.replace(/_/g, " ")}
-						</span>
+						<span className="text-(--ink-muted)">{csvFieldLabel(field)}</span>
 						<select
 							aria-label={field}
 							value={columnMap[field] ?? ""}
 							onChange={(e) =>
-								setColumnMap((m) => ({
-									...m,
+								setColumnMap((prev) => ({
+									...prev,
 									[field]: e.target.value || undefined,
 								}))
 							}
 							className="rounded-(--r-control) border border-(--border) bg-(--glass) px-2 py-1 text-(--ink)"
 						>
-							<option value="">(none)</option>
+							<option value="">{m.vault_csv_none_option()}</option>
 							{headers.map((h) => (
 								<option key={h} value={h}>
 									{h}
@@ -179,15 +225,17 @@ export function CsvImportPanel({ rows, onClose }: CsvImportPanelProps) {
 			</div>
 
 			<p className="text-sm font-mono tabular-nums text-(--ink-muted)">
-				<span className="text-(--ink)">{matched.length}</span> matched
+				<span className="text-(--ink)">{matched.length}</span>{" "}
+				{m.vault_csv_matched()}
 				{" · "}
-				<span className="text-(--ink)">{review.length}</span> unmatched
+				<span className="text-(--ink)">{review.length}</span>{" "}
+				{m.vault_csv_unmatched()}
 			</p>
 
 			{review.length > 0 && (
 				<div className="flex flex-col gap-2">
 					<p className="text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold">
-						Needs review ({review.length})
+						{m.vault_csv_needs_review({ count: review.length })}
 					</p>
 					<div className="max-h-56 overflow-y-auto flex flex-col gap-2">
 						{review.map(({ i, row }) => (
@@ -213,10 +261,10 @@ export function CsvImportPanel({ rows, onClose }: CsvImportPanelProps) {
 						checked={merge}
 						onChange={(e) => setMerge(e.target.checked)}
 					/>
-					Merge duplicate stacks
+					{m.vault_csv_merge_duplicates()}
 				</label>
 				<Button onClick={onImport} disabled={matched.length === 0}>
-					Import {matched.length} stack{matched.length === 1 ? "" : "s"}
+					{m.vault_csv_import_button({ count: matched.length })}
 				</Button>
 			</div>
 		</div>

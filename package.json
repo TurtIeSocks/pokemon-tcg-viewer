@@ -15,7 +15,9 @@
 		"lint": "biome check",
 		"format": "biome check --write --unsafe",
 		"typecheck:worker": "tsc -p worker/tsconfig.json",
-		"deploy:worker": "cd worker && bunx wrangler deploy"
+		"deploy:worker": "cd worker && bunx wrangler deploy",
+		"paraglide": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --strategy cookie preferredLanguage baseLocale --emit-ts-declarations",
+		"postinstall": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide --strategy cookie preferredLanguage baseLocale --emit-ts-declarations"
 	},
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.110.0",
@@ -54,6 +56,7 @@
 		"@biomejs/biome": "^2.4.14",
 		"@cloudflare/workers-types": "^4.20260529.1",
 		"@happy-dom/global-registrator": "^20.9.0",
+		"@inlang/paraglide-js": "^2.20.2",
 		"@testing-library/dom": "^10.4.1",
 		"@testing-library/react": "^16.3.2",
 		"@types/babel__core": "^7.20.5",

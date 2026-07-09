@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { m } from "@/paraglide/messages";
 
 const REPO_URL = "https://github.com/TurtIeSocks/pokemon-tcg-viewer";
 
@@ -20,8 +21,8 @@ export function RepoLink() {
 				href={REPO_URL}
 				target="_blank"
 				rel="noreferrer noopener"
-				aria-label="View source on GitHub"
-				title="View source on GitHub"
+				aria-label={m.shell_view_source_github()}
+				title={m.shell_view_source_github()}
 			>
 				<GithubMark />
 			</a>

@@ -161,6 +161,7 @@ export function makeProfile(overrides: Partial<Profile> = {}): Profile {
 		avatarPreset: "dusk",
 		favoriteSetId: null,
 		displayLanguage: "en",
+		uiLanguage: "en",
 		displayCurrency: "USD",
 		hideValue: false,
 		createdAt: now,

@@ -4,6 +4,7 @@ import {
 	useNavigate,
 } from "@tanstack/react-router";
 import { useMemo } from "react";
+import { m } from "@/paraglide/messages";
 import { PokedexControls } from "../../components/pokedex/pokedex-controls";
 import { PokedexGrid } from "../../components/pokedex/pokedex-grid";
 import { ResultsBar } from "../../components/results-bar";
@@ -26,12 +27,14 @@ export const Route = createFileRoute("/pokemon/")({
 	loader: () => getPokedexFn(),
 	head: ({ loaderData }) => ({
 		meta: [
-			{ title: "Pokédex · every Pokémon TCG card by species" },
+			{ title: m.pokemon_meta_title() },
 			{
 				name: "description",
-				content: `Browse ${loaderData?.length ?? ""} Pokémon species and find every TCG card of each.`,
+				content: m.pokemon_meta_description({
+					count: loaderData?.length ?? "",
+				}),
 			},
-			{ property: "og:title", content: "Pokédex · Pokémon TCG by species" },
+			{ property: "og:title", content: m.pokemon_meta_og_title() },
 		],
 	}),
 	component: PokedexPage,
@@ -63,7 +66,7 @@ function PokedexPage() {
 				/>
 			</div>
 			<div className="shrink-0">
-				<ResultsBar count={visible.length} unit="species">
+				<ResultsBar count={visible.length} unit={m.pokemon_species_unit()}>
 					<SortControl
 						mode={filter.sortMode}
 						dir={filter.sortDir}

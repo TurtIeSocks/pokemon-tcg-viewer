@@ -143,6 +143,7 @@ export interface Profile {
 	avatarPreset: string; // key into AVATAR_PRESETS (gradient); never an uploaded image
 	favoriteSetId: string | null; // corpus set id (FK); null = none picked
 	displayLanguage: string; // ISO 639-1; catalog render language; always present (default "en")
+	uiLanguage: string; // ISO 639-1; site-chrome language, independent of displayLanguage; always present (default "en")
 	displayCurrency: string; // ISO 4217; portfolio/display currency; always present (default "USD")
 	hideValue: boolean; // hide all monetary surfaces; always present (default false)
 	createdAt: number; // ms epoch; set on first save
@@ -159,6 +160,7 @@ export type ProfilePatch = Partial<
 		| "avatarPreset"
 		| "favoriteSetId"
 		| "displayLanguage"
+		| "uiLanguage"
 		| "displayCurrency"
 		| "hideValue"
 	>

@@ -27,6 +27,7 @@ import {
 	type SupportedLanguage,
 } from "@/lib/languages";
 import { cn } from "@/lib/utils";
+import { m } from "@/paraglide/messages";
 import { type CardVariant, variantLabel } from "../../lib/card-variants";
 import type { Stack } from "../../store/userland/types";
 import {
@@ -35,7 +36,7 @@ import {
 	useUserland,
 } from "../../store/userland/userland-store";
 import { formToPatch, itemToForm } from "./stack-form-mapping";
-import { CONDITIONS, GRADERS, stackFormSchema } from "./stack-form-schema";
+import { CONDITIONS, GRADERS, makeStackFormSchema } from "./stack-form-schema";
 
 /** Western-region languages, in display order (everything not in ASIAN_LANGUAGES). */
 const WESTERN_LANGUAGES: readonly SupportedLanguage[] =
@@ -207,7 +208,7 @@ function SelectField<T extends string>({
 					<SelectValue placeholder={placeholder} />
 				</SelectTrigger>
 				<SelectContent>
-					<SelectItem value={NONE}>Unspecified</SelectItem>
+					<SelectItem value={NONE}>{m.stack_unspecified()}</SelectItem>
 					{options.map((o) => (
 						<SelectItem key={o} value={o}>
 							{o}
@@ -253,9 +254,9 @@ function LanguageSelectField({
 					<SelectValue placeholder={placeholder} />
 				</SelectTrigger>
 				<SelectContent>
-					<SelectItem value={NONE}>Unspecified</SelectItem>
+					<SelectItem value={NONE}>{m.stack_unspecified()}</SelectItem>
 					<SelectGroup>
-						<SelectLabel>Western</SelectLabel>
+						<SelectLabel>{m.stack_language_western()}</SelectLabel>
 						{WESTERN_LANGUAGES.map((lang) => (
 							<SelectItem key={lang} value={lang}>
 								{LANGUAGE_LABELS[lang]}
@@ -264,7 +265,7 @@ function LanguageSelectField({
 					</SelectGroup>
 					<SelectSeparator />
 					<SelectGroup>
-						<SelectLabel>Asian</SelectLabel>
+						<SelectLabel>{m.stack_language_asian()}</SelectLabel>
 						{ASIAN_LANGUAGES.map((lang) => (
 							<SelectItem key={lang} value={lang}>
 								{LANGUAGE_LABELS[lang]}
@@ -398,6 +399,9 @@ export function StackEditForm({
 		mode === "edit" && item
 			? itemToForm(item)
 			: { ...BLANK_DEFAULTS, currency: toSupportedCurrency(profileCurrency) };
+	// Built at render time (not module scope) so its .refine() messages resolve
+	// against the active locale — see makeStackFormSchema's doc comment.
+	const stackFormSchema = makeStackFormSchema();
 
 	const form = useForm({
 		defaultValues,
@@ -430,8 +434,8 @@ export function StackEditForm({
 				children={(field) => (
 					<TextField
 						field={field}
-						label="Label"
-						placeholder="Name this card (optional)"
+						label={m.stack_field_label()}
+						placeholder={m.stack_label_placeholder()}
 					/>
 				)}
 			/>
@@ -446,11 +450,11 @@ export function StackEditForm({
 					children={(field) => (
 						<TextField
 							field={field}
-							label="Quantity"
+							label={m.stack_field_quantity()}
 							type="number"
 							min={1}
 							mono
-							ariaLabel="Quantity"
+							ariaLabel={m.stack_field_quantity()}
 						/>
 					)}
 				/>
@@ -463,13 +467,13 @@ export function StackEditForm({
 						// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 						children={(field) => (
 							<Field className="sm:col-span-2">
-								<FieldLabel>Printing</FieldLabel>
+								<FieldLabel>{m.stack_field_printing()}</FieldLabel>
 								<SegmentedControl
-									aria-label="Printing"
+									aria-label={m.stack_field_printing()}
 									value={field.state.value}
 									onChange={(v) => field.handleChange(v)}
 									options={[
-										{ value: "", label: "Unspecified" },
+										{ value: "", label: m.stack_unspecified() },
 										...variantsDetailed.map((v) => ({
 											value: v.variantId,
 											label: variantLabel(v),
@@ -488,13 +492,13 @@ export function StackEditForm({
 							// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 							children={(field) => (
 								<Field className="sm:col-span-2">
-									<FieldLabel>Variant</FieldLabel>
+									<FieldLabel>{m.stack_field_variant()}</FieldLabel>
 									<SegmentedControl
-										aria-label="Variant"
+										aria-label={m.stack_field_variant()}
 										value={field.state.value}
 										onChange={(v) => field.handleChange(v)}
 										options={[
-											{ value: "", label: "Unspecified" },
+											{ value: "", label: m.stack_unspecified() },
 											...variants.map((v) => ({ value: v, label: v })),
 										]}
 									/>
@@ -510,14 +514,14 @@ export function StackEditForm({
 					// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 					children={(field) => (
 						<Field className="sm:col-span-2">
-							<FieldLabel>State</FieldLabel>
+							<FieldLabel>{m.stack_field_state()}</FieldLabel>
 							<SegmentedControl
-								aria-label="State"
+								aria-label={m.stack_field_state()}
 								value={field.state.value}
 								onChange={(v) => field.handleChange(v as "raw" | "graded")}
 								options={[
-									{ value: "raw", label: "Raw" },
-									{ value: "graded", label: "Graded" },
+									{ value: "raw", label: m.stack_state_raw() },
+									{ value: "graded", label: m.stack_state_graded() },
 								]}
 							/>
 						</Field>
@@ -537,8 +541,8 @@ export function StackEditForm({
 								children={(field) => (
 									<SelectField
 										field={field}
-										label="Condition"
-										placeholder="Select condition…"
+										label={m.stack_field_condition()}
+										placeholder={m.stack_condition_placeholder()}
 										options={CONDITIONS}
 									/>
 								)}
@@ -552,9 +556,9 @@ export function StackEditForm({
 									children={(field) => (
 										<SelectField
 											field={field}
-											label="Grader / company"
-											ariaLabel="Grader / company"
-											placeholder="Select grader…"
+											label={m.stack_field_grader()}
+											ariaLabel={m.stack_field_grader()}
+											placeholder={m.stack_grader_placeholder()}
 											options={GRADERS}
 										/>
 									)}
@@ -566,13 +570,18 @@ export function StackEditForm({
 										onBlur: ({ value }) => {
 											if (value === "") return undefined;
 											const n = Number(value);
-											if (!Number.isFinite(n) || n < 0 || n > 10) return "0-10";
+											if (!Number.isFinite(n) || n < 0 || n > 10)
+												return m.form_grade_error();
 											return undefined;
 										},
 									}}
 									// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 									children={(field) => (
-										<TextField field={field} label="Grade" type="number" />
+										<TextField
+											field={field}
+											label={m.stack_field_grade()}
+											type="number"
+										/>
 									)}
 								/>
 
@@ -582,8 +591,8 @@ export function StackEditForm({
 									children={(field) => (
 										<TextField
 											field={field}
-											label="Cert / serial"
-											placeholder="Slab cert number (optional)"
+											label={m.stack_field_cert()}
+											placeholder={m.stack_cert_placeholder()}
 										/>
 									)}
 								/>
@@ -598,7 +607,7 @@ export function StackEditForm({
 					validators={{ onBlur: stackFormSchema.shape.acquiredAt }}
 					// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 					children={(field) => (
-						<DateField field={field} label="Acquired date" />
+						<DateField field={field} label={m.stack_field_acquired_date()} />
 					)}
 				/>
 
@@ -609,7 +618,7 @@ export function StackEditForm({
 						onBlur: ({ value }) => {
 							if (value === "") return undefined;
 							const n = Number(value);
-							if (!Number.isFinite(n) || n < 0) return "Must be a number ≥ 0";
+							if (!Number.isFinite(n) || n < 0) return m.form_price_error();
 							return undefined;
 						},
 					}}
@@ -617,10 +626,10 @@ export function StackEditForm({
 					children={(field) => (
 						<TextField
 							field={field}
-							label="Price paid"
+							label={m.stack_field_price_paid()}
 							type="number"
 							mono
-							ariaLabel="Price paid"
+							ariaLabel={m.stack_field_price_paid()}
 						/>
 					)}
 				/>
@@ -631,7 +640,9 @@ export function StackEditForm({
 					// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 					children={(field) => (
 						<Field>
-							<FieldLabel htmlFor={field.name}>Currency</FieldLabel>
+							<FieldLabel htmlFor={field.name}>
+								{m.stack_field_currency()}
+							</FieldLabel>
 							<Select
 								value={field.state.value}
 								onValueChange={(v) => field.handleChange(v)}
@@ -658,8 +669,8 @@ export function StackEditForm({
 					children={(field) => (
 						<LanguageSelectField
 							field={field}
-							label="Language"
-							placeholder="Select language…"
+							label={m.stack_field_language()}
+							placeholder={m.stack_language_placeholder()}
 						/>
 					)}
 				/>
@@ -673,8 +684,8 @@ export function StackEditForm({
 					children={(field) => (
 						<TextField
 							field={field}
-							label="Source"
-							placeholder="Where / who from"
+							label={m.stack_field_source()}
+							placeholder={m.stack_source_placeholder()}
 						/>
 					)}
 				/>
@@ -684,8 +695,8 @@ export function StackEditForm({
 					children={(field) => (
 						<TextField
 							field={field}
-							label="Storage location"
-							placeholder="Binder / box"
+							label={m.stack_field_storage_location()}
+							placeholder={m.stack_storage_placeholder()}
 						/>
 					)}
 				/>
@@ -697,7 +708,7 @@ export function StackEditForm({
 				validators={{ onBlur: stackFormSchema.shape.notes }}
 				// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 				children={(field) => (
-					<TextField field={field} label="Notes" multiline />
+					<TextField field={field} label={m.stack_field_notes()} multiline />
 				)}
 			/>
 
@@ -715,7 +726,7 @@ export function StackEditForm({
 							disabled={!canSubmit || isSubmitting}
 							className="flex-1"
 						>
-							{isSubmitting ? "Saving…" : "Save"}
+							{isSubmitting ? m.form_saving() : m.form_save()}
 						</Button>
 						<Button
 							type="button"
@@ -723,7 +734,7 @@ export function StackEditForm({
 							onClick={onCancel}
 							className="flex-1"
 						>
-							Cancel
+							{m.form_cancel()}
 						</Button>
 					</div>
 				)}

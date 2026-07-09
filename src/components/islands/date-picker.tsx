@@ -12,6 +12,7 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { m } from "@/paraglide/messages";
 
 // The form layer speaks `yyyy-MM-dd` (see stack-form-mapping `dayMsToInput`/
 // `inputDayToMs`). date-fns `format`/`parse` both operate in LOCAL time — the
@@ -80,7 +81,11 @@ export function DatePicker({
 					)}
 				>
 					<CalendarIcon />
-					{selected ? format(selected, "LLL dd, y") : <span>Pick a date</span>}
+					{selected ? (
+						format(selected, "LLL dd, y")
+					) : (
+						<span>{m.date_picker_placeholder()}</span>
+					)}
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent className="w-auto p-0" align="start">

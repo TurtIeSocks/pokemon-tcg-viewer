@@ -1,6 +1,7 @@
 // scan.tsx
 import { createFileRoute } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
+import { m } from "@/paraglide/messages";
 import { useEnsureCorpus } from "../store/corpus/use-ensure-corpus";
 
 // R1/R4: ScanView dynamic-imports Tesseract.js internally (via getOcr), but
@@ -12,7 +13,7 @@ const ScanView = lazy(() =>
 );
 
 export const Route = createFileRoute("/scan")({
-	head: () => ({ meta: [{ title: "Scan a card · Cardstack" }] }),
+	head: () => ({ meta: [{ title: m.scan_meta_title() }] }),
 	component: ScanPage,
 });
 
@@ -21,12 +22,10 @@ function ScanPage() {
 	return (
 		<div className="mx-auto w-full max-w-md px-4 py-6">
 			<h1 className="mb-4 font-display text-2xl text-(--ink)">
-				Scan a card
+				{m.scan_page_heading()}
 			</h1>
 			<Suspense
-				fallback={
-					<div className="text-(--ink-muted)">Loading scanner…</div>
-				}
+				fallback={<div className="text-(--ink-muted)">{m.scan_loading()}</div>}
 			>
 				<ScanView />
 			</Suspense>

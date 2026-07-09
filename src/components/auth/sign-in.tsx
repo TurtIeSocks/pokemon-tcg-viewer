@@ -9,11 +9,22 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { fieldErrorText } from "@/lib/field-error";
 import { isCloudEnabled } from "@/lib/supabase/client";
+import { m } from "@/paraglide/messages";
 import { sendMagicLink } from "./auth-actions";
 
-const signInSchema = z.object({
-	email: z.string().min(1, "Email is required").email("Enter a valid email"),
-});
+/**
+ * A factory, not a module-scope constant: the `.min()`/`.email()` messages call
+ * `m.*()`, which reads the ACTIVE locale when called — building this at
+ * module-eval time would freeze it to the base locale forever.
+ */
+function makeSignInSchema() {
+	return z.object({
+		email: z
+			.string()
+			.min(1, m.auth_email_required())
+			.email(m.auth_email_invalid()),
+	});
+}
 
 /**
  * Passwordless sign-in: enter an email → receive a magic link → land back on
@@ -31,6 +42,9 @@ function SignInForm() {
 	const [sentTo, setSentTo] = useState<string | null>(null);
 	// Submit-level error (network / Supabase), distinct from field validation.
 	const [submitError, setSubmitError] = useState<string | null>(null);
+	// Built at render time (not module scope) so its messages resolve against
+	// the active locale — see makeSignInSchema's doc comment.
+	const signInSchema = makeSignInSchema();
 
 	const form = useForm({
 		defaultValues: { email: "" },
@@ -53,11 +67,11 @@ function SignInForm() {
 					<MailCheck className="size-5" />
 				</div>
 				<div className="space-y-1">
-					<p className="font-medium text-(--ink)">Check your email</p>
+					<p className="font-medium text-(--ink)">
+						{m.shell_check_your_email()}
+					</p>
 					<p className="text-sm text-(--ink-muted)">
-						We sent a sign-in link to{" "}
-						<span className="font-medium text-(--ink)">{sentTo}</span>.
-						Open it on this device to finish signing in.
+						{m.shell_sign_in_link_sent({ email: sentTo ?? "" })}
 					</p>
 				</div>
 				<Button
@@ -69,7 +83,7 @@ function SignInForm() {
 						setSubmitError(null);
 					}}
 				>
-					Use a different email
+					{m.shell_use_different_email()}
 				</Button>
 			</div>
 		);
@@ -94,7 +108,9 @@ function SignInForm() {
 						field.state.meta.isTouched && !field.state.meta.isValid;
 					return (
 						<Field data-invalid={isInvalid}>
-							<FieldLabel htmlFor={field.name}>Email</FieldLabel>
+							<FieldLabel htmlFor={field.name}>
+								{m.shell_email_label()}
+							</FieldLabel>
 							<Input
 								id={field.name}
 								type="email"
@@ -104,7 +120,7 @@ function SignInForm() {
 								value={field.state.value}
 								onBlur={field.handleBlur}
 								onChange={(e) => field.handleChange(e.target.value)}
-								placeholder="you@example.com"
+								placeholder={m.shell_email_placeholder()}
 							/>
 							{isInvalid && field.state.meta.errors.length > 0 && (
 								<FieldError>
@@ -130,7 +146,9 @@ function SignInForm() {
 				// biome-ignore lint/correctness/noChildrenProp: TanStack Form requires render-prop
 				children={({ canSubmit, isSubmitting }) => (
 					<Button type="submit" disabled={!canSubmit || isSubmitting}>
-						{isSubmitting ? "Sending…" : "Send magic link"}
+						{isSubmitting
+							? m.shell_sending_ellipsis()
+							: m.shell_send_magic_link()}
 					</Button>
 				)}
 			/>

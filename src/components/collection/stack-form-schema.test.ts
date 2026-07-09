@@ -5,7 +5,7 @@ import {
 	isMoneyOrEmpty,
 	isValidDateStr,
 	LANGUAGES,
-	stackFormSchema,
+	makeStackFormSchema,
 } from "./stack-form-schema";
 
 test("predicates", () => {
@@ -22,6 +22,7 @@ test("predicates", () => {
 });
 
 test("schema accepts a valid raw stack and rejects bad price", () => {
+	const stackFormSchema = makeStackFormSchema();
 	const base = {
 		label: "",
 		quantity: "1",
@@ -60,6 +61,7 @@ test("LANGUAGES derives from SUPPORTED_LANGUAGES (Asian codes included)", () => 
 });
 
 test("schema accepts every SUPPORTED_LANGUAGES code as a valid language value", () => {
+	const stackFormSchema = makeStackFormSchema();
 	const base = {
 		label: "",
 		quantity: "1",

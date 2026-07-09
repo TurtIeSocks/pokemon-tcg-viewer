@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { m } from "@/paraglide/messages";
 import { useStore } from "../../store";
 import {
 	resolveCardAcrossRegions,
@@ -58,16 +59,16 @@ export function VaultBackupControls() {
 	return (
 		<div className="flex flex-wrap gap-2">
 			<Button variant="secondary" size="sm" onClick={exportBackup}>
-				Export backup
+				{m.vault_export_backup()}
 			</Button>
 			<Button variant="secondary" size="sm" onClick={() => exportCsv("stack")}>
-				Export CSV (stacks)
+				{m.vault_export_csv_stacks()}
 			</Button>
 			<Button variant="secondary" size="sm" onClick={() => exportCsv("copy")}>
-				Export CSV (per card)
+				{m.vault_export_csv_per_card()}
 			</Button>
 			<Button variant="secondary" size="sm" onClick={() => setImportOpen(true)}>
-				Import backup
+				{m.vault_import_backup_button()}
 			</Button>
 			<ImportDialog open={importOpen} onOpenChange={setImportOpen} />
 		</div>

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { OwnedMissingGrid } from "@/components/vault/owned-missing-grid";
 import { binderRuleLabel } from "@/lib/binder-rule-label";
+import { m } from "@/paraglide/messages";
 import { useStore } from "../../store";
 import {
 	hydrateCard,
@@ -146,10 +147,7 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 	);
 
 	async function handleDelete() {
-		if (
-			!window.confirm(`Delete binder "${binder.name}"? This cannot be undone.`)
-		)
-			return;
+		if (!window.confirm(m.binder_delete_confirm({ name: binder.name }))) return;
 		await removeBinder(binder.id);
 		await navigate({ to: "/vault/binders" });
 	}
@@ -159,11 +157,11 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 			{/* Back link */}
 			<Link
 				to="/vault/binders"
-				aria-label="Back to binders"
+				aria-label={m.vault_back_to_binders()}
 				className="inline-flex items-center gap-1 text-sm text-(--ink-muted) hover:text-(--ink) transition-colors"
 			>
 				<ArrowLeft className="h-4 w-4" />
-				Binders
+				{m.vault_binders_heading()}
 			</Link>
 
 			{/* Header */}
@@ -181,44 +179,44 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 						variant="ghost"
 						size="sm"
 						onClick={() => setEditOpen(true)}
-						aria-label="Edit binder"
+						aria-label={m.binder_edit_aria()}
 					>
 						<Pencil className="h-4 w-4 mr-1" />
-						Edit
+						{m.binder_edit_button()}
 					</Button>
 					<Button
 						variant="soft"
 						size="sm"
 						onClick={() => setShareOpen(true)}
-						aria-label="Share binder"
+						aria-label={m.binder_share_aria()}
 					>
 						<Share2 className="h-4 w-4 mr-1" />
-						Share
+						{m.binder_share_button()}
 					</Button>
 					<Button
 						variant="ghost"
 						size="sm"
 						onClick={() => setPrintOpen(true)}
-						aria-label="Print missing cards"
+						aria-label={m.binder_print_missing_cards()}
 						disabled={missingCards.length === 0}
 						title={
 							missingCards.length === 0
-								? "You own every card in this binder"
+								? m.binder_print_disabled_title()
 								: undefined
 						}
 					>
 						<Printer className="h-4 w-4 mr-1" />
-						Print missing
+						{m.binder_print_missing_button()}
 					</Button>
 					<Button
 						variant="ghost"
 						size="sm"
 						onClick={() => void handleDelete()}
-						aria-label="Delete binder"
+						aria-label={m.binder_delete_aria()}
 						className="text-danger hover:text-danger border-(--danger)/30"
 					>
 						<Trash2 className="h-4 w-4 mr-1" />
-						Delete
+						{m.stack_delete()}
 					</Button>
 				</div>
 			</div>
@@ -228,7 +226,7 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 				<div className="rounded-(--r-panel) border border-border bg-(--glass) p-4 space-y-2 backdrop-blur-xl">
 					<div className="flex justify-between text-sm">
 						<span className="text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold self-center">
-							Progress
+							{m.binder_progress_label()}
 						</span>
 						<span className="font-mono tabular-nums text-(--ink-muted)">
 							<span
@@ -240,7 +238,7 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 							>
 								{progress.owned}
 							</span>
-							/{progress.total} cards
+							{m.binder_progress_of_total_cards({ total: progress.total })}
 							{progress.total > 0
 								? ` (${Math.round((progress.owned / progress.total) * 100)}%)`
 								: ""}
@@ -254,7 +252,7 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 					{value != null ? (
 						<div className="flex justify-between text-sm">
 							<span className="text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold self-center">
-								Market value
+								{m.binder_market_value_label()}
 							</span>
 							<span className="font-mono tabular-nums text-success">
 								{hidden ? "•••" : formatPrice(value, currency)}
@@ -268,7 +266,7 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 			{binder.rules.length > 0 && (
 				<div>
 					<h2 className="text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold mb-2">
-						Rules
+						{m.binder_rules_heading()}
 					</h2>
 					<div className="flex flex-wrap gap-2">
 						{binder.rules.map((rule) => {
@@ -280,7 +278,7 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 								<RemovableChip
 									key={rule.id}
 									label={label}
-									removeLabel={`Remove rule ${label}`}
+									removeLabel={m.binder_remove_rule_aria({ label })}
 									onRemove={() => void removeRuleFromBinder(binder.id, rule.id)}
 								/>
 							);
@@ -292,7 +290,7 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 			{/* Members grid */}
 			<div>
 				<h2 className="text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold mb-3">
-					Members
+					{m.binder_members_heading()}
 					{memberCards.length > 0 && (
 						<span className="ml-2 font-mono tabular-nums text-(--ink-muted) normal-case tracking-normal text-sm">
 							({memberCards.length})
@@ -310,7 +308,7 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 								<RemovableChip
 									key={cardId}
 									label={card.name}
-									removeLabel={`Remove ${card.name} from binder`}
+									removeLabel={m.binder_remove_card_aria({ name: card.name })}
 									onRemove={() => void removeCardFromBinder(binder.id, cardId)}
 								/>
 							);

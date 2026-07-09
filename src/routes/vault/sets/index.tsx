@@ -1,6 +1,7 @@
 import { ClientOnly, createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { VaultPageHeader } from "@/components/vault/vault-page-header";
+import { m } from "@/paraglide/messages";
 import { SetTile } from "../../../components/shell/set-tile";
 import { Button } from "../../../components/ui/button";
 import { getNavTreeFn } from "../../../server/nav-tree";
@@ -37,8 +38,8 @@ export function VaultSetsInner() {
 	return (
 		<div className="space-y-8">
 			<VaultPageHeader
-				title="Sets"
-				subtitle="See how close you are on every set."
+				title={m.vault_sets_title()}
+				subtitle={m.vault_sets_subtitle()}
 				actions={
 					<>
 						<Button
@@ -47,7 +48,7 @@ export function VaultSetsInner() {
 							onClick={() => setShowAll(false)}
 							aria-pressed={!showAll}
 						>
-							Owned sets
+							{m.vault_owned_sets()}
 						</Button>
 						<Button
 							variant={showAll ? "default" : "outline"}
@@ -55,7 +56,7 @@ export function VaultSetsInner() {
 							onClick={() => setShowAll(true)}
 							aria-pressed={showAll}
 						>
-							All sets
+							{m.vault_all_sets()}
 						</Button>
 					</>
 				}
@@ -64,11 +65,9 @@ export function VaultSetsInner() {
 			{/* Empty state */}
 			{!showAll && totalOwned === 0 ? (
 				<div className="py-12 text-center space-y-3">
-					<p className="text-muted-foreground">
-						No cards yet, so no sets to track. Add a few and they show up here.
-					</p>
+					<p className="text-muted-foreground">{m.vault_no_owned_sets()}</p>
 					<Button variant="outline" size="sm" onClick={() => setShowAll(true)}>
-						Browse all sets
+						{m.vault_browse_all_sets()}
 					</Button>
 				</div>
 			) : (
@@ -99,7 +98,9 @@ function VaultSets() {
 	return (
 		<ClientOnly
 			fallback={
-				<p className="py-12 text-center text-muted-foreground">Loading sets…</p>
+				<p className="py-12 text-center text-muted-foreground">
+					{m.vault_loading_sets()}
+				</p>
 			}
 		>
 			<VaultSetsInner />

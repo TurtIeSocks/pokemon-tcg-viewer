@@ -12,6 +12,7 @@ import {
 	useBilling,
 } from "@/lib/billing/use-billing";
 import { isCloudEnabled } from "@/lib/supabase/client";
+import { m } from "@/paraglide/messages";
 
 export const Route = createFileRoute("/billing")({
 	// Stripe Checkout redirects back with ?upgraded=1 → reconcile + refresh.
@@ -20,23 +21,24 @@ export const Route = createFileRoute("/billing")({
 		search.upgraded === "1" || search.upgraded === 1 || search.upgraded === true
 			? { upgraded: true }
 			: {},
-	head: () => ({ meta: [{ title: "Billing & plan · Cardstack" }] }),
+	head: () => ({ meta: [{ title: m.billing_meta_title() }] }),
 	component: BillingPage,
 });
 
-const PLUS_FEATURES = [
-	"Sync every card, every device",
-	"Stacks and binders kept in sync",
-	"Pick up on phone, tablet, or desktop",
-] as const;
-
-const FREE_FEATURES = [
-	"Your full Vault, offline, no caps",
-	"CSV import and export, always on",
-	"Edit, delete, or export it anytime. It's your data.",
-] as const;
-
 function BillingPage() {
+	// Not module-scope consts (unlike a static data table): m.*() reads the
+	// active locale at call time, so these must be built inside the component
+	// render to react to locale switches.
+	const plusFeatures = [
+		m.billing_feature_sync_everywhere(),
+		m.billing_feature_stacks_binders_sync(),
+		m.billing_feature_pickup_anywhere(),
+	];
+	const freeFeatures = [
+		m.billing_feature_full_vault_offline(),
+		m.billing_feature_csv_import_export(),
+		m.billing_feature_edit_delete_export(),
+	];
 	const { upgraded } = Route.useSearch();
 	const { entitlement, billingEnabled, loading, refresh } = useBilling();
 	const [busy, setBusy] = useState(false);
@@ -55,7 +57,7 @@ function BillingPage() {
 		void reconcileBilling().then((result) => {
 			refresh();
 			if (result === "ok") {
-				toast.success("You're on Plus. Your Vault now syncs everywhere.");
+				toast.success(m.billing_upgrade_success_toast());
 			} else if (result === "unauthorized") {
 				setReconcileUnauthorized(true);
 			} else {
@@ -74,9 +76,9 @@ function BillingPage() {
 				window.location.href = url;
 				return;
 			}
-			toast.message("Billing isn't configured on this instance yet.");
+			toast.message(m.billing_not_configured_toast());
 		} catch (e) {
-			toast.error(e instanceof Error ? e.message : "Something went wrong.");
+			toast.error(e instanceof Error ? e.message : m.billing_generic_error());
 		} finally {
 			setBusy(false);
 		}
@@ -85,12 +87,9 @@ function BillingPage() {
 	return (
 		<div className="mx-auto w-full max-w-3xl px-4 py-8">
 			<h1 className="mb-1 font-display font-semibold text-2xl text-(--ink)">
-				Billing &amp; plan
+				{m.billing_heading()}
 			</h1>
-			<p className="mb-6 text-(--ink-muted) text-sm">
-				The whole app is free and local-first. Plus pays for the sync servers,
-				not for access to your own cards. Self-hosters get it unbilled.
-			</p>
+			<p className="mb-6 text-(--ink-muted) text-sm">{m.billing_intro()}</p>
 
 			{reconcileUnauthorized && (
 				<GlassPanel
@@ -98,7 +97,7 @@ function BillingPage() {
 					className="mb-4 border-amber-400/30 p-4 text-sm"
 				>
 					<p className="font-medium text-(--ink)">
-						Payment received. Please sign in again to finish activating Plus.
+						{m.billing_reconcile_unauthorized()}
 					</p>
 				</GlassPanel>
 			)}
@@ -109,37 +108,34 @@ function BillingPage() {
 					className="mb-4 border-amber-400/30 p-4 text-sm"
 				>
 					<p className="font-medium text-(--ink)">
-						Payment received, activation is retrying.
+						{m.billing_reconcile_failed_title()}
 					</p>
 					<p className="mt-1 text-(--ink-muted)">
-						Your Vault will unlock automatically in a few minutes. Contact
-						support if this persists.
+						{m.billing_reconcile_failed_body()}
 					</p>
 				</GlassPanel>
 			)}
 
 			{!isCloudEnabled() ? (
 				<GlassPanel className="p-4 text-(--ink-muted) text-sm">
-					Cloud is off on this build. Your Vault lives on this device, and
-					there's nothing to bill.
+					{m.billing_cloud_off()}
 				</GlassPanel>
 			) : !loading && !billingEnabled ? (
 				<GlassPanel className="p-4 text-(--ink-muted) text-sm">
-					This instance runs self-hosted, so every cloud feature is already
-					free. Nothing to upgrade.
+					{m.billing_self_hosted()}
 				</GlassPanel>
 			) : (
 				<div className="grid gap-4 sm:grid-cols-2">
 					<TierCard
-						name="Free"
+						name={m.billing_tier_free()}
 						price="$0"
-						features={FREE_FEATURES}
+						features={freeFeatures}
 						current={!loading && !isPaid}
 					/>
 					<TierCard
-						name="Plus"
+						name={m.billing_tier_plus()}
 						price="$4/mo · $36/yr"
-						features={PLUS_FEATURES}
+						features={plusFeatures}
 						highlight
 						current={!loading && isPaid}
 						action={
@@ -150,7 +146,7 @@ function BillingPage() {
 									disabled={busy}
 									onClick={() => go(openPortal)}
 								>
-									Manage subscription
+									{m.billing_manage_subscription()}
 								</Button>
 							) : (
 								<Button
@@ -159,7 +155,7 @@ function BillingPage() {
 									onClick={() => go(startCheckout)}
 								>
 									<Sparkles className="size-4" />
-									Get Plus
+									{m.billing_get_plus()}
 								</Button>
 							)
 						}
@@ -199,7 +195,7 @@ function TierCard({
 				<span className="font-display font-semibold text-(--ink)">{name}</span>
 				{current && (
 					<span className="rounded-full bg-(--success)/15 px-2 py-0.5 font-mono text-(--success) text-[10px] uppercase tracking-wide">
-						Current
+						{m.billing_current_badge()}
 					</span>
 				)}
 			</div>

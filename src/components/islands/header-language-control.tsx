@@ -1,4 +1,4 @@
-import { Languages } from "lucide-react";
+import { CardGlyph } from "@/components/ui/card-glyph";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -27,7 +27,7 @@ export function HeaderLanguageControl() {
 					aria-label={`Catalog language: ${LANGUAGE_LABELS[lang]}`}
 					title={`Catalog language: ${LANGUAGE_LABELS[lang]}`}
 				>
-					<Languages />
+					<CardGlyph />
 				</Button>
 			</DropdownMenuTrigger>
 			<LanguageRadioMenu

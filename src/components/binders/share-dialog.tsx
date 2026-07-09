@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
+import { m } from "@/paraglide/messages";
 import {
 	groupByCardId,
 	useBinderMembers,
@@ -93,9 +94,11 @@ export function ShareDialog({ open, onOpenChange, binder }: ShareDialogProps) {
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle className="font-display">Share Binder</DialogTitle>
+					<DialogTitle className="font-display">
+						{m.binder_share_dialog_title()}
+					</DialogTitle>
 					<DialogDescription>
-						Generate a one-time shareable link for this binder.
+						{m.binder_share_dialog_description()}
 					</DialogDescription>
 				</DialogHeader>
 
@@ -103,7 +106,7 @@ export function ShareDialog({ open, onOpenChange, binder }: ShareDialogProps) {
 					{/* Scope control */}
 					<div className="flex flex-col gap-2">
 						<Label className="text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold">
-							What to share
+							{m.binder_share_scope_label()}
 						</Label>
 						<RadioGroup
 							value={scope}
@@ -113,19 +116,19 @@ export function ShareDialog({ open, onOpenChange, binder }: ShareDialogProps) {
 							<div className="flex items-center gap-2">
 								<RadioGroupItem value="all" id="scope-all" />
 								<Label htmlFor="scope-all" className="text-(--ink)">
-									All
+									{m.vault_mode_all()}
 								</Label>
 							</div>
 							<div className="flex items-center gap-2">
 								<RadioGroupItem value="owned" id="scope-owned" />
 								<Label htmlFor="scope-owned" className="text-(--ink)">
-									Owned
+									{m.vault_mode_owned()}
 								</Label>
 							</div>
 							<div className="flex items-center gap-2">
 								<RadioGroupItem value="needed" id="scope-needed" />
 								<Label htmlFor="scope-needed" className="text-(--ink)">
-									Needed
+									{m.binder_share_scope_needed()}
 								</Label>
 							</div>
 						</RadioGroup>
@@ -140,24 +143,24 @@ export function ShareDialog({ open, onOpenChange, binder }: ShareDialogProps) {
 								onCheckedChange={setIncludeGrades}
 							/>
 							<Label htmlFor="include-grades" className="text-(--ink)">
-								Include condition &amp; grades
+								{m.binder_share_include_grades_label()}
 							</Label>
 						</div>
 						<p className="text-xs text-(--ink-muted) pl-0">
-							Your prices and notes are never shared.
+							{m.binder_share_privacy_note()}
 						</p>
 					</div>
 
 					{/* Generated link */}
 					<div className="flex flex-col gap-2">
 						<Label className="text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold">
-							Shareable link
+							{m.binder_share_link_label()}
 						</Label>
 						<div className="flex gap-2">
 							<Input
 								readOnly
 								value={url}
-								aria-label="shareable link"
+								aria-label={m.binder_share_link_aria()}
 								className="text-xs font-mono tabular-nums flex-1"
 							/>
 							<Button
@@ -166,21 +169,19 @@ export function ShareDialog({ open, onOpenChange, binder }: ShareDialogProps) {
 								onClick={handleCopy}
 								disabled={!url}
 							>
-								{copied ? "Copied!" : "Copy"}
+								{copied ? m.binder_share_copied() : m.binder_share_copy()}
 							</Button>
 						</div>
 						{urlTooLong && (
 							<p role="alert" className="text-xs text-(--danger)">
-								Link is very long. Try narrowing the scope to Owned or Needed to
-								reduce its size.
+								{m.binder_share_too_long()}
 							</p>
 						)}
 					</div>
 
 					{/* Frozen-snapshot note */}
 					<p className="text-xs text-(--ink-muted)">
-						This is a one-time snapshot of your binder as it is right now. It
-						won&apos;t update later.
+						{m.binder_share_snapshot_note()}
 					</p>
 				</div>
 
@@ -190,7 +191,7 @@ export function ShareDialog({ open, onOpenChange, binder }: ShareDialogProps) {
 						variant="ghost"
 						onClick={() => onOpenChange(false)}
 					>
-						Close
+						{m.binder_close()}
 					</Button>
 					<Button
 						type="button"
@@ -198,7 +199,7 @@ export function ShareDialog({ open, onOpenChange, binder }: ShareDialogProps) {
 						onClick={handleCopy}
 						disabled={!url}
 					>
-						{copied ? "Copied!" : "Copy link"}
+						{copied ? m.binder_share_copied() : m.binder_share_copy_link()}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

@@ -15,6 +15,7 @@ import { Stagger } from "@/components/ui/motion";
 import { VaultPageHeader } from "@/components/vault/vault-page-header";
 import { VaultSection } from "@/components/vault/vault-section";
 import { VaultSummaryHero } from "@/components/vault/vault-summary";
+import { m } from "@/paraglide/messages";
 import type { NavTree } from "../../lib/nav-tree";
 import { getNavTreeFn } from "../../server/nav-tree";
 import { useEnsureCorpus } from "../../store/corpus/use-ensure-corpus";
@@ -67,11 +68,11 @@ export function VaultOverviewInner({ tree }: { tree: NavTree }) {
 		<Stagger className="space-y-0">
 			{/* Page head */}
 			<VaultPageHeader
-				title="Overview"
-				subtitle="Every copy you own, in one place."
+				title={m.vault_overview_title()}
+				subtitle={m.vault_overview_subtitle()}
 				actions={
 					<Button asChild size="sm">
-						<Link to="/scan">Scan cards</Link>
+						<Link to="/scan">{m.vault_scan_cards()}</Link>
 					</Button>
 				}
 			/>
@@ -83,13 +84,13 @@ export function VaultOverviewInner({ tree }: { tree: NavTree }) {
 
 			{/* Set completion */}
 			<VaultSection
-				title="Set completion"
+				title={m.vault_set_completion()}
 				action={
 					<Link
 						to="/vault/sets"
 						className="text-[12.5px] font-medium text-(--primary) hover:underline"
 					>
-						View all sets →
+						{m.vault_view_all_sets()}
 					</Link>
 				}
 			>
@@ -107,37 +108,33 @@ export function VaultOverviewInner({ tree }: { tree: NavTree }) {
 					</div>
 				) : (
 					<GlassPanel className="py-10 text-center">
-						<p className="text-(--ink-muted)">
-							No cards yet. Find your first one and the chase begins.
-						</p>
+						<p className="text-(--ink-muted)">{m.vault_no_owned_cards()}</p>
 					</GlassPanel>
 				)}
 			</VaultSection>
 
 			{/* Binders */}
 			<VaultSection
-				title="Binders"
+				title={m.vault_binders_heading()}
 				action={
 					<Button
 						variant="soft"
 						size="sm"
 						onClick={() => setNewBinderOpen(true)}
 					>
-						New binder
+						{m.vault_new_binder()}
 					</Button>
 				}
 			>
 				{binderIds.length === 0 ? (
 					<GlassPanel className="py-10 text-center space-y-3">
-						<p className="text-(--ink-muted)">
-							No binders yet. Make your first one.
-						</p>
+						<p className="text-(--ink-muted)">{m.vault_no_binders()}</p>
 						<Button
 							variant="outline"
 							size="sm"
 							onClick={() => setNewBinderOpen(true)}
 						>
-							New binder
+							{m.vault_new_binder()}
 						</Button>
 					</GlassPanel>
 				) : (
@@ -169,8 +166,8 @@ function VaultOverview() {
 			fallback={
 				<div className="space-y-4 py-6">
 					<VaultPageHeader
-						title="Overview"
-						subtitle="Every copy you own, in one place."
+						title={m.vault_overview_title()}
+						subtitle={m.vault_overview_subtitle()}
 					/>
 				</div>
 			}

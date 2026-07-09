@@ -22,7 +22,10 @@ export function BottomNav() {
 		>
 			<GlassPanel className="mx-auto flex max-w-md items-stretch justify-around gap-1 rounded-[26px] px-1 py-1.5">
 				{BOTTOM_NAV_ITEMS.map((item) => (
-					<BottomNavSlot key={item.label} item={item} />
+					<BottomNavSlot
+						key={item.to ?? item.action ?? item.label()}
+						item={item}
+					/>
 				))}
 			</GlassPanel>
 		</nav>
@@ -34,6 +37,7 @@ const SLOT_CLASS =
 
 function BottomNavSlot({ item }: { item: BottomNavItem }) {
 	const Icon = item.icon;
+	const label = item.label();
 	const paletteOpen = useCommandPalette((s) => s.open);
 	const setPaletteOpen = useCommandPalette((s) => s.setOpen);
 	// Search slot has no route; route items match by prefix except Browse ("/"),
@@ -47,7 +51,7 @@ function BottomNavSlot({ item }: { item: BottomNavItem }) {
 		return (
 			<Link
 				to={item.to}
-				aria-label={item.label}
+				aria-label={label}
 				aria-current={active ? "page" : undefined}
 				className="group flex flex-1 flex-col items-center justify-center focus-visible:outline-none"
 			>
@@ -78,7 +82,7 @@ function BottomNavSlot({ item }: { item: BottomNavItem }) {
 					active ? "text-(--primary)" : "text-(--faint)",
 				)}
 			>
-				{item.label}
+				{label}
 			</span>
 		</>
 	);

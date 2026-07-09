@@ -1,6 +1,6 @@
 // src/store/userland/userland-store.ts
 import { create } from "zustand";
-import { writeLangCookie } from "../../lib/loader-region";
+import { writeLangCookie, writeUiLangCookie } from "../../lib/loader-region";
 import { getBrowserClient, isCloudEnabled } from "../../lib/supabase/client";
 // Leaf store module (NOT ../corpus/corpus-runtime): importing the heavy corpus
 // module here — statically or dynamically — forms a chunk cycle that crashed the
@@ -852,6 +852,7 @@ export async function updateProfile(patch: ProfilePatch): Promise<Profile> {
 	// (the chosen locale otherwise lives only in client IndexedDB, invisible to the
 	// server). Centralized here so every language switch persists the cookie.
 	if (patch.displayLanguage != null) writeLangCookie(profile.displayLanguage);
+	if (patch.uiLanguage != null) writeUiLangCookie(profile.uiLanguage);
 	notifyLocalWrite();
 	return profile;
 }

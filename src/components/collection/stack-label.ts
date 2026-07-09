@@ -1,3 +1,4 @@
+import { m } from "@/paraglide/messages";
 import type { Stack } from "../../store/userland/types";
 
 /**
@@ -32,5 +33,5 @@ function autoStackLabel(item: Stack): string {
 	const parts = [item.variant, gradeOrCondition].filter(Boolean);
 	// Bare stack (no variant/grade): "Ungraded card" — NOT the acquired date,
 	// which the row already shows as a secondary line.
-	return parts.length > 0 ? parts.join(" · ") : "Ungraded";
+	return parts.length > 0 ? parts.join(" · ") : m.stack_ungraded_label();
 }

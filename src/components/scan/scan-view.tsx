@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { GlassPanel } from "@/components/ui/glass";
 import { useBilling } from "@/lib/billing/use-billing";
+import { m } from "@/paraglide/messages";
 import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import { useStore } from "../../store";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime-store";
@@ -346,7 +347,7 @@ export function ScanView() {
 							? `${reading.number}/${reading.total}`
 							: reading.number
 						: nameText
-							? `name: ${nameText}`
+							? m.scan_ocr_name_reading({ name: nameText })
 							: null,
 				);
 
@@ -458,7 +459,9 @@ export function ScanView() {
 		try {
 			await addStack(cardId, quantity > 1 ? { quantity } : {});
 			toast.success(
-				quantity > 1 ? `Added ${quantity} to Vault.` : "Added to Vault.",
+				quantity > 1
+					? m.scan_added_n_to_vault({ quantity })
+					: m.scan_added_to_vault(),
 			);
 			setSessionCount((n) => n + quantity);
 			setCandidates([]);
@@ -466,7 +469,7 @@ export function ScanView() {
 			voterRef.current.reset();
 			nameStreakRef.current = { text: null, count: 0 };
 		} catch (e) {
-			toast.error(e instanceof Error ? e.message : "Couldn't add that card.");
+			toast.error(e instanceof Error ? e.message : m.scan_add_failed());
 		}
 	}
 
@@ -504,7 +507,7 @@ export function ScanView() {
 		if (aiScanning) return;
 		const video = camera.videoRef.current;
 		if (!video || video.readyState < 2) {
-			toast.error("Start the camera first.");
+			toast.error(m.scan_start_camera_first());
 			return;
 		}
 		const viewW = video.videoWidth;
@@ -516,7 +519,7 @@ export function ScanView() {
 		const frameCanvas = cropToCanvasColor(video, guide);
 		const frameBase64 = canvasToJpegBase64(frameCanvas);
 		if (!frameBase64) {
-			toast.error("Could not capture a frame. Try again.");
+			toast.error(m.scan_capture_frame_failed());
 			return;
 		}
 
@@ -532,7 +535,7 @@ export function ScanView() {
 			}
 			if (result.state === "error") {
 				// R7: errors fall back silently to the device loop, plus a toast.
-				toast.error("AI scan failed. Falling back to the live scanner.");
+				toast.error(m.scan_ai_scan_failed());
 				return;
 			}
 			// result.state === "ok" (only remaining case, narrowed explicitly
@@ -542,7 +545,7 @@ export function ScanView() {
 				setCandidates(result.candidates);
 				setShowHint(false);
 			} else {
-				toast.error("Couldn't identify that card. Try again or keep scanning.");
+				toast.error(m.scan_ai_no_match());
 			}
 		} finally {
 			// React 18 no-ops a post-unmount setState, so this can run
@@ -584,17 +587,17 @@ export function ScanView() {
 			// Corrupt/undecodable upload or a failed OCR pass; mirror runFrame's
 			// swallow-and-continue policy but tell the user, since a one-shot
 			// upload has no next tick to retry on.
-			toast.error("Could not read that image. Try another photo.");
+			toast.error(m.scan_file_read_failed());
 		}
 	}
 
 	return (
 		<div className="flex flex-col gap-4">
 			<p className="max-w-md rounded-(--r-control) border border-(--primary)/30 bg-(--primary-wash) px-3 py-2 text-xs text-(--ink-muted)">
-				<span className="font-medium text-(--ink)">Early alpha.</span> The
-				scanner is brand new and still learning, so results will keep improving.
-				If a card is not found, line it up inside the frame, add more light, or
-				search for it manually.
+				<span className="font-medium text-(--ink)">
+					{m.scan_early_alpha_badge()}
+				</span>{" "}
+				{m.scan_early_alpha_body()}
 			</p>
 
 			<GlassPanel className="relative aspect-3/4 w-full max-w-md overflow-hidden">
@@ -609,12 +612,9 @@ export function ScanView() {
 						/>
 					) : (
 						<div className="flex h-full w-full items-center justify-center p-6 text-center text-(--ink-muted)">
-							{camera.status === "denied" &&
-								"Camera access was denied. Use the upload option below."}
-							{camera.status === "unavailable" &&
-								"No camera available. Use the upload option below."}
-							{camera.status === "idle" &&
-								"Start the camera to begin scanning."}
+							{camera.status === "denied" && m.scan_camera_denied()}
+							{camera.status === "unavailable" && m.scan_camera_unavailable()}
+							{camera.status === "idle" && m.scan_camera_idle()}
 						</div>
 					)}
 				</div>
@@ -626,7 +626,7 @@ export function ScanView() {
 
 				{camera.status === "active" && (
 					<div className="absolute top-3 left-3 rounded-(--r-pill) border border-white/10 bg-black/50 px-3 py-1 font-mono text-xs text-white tabular-nums">
-						{sessionCount} scanned this session
+						{m.scan_session_count({ count: sessionCount })}
 					</div>
 				)}
 
@@ -640,8 +640,8 @@ export function ScanView() {
 									variant="secondary"
 									aria-label={
 										camera.torch.on
-											? "Turn off flashlight"
-											: "Turn on flashlight"
+											? m.scan_flashlight_off_aria()
+											: m.scan_flashlight_on_aria()
 									}
 									onClick={() => void camera.torch.toggle()}
 								>
@@ -657,7 +657,7 @@ export function ScanView() {
 									type="button"
 									size="icon-sm"
 									variant="secondary"
-									aria-label="Switch camera lens"
+									aria-label={m.scan_switch_lens_aria()}
 									onClick={() => void camera.lenses.cycle()}
 								>
 									<SwitchCameraIcon />
@@ -668,24 +668,24 @@ export function ScanView() {
 
 				{camera.status === "active" && lastRead && (
 					<div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-(--r-pill) border border-white/10 bg-black/60 px-3 py-1.5 text-center font-mono text-xs text-white tabular-nums">
-						Saw: {lastRead}
+						{m.scan_saw_prefix({ reading: lastRead })}
 					</div>
 				)}
 				{showHint && !lastRead && (
 					<div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-(--r-pill) border border-white/10 bg-black/60 px-3 py-1.5 text-center text-xs text-white">
-						More light. Fill the frame.
+						{m.scan_more_light_hint()}
 					</div>
 				)}
 			</GlassPanel>
 
 			<p className="max-w-md text-xs text-(--ink-muted)">
-				Scanning happens on your device. Photos never leave it.
+				{m.scan_privacy_note()}
 			</p>
 
 			<div className="flex flex-wrap items-center gap-2">
 				{camera.status !== "active" && (
 					<Button type="button" onClick={() => void camera.start()}>
-						<CameraIcon /> Start camera
+						<CameraIcon /> {m.scan_start_camera_button()}
 					</Button>
 				)}
 				{camera.status !== "active" && (
@@ -696,8 +696,8 @@ export function ScanView() {
 					(aiScan.state === "needs_plus" || aiScan.state === "unauthorized" ? (
 						<Button type="button" variant="outline" size="sm" asChild>
 							<Link to="/billing">
-								<SparklesIcon /> AI scan
-								<Badge variant="default">Plus</Badge>
+								<SparklesIcon /> {m.scan_ai_scan_label()}
+								<Badge variant="default">{m.scan_tier_plus_badge()}</Badge>
 							</Link>
 						</Button>
 					) : (
@@ -708,8 +708,11 @@ export function ScanView() {
 							onClick={() => void handleAiScan()}
 							disabled={aiScanning}
 						>
-							<SparklesIcon /> {aiScanning ? "Scanning..." : "AI scan"}
-							{!isPlus && <Badge variant="default">Plus</Badge>}
+							<SparklesIcon />{" "}
+							{aiScanning ? m.scan_ai_scanning_label() : m.scan_ai_scan_label()}
+							{!isPlus && (
+								<Badge variant="default">{m.scan_tier_plus_badge()}</Badge>
+							)}
 						</Button>
 					))}
 				{FIXTURE_CAPTURE_ENABLED && lastCropsRef.current && (
@@ -728,7 +731,7 @@ export function ScanView() {
 
 			{AI_SCAN_ENABLED && camera.status === "active" && (
 				<p className="max-w-md text-xs text-(--ink-muted)">
-					AI scan sends this one photo to the server.
+					{m.scan_ai_scan_disclosure()}
 				</p>
 			)}
 
@@ -745,7 +748,7 @@ export function ScanView() {
 							variant={
 								Math.round(camera.zoom.value) === 1 ? "default" : "secondary"
 							}
-							aria-label="Zoom 1x"
+							aria-label={m.scan_zoom_aria({ multiplier: 1 })}
 							onClick={() => void camera.zoom.set(1)}
 						>
 							1x
@@ -756,14 +759,14 @@ export function ScanView() {
 							variant={
 								Math.round(camera.zoom.value) === 2 ? "default" : "secondary"
 							}
-							aria-label="Zoom 2x"
+							aria-label={m.scan_zoom_aria({ multiplier: 2 })}
 							onClick={() => void camera.zoom.set(2)}
 						>
 							2x
 						</Button>
 					</div>
 					<p className="max-w-md text-xs text-(--ink-muted)">
-						Tip: zoom in and hold the card farther away for steadier focus.
+						{m.scan_zoom_tip()}
 					</p>
 				</div>
 			)}
@@ -780,7 +783,7 @@ export function ScanView() {
 					search={{ ...LIST_SEARCH_DEFAULTS, q: nameGuess ?? "" }}
 					className="text-sm text-(--primary) underline-offset-4 hover:underline"
 				>
-					Search for it manually instead
+					{m.scan_search_manually_link()}
 				</Link>
 			)}
 		</div>
@@ -825,7 +828,7 @@ function FileFallbackButton({ onFile }: { onFile: (file: File) => void }) {
 				variant="outline"
 				onClick={() => inputRef.current?.click()}
 			>
-				<UploadIcon /> Upload a photo
+				<UploadIcon /> {m.scan_upload_photo_button()}
 			</Button>
 			<input
 				ref={inputRef}

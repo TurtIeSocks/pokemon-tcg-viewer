@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { cardManageLinkPropsFor } from "../../lib/card-route";
 import { isReversePrinting } from "../../lib/card-variants";
 import { faceLanguageFor } from "../../lib/languages";
+import { m } from "../../paraglide/messages";
 import { useCardRouteParamsForRegion } from "../../store/corpus/corpus-runtime";
 import { useDisplayLanguage } from "../../store/corpus/i18n-active-hooks";
 import type { CardRow } from "../../store/userland/card-rows";
@@ -57,7 +58,7 @@ export function OwnedCardTile({ row }: OwnedCardTileProps) {
 			<Link
 				{...cardManageLinkPropsFor(p, linkLanguage)}
 				className="relative block w-full text-left rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary-wash)"
-				aria-label={`Manage stacks of ${row.card.name}`}
+				aria-label={m.vault_manage_stacks_of({ name: row.card.name })}
 			>
 				{inner}
 			</Link>

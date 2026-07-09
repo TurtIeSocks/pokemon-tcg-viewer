@@ -5,6 +5,7 @@ import {
 } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { m } from "@/paraglide/messages";
 
 /**
  * Router-wide pending UI. Shown when a navigation's loader runs past the
@@ -15,7 +16,7 @@ export function RoutePending() {
 	return (
 		<output
 			className="flex h-full items-center justify-center py-16"
-			aria-label="Loading"
+			aria-label={m.route_loading_aria()}
 		>
 			<Loader2 className="size-6 animate-spin text-muted-foreground" />
 		</output>
@@ -26,13 +27,12 @@ export function RoutePending() {
 export function RouteNotFound() {
 	return (
 		<div className="mx-auto flex h-full max-w-md flex-col items-center justify-center gap-3 px-4 py-16 text-center">
-			<h1 className="text-2xl font-bold">Not found</h1>
+			<h1 className="text-2xl font-bold">{m.route_not_found_heading()}</h1>
 			<p className="text-sm text-muted-foreground">
-				That page, set, or card doesn’t exist. It may have moved or never
-				existed.
+				{m.route_not_found_body()}
 			</p>
 			<Button asChild variant="outline" size="sm" className="mt-2">
-				<Link to="/">Back to home</Link>
+				<Link to="/">{m.route_back_to_home()}</Link>
 			</Button>
 		</div>
 	);
@@ -42,7 +42,7 @@ export function RouteNotFound() {
 export function RouteError({ error }: ErrorComponentProps) {
 	const router = useRouter();
 	const message =
-		error instanceof Error ? error.message : "Something went wrong.";
+		error instanceof Error ? error.message : m.route_error_generic();
 	// In dev, surface the real error (name + stack + cause) so a thrown loader
 	// isn't an opaque "Something went wrong". Stays hidden in production.
 	const detail =
@@ -53,7 +53,7 @@ export function RouteError({ error }: ErrorComponentProps) {
 			: null;
 	return (
 		<div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center gap-3 px-4 py-16 text-center">
-			<h1 className="text-2xl font-bold">Something went wrong</h1>
+			<h1 className="text-2xl font-bold">{m.route_error_heading()}</h1>
 			<p className="max-w-prose text-sm text-muted-foreground">{message}</p>
 			{detail && (
 				<pre className="mt-1 max-h-80 w-full overflow-auto whitespace-pre-wrap rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-left font-mono text-xs text-destructive">
@@ -62,10 +62,10 @@ export function RouteError({ error }: ErrorComponentProps) {
 			)}
 			<div className="mt-2 flex gap-2">
 				<Button variant="outline" size="sm" onClick={() => router.invalidate()}>
-					Try again
+					{m.route_try_again()}
 				</Button>
 				<Button asChild variant="ghost" size="sm">
-					<Link to="/">Back to home</Link>
+					<Link to="/">{m.route_back_to_home()}</Link>
 				</Button>
 			</div>
 		</div>

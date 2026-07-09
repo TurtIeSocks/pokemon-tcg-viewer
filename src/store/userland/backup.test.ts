@@ -227,6 +227,7 @@ test("parseSnapshot backfills a partial v3 profile (no undefined fields)", () =>
 		avatarPreset: "dusk",
 		favoriteSetId: null,
 		displayLanguage: "en",
+		uiLanguage: "en",
 		displayCurrency: "USD",
 		hideValue: false,
 		createdAt: 0,
@@ -251,6 +252,30 @@ test("parseSnapshot backfills profile.displayLanguage to 'en' when absent", () =
 	};
 	const snap = parseSnapshot(JSON.stringify(withProfile));
 	expect(snap.profile?.displayLanguage).toBe("en");
+});
+
+test("parseSnapshot backfills profile.uiLanguage to 'en' when absent", () => {
+	const raw = {
+		schemaVersion: 5,
+		exportedAt: 0,
+		collection: [],
+		binders: [],
+		profile: {
+			id: "me",
+			displayName: "",
+			bio: null,
+			avatarPreset: "a",
+			favoriteSetId: null,
+			displayLanguage: "en",
+			displayCurrency: "USD",
+			hideValue: false,
+			createdAt: 0,
+			updatedAt: 0,
+			deletedAt: null,
+		},
+	};
+	const snap = parseSnapshot(JSON.stringify(raw));
+	expect(snap.profile?.uiLanguage).toBe("en");
 });
 
 test("parseSnapshot round-trips an explicit profile.displayLanguage", () => {

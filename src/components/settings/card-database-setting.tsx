@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { GlassPanel } from "@/components/ui/glass";
+import { bcp47 } from "@/lib/bcp47";
 import type { Region } from "@/lib/languages";
+import { m } from "@/paraglide/messages";
+import { getLocale } from "@/paraglide/runtime";
 import { loadCorpus } from "@/store/corpus/corpus-runtime";
 import { useCorpusRuntime } from "@/store/corpus/corpus-runtime-store";
 import { clearCorpus } from "@/store/corpus/corpus-store";
@@ -17,7 +20,9 @@ const SIZE = "~2.1 MiB";
 
 /** "3 days ago" / "yesterday" style label for the last sync. */
 function relativeTime(ms: number): string {
-	const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+	const rtf = new Intl.RelativeTimeFormat(bcp47(getLocale()), {
+		numeric: "auto",
+	});
 	const min = Math.round((Date.now() - ms) / 60000);
 	if (min < 60) return rtf.format(-min, "minute");
 	const hr = Math.round(min / 60);
@@ -75,19 +80,21 @@ export function CardDatabaseSetting() {
 	}
 
 	const description = refreshing
-		? "Refreshing card database..."
+		? m.settings_card_database_refreshing()
 		: status === "ready" && syncedAt
-			? `Full card details saved for offline. Synced ${relativeTime(syncedAt)}.`
+			? m.settings_card_database_synced({ time: relativeTime(syncedAt) })
 			: status === "stale"
-				? "Card details updated. Refresh to re-sync."
+				? m.settings_card_database_stale()
 				: status === "error"
-					? "Download failed."
-					: `Card names, sets, and browse data live on this device. Download full card details (battle data, rules, flavor text) for instant offline viewing (${SIZE}).`;
+					? m.settings_card_database_download_failed()
+					: m.settings_card_database_description({ size: SIZE });
 
 	return (
 		<GlassPanel className="flex flex-col gap-3 p-5">
 			<div className="flex flex-col gap-1">
-				<h2 className="font-display text-lg">Card database</h2>
+				<h2 className="font-display text-lg">
+					{m.settings_card_database_title()}
+				</h2>
 				<p className="font-mono text-[12px] text-(--ink-muted)">
 					{description}
 				</p>
@@ -96,22 +103,24 @@ export function CardDatabaseSetting() {
 				{status === "off" || status === "error" ? (
 					<Button onClick={() => void enableOffline()} disabled={busy}>
 						{status === "error"
-							? "Retry download"
-							: `Download for offline (${SIZE})`}
+							? m.settings_card_database_retry()
+							: m.settings_card_database_download({ size: SIZE })}
 					</Button>
 				) : null}
-				{detailBusy ? <Button disabled>Downloading...</Button> : null}
+				{detailBusy ? (
+					<Button disabled>{m.settings_card_database_downloading()}</Button>
+				) : null}
 				{offlineOn ? (
 					<Button
 						variant="ghost"
 						onClick={() => void disableOffline()}
 						disabled={busy}
 					>
-						Remove offline copy
+						{m.settings_card_database_remove_offline()}
 					</Button>
 				) : null}
 				<Button variant="ghost" onClick={() => void refresh()} disabled={busy}>
-					{refreshing ? "Refreshing..." : "Refresh"}
+					{refreshing ? m.settings_refreshing() : m.settings_refresh()}
 				</Button>
 			</div>
 		</GlassPanel>

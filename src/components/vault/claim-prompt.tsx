@@ -5,6 +5,7 @@
 // Gated on isCloudEnabled() — never renders in pure local-first mode.
 
 import { getBrowserClient, isCloudEnabled } from "@/lib/supabase/client";
+import { m } from "@/paraglide/messages";
 import { dismissClaimPrompt, importLocalExtras } from "@/store/userland/claim";
 import { getRepos } from "@/store/userland/idb-repo";
 import { createSupabaseRepo } from "@/store/userland/supabase-repo";
@@ -66,11 +67,7 @@ export function ClaimPromptBanner() {
 			className="flex flex-wrap items-center justify-between gap-3 rounded-(--r-panel) border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-xl"
 		>
 			<p className="text-sm text-(--ink)">
-				You have{" "}
-				<span className="font-mono tabular-nums font-semibold">
-					{localOnlyCount}
-				</span>{" "}
-				local {localOnlyCount === 1 ? "card" : "cards"} not in your cloud Vault.
+				{m.vault_claim_local_cards({ count: localOnlyCount })}
 			</p>
 			<div className="flex gap-2">
 				<button
@@ -80,14 +77,14 @@ export function ClaimPromptBanner() {
 					}}
 					className="rounded-(--r-pill) bg-(--primary) px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary)"
 				>
-					Import
+					{m.vault_import_action()}
 				</button>
 				<button
 					type="button"
 					onClick={() => handleDismiss(uid)}
 					className="rounded-(--r-pill) border border-white/10 px-3 py-1.5 text-xs font-medium text-(--ink-muted) transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary)"
 				>
-					Dismiss
+					{m.vault_dismiss()}
 				</button>
 			</div>
 		</div>

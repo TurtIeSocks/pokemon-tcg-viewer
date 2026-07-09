@@ -2,6 +2,7 @@ import { Combine, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { m } from "@/paraglide/messages";
 import type { CardVariant } from "../../lib/card-variants";
 import { useOwnedIndex } from "../../store/userland/selectors";
 import {
@@ -34,7 +35,7 @@ export function StackManager({
 		new Set(stacks.map(stackIdentityKey)).size < stacks.length;
 
 	function handleRemoveAll() {
-		if (!window.confirm("Remove all copies of this card?")) return;
+		if (!window.confirm(m.stack_manager_remove_all_confirm())) return;
 		void removeAllStacksOfCard(cardId);
 	}
 
@@ -43,7 +44,7 @@ export function StackManager({
 			{/* Header: stack count + prominent Add button */}
 			<div className="flex flex-wrap items-center justify-between gap-2">
 				<h3 className="flex items-center gap-2 font-display text-[19px] font-medium text-(--ink)">
-					Your cards
+					{m.stack_manager_your_cards()}
 					<Badge variant="default" className="font-mono text-[11px]">
 						{stacks.length}
 					</Badge>
@@ -55,10 +56,10 @@ export function StackManager({
 							size="sm"
 							onClick={() => void mergeDuplicateStacks(cardId)}
 							className="gap-1.5"
-							aria-label="Merge duplicates"
+							aria-label={m.stack_manager_merge_duplicates_aria()}
 						>
 							<Combine className="h-4 w-4" aria-hidden="true" />
-							Merge dupes
+							{m.stack_manager_merge_dupes()}
 						</Button>
 					)}
 					{stacks.length > 0 && (
@@ -67,10 +68,10 @@ export function StackManager({
 							size="sm"
 							onClick={handleRemoveAll}
 							className="gap-1.5"
-							aria-label="Remove all"
+							aria-label={m.stack_manager_remove_all()}
 						>
 							<Trash2 className="h-4 w-4" aria-hidden="true" />
-							Remove all
+							{m.stack_manager_remove_all()}
 						</Button>
 					)}
 					{!addOpen && (
@@ -78,10 +79,10 @@ export function StackManager({
 							size="sm"
 							onClick={() => setAddOpen(true)}
 							className="gap-1.5"
-							aria-label="Add card"
+							aria-label={m.stack_manager_add_card()}
 						>
 							<Plus className="h-4 w-4" aria-hidden="true" />
-							Add card
+							{m.stack_manager_add_card()}
 						</Button>
 					)}
 				</div>
@@ -90,7 +91,9 @@ export function StackManager({
 			{/* Create-mode form — shown when Add stack is clicked */}
 			{addOpen && (
 				<div className="rounded-lg border border-dashed border-(--border) bg-(--glass) p-4">
-					<p className="text-xs text-(--faint) mb-3">New card</p>
+					<p className="text-xs text-(--faint) mb-3">
+						{m.stack_manager_new_card()}
+					</p>
 					<StackEditForm
 						mode="create"
 						cardId={cardId}
@@ -105,7 +108,7 @@ export function StackManager({
 			{/* Stack tiles */}
 			{stacks.length === 0 && !addOpen ? (
 				<p className="text-sm text-(--ink-muted) py-4 text-center">
-					No cards yet. Add one above.
+					{m.stack_manager_empty()}
 				</p>
 			) : (
 				<div className="flex flex-col gap-2">

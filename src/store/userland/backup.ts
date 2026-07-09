@@ -61,6 +61,9 @@ function upgradeProfile(raw: unknown): UserDataSnapshot["profile"] {
 		// existed lack the key; backfill "en" so it's never undefined.
 		displayLanguage:
 			typeof raw.displayLanguage === "string" ? raw.displayLanguage : "en",
+		// Additive field (no schema bump): snapshots saved before uiLanguage
+		// existed lack the key; backfill "en" so it's never undefined.
+		uiLanguage: typeof raw.uiLanguage === "string" ? raw.uiLanguage : "en",
 		// Additive field (no schema bump): snapshots saved before displayCurrency
 		// existed default to USD.
 		displayCurrency:

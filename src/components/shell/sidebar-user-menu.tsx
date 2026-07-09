@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/sidebar";
 import { isCloudEnabled } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { m } from "@/paraglide/messages";
 import { useUserland } from "@/store/userland/userland-store";
 
 /**
@@ -61,7 +62,7 @@ export function SidebarUserMenu() {
 	const [signInOpen, setSignInOpen] = useState(false);
 
 	const cloud = isCloudEnabled();
-	const displayName = profile?.displayName || "Collector";
+	const displayName = profile?.displayName || m.profile_default_display_name();
 	const preset = profile?.avatarPreset ?? DEFAULT_AVATAR_PRESET_ID;
 	// `ready` gates auth-derived UI so we don't flash sign-in/out before the
 	// initial session check resolves.
@@ -128,20 +129,20 @@ export function SidebarUserMenu() {
 								<DropdownMenuItem asChild>
 									<Link to="/settings" onClick={() => setOpenMobile(false)}>
 										<Settings />
-										Settings
+										{m.shell_settings()}
 									</Link>
 								</DropdownMenuItem>
 								<DropdownMenuItem asChild>
 									<Link to="/profile" onClick={() => setOpenMobile(false)}>
 										<UserRound />
-										Edit profile
+										{m.profile_edit_button()}
 									</Link>
 								</DropdownMenuItem>
 								{signedIn && (
 									<DropdownMenuItem asChild>
 										<Link to="/billing" onClick={() => setOpenMobile(false)}>
 											<CreditCard />
-											Billing &amp; plan
+											{m.billing_heading()}
 										</Link>
 									</DropdownMenuItem>
 								)}
@@ -152,13 +153,13 @@ export function SidebarUserMenu() {
 										}}
 									>
 										<LogOut />
-										Sign out
+										{m.shell_sign_out()}
 									</DropdownMenuItem>
 								)}
 								{canSignIn && (
 									<DropdownMenuItem onSelect={() => setSignInOpen(true)}>
 										<LogIn />
-										Sign in to sync
+										{m.shell_sign_in_to_sync()}
 									</DropdownMenuItem>
 								)}
 							</DropdownMenuGroup>
@@ -171,11 +172,11 @@ export function SidebarUserMenu() {
 			<Dialog open={signInOpen} onOpenChange={setSignInOpen}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle className="font-display">Sign in to sync</DialogTitle>
+						<DialogTitle className="font-display">
+							{m.shell_sign_in_to_sync()}
+						</DialogTitle>
 						<DialogDescription>
-							Sign-in is just for sync. Browse and collect work fine without it.
-							Want your Vault on every device? We'll email a magic link. No
-							password, no snooping.
+							{m.shell_sign_in_dialog_description()}
 						</DialogDescription>
 					</DialogHeader>
 					<SignIn />
@@ -248,7 +249,7 @@ function AccountStatusLine({ signedIn }: { signedIn: boolean }) {
 	return (
 		<span
 			role="status"
-			aria-label={`Sync status: ${label}`}
+			aria-label={m.shell_sync_status_aria({ label: label() })}
 			className="flex items-center gap-1.5"
 		>
 			<span
@@ -258,7 +259,7 @@ function AccountStatusLine({ signedIn }: { signedIn: boolean }) {
 				)}
 			/>
 			<span className="truncate font-mono text-[10px] text-(--faint) tabular-nums">
-				{label}
+				{label()}
 			</span>
 		</span>
 	);
@@ -287,7 +288,7 @@ function UpgradeToSyncItem({
 				className="text-(--primary) focus:text-(--primary) [&_svg]:text-(--primary)"
 			>
 				<Sparkles />
-				Upgrade to sync
+				{m.shell_upgrade_to_sync()}
 			</Link>
 		</DropdownMenuItem>
 	);

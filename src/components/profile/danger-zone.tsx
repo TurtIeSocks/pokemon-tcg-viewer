@@ -23,6 +23,7 @@ import {
 import { GlassPanel } from "@/components/ui/glass";
 import { Input } from "@/components/ui/input";
 import { useBilling } from "@/lib/billing/use-billing";
+import { m } from "@/paraglide/messages";
 
 /**
  * Gate + subscribe wrapper: reads auth/billing state itself (so the parent
@@ -49,29 +50,28 @@ function DangerZonePanel({ email }: DangerZonePanelProps) {
 	return (
 		<section className="mt-8 space-y-3.5">
 			<h2 className="font-display text-[21px] font-medium text-(--ink)">
-				Danger zone
+				{m.profile_danger_zone_heading()}
 			</h2>
 			<GlassPanel className="flex flex-wrap items-center justify-between gap-4 p-5">
 				<div className="space-y-1">
 					<p className="text-sm font-medium text-(--ink)">
-						Export my data
+						{m.profile_export_data_title()}
 					</p>
 					<p className="text-sm text-(--ink-muted)">
-						Download your full collection as a backup or CSV, any time.
+						{m.profile_export_data_body()}
 					</p>
 				</div>
 				<Button variant="secondary" size="sm" asChild>
-					<Link to="/vault/cards">Go to export</Link>
+					<Link to="/vault/cards">{m.profile_go_to_export()}</Link>
 				</Button>
 			</GlassPanel>
 			<GlassPanel className="flex flex-wrap items-center justify-between gap-4 border-[color-mix(in_oklch,var(--danger)_35%,var(--border))] p-5">
 				<div className="space-y-1">
 					<p className="text-sm font-medium text-(--ink)">
-						Delete my account
+						{m.profile_delete_my_account()}
 					</p>
 					<p className="text-sm text-(--ink-muted)">
-						Cancels any active subscription and permanently deletes your account
-						and vault. This cannot be undone.
+						{m.profile_delete_account_body()}
 					</p>
 				</div>
 				<Button
@@ -79,7 +79,7 @@ function DangerZonePanel({ email }: DangerZonePanelProps) {
 					size="sm"
 					onClick={() => setConfirmOpen(true)}
 				>
-					Delete account
+					{m.profile_delete_account_title()}
 				</Button>
 			</GlassPanel>
 			<DeleteAccountDialog
@@ -117,8 +117,8 @@ function DeleteAccountDialog({
 			if (!res.ok) {
 				setError(
 					res.status === 501
-						? "Account deletion isn't available on this deployment."
-						: "Something went wrong. Please try again.",
+						? m.profile_delete_unavailable_error()
+						: m.profile_generic_error(),
 				);
 				setSubmitting(false);
 				return;
@@ -136,7 +136,7 @@ function DeleteAccountDialog({
 			await signOut().catch(() => {});
 			window.location.assign("/");
 		} catch {
-			setError("Something went wrong. Please try again.");
+			setError(m.profile_generic_error());
 			setSubmitting(false);
 		}
 	}
@@ -149,10 +149,11 @@ function DeleteAccountDialog({
 		>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle className="font-display">Delete account</DialogTitle>
+					<DialogTitle className="font-display">
+						{m.profile_delete_account_title()}
+					</DialogTitle>
 					<DialogDescription>
-						This permanently deletes your account, your vault, and cancels any
-						active subscription. Type <strong>{email}</strong> to confirm.
+						{m.profile_delete_account_dialog_description({ email })}
 					</DialogDescription>
 				</DialogHeader>
 
@@ -160,7 +161,7 @@ function DeleteAccountDialog({
 					value={typed}
 					onChange={(e) => setTyped(e.target.value)}
 					placeholder={email}
-					aria-label="Type your email to confirm"
+					aria-label={m.profile_type_email_confirm_aria()}
 					autoComplete="off"
 				/>
 				{error && <p className="text-sm text-(--danger)">{error}</p>}
@@ -171,7 +172,7 @@ function DeleteAccountDialog({
 						variant="ghost"
 						onClick={() => onOpenChange(false)}
 					>
-						Cancel
+						{m.form_cancel()}
 					</Button>
 					<Button
 						type="button"
@@ -179,7 +180,9 @@ function DeleteAccountDialog({
 						disabled={!matches || submitting}
 						onClick={handleDelete}
 					>
-						{submitting ? "Deleting…" : "Delete my account"}
+						{submitting
+							? m.profile_deleting_ellipsis()
+							: m.profile_delete_my_account()}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

@@ -14,6 +14,7 @@ import { cardRouteProps } from "../../lib/card-route";
 import { isSupportedLanguage } from "../../lib/languages";
 import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import type { NavTree } from "../../lib/nav-tree";
+import { m } from "../../paraglide/messages";
 import { useCommandPalette } from "../../store/command-palette";
 import {
 	type I18nOverlay,
@@ -62,12 +63,14 @@ function ClearableHeading({
 			{label}
 			<button
 				type="button"
-				aria-label={`Clear ${label.toLowerCase()}`}
+				aria-label={m.command_palette_clear_aria({
+					label: label.toLowerCase(),
+				})}
 				onMouseDown={(e) => e.preventDefault()}
 				onClick={onClear}
 				className="rounded px-1 tracking-normal text-(--faint) normal-case transition-colors hover:text-(--ink) focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--primary)"
 			>
-				Clear
+				{m.command_palette_clear()}
 			</button>
 		</span>
 	);
@@ -129,7 +132,7 @@ export function CommandPalette({ tree }: { tree: NavTree }) {
 		if (!trimmed) return NAV_DESTINATIONS;
 		const q = trimmed.toLowerCase();
 		return NAV_DESTINATIONS.filter((d) =>
-			`${d.label} ${d.keywords ?? ""}`.toLowerCase().includes(q),
+			`${d.label()} ${d.keywords ?? ""}`.toLowerCase().includes(q),
 		);
 	}, [trimmed]);
 
@@ -211,24 +214,20 @@ export function CommandPalette({ tree }: { tree: NavTree }) {
 			onValueChange={setValue}
 		>
 			<CommandInput
-				placeholder="Search cards, recent searches, pages…"
+				placeholder={m.command_palette_search_placeholder()}
 				value={query}
 				onValueChange={setQuery}
 			/>
 			<CommandList>
-				<CommandEmpty>
-					No matches — press Enter to search all cards.
-				</CommandEmpty>
+				<CommandEmpty>{m.command_palette_no_matches()}</CommandEmpty>
 
 				{trimmed && (
-					<CommandGroup heading="Search">
+					<CommandGroup heading={m.nav_search()}>
 						<CommandItem value="run-search" onSelect={() => runSearch(trimmed)}>
 							<Search />
 							<span className="truncate">
-								Search all cards for{" "}
-								<span className="font-medium text-(--ink)">
-									“{trimmed}”
-								</span>
+								{m.command_palette_search_all_for()}{" "}
+								<span className="font-medium text-(--ink)">“{trimmed}”</span>
 							</span>
 							<CommandShortcut>↵</CommandShortcut>
 						</CommandItem>
@@ -236,7 +235,7 @@ export function CommandPalette({ tree }: { tree: NavTree }) {
 				)}
 
 				{cardResults.length > 0 && (
-					<CommandGroup heading="Cards">
+					<CommandGroup heading={m.command_palette_cards()}>
 						{cardResults.map((card) => (
 							<CommandItem
 								key={card.id}
@@ -262,7 +261,7 @@ export function CommandPalette({ tree }: { tree: NavTree }) {
 					<CommandGroup
 						heading={
 							<ClearableHeading
-								label="Recent searches"
+								label={m.command_palette_recent_searches()}
 								onClear={clearRecentSearches}
 							/>
 						}
@@ -284,7 +283,7 @@ export function CommandPalette({ tree }: { tree: NavTree }) {
 					<CommandGroup
 						heading={
 							<ClearableHeading
-								label="Recently viewed"
+								label={m.command_palette_recently_viewed()}
 								onClear={clearRecentlyViewed}
 							/>
 						}
@@ -311,7 +310,7 @@ export function CommandPalette({ tree }: { tree: NavTree }) {
 				)}
 
 				{navMatches.length > 0 && (
-					<CommandGroup heading="Go to">
+					<CommandGroup heading={m.command_palette_go_to()}>
 						{navMatches.map((d) => (
 							<CommandItem
 								key={String(d.to)}
@@ -322,31 +321,31 @@ export function CommandPalette({ tree }: { tree: NavTree }) {
 								}}
 							>
 								<d.icon />
-								<span>{d.label}</span>
+								<span>{d.label()}</span>
 							</CommandItem>
 						))}
 					</CommandGroup>
 				)}
 
 				{setMatches.length > 0 && (
-					<CommandGroup heading="Sets">
-						{setMatches.map((m) => (
+					<CommandGroup heading={m.command_palette_sets()}>
+						{setMatches.map((match) => (
 							<CommandItem
-								key={`${m.seriesSlug}/${m.setSlug}`}
-								value={`set-${m.seriesSlug}-${m.setSlug}`}
+								key={`${match.seriesSlug}/${match.setSlug}`}
+								value={`set-${match.seriesSlug}-${match.setSlug}`}
 								onSelect={() => {
 									close();
 									navigate({
 										to: "/$series/$set",
-										params: { series: m.seriesSlug, set: m.setSlug },
+										params: { series: match.seriesSlug, set: match.setSlug },
 										search: LIST_SEARCH_DEFAULTS,
 									});
 								}}
 							>
 								<Boxes />
-								<span className="truncate">{m.setName}</span>
+								<span className="truncate">{match.setName}</span>
 								<span className="ml-auto truncate pl-2 text-xs text-(--faint)">
-									{m.seriesName}
+									{match.seriesName}
 								</span>
 							</CommandItem>
 						))}
@@ -356,13 +355,13 @@ export function CommandPalette({ tree }: { tree: NavTree }) {
 
 			<div className="flex items-center gap-3 border-t border-(--border) px-4 py-2 text-[11px] text-(--faint)">
 				<span className="flex items-center gap-1">
-					<kbd className={KBD}>↑↓</kbd> navigate
+					<kbd className={KBD}>↑↓</kbd> {m.command_palette_hint_navigate()}
 				</span>
 				<span className="flex items-center gap-1">
-					<kbd className={KBD}>↵</kbd> select
+					<kbd className={KBD}>↵</kbd> {m.command_palette_hint_select()}
 				</span>
 				<span className="flex items-center gap-1">
-					<kbd className={KBD}>esc</kbd> close
+					<kbd className={KBD}>esc</kbd> {m.command_palette_hint_close()}
 				</span>
 			</div>
 		</CommandDialog>

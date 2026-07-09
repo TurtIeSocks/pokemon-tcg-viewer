@@ -4,6 +4,7 @@ import { SetTile } from "@/components/shell/set-tile";
 import { Stagger } from "@/components/ui/motion";
 import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import type { NavTree } from "../../lib/nav-tree";
+import { m } from "../../paraglide/messages";
 
 const LATEST_COUNT = 8;
 
@@ -35,7 +36,7 @@ export function HomeBrowse({ tree }: { tree: NavTree }) {
 		<div className="w-full">
 			<Stagger className="space-y-0">
 				{/* Latest sets — the newest releases as browse-variant tiles. */}
-				<HomeSection title="Latest sets">
+				<HomeSection title={m.home_latest_sets()}>
 					<div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4">
 						{latest.map(({ series, set }) => (
 							<SetTile key={set.id} seriesSlug={series.slug} set={set} />
@@ -45,7 +46,7 @@ export function HomeBrowse({ tree }: { tree: NavTree }) {
 
 				{/* Browse by era — a glass launch card per series, linking to its newest
 				    set. Anchored: the launch pad's "Browse by era" card scrolls here. */}
-				<HomeSection id="browse-by-era" title="Browse by era">
+				<HomeSection id="browse-by-era" title={m.home_browse_by_era()}>
 					<div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4">
 						{tree.map((series) => (
 							<EraTile key={series.slug} series={series} />
@@ -73,7 +74,7 @@ function EraTile({ series }: { series: NavTree[number] }) {
 			to="/$series"
 			params={{ series: series.slug }}
 			search={LIST_SEARCH_DEFAULTS}
-			aria-label={`Browse ${series.name}`}
+			aria-label={m.home_browse_aria({ name: series.name })}
 			className="group relative block aspect-4/5 w-full overflow-hidden rounded-2xl transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-8px_rgba(0,0,0,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none motion-reduce:hover:translate-y-0"
 		>
 			{/* Backdrop: the era's newest set logo, blurred → per-era color field. */}
@@ -108,7 +109,7 @@ function EraTile({ series }: { series: NavTree[number] }) {
 					</span>
 				</span>
 				<span className="text-sm font-medium text-white/80 drop-shadow-[0_1px_6px_rgba(0,0,0,0.5)]">
-					{count} {count === 1 ? "set" : "sets"}
+					{m.home_set_count({ count })}
 				</span>
 			</span>
 		</Link>

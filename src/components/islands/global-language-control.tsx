@@ -1,4 +1,5 @@
-import { ChevronsUpDown, Languages } from "lucide-react";
+import { ChevronsUpDown } from "lucide-react";
+import { CardGlyph } from "@/components/ui/card-glyph";
 import {
 	DropdownMenu,
 	DropdownMenuTrigger,
@@ -39,7 +40,7 @@ export function GlobalLanguageControl() {
 							aria-label="Catalog language"
 							className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
 						>
-							<Languages className="text-(--ink-muted)" />
+							<CardGlyph className="text-(--ink-muted)" />
 							<span className="truncate">{LANGUAGE_LABELS[lang]}</span>
 							<ChevronsUpDown className="ml-auto size-4 text-(--ink-muted)" />
 						</SidebarMenuButton>

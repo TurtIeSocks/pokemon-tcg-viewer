@@ -3,6 +3,7 @@
 import { Link } from "@tanstack/react-router";
 import { cardModalLinkPropsFor } from "../../lib/card-route";
 import { faceLanguageFor } from "../../lib/languages";
+import { m } from "../../paraglide/messages";
 import { useCardRouteParamsForRegion } from "../../store/corpus/corpus-runtime";
 import { useDisplayLanguage } from "../../store/corpus/i18n-active-hooks";
 import { type HoloCardData, holoCardProps } from "../holo-card";
@@ -101,10 +102,10 @@ export function OwnedMissingGrid({
 		return (
 			<p className="py-8 text-center text-sm text-muted-foreground">
 				{mode === "owned"
-					? "You don't own any cards in this binder yet."
+					? m.vault_grid_none_owned()
 					: mode === "missing"
-						? "You own every card in this binder!"
-						: "No cards in this binder."}
+						? m.vault_grid_all_owned()
+						: m.vault_grid_no_cards()}
 			</p>
 		);
 	}
@@ -112,7 +113,7 @@ export function OwnedMissingGrid({
 	return (
 		<ul
 			className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
-			aria-label="Card grid"
+			aria-label={m.vault_grid_aria()}
 		>
 			{visible.map((card) => (
 				<OwnedMissingCard

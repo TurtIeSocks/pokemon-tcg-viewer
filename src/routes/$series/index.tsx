@@ -9,6 +9,7 @@ import {
 	type SupportedLanguage,
 } from "../../lib/languages";
 import { loaderRegion } from "../../lib/loader-region";
+import { m } from "../../paraglide/messages";
 import { findSeries, getNavTreeFn } from "../../server/nav-tree";
 import { useCorpusRuntime } from "../../store/corpus/corpus-runtime";
 import { useEnsureCorpus } from "../../store/corpus/use-ensure-corpus";
@@ -39,10 +40,14 @@ export const Route = createFileRoute("/$series/")({
 	},
 	head: ({ loaderData }) => ({
 		meta: [
-			{ title: `${loaderData?.name ?? "Series"} · Pokémon TCG sets` },
+			{
+				title: m.series_meta_title({
+					name: loaderData?.name ?? m.series_meta_title_fallback(),
+				}),
+			},
 			{
 				name: "description",
-				content: `Browse every ${loaderData?.name ?? ""} set.`,
+				content: m.series_meta_description({ name: loaderData?.name ?? "" }),
 			},
 		],
 	}),

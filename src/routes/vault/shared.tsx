@@ -1,6 +1,9 @@
 import { ClientOnly, createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { OwnedMissingGrid } from "@/components/vault/owned-missing-grid";
+import { bcp47 } from "@/lib/bcp47";
+import { m } from "@/paraglide/messages";
+import { getLocale } from "@/paraglide/runtime";
 import { useStore } from "@/store";
 import { hydrateCard, setsById } from "@/store/corpus/corpus-engine";
 import { useCorpusRuntime } from "@/store/corpus/corpus-runtime";
@@ -59,14 +62,15 @@ export function SharedBinderInner() {
 		return (
 			<div className="py-16 text-center space-y-2">
 				<p className="text-lg font-medium text-destructive">
-					Couldn't read this shared binder. The link may be broken or
-					incomplete.
+					{m.vault_shared_not_found()}
 				</p>
 			</div>
 		);
 	}
 
-	const snapshotDate = new Date(snapshot.sharedAt).toLocaleDateString();
+	const snapshotDate = new Date(snapshot.sharedAt).toLocaleDateString(
+		bcp47(getLocale()),
+	);
 
 	return (
 		<div className="space-y-6">
@@ -76,7 +80,7 @@ export function SharedBinderInner() {
 				className="flex items-center gap-2 rounded-md border border-[color-mix(in_oklch,var(--warning)_40%,transparent)] bg-[color-mix(in_oklch,var(--warning)_12%,transparent)] px-4 py-3 text-(--warning) text-sm font-medium"
 			>
 				<span aria-hidden="true">📸</span>
-				<span>Snapshot from {snapshotDate} · not live</span>
+				<span>{m.vault_shared_snapshot_banner({ date: snapshotDate })}</span>
 			</div>
 
 			{/* Header */}
@@ -102,7 +106,7 @@ function SharedBinder() {
 		<ClientOnly
 			fallback={
 				<p className="py-12 text-center text-muted-foreground">
-					Loading shared binder…
+					{m.vault_loading_shared_binder()}
 				</p>
 			}
 		>
