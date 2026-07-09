@@ -15,6 +15,7 @@ import {
 } from "@/lib/languages";
 import { setUiLanguage } from "@/lib/ui-locale";
 import { m } from "@/paraglide/messages";
+import { getLocale } from "@/paraglide/runtime";
 import { useUserland } from "@/store/userland/userland-store";
 
 /**
@@ -25,15 +26,19 @@ import { useUserland } from "@/store/userland/userland-store";
  * style, but with a FLAT language list: UI language has no region/coverage axis
  * (all locales are fully translated), so no Western/Asian grouping.
  *
- * Reads `profile.uiLanguage` with a narrow primitive selector (S3 pattern) so
- * this panel only re-renders when the UI language itself changes. Switching
- * updates Paraglide's active locale live, no reload (`setUiLanguage`);
- * `<LocaleBoundary>` at the app root re-renders the tree so every `m.*()` call
- * picks up the new locale.
+ * Displays the ACTUAL active locale via `getLocale()` (not just the stored
+ * `profile.uiLanguage`) so the trigger can never disagree with the chrome the
+ * page is rendering -- e.g. a first-time visitor whose locale came from the
+ * `ui-lang` cookie or an Accept-Language match, before any preference is saved.
+ * Still subscribes to `profile.uiLanguage` with a narrow primitive selector (S3)
+ * so the control re-renders the instant the user switches; `setUiLanguage`
+ * updates Paraglide's active locale live (no reload) and `<LocaleBoundary>`
+ * re-renders the tree so every `m.*()` call picks up the new locale.
  */
 export function UiLanguageSetting() {
-	const uiLanguage = useUserland((s) => s.profile?.uiLanguage);
-	const current = toUiLanguage(uiLanguage);
+	// Subscribe for re-render on preference change; value comes from getLocale().
+	useUserland((s) => s.profile?.uiLanguage);
+	const current = toUiLanguage(getLocale());
 
 	return (
 		<GlassPanel className="flex flex-col gap-3 p-5">
