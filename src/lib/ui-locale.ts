@@ -5,18 +5,22 @@ import { bcp47 } from "./bcp47";
 import type { UiLanguage } from "./languages";
 
 /**
- * Switch the site-UI language. Persists to profile (which mirrors the ui-lang
- * cookie via `updateProfile`), then updates Paraglide's active locale WITHOUT a
- * full reload (`{ reload: false }` — confirmed supported by the installed
- * runtime's `setLocale(newLocale, options?: { reload?: boolean })`).
- * `<LocaleBoundary>` re-renders the tree once the profile change lands.
+ * Switch the site-UI language. Updates Paraglide's active locale FIRST (no full
+ * reload, `{ reload: false }`), THEN persists to the profile (which mirrors the
+ * ui-lang cookie via `updateProfile`).
+ *
+ * Order matters: `updateProfile` writes the store synchronously, which triggers
+ * `<LocaleBoundary>`'s re-render on the same tick. That re-render reads
+ * `getLocale()` for its key, so the locale MUST already be updated by then --
+ * otherwise the boundary keys on the previous locale and the UI lags exactly one
+ * selection behind (select FR -> still EN, select JA -> shows FR, ...).
  */
 export async function setUiLanguage(lang: UiLanguage): Promise<void> {
-	await updateProfile({ uiLanguage: lang });
 	setLocale(lang, { reload: false });
 	if (typeof document !== "undefined") {
 		document.documentElement.lang = bcp47(lang);
 	}
+	await updateProfile({ uiLanguage: lang });
 }
 
 /**
