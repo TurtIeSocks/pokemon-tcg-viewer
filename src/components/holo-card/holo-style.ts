@@ -109,6 +109,52 @@ export function variantsToHolo(variants?: string[]): boolean | undefined {
 	return undefined; // e.g. reverse-only — ambiguous, defer to rarity
 }
 
+/**
+ * Sets whose NON-classic cards are foiled across the ENTIRE card face (the
+ * Celebrations 25th-anniversary mirror confetti covers everything, not just
+ * the art window). These emit data-frame="fullface", which nulls every clip
+ * window in rarity-styles.css. Lowercased set ids. USER-EDITABLE.
+ */
+export const FULLFACE_FOIL_SETS: ReadonlySet<string> = new Set(["cel25"]);
+
+/**
+ * Celebrations Classic Collection reprints whose ORIGINAL printing is a
+ * full-bleed art card (foil face-wide) rather than an art-window holo:
+ * Tapu Lele GX (SM full-art), Luxray GL LV.X + Garchomp C LV.X (full-art
+ * SP X cards). Everything else in the Classic Collection gets the vintage
+ * art-window knobs. Lowercased card numbers. USER-EDITABLE.
+ */
+export const CLASSIC_FULLFACE_NUMBERS: ReadonlySet<string> = new Set([
+	"60a", // Tapu Lele GX
+	"109a", // Luxray GL LV.X
+	"145a", // Garchomp C LV.X
+]);
+
+/** Frame treatment for the procedural clip windows (data-frame attribute). */
+export type HoloFrame = "vintage" | "fullface" | null;
+
+function frameFor(
+	series?: string,
+	setId?: string,
+	rarity?: string,
+	cardNumber?: string,
+): HoloFrame {
+	const sid = setId?.toLowerCase();
+	if (sid && FULLFACE_FOIL_SETS.has(sid)) {
+		// Classic Collection reprints keep their original frame's window;
+		// the main-set cards are mirror-foiled face-wide.
+		if (rarity?.toLowerCase() === "classic collection") {
+			return CLASSIC_FULLFACE_NUMBERS.has((cardNumber ?? "").toLowerCase())
+				? "fullface"
+				: "vintage";
+		}
+		return "fullface";
+	}
+	if (series && VINTAGE_FRAME_SERIES.has(series.toLowerCase()))
+		return "vintage";
+	return null;
+}
+
 const ALT_ART_IDS: ReadonlySet<string> = new Set(altArts as string[]);
 const PROMO_STYLES = promos as Record<string, { style: string; etch: string }>;
 
@@ -141,6 +187,13 @@ export interface HoloPresentation {
 	effectiveRarity: string | null;
 	/** True for Trainer/Galar Gallery cards → data-trainer-gallery="true". */
 	trainerGallery: boolean;
+	/**
+	 * Procedural clip-window treatment → data-frame attribute: "vintage"
+	 * (WotC-style windows, user-tunable knobs) or "fullface" (no clip — the
+	 * whole card face is foil, e.g. Celebrations mirror confetti). Masked
+	 * (CDN) cards ignore this entirely.
+	 */
+	frame: HoloFrame;
 	/** Internal class (tests/debugging); CSS keys on data-rarity, not this. */
 	className: string;
 }
@@ -171,11 +224,14 @@ export function holoPresentation(
 	// Reverse holo printing: a per-PRINTING override, decided before everything
 	// else (a reverse is always physically foil, whatever the base rarity or
 	// the noisy variant flags say). CardProxy: rarity + " Reverse Holo".
+	const frame = frameFor(series, setId, rarity, cardNumber);
+
 	if (reverse) {
 		const eff = `${(rarity ?? "common").toLowerCase()} reverse holo`;
 		return {
 			effectiveRarity: eff,
 			trainerGallery: false,
+			frame,
 			className: effectiveToClass(eff),
 		};
 	}
@@ -187,6 +243,18 @@ export function holoPresentation(
 		eff === "rare holo" &&
 		((series && COSMOS_SERIES.has(series.toLowerCase())) ||
 			(setId && COSMOS_SETS.has(setId.toLowerCase())))
+	) {
+		eff = "rare holo cosmos";
+	}
+
+	// Cosmos-set upgrade: in sets whose whole run is foil (Celebrations), a
+	// plain "Rare" with a holo printing is still a cosmos holo — the rarity
+	// heuristic alone would leave it glare-only.
+	if (
+		eff === null &&
+		holo === true &&
+		setId &&
+		COSMOS_SETS.has(setId.toLowerCase())
 	) {
 		eff = "rare holo cosmos";
 	}
@@ -262,6 +330,7 @@ export function holoPresentation(
 		return {
 			effectiveRarity: null,
 			trainerGallery: isGallery,
+			frame,
 			className: "no-foil",
 		};
 	}
@@ -269,6 +338,7 @@ export function holoPresentation(
 	return {
 		effectiveRarity: eff,
 		trainerGallery: isGallery,
+		frame,
 		className: effectiveToClass(eff),
 	};
 }

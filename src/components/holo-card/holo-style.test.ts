@@ -106,6 +106,7 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		).toEqual({
 			effectiveRarity: "rare holo vmax",
 			trainerGallery: false,
+			frame: null,
 			className: "holo-vmax",
 		});
 	});
@@ -170,6 +171,7 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		).toEqual({
 			effectiveRarity: "rare secret",
 			trainerGallery: true,
+			frame: null,
 			className: "gold-secret",
 		});
 		// swshp-SWSH001 is SwHolo in promos.json → "rare holo".
@@ -237,10 +239,64 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		).toBeNull();
 	});
 
+	test("Celebrations main set: full-face cosmos, incl. plain Rare + holo", () => {
+		// cel25-5 Pikachu (Rare Holo) — mirror confetti covers the whole face.
+		const pikachu = holoPresentation({
+			rarity: "Rare Holo",
+			series: "Sword & Shield",
+			setId: "cel25",
+			cardNumber: "5",
+			holo: true,
+		});
+		expect(pikachu.effectiveRarity).toBe("rare holo cosmos");
+		expect(pikachu.frame).toBe("fullface");
+		// cel25-2 Reshiram (plain "Rare" but printed holo) — must not be
+		// glare-only.
+		const reshiram = holoPresentation({
+			rarity: "Rare",
+			series: "Sword & Shield",
+			setId: "cel25",
+			cardNumber: "2",
+			holo: true,
+		});
+		expect(reshiram.effectiveRarity).toBe("rare holo cosmos");
+		expect(reshiram.frame).toBe("fullface");
+		// V cards keep their own family, still full-face frame (no clip anyway).
+		expect(
+			holoPresentation({
+				rarity: "Rare Holo V",
+				setId: "cel25",
+				cardNumber: "16",
+				holo: true,
+			}).effectiveRarity,
+		).toBe("rare holo v");
+	});
+
+	test("Classic Collection: vintage window, except full-bleed originals", () => {
+		// cel25-8A Dark Gyarados — WotC-frame reprint → vintage clip knobs.
+		const gyarados = holoPresentation({
+			rarity: "Classic Collection",
+			series: "Sword & Shield",
+			setId: "cel25",
+			cardNumber: "8A",
+		});
+		expect(gyarados.effectiveRarity).toBe("rare holo cosmos");
+		expect(gyarados.frame).toBe("vintage");
+		// cel25-60A Tapu Lele GX — full-art original → full-face foil.
+		expect(
+			holoPresentation({
+				rarity: "Classic Collection",
+				setId: "cel25",
+				cardNumber: "60A",
+			}).frame,
+		).toBe("fullface");
+	});
+
 	test("reverse printing suffixes the base rarity (CardProxy isReverse)", () => {
 		expect(holoPresentation({ rarity: "Common", reverse: true })).toEqual({
 			effectiveRarity: "common reverse holo",
 			trainerGallery: false,
+			frame: null,
 			className: "reverse-holo",
 		});
 		// A reverse printing is always physically foil — the noisy "normal"
