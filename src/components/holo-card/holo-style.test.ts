@@ -342,6 +342,26 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		).toBe("rare holo cosmos");
 	});
 
+	test("EX era gets its own frame (bottom-left stage badge)", () => {
+		// ex1-5 Delcatty — Stage 1 with the badge hanging off the window's
+		// bottom-left; JP ADV/PCG share the frame.
+		const p = holoPresentation({
+			rarity: "Rare Holo",
+			series: "EX",
+			setId: "ex1",
+			cardNumber: "5",
+			subtypes: ["Stage 1"],
+		});
+		expect(p.frame).toBe("ex");
+		expect(p.effectiveRarity).toBe("rare holo cosmos");
+		expect(holoPresentation({ rarity: "Holo Rare", series: "ADV" }).frame).toBe(
+			"ex",
+		);
+		expect(holoPresentation({ rarity: "Holo Rare", series: "PCG" }).frame).toBe(
+			"ex",
+		);
+	});
+
 	test("e-Card era gets its own frame (rounded window + dot-code strips)", () => {
 		// ecard3-1 Aerodactyl — reverse foil must dodge the e-reader strips.
 		const std = holoPresentation({

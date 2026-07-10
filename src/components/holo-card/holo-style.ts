@@ -101,6 +101,19 @@ export const ECARD_FRAME_SERIES: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * EX era series (Ruby & Sapphire → Power Keepers, plus the JP ADV/PCG
+ * equivalents): art window sits higher and the stage badge hangs off its
+ * BOTTOM-left corner (modern frames notch the top-left). Own knob set via
+ * data-frame="ex" (rarity-styles.css). Lowercased TCGdex `serie.name`
+ * strings. USER-EDITABLE.
+ */
+export const EX_FRAME_SERIES: ReadonlySet<string> = new Set([
+	"ex",
+	"adv", // JP ADV — same frame
+	"pcg", // JP PCG — same frame
+]);
+
+/**
  * Interpret TCGplayer price-variant keys as a holo signal:
  *   • has "holofoil"        → true  (holo printing)
  *   • has "normal", no holo → false (non-holo printing — should not foil)
@@ -147,7 +160,7 @@ export const CLASSIC_FULLFACE_NUMBERS: ReadonlySet<string> = new Set([
 ]);
 
 /** Frame treatment for the procedural clip windows (data-frame attribute). */
-export type HoloFrame = "vintage" | "ecard" | "fullface" | null;
+export type HoloFrame = "vintage" | "ecard" | "ex" | "fullface" | null;
 
 function frameFor(
 	series?: string,
@@ -168,6 +181,7 @@ function frameFor(
 	}
 	const ser = series?.toLowerCase();
 	if (ser && ECARD_FRAME_SERIES.has(ser)) return "ecard";
+	if (ser && EX_FRAME_SERIES.has(ser)) return "ex";
 	if (ser && VINTAGE_FRAME_SERIES.has(ser)) return "vintage";
 	return null;
 }

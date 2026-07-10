@@ -3313,3 +3313,94 @@
 	--clip-trainer-invert: var(--clip-invert);
 	--clip-energy-invert: var(--clip-invert);
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   OUR EXTENSION — EX era clip windows (data-frame="ex")
+   ─────────────────────────────────────────────────────────────────────────────
+   Ruby & Sapphire → Power Keepers (+ JP ADV/PCG): the art window sits higher
+   than modern frames, and the stage badge (pre-evolution portrait + banner)
+   hangs off the window's BOTTOM-LEFT corner — modern clips notch the
+   top-left, which bit into EX art for no reason. Which series get this =
+   EX_FRAME_SERIES in holo-style.ts.
+
+   ══ TUNING GUIDE (same rules as the vintage knobs) ═══════════════════════════
+
+     0%                                100%
+  0% ┌──────────────────────────────────┐
+     │ Delcatty                  70 HP  │
+     │ ┌─────────────────────────────┐ ◄── --ex-window-top
+     │ │                             │  │
+     │ │         ART WINDOW          │  │
+     │ │          = FOIL             │  │
+     │ ├────┬─◄ --ex-badge-top       │  │
+     │ │▓▓▓▓│                        │  │
+     │ └────┴────────────────────────┘ ◄── --ex-window-bottom
+     │ (🐱)══╗ ▲ badge circle+banner ▲  │
+     │ STAGE 1║  Poké-POWER · text…  │  │
+     └─┼─────╨──┬────────────────────┼──┘
+       │        --ex-badge-right     --ex-window-right
+       --ex-window-left              (bigger = wider right; from card LEFT)
+
+   ▓ = the badge notch: cut from the window's bottom-left ONLY on Stage 1/2
+   cards ([data-subtypes^="stage"]); Basics keep the clean rectangle.
+   Measured off the ex1-5 Delcatty scan.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+.holo-card[data-frame="ex"] {
+	/* ── THE SIX KNOBS ─────────────────────────────────────────────────── */
+	--ex-window-top: 10.5%; /* foil TOP edge (under the name bar) */
+	--ex-window-bottom: 45.5%; /* foil BOTTOM edge (above the badge row) */
+	--ex-window-left: 7.5%; /* foil LEFT edge */
+	--ex-window-right: 92.5%; /* foil RIGHT edge (from card LEFT!) */
+	--ex-badge-right: 14.5%; /* badge notch: reaches this far right */
+	--ex-badge-top: 43.5%; /* badge notch: starts this far down */
+
+	/* ── DERIVED SHAPES (no need to touch) ─────────────────────────────── */
+	/* Plain window: Basics, Trainers, Energies. */
+	--clip: inset(
+		var(--ex-window-top) calc(100% - var(--ex-window-right))
+			calc(100% - var(--ex-window-bottom)) var(--ex-window-left)
+	);
+	--clip-trainer: var(--clip);
+	--clip-energy: var(--clip);
+	/* Stage 1/2: the same window minus the badge's bottom-left corner. */
+	--clip-stage: polygon(
+		var(--ex-window-left) var(--ex-window-top),
+		var(--ex-window-right) var(--ex-window-top),
+		var(--ex-window-right) var(--ex-window-bottom),
+		var(--ex-badge-right) var(--ex-window-bottom),
+		var(--ex-badge-right) var(--ex-badge-top),
+		var(--ex-window-left) var(--ex-badge-top)
+	);
+	/* Reverse holo: everything except the plain window. */
+	--clip-invert: polygon(
+		0% 0%,
+		100% 0%,
+		100% 100%,
+		0% 100%,
+		0% var(--ex-window-bottom),
+		var(--ex-window-right) var(--ex-window-bottom),
+		var(--ex-window-right) var(--ex-window-top),
+		var(--ex-window-left) var(--ex-window-top),
+		var(--ex-window-left) var(--ex-window-bottom),
+		0% var(--ex-window-bottom)
+	);
+	/* Reverse holo, Stage 1/2: everything except the notched window (the
+	   badge corner is part of the frame, so it stays foiled). */
+	--clip-stage-invert: polygon(
+		0% 0%,
+		100% 0%,
+		100% 100%,
+		0% 100%,
+		0% var(--ex-window-bottom),
+		var(--ex-window-right) var(--ex-window-bottom),
+		var(--ex-window-right) var(--ex-window-top),
+		var(--ex-window-left) var(--ex-window-top),
+		var(--ex-window-left) var(--ex-badge-top),
+		var(--ex-badge-right) var(--ex-badge-top),
+		var(--ex-badge-right) var(--ex-window-bottom),
+		0% var(--ex-window-bottom)
+	);
+	--clip-trainer-invert: var(--clip-invert);
+	--clip-energy-invert: var(--clip-invert);
+}
