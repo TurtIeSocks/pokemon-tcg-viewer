@@ -11,8 +11,14 @@ import type { SortDir } from "../../lib/sort";
 import type { PokemonSet } from "../../server/card-mappers";
 import type { FilterClauses } from "../../utils/build-filter-clauses";
 import type { CorpusCard } from "./corpus-types";
-import { matchName, type NameMatch, normalize, type SearchMode } from "./fuzzy";
+import {
+	matchNameExpr,
+	type NameMatch,
+	normalize,
+	type SearchMode,
+} from "./fuzzy";
 import { compareCardNumber } from "./natural-compare";
+import { type FieldFilters, parseSearchQuery } from "./search-grammar";
 
 /**
  * Active display-language overlay passed into hydration. `lang` drives the
@@ -209,20 +215,112 @@ interface Hit {
 	match: NameMatch | null;
 }
 
+/** The array-valued facet dimensions a `field:` op can feed. */
+const ARRAY_DIMS = ["types", "rarities", "supertypes", "subtypes"] as const;
+
+/**
+ * Case-insensitive corpus vocabulary per array dimension: lowercased value →
+ * the canonical value(s) that share it (usually one; e.g. "ex"/"EX" would both
+ * map from "ex"). Lets a field op like `type:fire` resolve to the corpus's
+ * exact "Fire" so passesFilters keeps matching case-sensitively.
+ */
+interface CorpusVocab {
+	types: Map<string, string[]>;
+	rarities: Map<string, string[]>;
+	supertypes: Map<string, string[]>;
+	subtypes: Map<string, string[]>;
+}
+
+// Immutable index → its vocab. Built lazily and only when a query actually
+// carries `field:` array ops, so the common (no-field-op) path pays nothing.
+const vocabCache = new WeakMap<CorpusIndex, CorpusVocab>();
+
+function addVocab(map: Map<string, string[]>, value: string | undefined): void {
+	if (!value) return;
+	const key = value.toLowerCase();
+	let arr = map.get(key);
+	if (!arr) {
+		arr = [];
+		map.set(key, arr);
+	}
+	if (!arr.includes(value)) arr.push(value);
+}
+
+function getVocab(index: CorpusIndex): CorpusVocab {
+	const cached = vocabCache.get(index);
+	if (cached) return cached;
+	const v: CorpusVocab = {
+		types: new Map(),
+		rarities: new Map(),
+		supertypes: new Map(),
+		subtypes: new Map(),
+	};
+	for (const c of index.cards) {
+		for (const t of c.types ?? []) addVocab(v.types, t);
+		addVocab(v.rarities, c.rarity);
+		addVocab(v.supertypes, c.supertype);
+		for (const s of c.subtypes ?? []) addVocab(v.subtypes, s);
+	}
+	vocabCache.set(index, v);
+	return v;
+}
+
+/**
+ * Merge `field:` op array filters into the dropdown-derived facets, resolving
+ * each field value case-insensitively to the corpus's canonical value(s) and
+ * unioning within each dimension (OR-within, matching the engine's semantics).
+ * Fast-paths to `base` untouched when the query has no array field ops.
+ */
+function mergeEffectiveFilters(
+	base: FilterClauses,
+	fields: FieldFilters,
+	index: CorpusIndex,
+): FilterClauses {
+	if (!ARRAY_DIMS.some((d) => fields[d]?.length)) return base;
+	const vocab = getVocab(index);
+	const out: FilterClauses = { ...base };
+	for (const dim of ARRAY_DIMS) {
+		const fieldVals = fields[dim];
+		if (!fieldVals?.length) continue;
+		const merged = [...(out[dim] ?? [])];
+		for (const raw of fieldVals) {
+			// Unknown value keeps its raw form → it simply matches no card.
+			const canon = vocab[dim].get(raw.toLowerCase()) ?? [raw];
+			for (const c of canon) if (!merged.includes(c)) merged.push(c);
+		}
+		out[dim] = merged;
+	}
+	return out;
+}
+
 export function queryCorpus(
 	index: CorpusIndex,
 	q: CorpusQuery,
 	setsById: Map<string, PokemonSet>,
 	i18n?: I18nOverlay | null,
 ): HoloCardData[] {
-	const queryNorm = q.query ? normalize(q.query) : "";
-	const hasName = queryNorm.length > 0;
-	const filters = q.filters ?? {};
+	// Parse the free-text grammar ONCE (not per card): OR/AND/NOT/quoted name
+	// terms plus any global `field:` ops. Fields AND-merge into the effective
+	// facets; every caller (client grid, server SSR, binder smart-rules) inherits
+	// the grammar because they all route through queryCorpus.
+	const parsed = parseSearchQuery(q.query ?? "");
+	const hasName = parsed.name.arms.length > 0;
+	const filters = mergeEffectiveFilters(q.filters ?? {}, parsed.fields, index);
+	const effectiveSetId = q.setId ?? parsed.fields.setId ?? null;
+	const yearMins = [q.yearMin, parsed.fields.yearMin].filter(
+		(x): x is number => x != null,
+	);
+	const yearMaxs = [q.yearMax, parsed.fields.yearMax].filter(
+		(x): x is number => x != null,
+	);
+	const effYearMin = yearMins.length ? Math.max(...yearMins) : null;
+	const effYearMax = yearMaxs.length ? Math.min(...yearMaxs) : null;
+	const mode = q.mode ?? "fuzzy";
 	const hits: Hit[] = [];
 
 	for (let i = 0; i < index.cards.length; i++) {
 		const card = index.cards[i];
-		if (q.setId && card.setId !== q.setId) continue;
+		if (effectiveSetId && card.setId !== effectiveSetId) continue;
 		// Guard against upstream mislabels: a card with a national dex is a Pokémon,
 		// so it can never be a real Trainer/Energy — drop it on those browse views.
 		if (q.excludeDexCards && card.nationalPokedexNumbers?.length) continue;
@@ -248,22 +346,23 @@ export function queryCorpus(
 		// page (near-zero in the real card set); split by exact name if it ever bites.
 		if (q.nameSlug != null && slugify(card.name) !== q.nameSlug) continue;
 		if (!passesFilters(card, filters)) continue;
-		if (q.yearMin != null || q.yearMax != null) {
+		if (effYearMin != null || effYearMax != null) {
 			const year = Number(setsById.get(card.setId)?.releaseDate?.slice(0, 4));
-			if (q.yearMin != null && (Number.isNaN(year) || year < q.yearMin))
+			if (effYearMin != null && (Number.isNaN(year) || year < effYearMin))
 				continue;
-			if (q.yearMax != null && (Number.isNaN(year) || year > q.yearMax))
+			if (effYearMax != null && (Number.isNaN(year) || year > effYearMax))
 				continue;
 		}
 		let match: NameMatch | null = null;
 		if (hasName) {
-			match = matchName(
-				queryNorm,
+			const r = matchNameExpr(
+				parsed.name,
 				index.nameNorm[i],
 				index.nameTokens[i],
-				q.mode ?? "fuzzy",
+				mode,
 			);
-			if (!match) continue;
+			if (!r.matched) continue;
+			match = { tier: r.tier, distance: r.distance };
 		}
 		hits.push({ card, i, match });
 	}

@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
-import { editDistance, matchName, normalize } from "./fuzzy";
+import { editDistance, matchName, matchNameExpr, normalize } from "./fuzzy";
+import { parseSearchQuery } from "./search-grammar";
 
 test("normalize lowercases and strips accents/punctuation/spaces", () => {
 	expect(normalize("Mr. Mime")).toBe("mrmime");
@@ -92,4 +93,80 @@ test("contains mode keeps exact/prefix/substring but drops fuzzy (tier 3) — ol
 	expect(matchMode("char", "Charizard", "contains")?.tier).toBe(1); // prefix
 	expect(matchMode("izard", "Charizard", "contains")?.tier).toBe(2); // substring
 	expect(matchMode("charizrd", "Charizard", "contains")).toBeNull(); // typo rejected
+});
+
+// --- matchNameExpr (grammar evaluator) ---
+
+function evalExpr(
+	raw: string,
+	name: string,
+	mode: Parameters<typeof matchName>[3] = "fuzzy",
+) {
+	const expr = parseSearchQuery(raw).name;
+	const n = normalize(name);
+	const tokens = name.split(/[\s-]+/).flatMap((t) => {
+		const x = normalize(t);
+		return x ? [x] : [];
+	});
+	return matchNameExpr(expr, n, tokens, mode);
+}
+
+test("empty expr matches every name (tier 2, like an empty query)", () => {
+	const r = evalExpr("", "Charizard");
+	expect(r.matched).toBe(true);
+	expect(r.tier).toBe(2);
+});
+
+test("single positive term keeps matchName's tier (exact/prefix/substring)", () => {
+	expect(evalExpr("charizard", "Charizard").tier).toBe(0);
+	expect(evalExpr("char", "Charizard").tier).toBe(1);
+	expect(evalExpr("izard", "Charizard").tier).toBe(2);
+});
+
+test("single positive fuzzy term keeps the typo tier + distance", () => {
+	const r = evalExpr("charizrd", "Charizard");
+	expect(r.matched).toBe(true);
+	expect(r.tier).toBe(3);
+	expect(r.distance).toBe(1);
+});
+
+test("AND: all terms must match; tier is the WORST term's tier", () => {
+	const r = evalExpr("char + izard", "Charizard");
+	expect(r.matched).toBe(true);
+	expect(r.tier).toBe(2); // prefix(1) AND substring(2) → worst = 2
+});
+
+test("AND: one missing term → not matched", () => {
+	expect(evalExpr("char + xyzzy", "Charizard").matched).toBe(false);
+});
+
+test("NOT: excludes a name that contains the negated term", () => {
+	expect(evalExpr("!v", "Charizard V").matched).toBe(false);
+	expect(evalExpr("!v", "Charizard").matched).toBe(true);
+});
+
+test("AND + NOT combined", () => {
+	expect(evalExpr("char + !v", "Charizard").matched).toBe(true);
+	expect(evalExpr("char + !v", "Charizard V").matched).toBe(false);
+});
+
+test("pure-negation arm matches (and reports the neutral tier 2)", () => {
+	const r = evalExpr("!ex", "Charizard");
+	expect(r.matched).toBe(true);
+	expect(r.tier).toBe(2);
+});
+
+test("OR: matched if ANY arm matches, tier is the BEST arm's tier", () => {
+	const r = evalExpr("izard, char", "Charizard");
+	expect(r.matched).toBe(true);
+	expect(r.tier).toBe(1); // substring(2) vs prefix(1) → best = 1
+});
+
+test("OR: no arm matches → not matched", () => {
+	expect(evalExpr("pikachu, blastoise", "Charizard").matched).toBe(false);
+});
+
+test("mode threads through leaves (exact rejects a prefix)", () => {
+	expect(evalExpr("char", "Charizard", "exact").matched).toBe(false);
+	expect(evalExpr("charizard", "Charizard", "exact").tier).toBe(0);
 });

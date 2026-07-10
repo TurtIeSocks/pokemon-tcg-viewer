@@ -732,6 +732,138 @@ test("hydrateCard: asia card + active en -> ja face (region base)", () => {
 	);
 });
 
+// --- search grammar via queryCorpus (centralized in the engine) ---
+
+const ids = (r: { id: string }[]) => r.map((c) => c.id);
+const sortedIds = (r: { id: string }[]) => ids(r).sort();
+
+// REGRESSION PINS: a query with NO operators must return EXACTLY the same
+// cards + order as before the grammar landed (protects shared URLs + binder
+// smart-rules). The pinned values below are the pre-change engine output.
+
+test("REGRESSION: plain single-word query is byte-identical to pre-grammar output", () => {
+	const r = queryCorpus(
+		index,
+		{ query: "charizard", relevance: true },
+		setsById,
+	);
+	expect(ids(r)).toEqual(["base1-4", "swsh1-25"]); // exact before prefix (unchanged)
+});
+
+test("REGRESSION: multi-word no-operator query stays ONE contiguous term", () => {
+	// "pikachu ex" normalizes to "pikachuex" and fuzzy-matches Pikachu (dist 2),
+	// exactly as the old normalize()+matchName path did.
+	const r = queryCorpus(
+		index,
+		{ query: "pikachu ex", relevance: true },
+		setsById,
+	);
+	expect(ids(r)).toEqual(["base1-58"]);
+});
+
+test("grammar OR (comma): matches either name", () => {
+	const r = queryCorpus(
+		index,
+		{ query: "charizard, blastoise", relevance: true },
+		setsById,
+	);
+	expect(sortedIds(r)).toEqual(["base1-2", "base1-4", "swsh1-25"]);
+});
+
+test("grammar AND (+): a name must contain both terms", () => {
+	const r = queryCorpus(
+		index,
+		{ query: "char + v", relevance: true },
+		setsById,
+	);
+	expect(ids(r)).toEqual(["swsh1-25"]); // only "Charizard V" has both
+});
+
+test("grammar NOT (!): excludes names containing the negated term", () => {
+	const r = queryCorpus(
+		index,
+		{ query: "charizard + !v", relevance: true },
+		setsById,
+	);
+	expect(ids(r)).toEqual(["base1-4"]); // "Charizard V" dropped by !v
+});
+
+test("grammar field op type: filters by card type (case-insensitive)", () => {
+	const lower = queryCorpus(
+		index,
+		{ query: "type:fire", relevance: true },
+		setsById,
+	);
+	const upper = queryCorpus(
+		index,
+		{ query: "type:FIRE", relevance: true },
+		setsById,
+	);
+	expect(sortedIds(lower)).toEqual(["base1-4", "swsh1-25"]);
+	expect(sortedIds(upper)).toEqual(["base1-4", "swsh1-25"]); // FIRE resolves to "Fire"
+});
+
+test("grammar field op AND name: both must hold (AND across dimensions)", () => {
+	// charizards are Fire, so a Water constraint yields nothing.
+	const r = queryCorpus(
+		index,
+		{ query: "type:water charizard", relevance: true },
+		setsById,
+	);
+	expect(r).toEqual([]);
+});
+
+test("grammar field op rarity with a quoted multi-word value", () => {
+	const r = queryCorpus(
+		index,
+		{ query: 'rarity:"rare holo"', relevance: true },
+		setsById,
+	);
+	expect(sortedIds(r)).toEqual(["base1-2", "base1-4"]); // not "Rare Holo V"
+});
+
+test("grammar field op set: scopes to a set when no context setId", () => {
+	const r = queryCorpus(
+		index,
+		{ query: "set:base1", relevance: false },
+		setsById,
+	);
+	expect(sortedIds(r)).toEqual(["base1-2", "base1-4", "base1-58"]);
+});
+
+test("grammar field op merges with dropdown facets by OR-within-dimension", () => {
+	// dropdown picked Water; query adds Fire → Water OR Fire.
+	const r = queryCorpus(
+		index,
+		{ query: "type:fire", filters: { types: ["Water"] }, relevance: true },
+		setsById,
+	);
+	expect(sortedIds(r)).toEqual(["base1-2", "base1-4", "swsh1-25"]);
+});
+
+test("grammar field op year: filters by release year", () => {
+	const r = queryCorpus(
+		yearCorpus,
+		{ query: "year:1999", relevance: false },
+		yearSetsById,
+	);
+	expect(ids(r)).toEqual(["yr1999-1"]);
+});
+
+test("grammar fail-open: lone ! applies no name filter (returns all)", () => {
+	const r = queryCorpus(index, { query: "!", relevance: false }, setsById);
+	expect(r.length).toBe(4);
+});
+
+test("grammar fail-open: trailing comma keeps the valid arm", () => {
+	const r = queryCorpus(
+		index,
+		{ query: "charizard,", relevance: true },
+		setsById,
+	);
+	expect(sortedIds(r)).toEqual(["base1-4", "swsh1-25"]);
+});
+
 test("hydrateCard: asia card + active ko -> ko face (matches region)", () => {
 	const setsById = new Map([["base1", base1]]);
 	const namesById = new Map([["sv1a-001", "니시노쿠쿠"]]);
