@@ -414,6 +414,63 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		}
 	});
 
+	test("SM era: art-window Pokémon holos get the sm frame", () => {
+		// sm1-20 Tsareena (Stage 2) — cosmos galaxy foil in the SM art window.
+		const p = holoPresentation({
+			rarity: "Rare Holo",
+			series: "Sun & Moon",
+			setId: "sm1",
+			cardNumber: "20",
+			subtypes: ["Stage 2"],
+			holo: false, // TCGdex lists most SM holos as normal-only (data gap)
+		});
+		expect(p.frame).toBe("sm");
+		expect(p.effectiveRarity).toBe("rare holo cosmos");
+	});
+
+	test("SM era: regular GX is a full-face sunpillar etch, not art-window", () => {
+		// sm1-35 Lapras GX — physically an etched full-face foil.
+		const p = holoPresentation({
+			rarity: "Rare Holo GX",
+			series: "Sun & Moon",
+			setId: "sm1",
+			cardNumber: "35",
+			subtypes: ["Basic", "GX"],
+			holo: false,
+		});
+		expect(p.frame).toBe("fullface");
+		expect(p.effectiveRarity).toBe("rare holo v");
+	});
+
+	test("SM era: Prism Star is revived from no-foil (fullface ultra)", () => {
+		// 'Rare Prism Star' carries no /holo/ and the printing is normal-only,
+		// so the old "rare holo" mapping downgraded it to no-foil (sm5-77
+		// Darkrai rendered flat). "rare ultra" isn't downgradable.
+		const p = holoPresentation({
+			rarity: "Rare Prism Star",
+			series: "Sun & Moon",
+			setId: "sm5",
+			cardNumber: "77",
+			subtypes: ["Basic", "Prism Star"],
+			holo: false,
+		});
+		expect(p.frame).toBe("fullface");
+		expect(p.effectiveRarity).toBe("rare ultra");
+	});
+
+	test("SM era: Hidden Fates shiny vault foils the full card", () => {
+		// sma SV1 — sparkle covers the whole white card, no art window.
+		const p = holoPresentation({
+			rarity: "Rare Shiny",
+			series: "Sun & Moon",
+			setId: "sma",
+			cardNumber: "SV1",
+			subtypes: ["Basic"],
+		});
+		expect(p.frame).toBe("fullface");
+		expect(p.effectiveRarity).toBe("rare shiny");
+	});
+
 	test("HGSS era gets its own (taller) frame, distinct from DP", () => {
 		// hgss1-1 Arcanine — taller window than DP.
 		expect(

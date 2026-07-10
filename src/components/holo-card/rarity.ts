@@ -17,7 +17,9 @@ const RARITY_EFFECTIVE: Record<string, string | null> = {
 	"Rare Holo": "rare holo",
 	"Rare Holo Cosmos": "rare holo cosmos",
 	"Rare Holo EX": "rare holo",
-	"Rare Holo GX": "rare holo",
+	// Regular (non-full-art) GX: physically an etched full-face foil, not an
+	// art-window holo — the sunpillar V recipe is the closest match.
+	"Rare Holo GX": "rare holo v",
 	"Rare Holo LV.X": "rare holo",
 	"Rare Holo V": "rare holo v",
 	"Rare Holo VMAX": "rare holo vmax",
@@ -31,7 +33,11 @@ const RARITY_EFFECTIVE: Record<string, string | null> = {
 	"ACE SPEC Rare": "rare ultra",
 	// Gold Star (EX era) — vintage holo; era routing sends these to cosmos.
 	"Rare Holo Star": "rare holo",
-	"Rare Prism Star": "rare holo",
+	// Prism Star (SM era): full-face dark holo with rainbow rays — the ultra
+	// recipe's iridescent hue-shift is the closest match ("rare holo" would
+	// clip it to the art window AND the normal-only printing would flatten it
+	// to no-foil, since "Rare Prism Star" carries no /holo/).
+	"Rare Prism Star": "rare ultra",
 	// TCGdex spelling variants of the V-family holos.
 	"Holo Rare V": "rare holo v",
 	"Holo Rare VMAX": "rare holo vmax",
@@ -84,7 +90,7 @@ const RARITY_EFFECTIVE: Record<string, string | null> = {
 	"Character Super Rare": "rare rainbow", // CSR — premium full-art character
 	"Trainer Rare": "trainer gallery rare holo",
 	"Triple Rare": "rare holo v", // RRR — full-card sheen like Double Rare
-	"Prism Rare": "rare holo", // Prism Star
+	"Prism Rare": "rare ultra", // Prism Star — cf. "Rare Prism Star"
 	"ACE Rare": "rare holo", // ACE SPEC, cf. "Rare ACE"
 	"Secret Rare": "rare secret", // cf. "Rare Secret"
 	"Shiny Secret Rare": "rare shiny vmax",

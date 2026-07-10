@@ -174,6 +174,34 @@ export const XY_FULLART_RARITIES: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Sun & Moon era series (2017-2019): the art-window Pokémon holos get their
+ * own window via data-frame="sm" (measured off sm1 — sides wider than simey's
+ * generic default, 6.5-93.5% vs 8-92%). Stage badge notches the top-left like
+ * XY/BW. Full-art premium cards route to fullface via SM_FULLART_RARITIES.
+ * Lowercased TCGdex `serie.name` strings. USER-EDITABLE.
+ */
+export const SM_FRAME_SERIES: ReadonlySet<string> = new Set(["sun & moon"]);
+
+/**
+ * SM-era rarities whose cards are foiled across the WHOLE face, so no clip
+ * window: regular GX (etched full-face → "rare holo v" via the rarity table),
+ * full-art GX/trainers (Rare Ultra), rainbows, gold secrets, Prism Star
+ * (full-face dark holo → "rare ultra" via the table), and the Hidden Fates
+ * shiny vault (sma — sparkle covers the full white card). All the target
+ * recipes carry :not(.masked) procedural fallbacks. Lowercased raw rarities.
+ * USER-EDITABLE.
+ */
+export const SM_FULLART_RARITIES: ReadonlySet<string> = new Set([
+	"rare holo gx",
+	"rare ultra",
+	"rare rainbow",
+	"rare secret",
+	"rare prism star",
+	"rare shiny",
+	"rare shiny gx",
+]);
+
+/**
  * POP series (promo distribution) spans two frame eras: POP 1–5 use the EX
  * frame, POP 6–9 the DP frame. Lowercased set ids. USER-EDITABLE.
  */
@@ -246,6 +274,7 @@ export type HoloFrame =
 	| "hgss"
 	| "bw"
 	| "xy"
+	| "sm"
 	| "fullface"
 	| null;
 
@@ -281,6 +310,13 @@ function frameFor(
 		return XY_FULLART_RARITIES.has((rarity ?? "").toLowerCase())
 			? "fullface"
 			: "xy";
+	}
+	if (ser && SM_FRAME_SERIES.has(ser)) {
+		// Same split as XY: GX / full-arts / prisms / shiny vault foil the whole
+		// face; the rest are art-window Pokémon holos.
+		return SM_FULLART_RARITIES.has((rarity ?? "").toLowerCase())
+			? "fullface"
+			: "sm";
 	}
 	if (ser && VINTAGE_FRAME_SERIES.has(ser)) return "vintage";
 	return null;

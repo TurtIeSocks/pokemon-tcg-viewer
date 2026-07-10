@@ -3700,3 +3700,85 @@
 	--clip-trainer-invert: var(--clip-invert);
 	--clip-energy-invert: var(--clip-invert);
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   OUR EXTENSION — Sun & Moon era clip windows (data-frame="sm")
+   ─────────────────────────────────────────────────────────────────────────────
+   Sun & Moon (2017-2019): the art-window Pokémon holos. Wider than simey's
+   generic default (sides 6.5-93.5% vs 8-92%), art starts a touch higher. The
+   evolution badge overlaps the window's top-left corner on Stage 1/2 (notch,
+   like XY/BW); Basics have no badge. GX / full-arts / prisms / shiny vault
+   route to frame="fullface" instead (SM_FULLART_RARITIES in holo-style.ts),
+   so this window only governs the art-window Pokémon holos.
+
+     0%                                100%
+  0% ┌──────────────────────────────────┐
+     │ STAGE2   Tsareena       HP        │
+     │╔══╗┌───────────────────────────┐ ◄── --sm-window-top
+     │║🌺║│                            │  │
+     │╚══╝│         ART = FOIL         │  │
+     │ ▲  │                            │  │
+     │ └──◄ --sm-badge-right/-bottom   │ ◄── --sm-window-bottom
+     └────┼───────────────────────────┼──┘
+          --sm-window-left            --sm-window-right
+
+   Six knobs; measured off sm1-99 Kangaskhan (Basic) + sm1-20 Tsareena
+   (Stage 2).
+───────────────────────────────────────────────────────────────────────────── */
+
+.holo-card[data-frame="sm"] {
+	/* ── THE SIX KNOBS ─────────────────────────────────────────────────── */
+	--sm-window-top: 9%; /* foil TOP edge (art border, under the name) */
+	--sm-window-bottom: 47.5%; /* foil BOTTOM edge (above the species bar) */
+	--sm-window-left: 6.5%; /* foil LEFT edge */
+	--sm-window-right: 93.5%; /* foil RIGHT edge (from card LEFT!) */
+	--sm-badge-right: 16.5%; /* stage-badge notch: reaches this far right */
+	--sm-badge-bottom: 15.5%; /* stage-badge notch: reaches this far down */
+
+	/* ── DERIVED SHAPES (no need to touch) ─────────────────────────────── */
+	/* Plain window: Basic Pokémon (no evolution badge). */
+	--clip: inset(
+		var(--sm-window-top) calc(100% - var(--sm-window-right))
+			calc(100% - var(--sm-window-bottom)) var(--sm-window-left)
+	);
+	--clip-trainer: var(--clip);
+	--clip-energy: var(--clip);
+	/* Stage 1/2 window: same rectangle minus the badge's top-left corner. */
+	--clip-stage: polygon(
+		var(--sm-window-right) var(--sm-window-top),
+		var(--sm-window-right) var(--sm-window-bottom),
+		var(--sm-window-left) var(--sm-window-bottom),
+		var(--sm-window-left) var(--sm-badge-bottom),
+		var(--sm-badge-right) var(--sm-badge-bottom),
+		var(--sm-badge-right) var(--sm-window-top)
+	);
+	--clip-invert: polygon(
+		0% 0%,
+		100% 0%,
+		100% 100%,
+		0% 100%,
+		0% var(--sm-window-bottom),
+		var(--sm-window-right) var(--sm-window-bottom),
+		var(--sm-window-right) var(--sm-window-top),
+		var(--sm-window-left) var(--sm-window-top),
+		var(--sm-window-left) var(--sm-window-bottom),
+		0% var(--sm-window-bottom)
+	);
+	/* Reverse holo, Stage 1/2: everything except the notched window. */
+	--clip-stage-invert: polygon(
+		0% 0%,
+		100% 0%,
+		100% 100%,
+		0% 100%,
+		0% var(--sm-window-bottom),
+		var(--sm-window-right) var(--sm-window-bottom),
+		var(--sm-window-right) var(--sm-window-top),
+		var(--sm-badge-right) var(--sm-window-top),
+		var(--sm-badge-right) var(--sm-badge-bottom),
+		var(--sm-window-left) var(--sm-badge-bottom),
+		var(--sm-window-left) var(--sm-window-bottom),
+		0% var(--sm-window-bottom)
+	);
+	--clip-trainer-invert: var(--clip-invert);
+	--clip-energy-invert: var(--clip-invert);
+}
