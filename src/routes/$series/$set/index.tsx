@@ -24,7 +24,7 @@ import {
 } from "../../../lib/languages";
 import {
 	LIST_SEARCH_DEFAULTS,
-	listSearchToUrl,
+	useListSearchOnChange,
 	validateListSearch,
 } from "../../../lib/list-search";
 import { loaderRegion } from "../../../lib/loader-region";
@@ -114,12 +114,11 @@ function SetPage() {
 	const params = Route.useParams();
 	const search = Route.useSearch();
 	const navigate = useNavigate({ from: Route.fullPath });
-	const onChange = (patch: Parameters<typeof listSearchToUrl>[0]) =>
-		navigate({
-			search: (prev) => ({ ...prev, ...listSearchToUrl(patch) }),
-			// In-page filter/view change: keep it instant, don't crossfade.
-			viewTransition: false,
-		});
+	// Shared onChange: `q` here is NOT a loaderDep (the grid filters the in-memory
+	// corpus), so `replace:true` on the debounced typing run is the load-bearing
+	// part — it stops each keystroke becoming its own Back entry. Filter/sort/view
+	// changes still push. Keeps the crossfade off (viewTransition default false).
+	const onChange = useListSearchOnChange(navigate);
 	const [packOpen, setPackOpen] = useState(false);
 	// id → per-page slug, built once. The grid/pack cardHref callbacks fire per
 	// card; a Map keeps them O(1) instead of a linear find over every card.
@@ -151,7 +150,7 @@ interface SetPageInnerProps {
 	facets: ReturnType<typeof Route.useLoaderData>["facets"];
 	search: ReturnType<typeof Route.useSearch>;
 	params: ReturnType<typeof Route.useParams>;
-	onChange: (patch: Parameters<typeof listSearchToUrl>[0]) => void;
+	onChange: ReturnType<typeof useListSearchOnChange>;
 	slugById: Map<string, string>;
 	packOpen: boolean;
 	setPackOpen: (open: boolean) => void;

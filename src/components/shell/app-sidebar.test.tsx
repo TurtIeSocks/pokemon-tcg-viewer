@@ -79,6 +79,13 @@ function expectVaultLinks() {
 	expect(screen.getByRole("link", { name: "Binders" })).toBeDefined();
 }
 
+/** Assert the three Browse-by-supertype links are present. */
+function expectBrowseLinks() {
+	expect(screen.getByRole("link", { name: "Pokémon" })).toBeDefined();
+	expect(screen.getByRole("link", { name: "Trainers" })).toBeDefined();
+	expect(screen.getByRole("link", { name: "Energy" })).toBeDefined();
+}
+
 test("AppSidebar lists all series", async () => {
 	await renderSidebar();
 	expect(screen.getByText("Sword & Shield")).toBeDefined();
@@ -90,7 +97,7 @@ test("active series auto-expands to reveal its sets", async () => {
 	expect(screen.getByText("Brilliant Stars")).toBeDefined();
 });
 
-test("Vault group renders Overview / All Cards / Sets / Binders links at /vault", async () => {
+test("Vault group renders Overview / All Cards / Binders / Sets links at /vault", async () => {
 	await renderSidebar({ initialPath: "/vault" });
 	expectVaultLinks();
 });
@@ -154,6 +161,52 @@ test("Vault items are always visible (flat group, matches mock)", async () => {
 	await renderSidebar({ initialPath: "/" });
 	// Flat group (no collapsible parent): vault children render regardless of path
 	expectVaultLinks();
+});
+
+test("Binders renders before Sets in the Vault group", async () => {
+	await renderSidebar({ initialPath: "/vault" });
+	const binders = screen.getByRole("link", { name: "Binders" });
+	const sets = screen.getByRole("link", { name: "Sets" });
+	// Sets should FOLLOW Binders now that the two were swapped.
+	const relation = binders.compareDocumentPosition(sets);
+	expect(relation & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+});
+
+test("Browse group renders Pokémon / Trainer / Energy links", async () => {
+	await renderSidebar({ initialPath: "/" });
+	expectBrowseLinks();
+});
+
+test("Pokémon browse link points to /pokemon", async () => {
+	await renderSidebar({ initialPath: "/" });
+	const pokemon = screen.getByRole("link", { name: "Pokémon" });
+	// Search defaults serialize onto the href in the bare test router (no strip
+	// middleware registered), so assert the path prefix rather than an exact URL.
+	expect(
+		(pokemon as HTMLAnchorElement).getAttribute("href")?.startsWith("/pokemon"),
+	).toBe(true);
+});
+
+test("Trainer browse link points to /trainer", async () => {
+	await renderSidebar({ initialPath: "/" });
+	const trainer = screen.getByRole("link", { name: "Trainers" });
+	expect(
+		(trainer as HTMLAnchorElement).getAttribute("href")?.startsWith("/trainer"),
+	).toBe(true);
+});
+
+test("Energy browse link points to /energy", async () => {
+	await renderSidebar({ initialPath: "/" });
+	const energy = screen.getByRole("link", { name: "Energy" });
+	expect(
+		(energy as HTMLAnchorElement).getAttribute("href")?.startsWith("/energy"),
+	).toBe(true);
+});
+
+test("Browse links render a leading icon", async () => {
+	await renderSidebar({ initialPath: "/" });
+	const pokemon = screen.getByRole("link", { name: "Pokémon" });
+	expect(pokemon.querySelector("svg")).not.toBeNull();
 });
 
 test("footer renders the account menu trigger", async () => {

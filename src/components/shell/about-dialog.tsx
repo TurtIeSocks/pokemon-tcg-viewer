@@ -30,6 +30,12 @@ const CREDITS: Credit[] = [
 	{
 		title: () => m.shell_credit_card_data_title(),
 		body: () => m.shell_credit_card_data_body(),
+		href: "https://tcgdex.dev",
+		linkLabel: "tcgdex.dev",
+	},
+	{
+		title: () => m.shell_credit_pricing_title(),
+		body: () => m.shell_credit_pricing_body(),
 		href: "https://pokemontcg.io",
 		linkLabel: "pokemontcg.io",
 	},
@@ -38,6 +44,12 @@ const CREDITS: Credit[] = [
 		body: () => m.shell_credit_holo_body(),
 		href: "https://github.com/simeydotme/pokemon-cards-css",
 		linkLabel: "simeydotme/pokemon-cards-css",
+	},
+	{
+		title: () => m.shell_credit_fonts_title(),
+		body: () => m.shell_credit_fonts_body(),
+		href: "https://www.fontshare.com",
+		linkLabel: "Fontshare",
 	},
 ];
 

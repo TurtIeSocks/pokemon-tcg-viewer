@@ -32,7 +32,7 @@ const TILE_OUTER =
 /** The shared Liquid-Glass face: color field, frosted pane, sheen, and content. */
 function LaunchFace({ icon: Icon, title, subtitle }: LaunchFaceProps) {
 	return (
-		<span className="relative flex aspect-4/3 w-full flex-col justify-between overflow-hidden rounded-2xl p-4 sm:p-5">
+		<span className="relative flex aspect-4/3 w-full flex-col items-center justify-between overflow-hidden rounded-2xl p-4 sm:p-5">
 			{/* ── Color backdrop: a violet glow + base darkening for legibility ── */}
 			<span
 				aria-hidden="true"
@@ -55,11 +55,13 @@ function LaunchFace({ icon: Icon, title, subtitle }: LaunchFaceProps) {
 				className="pointer-events-none absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full motion-reduce:hidden"
 			/>
 
-			{/* ── Content: glass icon chip up top, title + subtitle at the base ── */}
-			<span className="relative z-10 flex size-11 items-center justify-center rounded-(--r-control) border border-white/15 bg-white/8 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
-				<Icon className="size-5" aria-hidden="true" />
+			{/* ── Content: glass icon chip centered in the middle, title + subtitle at the base ── */}
+			<span className="relative z-10 flex w-full flex-1 items-center justify-center">
+				<span className="flex size-14 items-center justify-center rounded-(--r-control) border border-white/15 bg-white/8 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+					<Icon className="size-7" aria-hidden="true" />
+				</span>
 			</span>
-			<span className="relative z-10 flex flex-col gap-1">
+			<span className="relative z-10 flex flex-col items-center gap-1 text-center">
 				<span className="font-display text-lg font-semibold text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)]">
 					{title}
 				</span>

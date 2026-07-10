@@ -87,3 +87,37 @@ test("synced → no upgrade menu item", async () => {
 		screen.queryByRole("menuitem", { name: /upgrade to sync/i }),
 	).toBeNull();
 });
+
+test("identity block is a focusable menu item that links to /profile", async () => {
+	stubSignedIn("synced");
+	await renderMenu();
+	openMenu();
+
+	// The identity item is the only menuitem carrying the signed-in email; it's a
+	// real Link (role=menuitem) so keyboard/pointer users can open the profile.
+	const identity = await waitFor(() =>
+		screen.getByRole("menuitem", { name: /collector@example\.com/i }),
+	);
+	expect(identity.getAttribute("href")).toBe("/profile");
+});
+
+test("'Edit profile' opens the edit dialog in place instead of navigating", async () => {
+	stubSignedIn("synced");
+	await renderMenu();
+	openMenu();
+
+	const editItem = await waitFor(() =>
+		screen.getByRole("menuitem", { name: /edit profile/i }),
+	);
+	// It's a plain action item now — no route navigation.
+	expect(editItem.getAttribute("href")).toBeNull();
+	// The controlled dialog is unmounted until the item is selected.
+	expect(screen.queryByText(/your collector identity/i)).toBeNull();
+
+	fireEvent.click(editItem);
+
+	// Selecting the item opens ProfileFormDialog (identified by its description).
+	await waitFor(() =>
+		expect(screen.getByText(/your collector identity/i)).toBeDefined(),
+	);
+});

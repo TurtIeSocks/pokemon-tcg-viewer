@@ -6,7 +6,7 @@ import {
 import { CardListPage } from "../../components/card/card-list-page";
 import {
 	LIST_SEARCH_DEFAULTS,
-	listSearchToUrl,
+	useListSearchOnChange,
 	validateListSearch,
 } from "../../lib/list-search";
 import { toSerializedQuery } from "../../lib/serialized-query";
@@ -45,6 +45,7 @@ function TrainersPage() {
 	const { cards, total, facets } = Route.useLoaderData();
 	const search = Route.useSearch();
 	const navigate = useNavigate({ from: Route.fullPath });
+	const onChange = useListSearchOnChange(navigate);
 	const cardHref = useCorpusCardHref({ to: "/trainer", search });
 	return (
 		<CardListPage
@@ -52,12 +53,7 @@ function TrainersPage() {
 			total={total}
 			options={facets}
 			search={search}
-			onChange={(patch) =>
-				navigate({
-					search: (prev) => ({ ...prev, ...listSearchToUrl(patch) }),
-					viewTransition: false,
-				})
-			}
+			onChange={onChange}
 			context={CONTEXT}
 			cardHref={cardHref}
 			ruleQuery={{

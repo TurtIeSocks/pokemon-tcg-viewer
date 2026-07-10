@@ -27,6 +27,27 @@ export function nameByDex(
 	return entry ? entry.name : null;
 }
 
+/**
+ * Resolve a `/pokemon/$name` route param that may be EITHER a species slug
+ * ("charizard", case-insensitive) OR a national-dex id ("6"; leading zeros are
+ * fine, `Number("006") === 6`). Returns the `{ dex, name }` pair, or null when it
+ * maps to no known species. For the numeric form `name` is the canonical species
+ * name (via {@link nameByDex}); for the slug form it's the caller's slug (so the
+ * displayed casing matches what was typed).
+ */
+export function resolveDex(
+	list: PokemonListEntry[],
+	param: string,
+): { dex: number; name: string } | null {
+	if (/^\d+$/.test(param)) {
+		const dex = Number(param);
+		const name = nameByDex(list, dex);
+		return name === null ? null : { dex, name };
+	}
+	const dex = dexByName(list, param);
+	return dex === null ? null : { dex, name: param };
+}
+
 /** Most-frequent key in a count map, or null if empty. Ties resolve to first seen. */
 function topKey(counts: Map<string, number>): string | null {
 	let best: string | null = null;

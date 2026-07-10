@@ -1,9 +1,13 @@
-import { ClientOnly, createFileRoute, notFound } from "@tanstack/react-router";
+import {
+	ClientOnly,
+	createFileRoute,
+	notFound,
+	stripSearchParams,
+} from "@tanstack/react-router";
 import { useMemo } from "react";
-import { CardSelectionProvider } from "../../components/islands/card-selection";
 import { SetTile } from "../../components/shell/set-tile";
 import { cardIdsInSets } from "../../components/vault/bulk-add";
-import { SelectAndBulkAdd } from "../../components/vault/select-and-bulk-add";
+import { BulkAddMenu } from "../../components/vault/bulk-add-menu";
 import {
 	isSupportedLanguage,
 	type SupportedLanguage,
@@ -25,6 +29,9 @@ export const Route = createFileRoute("/$series/")({
 				? search.lang
 				: null,
 	}),
+	// Drop the default `lang: null` from the URL so tile/sidebar links stay
+	// clean (`/base`, not `/base?lang=null`); a real `?lang=ja` is preserved.
+	search: { middlewares: [stripSearchParams({ lang: null })] },
 	loaderDeps: ({ search }) => ({ lang: search.lang }),
 	loader: async ({ params, deps }) => {
 		// Region from `?lang`, else the active client region (sidebar/tile clicks
@@ -62,27 +69,25 @@ function SeriesBulkMenu({ setIds }: { setIds: string[] }) {
 		[index, setIds],
 	);
 	if (!index) return null;
-	return <SelectAndBulkAdd cardIds={cardIds} ruleQuery={null} />;
+	return <BulkAddMenu cardIds={cardIds} ruleQuery={null} />;
 }
 
 function SeriesPage() {
 	const series = Route.useLoaderData();
 	const setIds = useMemo(() => series.sets.map((s) => s.id), [series.sets]);
 	return (
-		<CardSelectionProvider>
-			<div className="mx-auto w-full max-w-7xl overflow-y-auto px-4 py-6">
-				<div className="mb-4 flex items-center gap-3">
-					<h1 className="text-2xl font-bold">{series.name}</h1>
-					<ClientOnly fallback={null}>
-						<SeriesBulkMenu setIds={setIds} />
-					</ClientOnly>
-				</div>
-				<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-					{series.sets.map((set) => (
-						<SetTile key={set.id} seriesSlug={series.slug} set={set} />
-					))}
-				</div>
+		<div className="mx-auto w-full max-w-7xl overflow-y-auto px-4 py-6">
+			<div className="mb-4 flex items-center gap-3">
+				<h1 className="text-2xl font-bold">{series.name}</h1>
+				<ClientOnly fallback={null}>
+					<SeriesBulkMenu setIds={setIds} />
+				</ClientOnly>
 			</div>
-		</CardSelectionProvider>
+			<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+				{series.sets.map((set) => (
+					<SetTile key={set.id} seriesSlug={series.slug} set={set} />
+				))}
+			</div>
+		</div>
 	);
 }
