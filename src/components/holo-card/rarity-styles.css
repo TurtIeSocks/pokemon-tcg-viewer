@@ -3404,3 +3404,88 @@
 	--clip-trainer-invert: var(--clip-invert);
 	--clip-energy-invert: var(--clip-invert);
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   OUR EXTENSION — DP era clip windows (data-frame="dp")
+   ─────────────────────────────────────────────────────────────────────────────
+   Diamond & Pearl / Platinum (+ POP 6-9): stage badge TOP-left like the WotC
+   vintage frame, but a lower art window. Which series/sets get this =
+   DP_FRAME_SERIES + POP_DP_SETS in holo-style.ts. (HeartGold & SoulSilver's
+   window is taller and Call of Legends' shorter — those get their own frames
+   when reported; until then they fall back to modern clips.)
+
+   ══ TUNING GUIDE (same rules as the vintage knobs) ═══════════════════════════
+
+     0%                                100%
+  0% ┌──────────────────────────────────┐
+     │ Dialga LV.68              HP 90   │
+     │ (🐉) STAGE 2  Evolves from…       │
+     │ ┌────┐───────────────────────┐  ◄── --dp-window-top
+     │ │▓▓▓▓│      ART WINDOW        │  │
+     │ ├────┘        = FOIL          │  │
+     │ │                             │  │
+     │ └─────────────────────────────┘  ◄── --dp-window-bottom
+     │ ▲ NO. 483 · attacks / text  ▲    │
+     └─┼───────────────────────────┼────┘
+       --dp-window-left            --dp-window-right
+
+   ▓ = badge notch: cut from the window's TOP-left ONLY on Stage 1/2 cards.
+   Measured off the dp1 Dialga + pop6/pop9 scans.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+.holo-card[data-frame="dp"] {
+	/* ── THE SIX KNOBS ─────────────────────────────────────────────────── */
+	--dp-window-top: 14.5%; /* foil TOP edge (under the stage banner) */
+	--dp-window-bottom: 51.5%; /* foil BOTTOM edge (above the species bar) */
+	--dp-window-left: 5.5%; /* foil LEFT edge */
+	--dp-window-right: 94.5%; /* foil RIGHT edge (from card LEFT!) */
+	--dp-badge-right: 24.5%; /* badge notch: reaches this far right */
+	--dp-badge-bottom: 31%; /* badge notch: reaches this far down */
+
+	/* ── DERIVED SHAPES (no need to touch) ─────────────────────────────── */
+	--clip: inset(
+		var(--dp-window-top) calc(100% - var(--dp-window-right))
+			calc(100% - var(--dp-window-bottom)) var(--dp-window-left)
+	);
+	--clip-trainer: var(--clip);
+	--clip-energy: var(--clip);
+	/* Stage 1/2: window minus the badge's top-left corner. */
+	--clip-stage: polygon(
+		var(--dp-window-right) var(--dp-window-top),
+		var(--dp-window-right) var(--dp-window-bottom),
+		var(--dp-window-left) var(--dp-window-bottom),
+		var(--dp-window-left) var(--dp-badge-bottom),
+		var(--dp-badge-right) var(--dp-badge-bottom),
+		var(--dp-badge-right) var(--dp-window-top)
+	);
+	/* Reverse holo: whole face except the plain window. */
+	--clip-invert: polygon(
+		0% 0%,
+		100% 0%,
+		100% 100%,
+		0% 100%,
+		0% var(--dp-window-bottom),
+		var(--dp-window-right) var(--dp-window-bottom),
+		var(--dp-window-right) var(--dp-window-top),
+		var(--dp-window-left) var(--dp-window-top),
+		var(--dp-window-left) var(--dp-window-bottom),
+		0% var(--dp-window-bottom)
+	);
+	/* Reverse holo, Stage 1/2: everything except the notched window. */
+	--clip-stage-invert: polygon(
+		0% 0%,
+		100% 0%,
+		100% 100%,
+		0% 100%,
+		0% var(--dp-window-bottom),
+		var(--dp-window-right) var(--dp-window-bottom),
+		var(--dp-window-right) var(--dp-window-top),
+		var(--dp-badge-right) var(--dp-window-top),
+		var(--dp-badge-right) var(--dp-badge-bottom),
+		var(--dp-window-left) var(--dp-badge-bottom),
+		var(--dp-window-left) var(--dp-window-bottom),
+		0% var(--dp-window-bottom)
+	);
+	--clip-trainer-invert: var(--clip-invert);
+	--clip-energy-invert: var(--clip-invert);
+}

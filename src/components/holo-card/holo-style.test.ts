@@ -342,6 +342,49 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		).toBe("rare holo cosmos");
 	});
 
+	test("POP: plain 'Rare'/'Common' with a holo printing → cosmos foil", () => {
+		// pop3-1 Blastoise — rarity "Rare" (not "Rare Holo") but variants
+		// include "holo"; must not render glare-only.
+		const p = holoPresentation({
+			rarity: "Rare",
+			series: "POP",
+			setId: "pop3",
+			cardNumber: "1",
+			subtypes: ["Stage 2"],
+			holo: true,
+		});
+		expect(p.effectiveRarity).toBe("rare holo cosmos");
+		// No holo printing → stays glare-only.
+		expect(
+			holoPresentation({
+				rarity: "Rare",
+				series: "POP",
+				setId: "pop3",
+				cardNumber: "9",
+				holo: false,
+			}).effectiveRarity,
+		).toBeNull();
+	});
+
+	test("POP spans two frame eras (1-5 EX, 6-9 DP); DP/Platinum → dp frame", () => {
+		expect(
+			holoPresentation({ rarity: "Rare", setId: "pop3", holo: true }).frame,
+		).toBe("ex");
+		expect(
+			holoPresentation({ rarity: "Rare", setId: "pop6", holo: true }).frame,
+		).toBe("dp");
+		expect(
+			holoPresentation({ rarity: "Rare", setId: "pop9", holo: true }).frame,
+		).toBe("dp");
+		expect(
+			holoPresentation({ rarity: "Rare Holo", series: "Diamond & Pearl" })
+				.frame,
+		).toBe("dp");
+		expect(
+			holoPresentation({ rarity: "Rare Holo", series: "Platinum" }).frame,
+		).toBe("dp");
+	});
+
 	test("EX era gets its own frame (bottom-left stage badge)", () => {
 		// ex1-5 Delcatty — Stage 1 with the badge hanging off the window's
 		// bottom-left; JP ADV/PCG share the frame.

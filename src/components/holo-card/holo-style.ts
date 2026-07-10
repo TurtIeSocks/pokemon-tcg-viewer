@@ -114,6 +114,39 @@ export const EX_FRAME_SERIES: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * DP era series (Diamond & Pearl, Platinum): stage badge TOP-left (like the
+ * WotC vintage frame) but a lower, differently-sized art window. Own knob set
+ * via data-frame="dp" (rarity-styles.css). Lowercased TCGdex `serie.name`
+ * strings. USER-EDITABLE.
+ *
+ * NOT included yet (their windows differ — HGSS is taller, Call of Legends
+ * shorter; add dedicated frames when reported): "heartgold & soulsilver",
+ * "call of legends".
+ */
+export const DP_FRAME_SERIES: ReadonlySet<string> = new Set([
+	"diamond & pearl",
+	"platinum",
+]);
+
+/**
+ * POP series (promo distribution) spans two frame eras: POP 1–5 use the EX
+ * frame, POP 6–9 the DP frame. Lowercased set ids. USER-EDITABLE.
+ */
+const POP_EX_SETS: ReadonlySet<string> = new Set([
+	"pop1",
+	"pop2",
+	"pop3",
+	"pop4",
+	"pop5",
+]);
+const POP_DP_SETS: ReadonlySet<string> = new Set([
+	"pop6",
+	"pop7",
+	"pop8",
+	"pop9",
+]);
+
+/**
  * Interpret TCGplayer price-variant keys as a holo signal:
  *   • has "holofoil"        → true  (holo printing)
  *   • has "normal", no holo → false (non-holo printing — should not foil)
@@ -160,7 +193,7 @@ export const CLASSIC_FULLFACE_NUMBERS: ReadonlySet<string> = new Set([
 ]);
 
 /** Frame treatment for the procedural clip windows (data-frame attribute). */
-export type HoloFrame = "vintage" | "ecard" | "ex" | "fullface" | null;
+export type HoloFrame = "vintage" | "ecard" | "ex" | "dp" | "fullface" | null;
 
 function frameFor(
 	series?: string,
@@ -179,9 +212,13 @@ function frameFor(
 		}
 		return "fullface";
 	}
+	// POP (one TCGdex series) spans two frame eras — decide by set id first.
+	if (sid && POP_EX_SETS.has(sid)) return "ex";
+	if (sid && POP_DP_SETS.has(sid)) return "dp";
 	const ser = series?.toLowerCase();
 	if (ser && ECARD_FRAME_SERIES.has(ser)) return "ecard";
 	if (ser && EX_FRAME_SERIES.has(ser)) return "ex";
+	if (ser && DP_FRAME_SERIES.has(ser)) return "dp";
 	if (ser && VINTAGE_FRAME_SERIES.has(ser)) return "vintage";
 	return null;
 }
@@ -269,24 +306,21 @@ export function holoPresentation(
 
 	let eff = getEffectiveRarity(rarity);
 
-	// Era routing: classic Rare Holo in a vintage era → cosmos galaxy foil.
-	if (
-		eff === "rare holo" &&
-		((series && COSMOS_SERIES.has(series.toLowerCase())) ||
-			(setId && COSMOS_SETS.has(setId.toLowerCase())))
-	) {
+	// A vintage-era card (galaxy-foil years) OR a specific cosmos set.
+	const inCosmosEra =
+		(series && COSMOS_SERIES.has(series.toLowerCase())) ||
+		(setId && COSMOS_SETS.has(setId.toLowerCase()));
+
+	// Era routing: classic Rare Holo in a cosmos era → cosmos galaxy foil.
+	if (eff === "rare holo" && inCosmosEra) {
 		eff = "rare holo cosmos";
 	}
 
-	// Cosmos-set upgrade: in sets whose whole run is foil (Celebrations), a
-	// plain "Rare" with a holo printing is still a cosmos holo — the rarity
-	// heuristic alone would leave it glare-only.
-	if (
-		eff === null &&
-		holo === true &&
-		setId &&
-		COSMOS_SETS.has(setId.toLowerCase())
-	) {
+	// Cosmos-era upgrade: a plain "Rare"/"Common"/"Uncommon" that carries a
+	// HOLO printing (TCGdex marks POP + some vintage holos with the tier rarity,
+	// not "Rare Holo", but flags the holo variant) is still a cosmos holo — the
+	// rarity heuristic alone would leave it glare-only.
+	if (eff === null && holo === true && inCosmosEra) {
 		eff = "rare holo cosmos";
 	}
 
