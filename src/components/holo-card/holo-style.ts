@@ -260,9 +260,28 @@ export const FULLFACE_FOIL_SETS: ReadonlySet<string> = new Set([
  * art-window knobs. Lowercased card numbers. USER-EDITABLE.
  */
 export const CLASSIC_FULLFACE_NUMBERS: ReadonlySet<string> = new Set([
-	"60a", // Tapu Lele GX
-	"109a", // Luxray GL LV.X
-	"145a", // Garchomp C LV.X
+	"54a", // Mewtwo EX (BW full-art)
+	"60a", // Tapu Lele GX (SM full-art)
+	"76a", // M Rayquaza EX (XY Mega full-art)
+	"97a", // Xerneas EX (XY full-art)
+	"107a", // Donphan Prime (HGSS full-bleed)
+	"109a", // Luxray GL LV.X (DP full-art)
+	"113a", // Reshiram (BW full-art)
+	"114a", // Zekrom (BW full-art)
+	"145a", // Garchomp C LV.X (DP full-art)
+]);
+
+/**
+ * Classic Collection reprints of EX-era (2003-2007) cards: their art window +
+ * bottom-left stage badge match the EX frame, not the WotC vintage window they
+ * would otherwise default to. Lowercased card numbers. USER-EDITABLE.
+ */
+export const CLASSIC_EX_NUMBERS: ReadonlySet<string> = new Set([
+	"9a", // Team Magma's Groudon
+	"17a", // Umbreon ☆ (Gold Star, POP5)
+	"86a", // Rocket's Admin. (trainer)
+	"88a", // Mew ex
+	"93a", // Gardevoir ex
 ]);
 
 /** Frame treatment for the procedural clip windows (data-frame attribute). */
@@ -299,9 +318,12 @@ function frameFor(
 		// Classic Collection reprints keep their original frame's window;
 		// the main-set cards are mirror-foiled face-wide.
 		if (rarity?.toLowerCase() === "classic collection") {
-			return CLASSIC_FULLFACE_NUMBERS.has((cardNumber ?? "").toLowerCase())
-				? "fullface"
-				: "vintage";
+			// Cross-era anthology: full-bleed cards → fullface, EX-era cards → the
+			// EX window, everything else → the WotC vintage window.
+			const num = (cardNumber ?? "").toLowerCase();
+			if (CLASSIC_FULLFACE_NUMBERS.has(num)) return "fullface";
+			if (CLASSIC_EX_NUMBERS.has(num)) return "ex";
+			return "vintage";
 		}
 		return "fullface";
 	}

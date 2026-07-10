@@ -318,14 +318,26 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		});
 		expect(gyarados.effectiveRarity).toBe("rare holo cosmos");
 		expect(gyarados.frame).toBe("vintage");
-		// cel25-60A Tapu Lele GX — full-art original → full-face foil.
-		expect(
-			holoPresentation({
-				rarity: "Classic Collection",
-				setId: "cel25",
-				cardNumber: "60A",
-			}).frame,
-		).toBe("fullface");
+		// Full-bleed originals (GX / Mega / LV.X / BW full-art) → full-face foil.
+		for (const num of ["54A", "60A", "76A", "97A", "107A", "113A", "145A"]) {
+			expect(
+				holoPresentation({
+					rarity: "Classic Collection",
+					setId: "cel25",
+					cardNumber: num,
+				}).frame,
+			).toBe("fullface");
+		}
+		// EX-era reprints (2003-2007) → the EX window, not the WotC vintage one.
+		for (const num of ["9A", "17A", "88A", "93A", "86A"]) {
+			expect(
+				holoPresentation({
+					rarity: "Classic Collection",
+					setId: "cel25",
+					cardNumber: num,
+				}).frame,
+			).toBe("ex");
+		}
 	});
 
 	test("explicit 'Rare Holo' rarity is never downgraded by a normal-only variant", () => {
