@@ -33,6 +33,8 @@ export const COSMOS_SERIES: ReadonlySet<string> = new Set([
 	"xy",
 	"sun & moon",
 	"np", // Nintendo Black Star Promos — vintage cosmos foil
+	"legendary collection", // TCGdex gives LC its OWN serie (not "Base")
+	"trainer kits", // half-deck reprints, EX→XY era art-window holos
 
 	// --- Asian region: TCGdex `serie.name` strings (the corpus joins series
 	// by NAME, and the JP names are the display strings below). Mirrors the
@@ -78,6 +80,7 @@ export const VINTAGE_FRAME_SERIES: ReadonlySet<string> = new Set([
 	"neo",
 	"e-card",
 	"np", // Nintendo Black Star Promos — WotC-style frame
+	"legendary collection", // WotC-frame reprint set (own TCGdex serie)
 
 	// --- Asian region equivalents (TCGdex `serie.name` strings): the JP
 	// original-era frames share the WotC window geometry.

@@ -342,6 +342,18 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		).toBe("rare holo cosmos");
 	});
 
+	test("Legendary Collection: own TCGdex serie → cosmos + vintage frame", () => {
+		const p = holoPresentation({
+			rarity: "Rare Holo",
+			series: "Legendary Collection",
+			setId: "lc",
+			cardNumber: "3",
+			holo: true,
+		});
+		expect(p.effectiveRarity).toBe("rare holo cosmos");
+		expect(p.frame).toBe("vintage");
+	});
+
 	test("Japanese vintage series route to cosmos (TCGdex serie names)", () => {
 		// PMCG1 リザードン and friends — the Asian corpus joins series by the
 		// Japanese display name, not the Western one.
