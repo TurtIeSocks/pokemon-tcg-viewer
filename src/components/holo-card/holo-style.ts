@@ -284,10 +284,16 @@ function frameFor(
 	rarity?: string,
 	cardNumber?: string,
 ): HoloFrame {
+	const rarityLower = (rarity ?? "").toLowerCase();
 	// Black White Rare (the 2 Black Bolt / White Flare chase ex full-arts) are
 	// full-bleed etched cards — foil the whole face, no art window. Keyed on the
 	// rarity, not the set (the set is otherwise a normal masked SV set).
-	if ((rarity ?? "").toLowerCase() === "black white rare") return "fullface";
+	if (rarityLower === "black white rare") return "fullface";
+	// Pokémon LEGEND cards (HGSS era; each is a 2-card top/bottom assembly) are
+	// full-bleed holos — the whole illustration is foil, not an art window. They
+	// live in the HGSS sets, so without this they'd take the hgss art-window clip.
+	if (rarityLower === "legend" || rarityLower === "rare holo legend")
+		return "fullface";
 	const sid = setId?.toLowerCase();
 	if (sid && FULLFACE_FOIL_SETS.has(sid)) {
 		// Classic Collection reprints keep their original frame's window;

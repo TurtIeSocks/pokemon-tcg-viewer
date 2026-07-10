@@ -486,6 +486,21 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		expect(p.effectiveRarity).toBe("rare holo v");
 	});
 
+	test("Pokémon LEGEND cards are full-face cosmos, not the HGSS window", () => {
+		// hgss3-87 Kyogre & Groudon LEGEND — a full-bleed 2-card holo. The rarity
+		// is "LEGEND"; it must not take the hgss art-window clip.
+		const p = holoPresentation({
+			rarity: "LEGEND",
+			series: "HeartGold & SoulSilver",
+			setId: "hgss3",
+			cardNumber: "87",
+			subtypes: ["LEGEND"],
+			holo: true,
+		});
+		expect(p.frame).toBe("fullface");
+		expect(p.effectiveRarity).toBe("rare holo cosmos");
+	});
+
 	test("HGSS era gets its own (taller) frame, distinct from DP", () => {
 		// hgss1-1 Arcanine — taller window than DP.
 		expect(
