@@ -497,6 +497,7 @@
 	"sync_status_offline": "Frakoblet",
 	"sync_status_error": "Synkroniseringsfeil",
 	"sync_status_local_only": "Bare lokalt",
+	"offline_indicator": "Frakoblet",
 	"shell_about_credits_aria": "Om og takk til",
 	"shell_about_title": "Om Cardstack",
 	"shell_about_description": "Cardstack er en fanlaget samlingsbehandler med åpen kildekode for Pokémon TCG. Lokalt først, dine data, ingen reklame, ingen snoking. Bygget av samlere, med takk til:",

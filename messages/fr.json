@@ -497,6 +497,7 @@
 	"sync_status_offline": "Hors ligne",
 	"sync_status_error": "Erreur de synchronisation",
 	"sync_status_local_only": "Local uniquement",
+	"offline_indicator": "Hors ligne",
 	"shell_about_credits_aria": "À propos et crédits",
 	"shell_about_title": "À propos de Cardstack",
 	"shell_about_description": "Cardstack est un gestionnaire de collection open source créé par des fans pour le JCC Pokémon. Local d'abord, vos données, sans publicité, sans espionnage. Créé par des collectionneurs, avec nos remerciements à :",

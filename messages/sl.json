@@ -513,6 +513,7 @@
 	"sync_status_offline": "Brez povezave",
 	"sync_status_error": "Napaka sinhronizacije",
 	"sync_status_local_only": "Samo lokalno",
+	"offline_indicator": "Brez povezave",
 	"shell_about_credits_aria": "O aplikaciji in zasluge",
 	"shell_about_title": "O Cardstacku",
 	"shell_about_description": "Cardstack je oboževalski, odprtokodni upravitelj zbirk za Pokémon TCG. Najprej lokalno, tvoji podatki, brez oglasov, brez vohljanja. Ustvarili zbiratelji, z zahvalo:",

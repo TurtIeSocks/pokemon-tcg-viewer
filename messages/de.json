@@ -497,6 +497,7 @@
 	"sync_status_offline": "Offline",
 	"sync_status_error": "Sync-Fehler",
 	"sync_status_local_only": "Nur lokal",
+	"offline_indicator": "Offline",
 	"shell_about_credits_aria": "Über & Danksagungen",
 	"shell_about_title": "Über Cardstack",
 	"shell_about_description": "Cardstack ist ein von Fans erstellter, quelloffener Sammlungsmanager für das Pokémon TCG. Local-first, Ihre Daten, keine Werbung, keine Schnüffelei. Erstellt von Sammlern, mit Dank an:",

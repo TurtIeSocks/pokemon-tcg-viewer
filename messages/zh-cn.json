@@ -489,6 +489,7 @@
 	"sync_status_offline": "离线",
 	"sync_status_error": "同步错误",
 	"sync_status_local_only": "仅本地",
+	"offline_indicator": "离线",
 	"shell_about_credits_aria": "关于与致谢",
 	"shell_about_title": "关于 Cardstack",
 	"shell_about_description": "Cardstack 是一个由粉丝制作的开源 Pokémon TCG 收藏管理工具。本地优先,数据归你所有,无广告,绝不窥探。由收藏家打造,特别感谢:",

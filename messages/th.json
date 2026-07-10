@@ -489,6 +489,7 @@
 	"sync_status_offline": "ออฟไลน์",
 	"sync_status_error": "ซิงก์ผิดพลาด",
 	"sync_status_local_only": "ในเครื่องเท่านั้น",
+	"offline_indicator": "ออฟไลน์",
 	"shell_about_credits_aria": "เกี่ยวกับและเครดิต",
 	"shell_about_title": "เกี่ยวกับ Cardstack",
 	"shell_about_description": "Cardstack เป็นเครื่องมือจัดการคอลเลกชัน Pokémon TCG ที่ทำโดยแฟนคลับและเป็นโอเพนซอร์ส เน้นเก็บข้อมูลในเครื่อง เป็นข้อมูลของคุณ ไม่มีโฆษณา ไม่มีการสอดแนม สร้างโดยนักสะสม ขอขอบคุณ:",

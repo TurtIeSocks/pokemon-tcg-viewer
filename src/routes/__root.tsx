@@ -12,6 +12,7 @@ import { useEffect } from "react";
 import { PreviewLogin } from "@/components/dev/preview-login";
 import { AboutDialog } from "@/components/shell/about-dialog";
 import { CommandPalette } from "@/components/shell/command-palette";
+import { OnlineIndicator } from "@/components/shell/online-indicator";
 import { RepoLink } from "@/components/shell/repo-link";
 import { SyncToastsWatcher } from "@/components/sync/sync-toasts";
 import { Button } from "@/components/ui/button";
@@ -119,6 +120,7 @@ export const Route = createRootRoute({
 				href: "/favicon-16.png",
 			},
 			{ rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+			{ rel: "manifest", href: "/manifest.webmanifest" },
 		],
 	}),
 	component: RootComponent,
@@ -278,6 +280,7 @@ function RootComponent() {
 					<VersionToast />
 					<SyncToastsWatcher />
 					<PreviewLogin />
+					<OnlineIndicator />
 					<Toaster />
 				</ClientOnly>
 			</LocaleBoundary>

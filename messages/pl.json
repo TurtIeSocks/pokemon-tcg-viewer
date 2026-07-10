@@ -513,6 +513,7 @@
 	"sync_status_offline": "Offline",
 	"sync_status_error": "Błąd synchronizacji",
 	"sync_status_local_only": "Tylko lokalnie",
+	"offline_indicator": "Offline",
 	"shell_about_credits_aria": "O aplikacji i podziękowania",
 	"shell_about_title": "O Cardstack",
 	"shell_about_description": "Cardstack to fanowski, open-source menedżer kolekcji do Pokémon TCG. Local-first, Twoje dane, bez reklam, bez podglądania. Zbudowany przez kolekcjonerów, z podziękowaniami dla:",

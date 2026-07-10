@@ -489,6 +489,7 @@
 	"sync_status_offline": "オフライン",
 	"sync_status_error": "同期エラー",
 	"sync_status_local_only": "ローカルのみ",
+	"offline_indicator": "オフライン",
 	"shell_about_credits_aria": "アプリ情報とクレジット",
 	"shell_about_title": "Cardstackについて",
 	"shell_about_description": "Cardstackはファンが作った、ポケモンカードゲーム用のオープンソースコレクション管理アプリです。ローカルファーストで、データはあなたのもの、広告なし、詮索なし。コレクターの手によって作られました。感謝を込めて:",

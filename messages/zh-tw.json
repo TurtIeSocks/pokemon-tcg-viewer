@@ -489,6 +489,7 @@
 	"sync_status_offline": "離線",
 	"sync_status_error": "同步錯誤",
 	"sync_status_local_only": "僅限本機",
+	"offline_indicator": "離線",
 	"shell_about_credits_aria": "關於與致謝",
 	"shell_about_title": "關於 Cardstack",
 	"shell_about_description": "Cardstack 是一款由粉絲製作的開放原始碼寶可夢集換式卡牌收藏管理工具。本地優先、資料屬於你、沒有廣告、絕不窺探。由收藏家打造，特別感謝：",

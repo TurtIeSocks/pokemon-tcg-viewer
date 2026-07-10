@@ -497,6 +497,7 @@
 	"sync_status_offline": "Offline",
 	"sync_status_error": "Synkfel",
 	"sync_status_local_only": "Endast lokalt",
+	"offline_indicator": "Offline",
 	"shell_about_credits_aria": "Om och tack",
 	"shell_about_title": "Om Cardstack",
 	"shell_about_description": "Cardstack är en fangjord samlingshanterare med öppen källkod för Pokémon TCG. Local-first, dina data, inga annonser, ingen snokning. Byggd av samlare, med tack till:",

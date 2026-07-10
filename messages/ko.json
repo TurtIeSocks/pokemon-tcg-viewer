@@ -489,6 +489,7 @@
 	"sync_status_offline": "오프라인",
 	"sync_status_error": "동기화 오류",
 	"sync_status_local_only": "로컬 전용",
+	"offline_indicator": "오프라인",
 	"shell_about_credits_aria": "정보 및 크레딧",
 	"shell_about_title": "Cardstack 소개",
 	"shell_about_description": "Cardstack은 Pokémon TCG를 위한 팬 제작 오픈소스 컬렉션 매니저예요. 로컬 우선, 내 데이터, 광고 없음, 엿보기 없음. 수집가들이 만들었으며 다음 분들께 감사드려요:",

@@ -489,6 +489,7 @@
 	"sync_status_offline": "Offline",
 	"sync_status_error": "Kesalahan sinkronisasi",
 	"sync_status_local_only": "Hanya lokal",
+	"offline_indicator": "Offline",
 	"shell_about_credits_aria": "Tentang & kredit",
 	"shell_about_title": "Tentang Cardstack",
 	"shell_about_description": "Cardstack adalah pengelola koleksi open-source buatan penggemar untuk Pokémon TCG. Local-first, data Anda, tanpa iklan, tanpa mengintip. Dibuat oleh sesama kolektor, dengan terima kasih kepada:",

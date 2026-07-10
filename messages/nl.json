@@ -497,6 +497,7 @@
 	"sync_status_offline": "Offline",
 	"sync_status_error": "Synchronisatiefout",
 	"sync_status_local_only": "Alleen lokaal",
+	"offline_indicator": "Offline",
 	"shell_about_credits_aria": "Over en met dank aan",
 	"shell_about_title": "Over Cardstack",
 	"shell_about_description": "Cardstack is een door fans gemaakte, open source verzamelbeheerder voor de Pokémon TCG. Local-first, jouw gegevens, geen advertenties, geen gesnuffel. Gebouwd door verzamelaars, met dank aan:",

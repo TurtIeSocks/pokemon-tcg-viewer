@@ -1,0 +1,31 @@
+{
+	"name": "Cardstack: track your Pokémon TCG collection",
+	"short_name": "Cardstack",
+	"description": "Browse the whole Pokémon TCG catalog free, then track every copy you own. Local-first and open-source.",
+	"start_url": "/",
+	"scope": "/",
+	"display": "standalone",
+	"background_color": "#0d0a16",
+	"theme_color": "#0d0a16",
+	"categories": ["utilities", "productivity", "entertainment"],
+	"icons": [
+		{
+			"src": "/icon-192.png",
+			"sizes": "192x192",
+			"type": "image/png",
+			"purpose": "any"
+		},
+		{
+			"src": "/icon-512.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "any"
+		},
+		{
+			"src": "/icon-512-maskable.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "maskable"
+		}
+	]
+}
