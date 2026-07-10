@@ -53,8 +53,14 @@ describe("getHoloClass", () => {
 		expect(getHoloClass("Promo", "Base", undefined)).toBe("holo-cosmos");
 	});
 
-	test("holo=false even overrides an explicit holo rarity", () => {
-		expect(getHoloClass("Rare Holo", "Sword & Shield", false)).toBe("no-foil");
+	test("holo=false does NOT override an explicit holo rarity (CoL data-gap guard)", () => {
+		// TCGdex lists whole holo sets (Call of Legends) as normal-only — a data
+		// gap, not a real non-holo printing. A rarity that itself says "Holo" is
+		// ground truth, so a normal-only variant must not flatten it.
+		expect(getHoloClass("Rare Holo", "Sword & Shield", false)).toBe(
+			"holo-basic",
+		);
+		expect(getHoloClass("Rare Holo", "Base", false)).toBe("holo-cosmos");
 	});
 
 	test("NP Black Star Promos route to cosmos when holo", () => {
@@ -116,9 +122,13 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		expect(holoPresentation({ rarity: "Common" }).className).toBe("no-foil");
 	});
 
-	test("known non-holo printing → glare only regardless of rarity", () => {
+	test("normal-only printing of an upgradable rarity → glare only", () => {
+		// A non-committal rarity we upgraded (Promo/Rare) with a genuine
+		// normal-only printing downgrades to glare-only (basep-8 style). An
+		// explicit "Rare Holo" is NOT downgradable — see the CoL guard test.
 		expect(
-			holoPresentation({ rarity: "Rare Holo", holo: false }).effectiveRarity,
+			holoPresentation({ rarity: "Promo", series: "Base", holo: false })
+				.effectiveRarity,
 		).toBeNull();
 	});
 
@@ -233,10 +243,11 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 				holo: false,
 			}).effectiveRarity,
 		).toBe("rare holo v");
-		// …but the classic-holo families still honor it (basep-8 style).
+		// …and an explicit "Rare Holo" rarity is always-foil too — a normal-only
+		// TCGdex printing (the CoL data gap) must not flatten it.
 		expect(
 			holoPresentation({ rarity: "Rare Holo", holo: false }).effectiveRarity,
-		).toBeNull();
+		).toBe("rare holo");
 	});
 
 	test("Celebrations main set: full-face cosmos, incl. plain Rare + holo", () => {
