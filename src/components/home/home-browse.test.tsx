@@ -46,8 +46,10 @@ test("HomeBrowse renders a glass era card per series and the newest set tiles", 
 	expect(eraSection?.textContent).toContain("Browse by era");
 	const eraCards = [...(eraSection?.querySelectorAll("a") ?? [])];
 	expect(eraCards.length).toBe(3);
-	// Each era card links to its series' set page; the series name is the a11y name.
-	expect(eraCards[0].getAttribute("href")).toMatch(/^\/base\//);
+	// Each era card links to its era index page (209e5aa); the series name is the
+	// a11y name. The test router has no /$series route, so the default search
+	// params aren't stripped from the href — allow a ?query after the path.
+	expect(eraCards[0].getAttribute("href")).toMatch(/^\/base(\?|$)/);
 	expect(eraCards[0].getAttribute("aria-label")).toBe("Browse Base");
 	// The full series name + year + set count are shown (no monogram badge).
 	expect(eraCards[0].textContent).toContain("Base");

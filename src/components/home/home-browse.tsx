@@ -62,8 +62,8 @@ export function HomeBrowse({ tree }: { tree: NavTree }) {
  * A "browse by era" tile: the SetTile glass treatment (blurred backdrop, frosted
  * pane, hover sheen) with era content — the release year up top, the full series
  * name front and center (dramatic drop shadow so it pops off the glass), and the
- * set count along the bottom. Links to the era's newest set; backdrop reuses that
- * set's logo for a per-era color field.
+ * set count along the bottom. Links to the era index page; backdrop reuses the
+ * newest set's logo for a per-era color field.
  */
 function EraTile({ series }: { series: NavTree[number] }) {
 	const target = series.sets.at(-1);
