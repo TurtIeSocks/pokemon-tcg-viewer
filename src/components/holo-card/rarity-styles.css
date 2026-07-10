@@ -3541,27 +3541,53 @@
 /* ─────────────────────────────────────────────────────────────────────────────
    OUR EXTENSION — Black & White era clip windows (data-frame="bw")
    ─────────────────────────────────────────────────────────────────────────────
-   Black & White (2011-2013): the DP/HGSS plain window (stage badge sits to the
-   LEFT, outside the art — no notch), but the SHORTEST of the trio (bottom sits
-   a touch higher). Which series get this = BW_FRAME_SERIES in holo-style.ts.
-   Four knobs; measured off bw1-26 Reshiram (Basic) + bw1-5 Serperior (Stage 2).
+   Black & White (2011-2013): the DP/HGSS plain window, but the SHORTEST of the
+   trio (bottom sits a touch higher). UNLIKE DP/HGSS, the evolution badge (the
+   round pre-evo portrait) sits INSIDE the art at the top-left and overlaps the
+   window's top-left corner on Stage 1/2 cards — so it needs a badge notch like
+   the vintage frame. Basics have no badge (clean rectangle). Which series get
+   this = BW_FRAME_SERIES in holo-style.ts.
+
+     0%                                100%
+  0% ┌──────────────────────────────────┐
+     │ STAGE2   Serperior      HP        │
+     │╔══╗┌───────────────────────────┐ ◄── --bw-window-top
+     │║🐍║│                            │  │
+     │╚══╝│         ART = FOIL         │  │
+     │ ▲  │                            │  │
+     │ └──◄ --bw-badge-right/-bottom   │ ◄── --bw-window-bottom
+     └────┼───────────────────────────┼──┘
+          --bw-window-left            --bw-window-right
+
+   Six knobs; measured off bw1-26 Reshiram (Basic) + bw1-5 Serperior (Stage 2).
 ───────────────────────────────────────────────────────────────────────────── */
 
 .holo-card[data-frame="bw"] {
-	/* ── THE FOUR KNOBS ────────────────────────────────────────────────── */
+	/* ── THE SIX KNOBS ─────────────────────────────────────────────────── */
 	--bw-window-top: 9%; /* foil TOP edge (art border, under the name) */
 	--bw-window-bottom: 51%; /* foil BOTTOM edge (above the species bar) */
 	--bw-window-left: 6.5%; /* foil LEFT edge */
 	--bw-window-right: 93.5%; /* foil RIGHT edge (from card LEFT!) */
+	--bw-badge-right: 17%; /* stage-badge notch: reaches this far right */
+	--bw-badge-bottom: 15%; /* stage-badge notch: reaches this far down */
 
-	/* ── DERIVED SHAPES (no need to touch) — plain window, no badge notch. */
+	/* ── DERIVED SHAPES (no need to touch) ─────────────────────────────── */
+	/* Plain window: Basic Pokémon (no evolution badge). */
 	--clip: inset(
 		var(--bw-window-top) calc(100% - var(--bw-window-right))
 			calc(100% - var(--bw-window-bottom)) var(--bw-window-left)
 	);
-	--clip-stage: var(--clip);
 	--clip-trainer: var(--clip);
 	--clip-energy: var(--clip);
+	/* Stage 1/2 window: same rectangle minus the badge's top-left corner. */
+	--clip-stage: polygon(
+		var(--bw-window-right) var(--bw-window-top),
+		var(--bw-window-right) var(--bw-window-bottom),
+		var(--bw-window-left) var(--bw-window-bottom),
+		var(--bw-window-left) var(--bw-badge-bottom),
+		var(--bw-badge-right) var(--bw-badge-bottom),
+		var(--bw-badge-right) var(--bw-window-top)
+	);
 	--clip-invert: polygon(
 		0% 0%,
 		100% 0%,
@@ -3574,7 +3600,21 @@
 		var(--bw-window-left) var(--bw-window-bottom),
 		0% var(--bw-window-bottom)
 	);
-	--clip-stage-invert: var(--clip-invert);
+	/* Reverse holo, Stage 1/2: everything except the notched window. */
+	--clip-stage-invert: polygon(
+		0% 0%,
+		100% 0%,
+		100% 100%,
+		0% 100%,
+		0% var(--bw-window-bottom),
+		var(--bw-window-right) var(--bw-window-bottom),
+		var(--bw-window-right) var(--bw-window-top),
+		var(--bw-badge-right) var(--bw-window-top),
+		var(--bw-badge-right) var(--bw-badge-bottom),
+		var(--bw-window-left) var(--bw-badge-bottom),
+		var(--bw-window-left) var(--bw-window-bottom),
+		0% var(--bw-window-bottom)
+	);
 	--clip-trainer-invert: var(--clip-invert);
 	--clip-energy-invert: var(--clip-invert);
 }
