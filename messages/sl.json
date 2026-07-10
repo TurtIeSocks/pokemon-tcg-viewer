@@ -644,5 +644,15 @@
 	"subtype_group_stage": "Stopnja",
 	"subtype_group_mechanic": "Pokémon mehanika",
 	"subtype_group_trainer": "Trener",
-	"subtype_group_other": "Drugo"
+	"subtype_group_other": "Drugo",
+	"binder_excluded_heading": "Izključene",
+	"binder_restore": "Obnovi",
+	"binder_restore_aria": "Obnovi {name} v binder",
+	"binder_bulk_remove": "Odstrani iz binderja",
+	"binder_bulk_move": "Premakni v binder",
+	"binder_toast_removed": "Odstranjeno iz binderja",
+	"binder_toast_moved": "Premaknjeno",
+	"binder_toast_removed_count": "Odstranjenih {count} kart",
+	"binder_toast_moved_count": "Premaknjenih {count} kart",
+	"binder_toast_undo": "Razveljavi"
 }

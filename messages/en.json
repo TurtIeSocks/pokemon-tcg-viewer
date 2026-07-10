@@ -628,5 +628,15 @@
 	"subtype_group_stage": "Stage",
 	"subtype_group_mechanic": "Pokémon Mechanic",
 	"subtype_group_trainer": "Trainer",
-	"subtype_group_other": "Other"
+	"subtype_group_other": "Other",
+	"binder_excluded_heading": "Excluded",
+	"binder_restore": "Restore",
+	"binder_restore_aria": "Restore {name} to binder",
+	"binder_bulk_remove": "Remove from binder",
+	"binder_bulk_move": "Move to binder",
+	"binder_toast_removed": "Removed from binder",
+	"binder_toast_moved": "Moved",
+	"binder_toast_removed_count": "Removed {count} cards",
+	"binder_toast_moved_count": "Moved {count} cards",
+	"binder_toast_undo": "Undo"
 }

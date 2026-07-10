@@ -1,13 +1,15 @@
 "use client";
 
 import { Link } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { cardModalLinkPropsFor } from "../../lib/card-route";
 import { faceLanguageFor } from "../../lib/languages";
 import { m } from "../../paraglide/messages";
 import { useCardRouteParamsForRegion } from "../../store/corpus/corpus-runtime";
 import { useDisplayLanguage } from "../../store/corpus/i18n-active-hooks";
+import type { Binder } from "../../store/userland/types";
 import { type HoloCardData, holoCardProps } from "../holo-card";
-import { CardMiniNav } from "../holo-card/card-mini-nav";
+import { type BinderContext, CardMiniNav } from "../holo-card/card-mini-nav";
 import { HoloCardIsland } from "../islands/holo-card-island";
 
 /** Filter mode for the grid. */
@@ -26,6 +28,20 @@ interface OwnedMissingGridProps {
 	 * - "missing": only show cards the user does not own.
 	 */
 	mode?: OwnedMissingMode;
+	/**
+	 * Opt-in binder awareness. When set (with {@link OwnedMissingGridProps.binder}),
+	 * every cell's mini-nav gains a source badge + per-card remove/move controls
+	 * scoped to this binder. Absent → the grid renders with no binder controls
+	 * (the default browse/set/shared-view behavior).
+	 */
+	binderId?: string;
+	/**
+	 * The binder these cards belong to, used to classify each member's source
+	 * (`manual` if in `includeCardIds`, else `rule`) at O(1) per cell from one
+	 * memoized include-set — no per-cell reverse lookup. Only read when
+	 * {@link OwnedMissingGridProps.binderId} is set.
+	 */
+	binder?: Binder;
 }
 
 /**
@@ -43,9 +59,11 @@ interface OwnedMissingGridProps {
 function OwnedMissingCard({
 	card,
 	owned,
+	binderContext,
 }: {
 	card: HoloCardData;
 	owned: boolean;
+	binderContext?: BinderContext;
 }) {
 	const displayLanguage = useDisplayLanguage();
 	// A Japanese-lineage card has no English face (and vice versa) — resolve the
@@ -58,7 +76,7 @@ function OwnedMissingCard({
 			{...holoCardProps(card)}
 			owned={owned}
 			dimUnowned
-			miniNav={<CardMiniNav card={card} />}
+			miniNav={<CardMiniNav card={card} binderContext={binderContext} />}
 		/>
 	);
 
@@ -90,7 +108,17 @@ export function OwnedMissingGrid({
 	cards,
 	ownedCardIds,
 	mode = "all",
+	binderId,
+	binder,
 }: OwnedMissingGridProps) {
+	// Classify each member's source at O(1) per cell from one memoized include-set
+	// (binderMemberSource's logic hoisted to the grid), avoiding the per-cell
+	// useBindersForCard reverse lookup. Only relevant when binderId is set.
+	const includeSet = useMemo(
+		() => new Set(binder?.includeCardIds ?? []),
+		[binder],
+	);
+
 	const visible = cards.filter((c) => {
 		const owned = ownedCardIds.has(c.id);
 		if (mode === "owned") return owned;
@@ -120,6 +148,14 @@ export function OwnedMissingGrid({
 					key={card.id}
 					card={card}
 					owned={ownedCardIds.has(card.id)}
+					binderContext={
+						binderId
+							? {
+									binderId,
+									source: includeSet.has(card.id) ? "manual" : "rule",
+								}
+							: undefined
+					}
 				/>
 			))}
 		</ul>

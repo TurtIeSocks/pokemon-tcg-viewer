@@ -17,6 +17,7 @@ import {
 	importUserData,
 	loadUserland,
 	mergeDuplicateStacks,
+	moveCardBetweenBinders,
 	removeAllStacksOfCard,
 	removeBinder,
 	removeCardFromBinder,
@@ -376,6 +377,43 @@ test("removeBinder deletes the binder from store", async () => {
 	const b = await createBinder({ name: "ToDelete" });
 	await removeBinder(b.id);
 	expect(useUserland.getState().binders[b.id]).toBeUndefined();
+});
+
+test("moveCardBetweenBinders excludes from source and includes into target", async () => {
+	const from = await createBinder({ name: "From" });
+	const to = await createBinder({ name: "To" });
+	await addCardsToBinder(from.id, ["card-x"]);
+	await moveCardBetweenBinders("card-x", from.id, to.id);
+	const src = useUserland.getState().binders[from.id];
+	const tgt = useUserland.getState().binders[to.id];
+	// source: dropped from includes AND hidden via excludes (mirrors removeCardFromBinder)
+	expect(src?.includeCardIds).not.toContain("card-x");
+	expect(src?.excludeCardIds).toContain("card-x");
+	// target: now a manual member
+	expect(tgt?.includeCardIds).toContain("card-x");
+});
+
+test("moveCardBetweenBinders is a no-op when fromId === toId", async () => {
+	const b = await createBinder({ name: "B" });
+	await addCardsToBinder(b.id, ["card-x"]);
+	const before = useUserland.getState().binders[b.id];
+	await moveCardBetweenBinders("card-x", b.id, b.id);
+	const after = useUserland.getState().binders[b.id];
+	// same object ref proves no setState/write happened
+	expect(after).toBe(before);
+	expect(after?.includeCardIds).toContain("card-x");
+	expect(after?.excludeCardIds).not.toContain("card-x");
+});
+
+test("moveCardBetweenBinders no-ops (does not throw) when a binder is missing", async () => {
+	const to = await createBinder({ name: "To" });
+	// missing source: removeCardFromBinder no-ops, addCardsToBinder still runs
+	await expect(
+		moveCardBetweenBinders("card-x", "missing", to.id),
+	).resolves.toBeUndefined();
+	expect(useUserland.getState().binders[to.id]?.includeCardIds).toContain(
+		"card-x",
+	);
 });
 
 // --- import / export ---

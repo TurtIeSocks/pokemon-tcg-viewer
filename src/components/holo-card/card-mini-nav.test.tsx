@@ -2,7 +2,12 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import type { PokemonSet } from "../../server/card-mappers";
 import { useStore } from "../../store/index";
-import { resetUserlandForTests } from "../../store/userland/userland-store";
+import {
+	addCardsToBinder,
+	createBinder,
+	resetUserlandForTests,
+	useUserland,
+} from "../../store/userland/userland-store";
 import {
 	makeCard,
 	makeCorpusCard,
@@ -92,5 +97,92 @@ describe("<CardMiniNav />", () => {
 		);
 		// The picker dialog surfaces the "New binder" escape hatch.
 		expect(await screen.findByText(/new binder/i)).toBeDefined();
+	});
+
+	test("the binder button opens MEMBERSHIP mode (a checkbox per binder)", async () => {
+		await createBinder({ name: "Chase" });
+		await renderInRouter(<CardMiniNav card={card} />);
+		fireEvent.click(
+			await screen.findByRole("button", { name: /add pikachu to a binder/i }),
+		);
+		expect(
+			await screen.findByRole("checkbox", { name: "Chase" }),
+		).toBeDefined();
+	});
+
+	test("default (no binderContext): no source badge, remove, or move controls", async () => {
+		await renderInRouter(<CardMiniNav card={card} />);
+		await screen.findByRole("button", { name: /add pikachu to a binder/i });
+		expect(
+			screen.queryByRole("button", {
+				name: /remove pikachu from this binder/i,
+			}),
+		).toBeNull();
+		expect(
+			screen.queryByRole("button", { name: /move pikachu to another binder/i }),
+		).toBeNull();
+		expect(screen.queryByText(/via rule|added/i)).toBeNull();
+	});
+});
+
+describe("<CardMiniNav /> — binder context (opt-in)", () => {
+	test("source badge reads 'via rule' for a rule-matched member", async () => {
+		await renderInRouter(
+			<CardMiniNav
+				card={card}
+				binderContext={{ binderId: "b1", source: "rule" }}
+			/>,
+		);
+		expect(await screen.findByText(/via rule/i)).toBeDefined();
+	});
+
+	test("source badge reads 'Added' for a manually included member", async () => {
+		await renderInRouter(
+			<CardMiniNav
+				card={card}
+				binderContext={{ binderId: "b1", source: "manual" }}
+			/>,
+		);
+		expect(await screen.findByText(/^added$/i)).toBeDefined();
+	});
+
+	test("'Remove from this binder' calls removeCardFromBinder for that binder", async () => {
+		const binder = await createBinder({ name: "Members" });
+		await addCardsToBinder(binder.id, [card.id]);
+
+		await renderInRouter(
+			<CardMiniNav
+				card={card}
+				binderContext={{ binderId: binder.id, source: "manual" }}
+			/>,
+		);
+		fireEvent.click(
+			await screen.findByRole("button", {
+				name: /remove pikachu from this binder/i,
+			}),
+		);
+		// removeCardFromBinder drops the include and adds an exclude.
+		await waitFor(() =>
+			expect(
+				useUserland.getState().binders[binder.id]?.includeCardIds,
+			).not.toContain(card.id),
+		);
+		expect(useUserland.getState().binders[binder.id]?.excludeCardIds).toContain(
+			card.id,
+		);
+	});
+
+	test("exposes a 'Move to another binder' control", async () => {
+		await renderInRouter(
+			<CardMiniNav
+				card={card}
+				binderContext={{ binderId: "b1", source: "manual" }}
+			/>,
+		);
+		expect(
+			await screen.findByRole("button", {
+				name: /move pikachu to another binder/i,
+			}),
+		).toBeDefined();
 	});
 });

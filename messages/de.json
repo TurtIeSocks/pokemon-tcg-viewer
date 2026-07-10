@@ -628,5 +628,15 @@
 	"subtype_group_stage": "Phase",
 	"subtype_group_mechanic": "Pokémon-Mechanik",
 	"subtype_group_trainer": "Trainer",
-	"subtype_group_other": "Sonstige"
+	"subtype_group_other": "Sonstige",
+	"binder_excluded_heading": "Ausgeschlossen",
+	"binder_restore": "Wiederherstellen",
+	"binder_restore_aria": "{name} im Binder wiederherstellen",
+	"binder_bulk_remove": "Aus Binder entfernen",
+	"binder_bulk_move": "In Binder verschieben",
+	"binder_toast_removed": "Aus Binder entfernt",
+	"binder_toast_moved": "Verschoben",
+	"binder_toast_removed_count": "{count} Karten entfernt",
+	"binder_toast_moved_count": "{count} Karten verschoben",
+	"binder_toast_undo": "Rückgängig"
 }

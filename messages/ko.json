@@ -620,5 +620,15 @@
 	"subtype_group_stage": "진화 단계",
 	"subtype_group_mechanic": "포켓몬 메커니즘",
 	"subtype_group_trainer": "트레이너",
-	"subtype_group_other": "기타"
+	"subtype_group_other": "기타",
+	"binder_excluded_heading": "제외됨",
+	"binder_restore": "복원",
+	"binder_restore_aria": "{name}을(를) Binder에 복원",
+	"binder_bulk_remove": "Binder에서 제거",
+	"binder_bulk_move": "Binder로 이동",
+	"binder_toast_removed": "Binder에서 제거됨",
+	"binder_toast_moved": "이동됨",
+	"binder_toast_removed_count": "카드 {count}장 제거됨",
+	"binder_toast_moved_count": "카드 {count}장 이동됨",
+	"binder_toast_undo": "실행 취소"
 }

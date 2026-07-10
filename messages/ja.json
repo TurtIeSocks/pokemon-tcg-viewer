@@ -620,5 +620,15 @@
 	"subtype_group_stage": "進化段階",
 	"subtype_group_mechanic": "ポケモンのギミック",
 	"subtype_group_trainer": "トレーナー",
-	"subtype_group_other": "その他"
+	"subtype_group_other": "その他",
+	"binder_excluded_heading": "除外済み",
+	"binder_restore": "復元",
+	"binder_restore_aria": "{name}をBinderに復元",
+	"binder_bulk_remove": "Binderから削除",
+	"binder_bulk_move": "Binderへ移動",
+	"binder_toast_removed": "Binderから削除しました",
+	"binder_toast_moved": "移動しました",
+	"binder_toast_removed_count": "{count}枚のカードを削除しました",
+	"binder_toast_moved_count": "{count}枚のカードを移動しました",
+	"binder_toast_undo": "元に戻す"
 }

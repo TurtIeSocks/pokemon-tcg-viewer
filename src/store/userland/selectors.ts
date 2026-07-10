@@ -20,6 +20,7 @@ import { allLoadedSets } from "../sets-slice";
 import {
 	type BinderProgress,
 	binderMembers,
+	bindersContainingCard,
 	computeBinderProgress,
 	type RegionCorpus,
 } from "./binder-progress";
@@ -277,4 +278,20 @@ export function useBinderMembers(binderId: string): Set<string> | null {
 		if (!binder || regions.length === 0) return null;
 		return binderMembers(binder, regions);
 	}, [binder, regions]);
+}
+
+/**
+ * Hook: the ids of every binder that currently contains `cardId` (in binders-map
+ * order); [] until a corpus loads. This DERIVES over all binders × their rules,
+ * so mount it on-demand only (e.g. while a membership dialog is open), not on
+ * every card tile. Thin wrapper over {@link bindersContainingCard}.
+ */
+export function useBindersForCard(cardId: string): string[] {
+	useEnsureUserland();
+	const binders = useUserland((s) => s.binders);
+	const regions = useRegionCorpora();
+	return useMemo(() => {
+		if (regions.length === 0) return [];
+		return bindersContainingCard(Object.values(binders), regions, cardId);
+	}, [binders, regions, cardId]);
 }

@@ -620,5 +620,15 @@
 	"subtype_group_stage": "阶段",
 	"subtype_group_mechanic": "宝可梦机制",
 	"subtype_group_trainer": "训练家",
-	"subtype_group_other": "其他"
+	"subtype_group_other": "其他",
+	"binder_excluded_heading": "已排除",
+	"binder_restore": "恢复",
+	"binder_restore_aria": "将 {name} 恢复到 Binder",
+	"binder_bulk_remove": "从 Binder 移除",
+	"binder_bulk_move": "移动到 Binder",
+	"binder_toast_removed": "已从 Binder 移除",
+	"binder_toast_moved": "已移动",
+	"binder_toast_removed_count": "已移除 {count} 张卡片",
+	"binder_toast_moved_count": "已移动 {count} 张卡片",
+	"binder_toast_undo": "撤销"
 }

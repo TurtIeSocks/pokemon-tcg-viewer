@@ -628,5 +628,15 @@
 	"subtype_group_stage": "Trinn",
 	"subtype_group_mechanic": "Pokémon-mekanikk",
 	"subtype_group_trainer": "Trener",
-	"subtype_group_other": "Annet"
+	"subtype_group_other": "Annet",
+	"binder_excluded_heading": "Ekskludert",
+	"binder_restore": "Gjenopprett",
+	"binder_restore_aria": "Gjenopprett {name} i binder",
+	"binder_bulk_remove": "Fjern fra binder",
+	"binder_bulk_move": "Flytt til binder",
+	"binder_toast_removed": "Fjernet fra binder",
+	"binder_toast_moved": "Flyttet",
+	"binder_toast_removed_count": "Fjernet {count} kort",
+	"binder_toast_moved_count": "Flyttet {count} kort",
+	"binder_toast_undo": "Angre"
 }

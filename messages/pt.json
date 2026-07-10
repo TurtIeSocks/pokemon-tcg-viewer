@@ -628,5 +628,15 @@
 	"subtype_group_stage": "Estágio",
 	"subtype_group_mechanic": "Mecânica Pokémon",
 	"subtype_group_trainer": "Treinador",
-	"subtype_group_other": "Outro"
+	"subtype_group_other": "Outro",
+	"binder_excluded_heading": "Excluídas",
+	"binder_restore": "Restaurar",
+	"binder_restore_aria": "Restaurar {name} no binder",
+	"binder_bulk_remove": "Remover do binder",
+	"binder_bulk_move": "Mover para o binder",
+	"binder_toast_removed": "Removida do binder",
+	"binder_toast_moved": "Movida",
+	"binder_toast_removed_count": "{count} cartas removidas",
+	"binder_toast_moved_count": "{count} cartas movidas",
+	"binder_toast_undo": "Desfazer"
 }

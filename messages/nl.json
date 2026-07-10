@@ -628,5 +628,15 @@
 	"subtype_group_stage": "Fase",
 	"subtype_group_mechanic": "Pokémon-mechaniek",
 	"subtype_group_trainer": "Trainer",
-	"subtype_group_other": "Overig"
+	"subtype_group_other": "Overig",
+	"binder_excluded_heading": "Uitgesloten",
+	"binder_restore": "Herstellen",
+	"binder_restore_aria": "{name} in binder herstellen",
+	"binder_bulk_remove": "Uit binder verwijderen",
+	"binder_bulk_move": "Naar binder verplaatsen",
+	"binder_toast_removed": "Uit binder verwijderd",
+	"binder_toast_moved": "Verplaatst",
+	"binder_toast_removed_count": "{count} kaarten verwijderd",
+	"binder_toast_moved_count": "{count} kaarten verplaatst",
+	"binder_toast_undo": "Ongedaan maken"
 }

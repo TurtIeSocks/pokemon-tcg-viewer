@@ -1,8 +1,16 @@
 "use client";
 
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Pencil, Printer, Share2, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import {
+	ArrowLeft,
+	Check,
+	Pencil,
+	Printer,
+	RotateCcw,
+	Share2,
+	Trash2,
+} from "lucide-react";
+import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { OwnedMissingGrid } from "@/components/vault/owned-missing-grid";
@@ -29,14 +37,26 @@ import {
 import type { Binder } from "../../store/userland/types";
 import {
 	removeBinder,
-	removeCardFromBinder,
 	removeRuleFromBinder,
+	restoreCardToBinder,
+	useUserland,
 } from "../../store/userland/userland-store";
 import {
 	useBinderValue,
 	useHideValue,
 } from "../../store/userland/valuation-hooks";
+import { cardThumbSrc, type HoloCardData, holoCardProps } from "../holo-card";
+import {
+	CardSelectionProvider,
+	useCardSelection,
+} from "../islands/card-selection";
+import { HoloCardIsland } from "../islands/holo-card-island";
 import { BinderFormDialog } from "./binder-form-dialog";
+import {
+	moveCardsBetweenBindersWithUndo,
+	removeCardsFromBinderWithUndo,
+} from "./binder-mutations";
+import { BinderPickerDialog } from "./binder-picker-dialog";
 import { missingCardViews } from "./print-missing";
 import { PrintMissingDialog } from "./print-missing-dialog";
 import { ShareDialog } from "./share-dialog";
@@ -50,7 +70,7 @@ interface RemovableChipProps {
 	removeLabel: string;
 }
 
-/** Pill chip with an inline × remove button; used for rule and manual-card chips. */
+/** Pill chip with an inline × remove button; used for the rule chips. */
 function RemovableChip({ label, onRemove, removeLabel }: RemovableChipProps) {
 	return (
 		<span className="inline-flex items-center gap-1 rounded-(--r-control) border border-(--hairline) bg-(--glass) px-3 py-1 text-sm text-(--ink)">
@@ -67,13 +87,242 @@ function RemovableChip({ label, onRemove, removeLabel }: RemovableChipProps) {
 	);
 }
 
+/** Props shared by the members section (which lives under the selection provider). */
+interface MemberSectionProps {
+	/** The binder whose members are shown. */
+	binder: Binder;
+	/** Hydrated member cards for the grid. */
+	memberCards: HoloCardData[];
+	/** Owned-card set for the owned/missing color treatment. */
+	ownedCardIds: Set<string>;
+}
+
+/**
+ * Members heading + multi-select toggle + bulk action bar + the grid. Consumes
+ * the surrounding {@link CardSelectionProvider}: when select mode is OFF the grid
+ * is the interactive {@link OwnedMissingGrid} (per-card mini-nav remove/move via
+ * binder context); when ON, tiles become selection toggles and the bulk bar
+ * removes / moves every selected card through the undo-wrapped mutations.
+ */
+function MemberSection({
+	binder,
+	memberCards,
+	ownedCardIds,
+}: MemberSectionProps) {
+	const { active, selected, toggleActive, toggle, clear } = useCardSelection();
+	const binders = useUserland((s) => s.binders);
+	// A move target is any OTHER binder (never the one the cards already live in).
+	const moveTargets = useMemo(
+		() => Object.values(binders).filter((b) => b.id !== binder.id),
+		[binders, binder.id],
+	);
+	const [moveOpen, setMoveOpen] = useState(false);
+	const [newBinderOpen, setNewBinderOpen] = useState(false);
+	// Selection snapshot captured when the user opts to create a NEW target binder,
+	// consumed once that binder is saved. A ref: only read in the save handler.
+	const pendingMoveRef = useRef<string[] | null>(null);
+
+	function handleBulkRemove() {
+		void removeCardsFromBinderWithUndo(binder.id, [...selected]);
+		clear();
+	}
+
+	function handleBulkMove(targetId: string) {
+		void moveCardsBetweenBindersWithUndo([...selected], binder.id, targetId);
+		clear();
+		setMoveOpen(false);
+	}
+
+	function handleNewBinderSaved(created: Binder) {
+		const ids = pendingMoveRef.current;
+		pendingMoveRef.current = null;
+		if (!ids || ids.length === 0) return;
+		void moveCardsBetweenBindersWithUndo(ids, binder.id, created.id);
+		clear();
+	}
+
+	const toggleLabel = !active
+		? m.vault_select_cards()
+		: selected.size > 0
+			? m.vault_clear_selected()
+			: m.form_cancel();
+
+	return (
+		<div>
+			<div className="mb-3 flex items-center justify-between gap-2">
+				<h2 className="text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold">
+					{m.binder_members_heading()}
+					{memberCards.length > 0 && (
+						<span className="ml-2 font-mono tabular-nums text-(--ink-muted) normal-case tracking-normal text-sm">
+							({memberCards.length})
+						</span>
+					)}
+				</h2>
+				{memberCards.length > 0 && (
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						aria-pressed={active}
+						onClick={toggleActive}
+					>
+						{toggleLabel}
+					</Button>
+				)}
+			</div>
+
+			{/* Bulk action bar — only while a selection exists. */}
+			{active && selected.size > 0 && (
+				<div className="mb-3 flex flex-wrap items-center gap-2 rounded-(--r-control) border border-(--hairline) bg-(--glass) p-2 backdrop-blur-xl">
+					<span className="ml-1 font-mono tabular-nums text-sm text-(--ink-muted)">
+						{selected.size}
+					</span>
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						className="text-danger"
+						onClick={handleBulkRemove}
+					>
+						{m.binder_bulk_remove()}
+					</Button>
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={() => setMoveOpen(true)}
+					>
+						{m.binder_bulk_move()}
+					</Button>
+				</div>
+			)}
+
+			{active ? (
+				<ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+					{memberCards.map((card) => {
+						const isSelected = selected.has(card.id);
+						return (
+							<li key={card.id}>
+								<button
+									type="button"
+									aria-pressed={isSelected}
+									aria-label={`${isSelected ? "Deselect" : "Select"} ${card.name}`}
+									onClick={() => toggle(card.id)}
+									className="relative block w-full cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary-wash)"
+								>
+									<HoloCardIsland
+										{...holoCardProps(card)}
+										owned={ownedCardIds.has(card.id)}
+										dimUnowned
+									/>
+									{isSelected && (
+										<div
+											aria-hidden="true"
+											className="absolute inset-0 rounded-lg bg-primary/40"
+										>
+											<div className="flex h-full items-center justify-center">
+												<Check className="size-10 text-white drop-shadow" />
+											</div>
+										</div>
+									)}
+								</button>
+							</li>
+						);
+					})}
+				</ul>
+			) : (
+				<OwnedMissingGrid
+					cards={memberCards}
+					ownedCardIds={ownedCardIds}
+					binderId={binder.id}
+					binder={binder}
+				/>
+			)}
+
+			{/* Bulk "move to…" picker: pick an existing target, or create a new one. */}
+			<BinderPickerDialog
+				open={moveOpen}
+				onOpenChange={setMoveOpen}
+				title={m.binder_bulk_move()}
+				binders={moveTargets}
+				onPick={handleBulkMove}
+				onCreateNew={() => {
+					pendingMoveRef.current = [...selected];
+					setMoveOpen(false);
+					setNewBinderOpen(true);
+				}}
+			/>
+			<BinderFormDialog
+				open={newBinderOpen}
+				onOpenChange={setNewBinderOpen}
+				onSaved={handleNewBinderSaved}
+			/>
+		</div>
+	);
+}
+
+/** Props for {@link ExcludedSection}. */
+interface ExcludedSectionProps {
+	/** The binder whose exclusions are shown. */
+	binder: Binder;
+	/** Hydrated excluded cards (resolved from `binder.excludeCardIds`). */
+	cards: HoloCardData[];
+}
+
+/**
+ * Collapsible list of cards excluded from the binder (a smart-rule match the user
+ * hid, or a manual card they removed). Each row restores visibility via
+ * {@link restoreCardToBinder} — the surface that makes rule exclusions reversible.
+ */
+function ExcludedSection({ binder, cards }: ExcludedSectionProps) {
+	if (binder.excludeCardIds.length === 0) return null;
+	return (
+		<details className="rounded-(--r-panel) border border-border bg-(--glass) p-4 backdrop-blur-xl">
+			<summary className="cursor-pointer text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold">
+				{m.binder_excluded_heading()}
+				<span className="ml-2 font-mono tabular-nums text-(--ink-muted) normal-case tracking-normal text-sm">
+					({binder.excludeCardIds.length})
+				</span>
+			</summary>
+			<ul className="mt-3 flex flex-col gap-2">
+				{cards.map((card) => (
+					<li
+						key={card.id}
+						className="flex items-center gap-3 rounded-(--r-control) border border-(--hairline) bg-(--glass) p-2"
+					>
+						<img
+							src={cardThumbSrc(card)}
+							alt=""
+							className="h-12 w-auto rounded"
+							loading="lazy"
+						/>
+						<span className="min-w-0 flex-1 truncate text-sm text-(--ink)">
+							{card.name}
+						</span>
+						<Button
+							type="button"
+							variant="soft"
+							size="sm"
+							aria-label={m.binder_restore_aria({ name: card.name })}
+							onClick={() => void restoreCardToBinder(binder.id, card.id)}
+						>
+							<RotateCcw className="h-4 w-4 mr-1" />
+							{m.binder_restore()}
+						</Button>
+					</li>
+				))}
+			</ul>
+		</details>
+	);
+}
+
 /** Props for {@link BinderDetail}. */
 interface BinderDetailProps {
 	/** The binder to display and manage. */
 	binder: Binder;
 }
 
-/** Full-page binder view: header, progress, rule chips, member card grid. */
+/** Full-page binder view: header, progress, rule chips, member grid, exclusions. */
 export function BinderDetail({ binder }: BinderDetailProps) {
 	const navigate = useNavigate();
 	const [editOpen, setEditOpen] = useState(false);
@@ -137,6 +386,17 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 			})
 			.filter((c): c is NonNullable<typeof c> => c !== null);
 	}, [memberIds, indices, setById, i18n]);
+
+	// Hydrate excluded cards for the "Excluded" section, same cross-region join.
+	const excludedCards = useMemo(() => {
+		if (binder.excludeCardIds.length === 0 || setById.size === 0) return [];
+		return binder.excludeCardIds
+			.map((id) => {
+				const card = resolveCardAcrossRegions(id, indices);
+				return card ? hydrateCard(card, setById, i18n) : null;
+			})
+			.filter((c): c is NonNullable<typeof c> => c !== null);
+	}, [binder.excludeCardIds, indices, setById, i18n]);
 
 	// Cards the collector is missing from this binder: hydrated members minus
 	// owned. Drives both the "Print missing" button's enabled state and the
@@ -287,37 +547,17 @@ export function BinderDetail({ binder }: BinderDetailProps) {
 				</div>
 			)}
 
-			{/* Members grid */}
-			<div>
-				<h2 className="text-[10.5px] uppercase tracking-[0.18em] text-(--faint) font-semibold mb-3">
-					{m.binder_members_heading()}
-					{memberCards.length > 0 && (
-						<span className="ml-2 font-mono tabular-nums text-(--ink-muted) normal-case tracking-normal text-sm">
-							({memberCards.length})
-						</span>
-					)}
-				</h2>
+			{/* Members grid (with per-card + bulk binder controls) */}
+			<CardSelectionProvider>
+				<MemberSection
+					binder={binder}
+					memberCards={memberCards}
+					ownedCardIds={ownedCardIds}
+				/>
+			</CardSelectionProvider>
 
-				{/* Manual-include remove affordance — shown above the grid for included cards */}
-				{binder.includeCardIds.length > 0 && memberCards.length > 0 && (
-					<div className="mb-3 flex flex-wrap gap-2">
-						{binder.includeCardIds.map((cardId) => {
-							const card = index?.byId.get(cardId);
-							if (!card) return null;
-							return (
-								<RemovableChip
-									key={cardId}
-									label={card.name}
-									removeLabel={m.binder_remove_card_aria({ name: card.name })}
-									onRemove={() => void removeCardFromBinder(binder.id, cardId)}
-								/>
-							);
-						})}
-					</div>
-				)}
-
-				<OwnedMissingGrid cards={memberCards} ownedCardIds={ownedCardIds} />
-			</div>
+			{/* Excluded cards + restore */}
+			<ExcludedSection binder={binder} cards={excludedCards} />
 
 			<BinderFormDialog
 				open={editOpen}

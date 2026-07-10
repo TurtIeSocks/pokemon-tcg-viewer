@@ -3,6 +3,7 @@ import { screen } from "@testing-library/react";
 import type { PokemonSet } from "../../server/card-mappers";
 import { useStore } from "../../store/index";
 import {
+	makeBinder,
 	makeCard,
 	makeCorpusCard,
 	renderInRouter,
@@ -127,4 +128,28 @@ test("empty owned state shows the friendly message", async () => {
 		<OwnedMissingGrid cards={[cardB]} ownedCardIds={new Set()} mode="owned" />,
 	);
 	expect(screen.getByText(/don't own any cards/i)).toBeDefined();
+});
+
+test("no binderId: cells render no source badge (default, unchanged)", async () => {
+	await renderInRouter(
+		<OwnedMissingGrid cards={[cardA, cardB]} ownedCardIds={ownedSet} />,
+	);
+	await screen.findByRole("button", { name: "Bulbasaur" });
+	expect(screen.queryByText(/via rule|added/i)).toBeNull();
+});
+
+test("binder-aware: manual member shows 'Added', rule member shows 'via rule'", async () => {
+	// cardA is a manual include; cardB is not (so it's a rule match).
+	const binder = makeBinder({ id: "b1", includeCardIds: ["base1-1"] });
+	await renderInRouter(
+		<OwnedMissingGrid
+			cards={[cardA, cardB]}
+			ownedCardIds={ownedSet}
+			binderId="b1"
+			binder={binder}
+		/>,
+	);
+	await screen.findByRole("button", { name: "Bulbasaur" });
+	expect(screen.getByText(/^added$/i)).toBeDefined();
+	expect(screen.getByText(/via rule/i)).toBeDefined();
 });

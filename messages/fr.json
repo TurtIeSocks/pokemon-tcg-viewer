@@ -628,5 +628,15 @@
 	"subtype_group_stage": "Stade",
 	"subtype_group_mechanic": "Mécanique Pokémon",
 	"subtype_group_trainer": "Dresseur",
-	"subtype_group_other": "Autre"
+	"subtype_group_other": "Autre",
+	"binder_excluded_heading": "Exclues",
+	"binder_restore": "Restaurer",
+	"binder_restore_aria": "Restaurer {name} dans le binder",
+	"binder_bulk_remove": "Retirer du binder",
+	"binder_bulk_move": "Déplacer vers le binder",
+	"binder_toast_removed": "Retirée du binder",
+	"binder_toast_moved": "Déplacée",
+	"binder_toast_removed_count": "{count} cartes retirées",
+	"binder_toast_moved_count": "{count} cartes déplacées",
+	"binder_toast_undo": "Annuler"
 }

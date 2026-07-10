@@ -620,5 +620,15 @@
 	"subtype_group_stage": "Tingkat",
 	"subtype_group_mechanic": "Mekanik Pokémon",
 	"subtype_group_trainer": "Pelatih",
-	"subtype_group_other": "Lainnya"
+	"subtype_group_other": "Lainnya",
+	"binder_excluded_heading": "Dikecualikan",
+	"binder_restore": "Pulihkan",
+	"binder_restore_aria": "Pulihkan {name} ke binder",
+	"binder_bulk_remove": "Hapus dari binder",
+	"binder_bulk_move": "Pindahkan ke binder",
+	"binder_toast_removed": "Dihapus dari binder",
+	"binder_toast_moved": "Dipindahkan",
+	"binder_toast_removed_count": "{count} kartu dihapus",
+	"binder_toast_moved_count": "{count} kartu dipindahkan",
+	"binder_toast_undo": "Urungkan"
 }

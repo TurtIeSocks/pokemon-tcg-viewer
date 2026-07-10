@@ -628,5 +628,15 @@
 	"subtype_group_stage": "Steg",
 	"subtype_group_mechanic": "Pokémon-mekanik",
 	"subtype_group_trainer": "Tränare",
-	"subtype_group_other": "Övrigt"
+	"subtype_group_other": "Övrigt",
+	"binder_excluded_heading": "Uteslutna",
+	"binder_restore": "Återställ",
+	"binder_restore_aria": "Återställ {name} till binder",
+	"binder_bulk_remove": "Ta bort från binder",
+	"binder_bulk_move": "Flytta till binder",
+	"binder_toast_removed": "Borttagen från binder",
+	"binder_toast_moved": "Flyttad",
+	"binder_toast_removed_count": "Tog bort {count} kort",
+	"binder_toast_moved_count": "Flyttade {count} kort",
+	"binder_toast_undo": "Ångra"
 }

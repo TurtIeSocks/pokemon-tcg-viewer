@@ -620,5 +620,15 @@
 	"subtype_group_stage": "進化階段",
 	"subtype_group_mechanic": "寶可夢機制",
 	"subtype_group_trainer": "訓練家",
-	"subtype_group_other": "其他"
+	"subtype_group_other": "其他",
+	"binder_excluded_heading": "已排除",
+	"binder_restore": "還原",
+	"binder_restore_aria": "將 {name} 還原至 Binder",
+	"binder_bulk_remove": "從 Binder 移除",
+	"binder_bulk_move": "移動至 Binder",
+	"binder_toast_removed": "已從 Binder 移除",
+	"binder_toast_moved": "已移動",
+	"binder_toast_removed_count": "已移除 {count} 張卡片",
+	"binder_toast_moved_count": "已移動 {count} 張卡片",
+	"binder_toast_undo": "復原"
 }

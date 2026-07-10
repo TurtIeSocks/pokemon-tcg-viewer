@@ -1,5 +1,12 @@
 import { useRouter } from "@tanstack/react-router";
-import { Check, FolderPlus, Maximize2, Plus } from "lucide-react";
+import {
+	Check,
+	FolderInput,
+	FolderMinus,
+	FolderPlus,
+	Maximize2,
+	Plus,
+} from "lucide-react";
 import type React from "react";
 import { useMemo, useRef, useState } from "react";
 import { cardModalLinkPropsFor, cardRouteParams } from "../../lib/card-route";
@@ -12,9 +19,26 @@ import {
 	useUserland,
 } from "../../store/userland/userland-store";
 import { BinderFormDialog } from "../binders/binder-form-dialog";
+import {
+	moveCardBetweenBinderWithUndo,
+	removeCardFromBinderWithUndo,
+} from "../binders/binder-mutations";
 import { BinderPickerDialog } from "../binders/binder-picker-dialog";
 import { useCollectionToggle } from "../collection-toggle/use-collection-toggle";
 import type { HoloCardData } from "./types";
+
+/**
+ * The binder a card is being rendered *inside*, plus how it belongs there. When
+ * a {@link CardMiniNav} receives this (opt-in — only binder-detail's member grid
+ * passes it), the bar gains a source badge ("via rule" / "Added") and per-card
+ * remove / move-to-another-binder controls scoped to that binder.
+ */
+export interface BinderContext {
+	/** The binder this card is currently rendered within. */
+	binderId: string;
+	/** Whether the card belongs via a smart rule or a manual include. */
+	source: "manual" | "rule";
+}
 
 interface NavButtonProps {
 	label: string;
@@ -58,22 +82,48 @@ function NavButton({
  * Unified glass mini-nav bar for a card — the single interaction surface that
  * replaces the old top-right "add to collection" pill. Three glass icon
  * buttons: owned toggle (＋ / ✓ count), expand (open the card modal), and
- * binder (open the binder picker). Reusable across every card render path;
- * positioned by the host (HoloCard's lower-third `miniNav` slot).
+ * binder (open the binder MEMBERSHIP picker — add/remove this card across every
+ * binder). Reusable across every card render path; positioned by the host
+ * (HoloCard's lower-third `miniNav` slot).
+ *
+ * When {@link BinderContext} is supplied (opt-in, from binder-detail's member
+ * grid) the bar additionally shows a source badge and per-card remove /
+ * move-to-another-binder controls scoped to that binder. Absent it, the bar
+ * renders exactly as before.
  */
-export function CardMiniNav({ card }: { card: HoloCardData }) {
+export function CardMiniNav({
+	card,
+	binderContext,
+}: {
+	card: HoloCardData;
+	binderContext?: BinderContext;
+}) {
 	const { owned, count, activate } = useCollectionToggle(card);
 	const router = useRouter();
 	const slugIndex = useSlugIndex();
 	const displayLanguage = useDisplayLanguage();
 	const binders = useUserland((s) => s.binders);
 	const binderList = useMemo(() => Object.values(binders), [binders]);
+	// The "move to…" target list never includes the binder the card is already in.
+	const moveTargets = useMemo(
+		() =>
+			binderContext
+				? binderList.filter((b) => b.id !== binderContext.binderId)
+				: binderList,
+		[binderList, binderContext],
+	);
 
-	// Binder picker + inline "create binder" state (mirrors bulk-add-menu). The
-	// pending card id is only read in a handler, so a ref avoids a wasted render.
+	// Membership picker + move picker + inline "create binder" state (mirrors
+	// bulk-add-menu). The pending action is only read in a handler, so a ref
+	// avoids a wasted render.
 	const [pickerOpen, setPickerOpen] = useState(false);
+	const [moveOpen, setMoveOpen] = useState(false);
 	const [newBinderOpen, setNewBinderOpen] = useState(false);
-	const pendingCardRef = useRef<string | null>(null);
+	const pendingRef = useRef<
+		| { kind: "add"; cardId: string }
+		| { kind: "move"; cardId: string; fromId: string }
+		| null
+	>(null);
 
 	function stop(e: React.MouseEvent) {
 		// The bar lives inside the grid's card <Link>; stop the click from also
@@ -95,11 +145,26 @@ export function CardMiniNav({ card }: { card: HoloCardData }) {
 		setPickerOpen(true);
 	}
 
+	function handleRemoveFromBinder(e: React.MouseEvent) {
+		stop(e);
+		if (!binderContext) return;
+		void removeCardFromBinderWithUndo(binderContext.binderId, card.id);
+	}
+
+	function handleMove(e: React.MouseEvent) {
+		stop(e);
+		setMoveOpen(true);
+	}
+
 	function handleNewBinderSaved(b: Binder) {
-		const cardId = pendingCardRef.current;
-		if (!cardId) return;
-		void addCardsToBinder(b.id, [cardId]);
-		pendingCardRef.current = null;
+		const pending = pendingRef.current;
+		if (!pending) return;
+		if (pending.kind === "add") {
+			void addCardsToBinder(b.id, [pending.cardId]);
+		} else {
+			void moveCardBetweenBinderWithUndo(pending.cardId, pending.fromId, b.id);
+		}
+		pendingRef.current = null;
 	}
 
 	return (
@@ -137,20 +202,79 @@ export function CardMiniNav({ card }: { card: HoloCardData }) {
 				>
 					<FolderPlus className="size-4" aria-hidden="true" />
 				</NavButton>
+
+				{binderContext ? (
+					<>
+						<NavButton
+							label={`Remove ${card.name} from this binder`}
+							onClick={handleRemoveFromBinder}
+						>
+							<FolderMinus className="size-4" aria-hidden="true" />
+						</NavButton>
+
+						<NavButton
+							label={`Move ${card.name} to another binder`}
+							onClick={handleMove}
+						>
+							<FolderInput className="size-4" aria-hidden="true" />
+						</NavButton>
+
+						<span
+							className="inline-flex h-8 items-center rounded-full px-2 font-mono text-[10px] font-semibold uppercase tracking-wide text-white/85"
+							title={
+								binderContext.source === "rule"
+									? "In this binder via a smart rule"
+									: "Manually added to this binder"
+							}
+						>
+							{binderContext.source === "rule" ? "via rule" : "Added"}
+						</span>
+					</>
+				) : null}
 			</div>
 
+			{/* Membership picker: add/remove this card across every binder. */}
 			<BinderPickerDialog
 				open={pickerOpen}
 				onOpenChange={setPickerOpen}
-				title={`Add ${card.name} to a binder`}
-				description="Drop this card into a binder."
+				title={`Manage binders for ${card.name}`}
+				description="Check a binder to add this card. Uncheck to remove it."
 				binders={binderList}
-				onPick={(id) => void addCardsToBinder(id, [card.id])}
+				membershipCardId={card.id}
+				onPick={() => {}}
 				onCreateNew={() => {
-					pendingCardRef.current = card.id;
+					pendingRef.current = { kind: "add", cardId: card.id };
 					setNewBinderOpen(true);
 				}}
 			/>
+
+			{/* Move picker (binder-context only): pick a target, move out of the
+			    current binder into it. */}
+			{binderContext ? (
+				<BinderPickerDialog
+					open={moveOpen}
+					onOpenChange={setMoveOpen}
+					title={`Move ${card.name} to another binder`}
+					description="Move this card out of the current binder and into the one you pick."
+					binders={moveTargets}
+					onPick={(id) =>
+						void moveCardBetweenBinderWithUndo(
+							card.id,
+							binderContext.binderId,
+							id,
+						)
+					}
+					onCreateNew={() => {
+						pendingRef.current = {
+							kind: "move",
+							cardId: card.id,
+							fromId: binderContext.binderId,
+						};
+						setNewBinderOpen(true);
+					}}
+				/>
+			) : null}
+
 			<BinderFormDialog
 				open={newBinderOpen}
 				onOpenChange={setNewBinderOpen}

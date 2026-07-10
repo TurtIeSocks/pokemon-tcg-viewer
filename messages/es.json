@@ -628,5 +628,15 @@
 	"subtype_group_stage": "Etapa",
 	"subtype_group_mechanic": "Mecánica Pokémon",
 	"subtype_group_trainer": "Entrenador",
-	"subtype_group_other": "Otro"
+	"subtype_group_other": "Otro",
+	"binder_excluded_heading": "Excluidas",
+	"binder_restore": "Restaurar",
+	"binder_restore_aria": "Restaurar {name} en el binder",
+	"binder_bulk_remove": "Eliminar del binder",
+	"binder_bulk_move": "Mover al binder",
+	"binder_toast_removed": "Eliminada del binder",
+	"binder_toast_moved": "Movida",
+	"binder_toast_removed_count": "{count} cartas eliminadas",
+	"binder_toast_moved_count": "{count} cartas movidas",
+	"binder_toast_undo": "Deshacer"
 }

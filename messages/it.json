@@ -628,5 +628,15 @@
 	"subtype_group_stage": "Stadio",
 	"subtype_group_mechanic": "Meccanica Pokémon",
 	"subtype_group_trainer": "Alleato",
-	"subtype_group_other": "Altro"
+	"subtype_group_other": "Altro",
+	"binder_excluded_heading": "Escluse",
+	"binder_restore": "Ripristina",
+	"binder_restore_aria": "Ripristina {name} nel Binder",
+	"binder_bulk_remove": "Rimuovi dal Binder",
+	"binder_bulk_move": "Sposta nel Binder",
+	"binder_toast_removed": "Rimossa dal Binder",
+	"binder_toast_moved": "Spostata",
+	"binder_toast_removed_count": "{count} carte rimosse",
+	"binder_toast_moved_count": "{count} carte spostate",
+	"binder_toast_undo": "Annulla"
 }

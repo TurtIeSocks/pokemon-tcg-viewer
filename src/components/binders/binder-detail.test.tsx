@@ -9,9 +9,11 @@ import {
 } from "../../store/corpus/prices-runtime";
 import type { Binder } from "../../store/userland/types";
 import {
+	addCardsToBinder,
 	addRuleToBinder,
 	addStack,
 	createBinder,
+	removeCardFromBinder,
 	useUserland,
 } from "../../store/userland/userland-store";
 import {
@@ -503,4 +505,142 @@ test("does not show Market value when prices aren't loaded", async () => {
 		expect(screen.getByText(/Base Set/)).toBeDefined();
 	});
 	expect(screen.queryByText("Market value")).toBeNull();
+});
+
+// ---------------------------------------------------------------------------
+// L3: binder-scoped member controls
+// ---------------------------------------------------------------------------
+
+/** A set rule that pulls every base1 card into the binder as a member. */
+const BASE1_SET_RULE = {
+	text: null,
+	setId: "base1",
+	dexNumber: null,
+	types: [],
+	rarities: [],
+	supertypes: [],
+	subtypes: [],
+	yearMin: null,
+	yearMax: null,
+	mode: "fuzzy" as const,
+};
+
+test("the member grid receives binder context: per-card 'remove from this binder' appears", async () => {
+	const binder = await createBinder({ name: "Ctx Binder" });
+	await addRuleToBinder(binder.id, BASE1_SET_RULE);
+	const updated = useUserland.getState().binders[binder.id];
+
+	await renderDetail(updated);
+
+	// OwnedMissingGrid was handed binderId + binder, so each cell's mini-nav gains
+	// the binder-scoped remove control (absent when the grid has no binder context).
+	expect(
+		await screen.findByLabelText("Remove Bulbasaur from this binder"),
+	).toBeDefined();
+	// Rule members show the "via rule" source badge.
+	expect(screen.getAllByText("via rule").length).toBeGreaterThan(0);
+});
+
+test("the retired manual-include chip row is gone, but rule chips remain", async () => {
+	const binder = await createBinder({ name: "Chips Binder" });
+	await addRuleToBinder(binder.id, BASE1_SET_RULE);
+	// Manually include a card too — the OLD UI rendered a removable chip for it.
+	await addCardsToBinder(binder.id, [ownedCard.id]);
+	const updated = useUserland.getState().binders[binder.id];
+
+	await renderDetail(updated);
+
+	// Rule chip is still present (managing rules is a distinct concern we KEEP).
+	await waitFor(() => {
+		expect(screen.getByLabelText(/Remove rule/)).toBeDefined();
+	});
+	// The retired include-chip used aria "Remove {name} from binder"; it must be
+	// gone (the per-cell control reads "…from this binder", a different label).
+	expect(screen.queryByLabelText("Remove Bulbasaur from binder")).toBeNull();
+});
+
+test("excluded section lists excluded cards and Restore un-excludes (store state)", async () => {
+	const binder = await createBinder({ name: "Chase Pile" });
+	await addRuleToBinder(binder.id, BASE1_SET_RULE);
+	// Exclude Ivysaur (a rule member) so it shows in the Excluded section.
+	await removeCardFromBinder(binder.id, missingCard.id);
+	const updated = useUserland.getState().binders[binder.id];
+	expect(updated.excludeCardIds).toContain(missingCard.id);
+
+	await renderDetail(updated);
+
+	// The excluded card renders (only in the Excluded section — it is no longer a
+	// member) alongside its Restore control.
+	expect(await screen.findByText("Ivysaur")).toBeDefined();
+	const restoreBtn = await screen.findByLabelText("Restore Ivysaur to binder");
+	expect(restoreBtn).toBeDefined();
+
+	await act(async () => {
+		fireEvent.click(restoreBtn);
+	});
+
+	// Restore un-excludes the card (wires the previously-dead restore action).
+	await waitFor(() => {
+		expect(
+			useUserland.getState().binders[binder.id]?.excludeCardIds,
+		).not.toContain(missingCard.id);
+	});
+});
+
+test("excluded section is absent when there are no exclusions", async () => {
+	const binder = await createBinder({ name: "No Excludes Binder" });
+	await addRuleToBinder(binder.id, BASE1_SET_RULE);
+	const updated = useUserland.getState().binders[binder.id];
+
+	await renderDetail(updated);
+
+	await waitFor(() => {
+		expect(
+			screen.getByLabelText("Remove Bulbasaur from this binder"),
+		).toBeDefined();
+	});
+	// No exclusions → ExcludedSection renders nothing (no Restore controls).
+	expect(screen.queryByLabelText(/Restore/)).toBeNull();
+});
+
+test("bulk select → Remove from binder excludes every selected member", async () => {
+	const binder = await createBinder({ name: "Bulk Binder" });
+	await addRuleToBinder(binder.id, BASE1_SET_RULE);
+	const updated = useUserland.getState().binders[binder.id];
+
+	await renderDetail(updated);
+
+	// Enter multi-select mode.
+	const toggle = await screen.findByRole("button", { name: /select cards/i });
+	await act(async () => {
+		fireEvent.click(toggle);
+	});
+
+	// Select both members (the selection buttons are keyed by "Select {name}").
+	const selectBulba = await screen.findByRole("button", {
+		name: "Select Bulbasaur",
+	});
+	await act(async () => {
+		fireEvent.click(selectBulba);
+	});
+	const selectIvy = await screen.findByRole("button", {
+		name: "Select Ivysaur",
+	});
+	await act(async () => {
+		fireEvent.click(selectIvy);
+	});
+
+	// The bulk bar's remove action fires one batched, undo-wrapped removal.
+	const bulkRemove = await screen.findByRole("button", {
+		name: /remove from binder/i,
+	});
+	await act(async () => {
+		fireEvent.click(bulkRemove);
+	});
+
+	await waitFor(() => {
+		const b = useUserland.getState().binders[binder.id];
+		expect(b?.excludeCardIds).toContain(ownedCard.id);
+		expect(b?.excludeCardIds).toContain(missingCard.id);
+	});
 });

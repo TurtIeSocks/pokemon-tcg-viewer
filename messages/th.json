@@ -620,5 +620,15 @@
 	"subtype_group_stage": "สเตจ",
 	"subtype_group_mechanic": "กลไก Pokémon",
 	"subtype_group_trainer": "เทรนเนอร์",
-	"subtype_group_other": "อื่น ๆ"
+	"subtype_group_other": "อื่น ๆ",
+	"binder_excluded_heading": "ที่ยกเว้น",
+	"binder_restore": "กู้คืน",
+	"binder_restore_aria": "กู้คืน {name} ไปยัง Binder",
+	"binder_bulk_remove": "ลบออกจาก Binder",
+	"binder_bulk_move": "ย้ายไปยัง Binder",
+	"binder_toast_removed": "ลบออกจาก Binder แล้ว",
+	"binder_toast_moved": "ย้ายแล้ว",
+	"binder_toast_removed_count": "ลบ {count} การ์ดแล้ว",
+	"binder_toast_moved_count": "ย้าย {count} การ์ดแล้ว",
+	"binder_toast_undo": "เลิกทำ"
 }
