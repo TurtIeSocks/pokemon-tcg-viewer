@@ -39,16 +39,28 @@ export function CardLightbox({
 	useEffect(() => {
 		if (!open) return;
 		function onKey(e: KeyboardEvent) {
-			if (e.key === "Escape") onClose();
+			if (e.key !== "Escape") return;
+			// Capture phase + stopPropagation: when the lightbox is stacked on the
+			// card modal (a Radix Dialog listening for Escape on document), Escape
+			// must peel off ONLY the lightbox — not dismiss the whole modal too.
+			e.stopPropagation();
+			onClose();
 		}
-		window.addEventListener("keydown", onKey);
-		return () => window.removeEventListener("keydown", onKey);
+		window.addEventListener("keydown", onKey, { capture: true });
+		return () =>
+			window.removeEventListener("keydown", onKey, { capture: true });
 	}, [open, onClose]);
 
 	if (!open || typeof document === "undefined") return null;
 
 	return createPortal(
-		<div className="fixed inset-0 z-120 flex cursor-zoom-out items-center justify-center p-2 animate-in fade-in-0 duration-150 motion-reduce:animate-none sm:p-4">
+		// pointer-events-auto (load-bearing): when the lightbox is opened from the
+		// card MODAL, Radix Dialog + RemoveScroll set `pointer-events: none` on
+		// <body>, and this portal (a body child) inherits it — every click fell
+		// through to the modal/overlay underneath (backdrop + X dead, mouse tilt
+		// dead, outside clicks dismissing the whole modal). Re-enable hit-testing
+		// for the whole lightbox subtree.
+		<div className="pointer-events-auto fixed inset-0 z-120 flex cursor-zoom-out items-center justify-center p-2 animate-in fade-in-0 duration-150 motion-reduce:animate-none sm:p-4">
 			{/* Blurred fullscreen backdrop; clicking off the card dismisses. */}
 			<button
 				type="button"

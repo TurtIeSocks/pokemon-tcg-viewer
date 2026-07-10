@@ -126,6 +126,61 @@ describe("<HoloCard />", () => {
 		expect(container.querySelector(".holo-card-glare")).toBeNull();
 	});
 
+	// A SWSH promo has a real per-card CDN mask (buildFoilUrls resolves for
+	// swsh/sv/pgo). The mask preloads via `new Image()`; the card must paint NO
+	// foil until it lands, else the :not(.masked) procedural recipe flashes a
+	// full-rectangle foil for a beat (reported on the modal card).
+	const maskedProps = {
+		imageUrl: "https://example.invalid/rillaboom.png",
+		name: "Rillaboom V",
+		setId: "swshp",
+		cardNumber: "SWSH014",
+		rarity: "Rare Holo V",
+		subtypes: ["Basic", "V"],
+		supertype: "Pokémon",
+	};
+
+	test("withholds the foil layers while a per-card mask is still pending", () => {
+		// In the test env the mask Image never fires load, so it stays pending.
+		const { container } = render(<HoloCard {...maskedProps} />);
+		const root = container.querySelector(".holo-card") as HTMLElement;
+		expect(root.classList.contains("masked")).toBe(false);
+		expect(container.querySelector(".holo-card-shine")).toBeNull();
+		expect(container.querySelector(".holo-card-glare")).toBeNull();
+	});
+
+	test("renders the masked foil once the per-card mask loads", () => {
+		// Mock Image so onload fires synchronously when src is assigned.
+		const RealImage = window.Image;
+		class FakeImage {
+			onload: (() => void) | null = null;
+			onerror: (() => void) | null = null;
+			set src(_v: string) {
+				this.onload?.();
+			}
+		}
+		(window as unknown as { Image: unknown }).Image = FakeImage;
+		try {
+			const { container } = render(<HoloCard {...maskedProps} />);
+			const root = container.querySelector(".holo-card") as HTMLElement;
+			expect(root.classList.contains("masked")).toBe(true);
+			expect(root.style.getPropertyValue("--mask")).toContain("poke-holo");
+			expect(container.querySelector(".holo-card-shine")).not.toBeNull();
+			expect(container.querySelector(".holo-card-glare")).not.toBeNull();
+		} finally {
+			(window as unknown as { Image: unknown }).Image = RealImage;
+		}
+	});
+
+	test("an unmasked set never withholds the foil (no pending window)", () => {
+		// base1 has no CDN asset (buildFoilUrls → null), so it must paint the
+		// procedural foil immediately — no false pending gate.
+		const { container } = render(
+			<HoloCard {...baseProps} rarity="Rare Holo" />,
+		);
+		expect(container.querySelector(".holo-card-shine")).not.toBeNull();
+	});
+
 	test("emits effective rarity + card identity data attrs (CardProxy pipeline)", () => {
 		const { container } = render(
 			<HoloCard
@@ -156,6 +211,23 @@ describe("<HoloCard />", () => {
 		const root = container.querySelector(".holo-card") as HTMLElement;
 		expect(root.getAttribute("data-rarity")).toBe("common reverse holo");
 		expect(root.classList.contains("reverse-holo")).toBe(true);
+	});
+
+	test("reverse-only printings render the reverse foil by default", () => {
+		// basep-34 Entei (WotC movie promo): variants = ["reverse"] only.
+		const { container } = render(
+			<HoloCard
+				{...baseProps}
+				rarity="Promo"
+				series="Base"
+				variants={["reverse"]}
+			/>,
+		);
+		const root = container.querySelector(".holo-card") as HTMLElement;
+		expect(root.getAttribute("data-rarity")).toBe("promo reverse holo");
+		expect(root.classList.contains("reverse-holo")).toBe(true);
+		// Vintage frame still applies (Base series) → vintage inverse window.
+		expect(root.getAttribute("data-frame")).toBe("vintage");
 	});
 
 	test("Japanese vintage series get data-frame=vintage too", () => {

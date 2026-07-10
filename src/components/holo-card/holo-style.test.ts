@@ -53,8 +53,14 @@ describe("getHoloClass", () => {
 		expect(getHoloClass("Promo", "Base", undefined)).toBe("holo-cosmos");
 	});
 
-	test("holo=false even overrides an explicit holo rarity", () => {
-		expect(getHoloClass("Rare Holo", "Sword & Shield", false)).toBe("no-foil");
+	test("holo=false does NOT override an explicit holo rarity (CoL data-gap guard)", () => {
+		// TCGdex lists whole holo sets (Call of Legends) as normal-only — a data
+		// gap, not a real non-holo printing. A rarity that itself says "Holo" is
+		// ground truth, so a normal-only variant must not flatten it.
+		expect(getHoloClass("Rare Holo", "Sword & Shield", false)).toBe(
+			"holo-basic",
+		);
+		expect(getHoloClass("Rare Holo", "Base", false)).toBe("holo-cosmos");
 	});
 
 	test("NP Black Star Promos route to cosmos when holo", () => {
@@ -106,6 +112,7 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		).toEqual({
 			effectiveRarity: "rare holo vmax",
 			trainerGallery: false,
+			frame: null,
 			className: "holo-vmax",
 		});
 	});
@@ -115,9 +122,13 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		expect(holoPresentation({ rarity: "Common" }).className).toBe("no-foil");
 	});
 
-	test("known non-holo printing → glare only regardless of rarity", () => {
+	test("normal-only printing of an upgradable rarity → glare only", () => {
+		// A non-committal rarity we upgraded (Promo/Rare) with a genuine
+		// normal-only printing downgrades to glare-only (basep-8 style). An
+		// explicit "Rare Holo" is NOT downgradable — see the CoL guard test.
 		expect(
-			holoPresentation({ rarity: "Rare Holo", holo: false }).effectiveRarity,
+			holoPresentation({ rarity: "Promo", series: "Base", holo: false })
+				.effectiveRarity,
 		).toBeNull();
 	});
 
@@ -170,6 +181,7 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		).toEqual({
 			effectiveRarity: "rare secret",
 			trainerGallery: true,
+			frame: null,
 			className: "gold-secret",
 		});
 		// swshp-SWSH001 is SwHolo in promos.json → "rare holo".
@@ -231,16 +243,298 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 				holo: false,
 			}).effectiveRarity,
 		).toBe("rare holo v");
-		// …but the classic-holo families still honor it (basep-8 style).
+		// …and an explicit "Rare Holo" rarity is always-foil too — a normal-only
+		// TCGdex printing (the CoL data gap) must not flatten it.
 		expect(
 			holoPresentation({ rarity: "Rare Holo", holo: false }).effectiveRarity,
+		).toBe("rare holo");
+	});
+
+	test("Celebrations main set: full-face cosmos, incl. plain Rare + holo", () => {
+		// cel25-5 Pikachu (Rare Holo) — mirror confetti covers the whole face.
+		const pikachu = holoPresentation({
+			rarity: "Rare Holo",
+			series: "Sword & Shield",
+			setId: "cel25",
+			cardNumber: "5",
+			holo: true,
+		});
+		expect(pikachu.effectiveRarity).toBe("rare holo cosmos");
+		expect(pikachu.frame).toBe("fullface");
+		// cel25-2 Reshiram (plain "Rare" but printed holo) — must not be
+		// glare-only.
+		const reshiram = holoPresentation({
+			rarity: "Rare",
+			series: "Sword & Shield",
+			setId: "cel25",
+			cardNumber: "2",
+			holo: true,
+		});
+		expect(reshiram.effectiveRarity).toBe("rare holo cosmos");
+		expect(reshiram.frame).toBe("fullface");
+		// V cards keep their own family, still full-face frame (no clip anyway).
+		expect(
+			holoPresentation({
+				rarity: "Rare Holo V",
+				setId: "cel25",
+				cardNumber: "16",
+				holo: true,
+			}).effectiveRarity,
+		).toBe("rare holo v");
+	});
+
+	test("SV Black Star Promos: ex → full-card etch, rest → full-face mirror", () => {
+		// svp-004 Mimikyu ex — SV ex treatment (full-card sunpillar family).
+		const mimikyu = holoPresentation({
+			rarity: "Promo",
+			series: "Scarlet & Violet",
+			setId: "svp",
+			cardNumber: "004",
+			subtypes: ["Basic", "ex"],
+			holo: true,
+		});
+		expect(mimikyu.effectiveRarity).toBe("rare holo v");
+		expect(mimikyu.frame).toBe("fullface");
+		// svp-013 Miraidon — regular promo, mirror foil across the whole face.
+		const miraidon = holoPresentation({
+			rarity: "Promo",
+			series: "Scarlet & Violet",
+			setId: "svp",
+			cardNumber: "013",
+			subtypes: ["Basic"],
+			holo: true,
+		});
+		expect(miraidon.effectiveRarity).toBe("rare holo");
+		expect(miraidon.frame).toBe("fullface");
+	});
+
+	test("Classic Collection: vintage window, except full-bleed originals", () => {
+		// cel25-8A Dark Gyarados — WotC-frame reprint → vintage clip knobs.
+		const gyarados = holoPresentation({
+			rarity: "Classic Collection",
+			series: "Sword & Shield",
+			setId: "cel25",
+			cardNumber: "8A",
+		});
+		expect(gyarados.effectiveRarity).toBe("rare holo cosmos");
+		expect(gyarados.frame).toBe("vintage");
+		// Full-bleed originals (GX / Mega / LV.X / BW full-art) → full-face foil.
+		for (const num of ["54A", "60A", "76A", "97A", "107A", "113A", "145A"]) {
+			expect(
+				holoPresentation({
+					rarity: "Classic Collection",
+					setId: "cel25",
+					cardNumber: num,
+				}).frame,
+			).toBe("fullface");
+		}
+		// EX-era reprints (2003-2007) → the EX window, not the WotC vintage one.
+		for (const num of ["9A", "17A", "88A", "93A", "86A"]) {
+			expect(
+				holoPresentation({
+					rarity: "Classic Collection",
+					setId: "cel25",
+					cardNumber: num,
+				}).frame,
+			).toBe("ex");
+		}
+	});
+
+	test("explicit 'Rare Holo' rarity is never downgraded by a normal-only variant", () => {
+		// Call of Legends: 33 cards are rarity "Rare Holo" but TCGdex lists only
+		// ['normal'] (a data gap). The explicit holo rarity must win.
+		expect(
+			holoPresentation({
+				rarity: "Rare Holo",
+				series: "Call of Legends",
+				setId: "col1",
+				cardNumber: "1",
+				subtypes: ["Stage 1"],
+				holo: false, // variantsToHolo(['normal'])
+			}).effectiveRarity,
+		).toBe("rare holo cosmos");
+		// …but a non-committal rarity (Promo) still downgrades on holo=false.
+		expect(
+			holoPresentation({
+				rarity: "Promo",
+				series: "Base",
+				setId: "basep",
+				cardNumber: "8",
+				holo: false,
+			}).effectiveRarity,
 		).toBeNull();
+	});
+
+	test("Black & White era gets its own (shortest) frame", () => {
+		expect(
+			holoPresentation({
+				rarity: "Rare Holo",
+				series: "Black & White",
+				setId: "bw1",
+				cardNumber: "26",
+				subtypes: ["Basic"],
+			}).frame,
+		).toBe("bw");
+	});
+
+	test("XY era: art-window Pokémon holos get the xy frame", () => {
+		// xy1-26 Delphox (Stage 2) — cosmos galaxy foil in the XY art window.
+		const p = holoPresentation({
+			rarity: "Rare Holo",
+			series: "XY",
+			setId: "xy1",
+			cardNumber: "26",
+			subtypes: ["Stage 2"],
+			holo: false, // TCGdex lists XY holos as normal-only (data gap)
+		});
+		expect(p.frame).toBe("xy");
+		expect(p.effectiveRarity).toBe("rare holo cosmos");
+	});
+
+	test("XY era: full-art EX / Mega route to fullface + sunpillar etch", () => {
+		for (const rarity of ["Rare Holo EX", "Rare Ultra"]) {
+			const p = holoPresentation({
+				rarity,
+				series: "XY",
+				setId: "xy1",
+				cardNumber: "1",
+				subtypes: ["Basic", "EX"],
+				holo: false,
+			});
+			expect(p.frame).toBe("fullface");
+			expect(p.effectiveRarity).toBe("rare holo v");
+		}
+	});
+
+	test("XY era: gold secrets + BREAK route to fullface + gold foil", () => {
+		// 'Rare BREAK' isn't /holo/ and the printing is normal-only, so the
+		// downgrade would flatten it — the XY full-art path must beat that.
+		for (const [rarity, setId, number, subtypes] of [
+			["Rare Secret", "xy2", "107", ["MEGA", "EX"]],
+			["Rare BREAK", "xy8", "12", ["BREAK"]],
+		] as const) {
+			const p = holoPresentation({
+				rarity,
+				series: "XY",
+				setId,
+				cardNumber: number,
+				subtypes: [...subtypes],
+				holo: false,
+			});
+			expect(p.frame).toBe("fullface");
+			expect(p.effectiveRarity).toBe("rare secret");
+		}
+	});
+
+	test("SM era: art-window Pokémon holos get the sm frame", () => {
+		// sm1-20 Tsareena (Stage 2) — cosmos galaxy foil in the SM art window.
+		const p = holoPresentation({
+			rarity: "Rare Holo",
+			series: "Sun & Moon",
+			setId: "sm1",
+			cardNumber: "20",
+			subtypes: ["Stage 2"],
+			holo: false, // TCGdex lists most SM holos as normal-only (data gap)
+		});
+		expect(p.frame).toBe("sm");
+		expect(p.effectiveRarity).toBe("rare holo cosmos");
+	});
+
+	test("SM era: regular GX is a full-face sunpillar etch, not art-window", () => {
+		// sm1-35 Lapras GX — physically an etched full-face foil.
+		const p = holoPresentation({
+			rarity: "Rare Holo GX",
+			series: "Sun & Moon",
+			setId: "sm1",
+			cardNumber: "35",
+			subtypes: ["Basic", "GX"],
+			holo: false,
+		});
+		expect(p.frame).toBe("fullface");
+		expect(p.effectiveRarity).toBe("rare holo v");
+	});
+
+	test("SM era: Prism Star is revived from no-foil (fullface ultra)", () => {
+		// 'Rare Prism Star' carries no /holo/ and the printing is normal-only,
+		// so the old "rare holo" mapping downgraded it to no-foil (sm5-77
+		// Darkrai rendered flat). "rare ultra" isn't downgradable.
+		const p = holoPresentation({
+			rarity: "Rare Prism Star",
+			series: "Sun & Moon",
+			setId: "sm5",
+			cardNumber: "77",
+			subtypes: ["Basic", "Prism Star"],
+			holo: false,
+		});
+		expect(p.frame).toBe("fullface");
+		expect(p.effectiveRarity).toBe("rare ultra");
+	});
+
+	test("SM era: Hidden Fates shiny vault foils the full card", () => {
+		// sma SV1 — sparkle covers the whole white card, no art window.
+		const p = holoPresentation({
+			rarity: "Rare Shiny",
+			series: "Sun & Moon",
+			setId: "sma",
+			cardNumber: "SV1",
+			subtypes: ["Basic"],
+		});
+		expect(p.frame).toBe("fullface");
+		expect(p.effectiveRarity).toBe("rare shiny");
+	});
+
+	test("Black White Rare → full-face sunpillar etch (Zekrom/Reshiram ex)", () => {
+		// sv10.5w-173 Reshiram ex — a full-bleed etched full-art, not an
+		// art-window holo. No CDN mask (poke-holo has no sv10.5).
+		const p = holoPresentation({
+			rarity: "Black White Rare",
+			series: "Scarlet & Violet",
+			setId: "sv10.5w",
+			cardNumber: "173",
+			subtypes: ["Basic", "ex"],
+			holo: true,
+		});
+		expect(p.frame).toBe("fullface");
+		expect(p.effectiveRarity).toBe("rare holo v");
+	});
+
+	test("Pokémon LEGEND cards are full-face cosmos, not the HGSS window", () => {
+		// hgss3-87 Kyogre & Groudon LEGEND — a full-bleed 2-card holo. The rarity
+		// is "LEGEND"; it must not take the hgss art-window clip.
+		const p = holoPresentation({
+			rarity: "LEGEND",
+			series: "HeartGold & SoulSilver",
+			setId: "hgss3",
+			cardNumber: "87",
+			subtypes: ["LEGEND"],
+			holo: true,
+		});
+		expect(p.frame).toBe("fullface");
+		expect(p.effectiveRarity).toBe("rare holo cosmos");
+	});
+
+	test("HGSS era gets its own (taller) frame, distinct from DP", () => {
+		// hgss1-1 Arcanine — taller window than DP.
+		expect(
+			holoPresentation({
+				rarity: "Rare Holo",
+				series: "HeartGold & SoulSilver",
+				setId: "hgss1",
+				cardNumber: "1",
+				subtypes: ["Stage 1"],
+			}).frame,
+		).toBe("hgss");
+		// JP LEGEND line shares it.
+		expect(
+			holoPresentation({ rarity: "Holo Rare", series: "LEGEND" }).frame,
+		).toBe("hgss");
 	});
 
 	test("reverse printing suffixes the base rarity (CardProxy isReverse)", () => {
 		expect(holoPresentation({ rarity: "Common", reverse: true })).toEqual({
 			effectiveRarity: "common reverse holo",
 			trainerGallery: false,
+			frame: null,
 			className: "reverse-holo",
 		});
 		// A reverse printing is always physically foil — the noisy "normal"
@@ -259,6 +553,107 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		expect(
 			holoPresentation({ rarity: "Rare Holo", series: "Neo" }).effectiveRarity,
 		).toBe("rare holo cosmos");
+	});
+
+	test("POP: plain 'Rare'/'Common' with a holo printing → cosmos foil", () => {
+		// pop3-1 Blastoise — rarity "Rare" (not "Rare Holo") but variants
+		// include "holo"; must not render glare-only.
+		const p = holoPresentation({
+			rarity: "Rare",
+			series: "POP",
+			setId: "pop3",
+			cardNumber: "1",
+			subtypes: ["Stage 2"],
+			holo: true,
+		});
+		expect(p.effectiveRarity).toBe("rare holo cosmos");
+		// No holo printing → stays glare-only.
+		expect(
+			holoPresentation({
+				rarity: "Rare",
+				series: "POP",
+				setId: "pop3",
+				cardNumber: "9",
+				holo: false,
+			}).effectiveRarity,
+		).toBeNull();
+	});
+
+	test("POP spans two frame eras (1-5 EX, 6-9 DP); DP/Platinum → dp frame", () => {
+		expect(
+			holoPresentation({ rarity: "Rare", setId: "pop3", holo: true }).frame,
+		).toBe("ex");
+		expect(
+			holoPresentation({ rarity: "Rare", setId: "pop6", holo: true }).frame,
+		).toBe("dp");
+		expect(
+			holoPresentation({ rarity: "Rare", setId: "pop9", holo: true }).frame,
+		).toBe("dp");
+		expect(
+			holoPresentation({ rarity: "Rare Holo", series: "Diamond & Pearl" })
+				.frame,
+		).toBe("dp");
+		expect(
+			holoPresentation({ rarity: "Rare Holo", series: "Platinum" }).frame,
+		).toBe("dp");
+	});
+
+	test("EX era gets its own frame (bottom-left stage badge)", () => {
+		// ex1-5 Delcatty — Stage 1 with the badge hanging off the window's
+		// bottom-left; JP ADV/PCG share the frame.
+		const p = holoPresentation({
+			rarity: "Rare Holo",
+			series: "EX",
+			setId: "ex1",
+			cardNumber: "5",
+			subtypes: ["Stage 1"],
+		});
+		expect(p.frame).toBe("ex");
+		expect(p.effectiveRarity).toBe("rare holo cosmos");
+		expect(holoPresentation({ rarity: "Holo Rare", series: "ADV" }).frame).toBe(
+			"ex",
+		);
+		expect(holoPresentation({ rarity: "Holo Rare", series: "PCG" }).frame).toBe(
+			"ex",
+		);
+	});
+
+	test("e-Card era gets its own frame (rounded window + dot-code strips)", () => {
+		// ecard3-1 Aerodactyl — reverse foil must dodge the e-reader strips.
+		const std = holoPresentation({
+			rarity: "Rare Holo",
+			series: "E-Card",
+			setId: "ecard3",
+			cardNumber: "1",
+		});
+		expect(std.frame).toBe("ecard");
+		expect(std.effectiveRarity).toBe("rare holo cosmos"); // era still cosmos
+		const rev = holoPresentation({
+			rarity: "Rare",
+			series: "E-Card",
+			setId: "ecard3",
+			cardNumber: "1",
+			reverse: true,
+		});
+		expect(rev.frame).toBe("ecard");
+		expect(rev.effectiveRarity).toBe("rare reverse holo");
+		// JP e series routes the same way.
+		expect(
+			holoPresentation({ rarity: "Holo Rare", series: "ポケモンカードe" })
+				.frame,
+		).toBe("ecard");
+	});
+
+	test("Legendary Collection: own TCGdex serie → cosmos + vintage frame", () => {
+		const p = holoPresentation({
+			rarity: "Rare Holo",
+			series: "Legendary Collection",
+			setId: "lc",
+			cardNumber: "3",
+			holo: true,
+		});
+		expect(p.effectiveRarity).toBe("rare holo cosmos");
+		expect(p.frame).toBe("vintage");
 	});
 
 	test("Japanese vintage series route to cosmos (TCGdex serie names)", () => {

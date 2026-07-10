@@ -55,3 +55,12 @@ test("isReversePrinting prefers exact printing, falls back to legacy variant", a
 	expect(isReversePrinting({ printing: null, variant: "normal" })).toBe(false);
 	expect(isReversePrinting({ printing: null, variant: null })).toBe(false);
 });
+
+test("isReverseOnlyPrinting: true only when every printing is reverse", async () => {
+	const { isReverseOnlyPrinting } = await import("./card-variants");
+	expect(isReverseOnlyPrinting(["reverse"])).toBe(true); // basep-34 Entei
+	expect(isReverseOnlyPrinting(["normal", "reverse"])).toBe(false);
+	expect(isReverseOnlyPrinting(["holo"])).toBe(false);
+	expect(isReverseOnlyPrinting([])).toBe(false);
+	expect(isReverseOnlyPrinting(undefined)).toBe(false);
+});

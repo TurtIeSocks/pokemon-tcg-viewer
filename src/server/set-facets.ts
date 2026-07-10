@@ -1,6 +1,19 @@
-import type { HoloCardData } from "../components/holo-card";
 import { compareRarity } from "../lib/rarity-order";
 import { titleCaseSlug } from "../lib/slug";
+
+/**
+ * The subset of card fields facet derivation reads. Both the hydrated
+ * `HoloCardData` (set pages) and the raw in-memory `CorpusCard` (the dev
+ * all-cards grid) satisfy it, so either can be faceted without a cast.
+ */
+export interface FacetCard {
+	name: string;
+	supertype?: string;
+	subtypes?: string[];
+	rarity?: string;
+	types?: string[];
+	nationalPokedexNumbers?: number[];
+}
 
 /**
  * One option of the card ("name") filter. Pokémon are keyed by their national
@@ -40,7 +53,7 @@ const raritiesByLevel = (vals: (string | undefined)[]): string[] =>
  * its `group` (supertype). First writer wins a given id's label + group.
  */
 function deriveIds(
-	cards: HoloCardData[],
+	cards: FacetCard[],
 	dexName?: (dex: number) => string | null | undefined,
 ): IdFacet[] {
 	const byId = new Map<string, IdFacet>();
@@ -66,7 +79,7 @@ function deriveIds(
 
 /** Distinct, sorted filter options that actually occur in the given cards. */
 export function deriveFacets(
-	cards: HoloCardData[],
+	cards: FacetCard[],
 	dexName?: (dex: number) => string | null | undefined,
 ): SetFacets {
 	return {

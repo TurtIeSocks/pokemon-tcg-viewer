@@ -4,13 +4,10 @@ import { cn } from "@/lib/utils";
 import { useUiPrefs } from "../../store/ui-prefs";
 import "./holo-card.css";
 import "./rarity-styles.css";
+import { isReverseOnlyPrinting } from "../../lib/card-variants";
 import { cdnImage } from "./cdn-image";
 import { cdnSetId } from "./foil-assets";
-import {
-	holoPresentation,
-	VINTAGE_FRAME_SERIES,
-	variantsToHolo,
-} from "./holo-style";
+import { holoPresentation, variantsToHolo } from "./holo-style";
 import { useFoilAssets } from "./use-foil-assets";
 import { useHoloEffect } from "./use-holo-effect";
 import { useTiltEffect } from "./use-tilt-effect";
@@ -149,7 +146,10 @@ export function HoloCard({
 		subtypes,
 		supertype,
 		holo: variantsToHolo(variants),
-		reverse,
+		// Cards whose ONLY printing is the reverse holo (WotC movie promos:
+		// Scizor 33 / Entei 34 / Pichu 35) render it by default — there is no
+		// standard print to show.
+		reverse: reverse || isReverseOnlyPrinting(variants),
 	});
 	// Real per-card CDN foil + mask (modern sets); 404 → procedural fallback.
 	// Keyed on the EFFECTIVE rarity so the foil URL always agrees with the CSS
@@ -177,11 +177,10 @@ export function HoloCard({
 	if (setId) dataAttrs["data-set"] = cdnSetId(setId);
 	if (cardNumber) dataAttrs["data-number"] = cardNumber.toLowerCase();
 	if (holo.trainerGallery) dataAttrs["data-trainer-gallery"] = "true";
-	// WotC-era frames have a different art window; the vintage clip variables
-	// in rarity-styles.css key on this (procedural path only — masked cards'
-	// real CDN masks always win).
-	if (series && VINTAGE_FRAME_SERIES.has(series.toLowerCase()))
-		dataAttrs["data-frame"] = "vintage";
+	// Procedural clip-window treatment (vintage WotC windows / full-face foil);
+	// the clip variables in rarity-styles.css key on this. Masked cards' real
+	// CDN masks always win.
+	if (holo.frame) dataAttrs["data-frame"] = holo.frame;
 
 	const classes = [
 		"holo-card",
@@ -388,8 +387,12 @@ export function HoloCard({
 			    (+ ::before/::after sub-layers), .card__glare → glare div
 			    (+ ::after). Real elements — CSS can't chain pseudo-elements, and
 			    the recipes need all five compositing layers. Gated on hasImage so
-			    the foil never renders over the missing-image identity placeholder. */}
-			{hasImage && (
+			    the foil never renders over the missing-image identity placeholder,
+			    and on !maskPending so a masked card paints NO foil until its CDN
+			    mask lands — otherwise the `:not(.masked)` procedural recipe flashes
+			    a full-rectangle foil for a beat. When the mask resolves, the layers
+			    mount already-masked (same render adds the `masked` class). */}
+			{hasImage && !foil.maskPending && (
 				<>
 					<div className="holo-card-shine" aria-hidden="true" />
 					<div className="holo-card-glare" aria-hidden="true" />
