@@ -31,6 +31,10 @@ export default defineConfig({
 			// always reads `ui-lang`; the CLI compile only scaffolds src/paraglide
 			// for tsc/test (which don't exercise the cookie), then vite overwrites it.
 			cookieName: "ui-lang",
+			// Both compile paths (this plugin + the CLI postinstall scaffold) must
+			// emit .d.ts, or whichever runs last leaves src/paraglide untyped and
+			// `tsc -b` fails with TS7016 on every @/paraglide import.
+			emitTsDeclarations: true,
 		}),
 		// Next so its dev middleware registers ahead of nitro's catch-all
 		// (otherwise GET /version.json falls through to the SPA handler → 404).
