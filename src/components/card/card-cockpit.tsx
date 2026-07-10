@@ -144,7 +144,11 @@ export function CardCockpit({
 								{...holoCardProps(holo)}
 								reverse={canReverse && showReverse}
 								size="focus"
-								className="w-full cursor-zoom-in"
+								// cursor-zoom-in! (important): the .holo-card base
+								// `cursor: pointer` ties on specificity and wins on load
+								// order, so the unbanged utility showed a hand cursor
+								// (same trap the lightbox patches with cursor-zoom-out!).
+								className="w-full cursor-zoom-in!"
 								onClick={() => {
 									// Request device-tilt permission on the opening tap (iOS
 									// only allows it from a gesture); the lightbox then tilts
