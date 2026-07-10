@@ -471,6 +471,21 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		expect(p.effectiveRarity).toBe("rare shiny");
 	});
 
+	test("Black White Rare → full-face sunpillar etch (Zekrom/Reshiram ex)", () => {
+		// sv10.5w-173 Reshiram ex — a full-bleed etched full-art, not an
+		// art-window holo. No CDN mask (poke-holo has no sv10.5).
+		const p = holoPresentation({
+			rarity: "Black White Rare",
+			series: "Scarlet & Violet",
+			setId: "sv10.5w",
+			cardNumber: "173",
+			subtypes: ["Basic", "ex"],
+			holo: true,
+		});
+		expect(p.frame).toBe("fullface");
+		expect(p.effectiveRarity).toBe("rare holo v");
+	});
+
 	test("HGSS era gets its own (taller) frame, distinct from DP", () => {
 		// hgss1-1 Arcanine — taller window than DP.
 		expect(

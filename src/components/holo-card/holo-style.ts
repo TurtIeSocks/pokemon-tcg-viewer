@@ -284,6 +284,10 @@ function frameFor(
 	rarity?: string,
 	cardNumber?: string,
 ): HoloFrame {
+	// Black White Rare (the 2 Black Bolt / White Flare chase ex full-arts) are
+	// full-bleed etched cards — foil the whole face, no art window. Keyed on the
+	// rarity, not the set (the set is otherwise a normal masked SV set).
+	if ((rarity ?? "").toLowerCase() === "black white rare") return "fullface";
 	const sid = setId?.toLowerCase();
 	if (sid && FULLFACE_FOIL_SETS.has(sid)) {
 		// Classic Collection reprints keep their original frame's window;

@@ -98,7 +98,12 @@ const RARITY_EFFECTIVE: Record<string, string | null> = {
 	Kagayaku: "rare shining", // 輝く — Shining Pokémon
 	Shining: "rare shining",
 	"Mega Hyper Rare": "rare rainbow", // cf. Hyper Rare
-	"Black White Rare": "rare holo",
+	// Black White Rare — the 2 chase ex full-arts of Black Bolt (Zekrom, black)
+	// + White Flare (Reshiram, white), 2025. Full-bleed etched full-arts, so the
+	// sunpillar V etch (routed fullface in frameFor); "rare holo" wrongly clipped
+	// them to an art window. No CDN mask exists (poke-holo has no sv10.5), so
+	// they render procedurally.
+	"Black White Rare": "rare holo v",
 
 	// --- Pokémon TCG Pocket rarities (TCGdex tcgp sets). Diamonds are the
 	// commons ladder; stars/shinies are the premium full-arts. Mapped to the
