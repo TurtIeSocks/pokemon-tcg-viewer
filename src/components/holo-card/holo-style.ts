@@ -110,12 +110,16 @@ export function variantsToHolo(variants?: string[]): boolean | undefined {
 }
 
 /**
- * Sets whose NON-classic cards are foiled across the ENTIRE card face (the
- * Celebrations 25th-anniversary mirror confetti covers everything, not just
- * the art window). These emit data-frame="fullface", which nulls every clip
- * window in rarity-styles.css. Lowercased set ids. USER-EDITABLE.
+ * Sets whose NON-classic cards are foiled across the ENTIRE card face:
+ * Celebrations 25th-anniversary mirror confetti, and SV-era Black Star
+ * Promos (SV has no art-window holos — promo foil covers the whole face).
+ * These emit data-frame="fullface", which nulls every clip window in
+ * rarity-styles.css. Lowercased set ids. USER-EDITABLE.
  */
-export const FULLFACE_FOIL_SETS: ReadonlySet<string> = new Set(["cel25"]);
+export const FULLFACE_FOIL_SETS: ReadonlySet<string> = new Set([
+	"cel25",
+	"svp",
+]);
 
 /**
  * Celebrations Classic Collection reprints whose ORIGINAL printing is a
@@ -301,6 +305,14 @@ export function holoPresentation(
 			if (style === "swholo") eff = "rare holo";
 			else if (style === "cosmos") eff = "rare holo cosmos";
 		}
+	}
+
+	// SV-era Black Star Promos (svp): every card is rarity "Promo", but the
+	// physical treatments differ — ex promos carry the SV ex full-card etch
+	// (our "rare holo v" family), everything else is a full-face mirror holo
+	// (frame="fullface" via FULLFACE_FOIL_SETS un-clips the recipe).
+	if (setId?.toLowerCase() === "svp" && subtypesLower.includes("ex")) {
+		eff = "rare holo v";
 	}
 
 	if (isShiny) {

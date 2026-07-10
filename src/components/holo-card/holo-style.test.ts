@@ -272,6 +272,31 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		).toBe("rare holo v");
 	});
 
+	test("SV Black Star Promos: ex → full-card etch, rest → full-face mirror", () => {
+		// svp-004 Mimikyu ex — SV ex treatment (full-card sunpillar family).
+		const mimikyu = holoPresentation({
+			rarity: "Promo",
+			series: "Scarlet & Violet",
+			setId: "svp",
+			cardNumber: "004",
+			subtypes: ["Basic", "ex"],
+			holo: true,
+		});
+		expect(mimikyu.effectiveRarity).toBe("rare holo v");
+		expect(mimikyu.frame).toBe("fullface");
+		// svp-013 Miraidon — regular promo, mirror foil across the whole face.
+		const miraidon = holoPresentation({
+			rarity: "Promo",
+			series: "Scarlet & Violet",
+			setId: "svp",
+			cardNumber: "013",
+			subtypes: ["Basic"],
+			holo: true,
+		});
+		expect(miraidon.effectiveRarity).toBe("rare holo");
+		expect(miraidon.frame).toBe("fullface");
+	});
+
 	test("Classic Collection: vintage window, except full-bleed originals", () => {
 		// cel25-8A Dark Gyarados — WotC-frame reprint → vintage clip knobs.
 		const gyarados = holoPresentation({
