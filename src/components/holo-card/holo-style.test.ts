@@ -365,6 +365,50 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		).toBe("bw");
 	});
 
+	test("XY era: art-window Pokémon holos get the xy frame", () => {
+		// xy1-26 Delphox (Stage 2) — cosmos galaxy foil in the XY art window.
+		const p = holoPresentation({
+			rarity: "Rare Holo",
+			series: "XY",
+			setId: "xy1",
+			cardNumber: "26",
+			subtypes: ["Stage 2"],
+			holo: false, // TCGdex lists XY holos as normal-only (data gap)
+		});
+		expect(p.frame).toBe("xy");
+		expect(p.effectiveRarity).toBe("rare holo cosmos");
+	});
+
+	test("XY era: full-art EX / Ultra / Secret route to fullface + cosmos", () => {
+		for (const rarity of ["Rare Holo EX", "Rare Ultra", "Rare Secret"]) {
+			const p = holoPresentation({
+				rarity,
+				series: "XY",
+				setId: "xy1",
+				cardNumber: "1",
+				subtypes: ["Basic", "EX"],
+				holo: false,
+			});
+			expect(p.frame).toBe("fullface");
+			expect(p.effectiveRarity).toBe("rare holo cosmos");
+		}
+	});
+
+	test("XY era: Rare BREAK is revived from no-foil (fullface cosmos)", () => {
+		// 'Rare BREAK' isn't /holo/ and the printing is normal-only, so the
+		// downgrade would flatten it — the XY full-art path must beat that.
+		const p = holoPresentation({
+			rarity: "Rare BREAK",
+			series: "XY",
+			setId: "xy8",
+			cardNumber: "12",
+			subtypes: ["BREAK"],
+			holo: false,
+		});
+		expect(p.frame).toBe("fullface");
+		expect(p.effectiveRarity).toBe("rare holo cosmos");
+	});
+
 	test("HGSS era gets its own (taller) frame, distinct from DP", () => {
 		// hgss1-1 Arcanine — taller window than DP.
 		expect(

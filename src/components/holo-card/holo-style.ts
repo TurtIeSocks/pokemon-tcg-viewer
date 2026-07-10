@@ -147,6 +147,32 @@ export const HGSS_FRAME_SERIES: ReadonlySet<string> = new Set([
 export const BW_FRAME_SERIES: ReadonlySet<string> = new Set(["black & white"]);
 
 /**
+ * XY era series (2013-2016): the art-window Pokémon holos sit in their OWN
+ * window (measured off xy1 — a touch taller than BW, bottom ~49%), so they get
+ * data-frame="xy" with tunable knobs rather than simey's generic default clip.
+ * The stage badge overlaps the window's top-left corner (notch, like BW). The
+ * full-art premium cards are handled separately (see XY_FULLART_RARITIES).
+ * Lowercased TCGdex `serie.name` strings. USER-EDITABLE.
+ */
+export const XY_FRAME_SERIES: ReadonlySet<string> = new Set(["xy", "xy break"]);
+
+/**
+ * XY-era rarities whose cards are FULL-ART (foil covers the whole face): EX /
+ * Mega EX (Rare Holo EX, Rare Ultra), the gold/rainbow secrets (Rare Secret),
+ * and the rotated gold BREAK cards (Rare BREAK). XY has no CDN foil masks
+ * (buildFoilUrls only serves SWSH/SV/PGO), so these route to frame="fullface"
+ * and render the procedural galaxy foil across the entire card — the closest
+ * available match to their etched/gold foils. Lowercased raw rarities.
+ * USER-EDITABLE.
+ */
+export const XY_FULLART_RARITIES: ReadonlySet<string> = new Set([
+	"rare holo ex",
+	"rare ultra",
+	"rare secret",
+	"rare break",
+]);
+
+/**
  * POP series (promo distribution) spans two frame eras: POP 1–5 use the EX
  * frame, POP 6–9 the DP frame. Lowercased set ids. USER-EDITABLE.
  */
@@ -218,6 +244,7 @@ export type HoloFrame =
 	| "dp"
 	| "hgss"
 	| "bw"
+	| "xy"
 	| "fullface"
 	| null;
 
@@ -247,6 +274,13 @@ function frameFor(
 	if (ser && DP_FRAME_SERIES.has(ser)) return "dp";
 	if (ser && HGSS_FRAME_SERIES.has(ser)) return "hgss";
 	if (ser && BW_FRAME_SERIES.has(ser)) return "bw";
+	if (ser && XY_FRAME_SERIES.has(ser)) {
+		// Full-art premium cards (EX / Mega / secret / BREAK) foil the whole face;
+		// the rest are art-window Pokémon holos.
+		return XY_FULLART_RARITIES.has((rarity ?? "").toLowerCase())
+			? "fullface"
+			: "xy";
+	}
 	if (ser && VINTAGE_FRAME_SERIES.has(ser)) return "vintage";
 	return null;
 }
@@ -421,6 +455,15 @@ export function holoPresentation(
 		eff = "rare rainbow alt";
 	}
 
+	// XY full-art premium cards (frame="fullface" from frameFor) have no CDN
+	// mask, so give them the procedural galaxy foil over the whole face. This
+	// also revives Rare BREAK (rarity not /holo/, printing "normal"-only) which
+	// would otherwise flatten below — so it must skip the downgrade too.
+	const isXyFullArt =
+		frame === "fullface" &&
+		XY_FULLART_RARITIES.has((rarity ?? "").toLowerCase());
+	if (isXyFullArt) eff = "rare holo cosmos";
+
 	// Known non-holo printing (TCGplayer variants say "normal", no holo). Only
 	// the classic-holo families genuinely come in non-holo printings (basep-8
 	// style promos, vintage dual prints) — premium families (V/ultra/shiny/…)
@@ -438,6 +481,7 @@ export function holoPresentation(
 	if (
 		holo === false &&
 		!rarityIsExplicitHolo &&
+		!isXyFullArt &&
 		(eff === null || DOWNGRADABLE_EFFECTIVE.has(eff))
 	) {
 		return {
