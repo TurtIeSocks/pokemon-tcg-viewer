@@ -404,6 +404,29 @@
 	clip-path: var(--clip-trainer);
 }
 
+/* The cosmos foil is a 3-layer parallax: .holo-card-shine (cosmos-bottom) +
+   ::before (cosmos-middle) + ::after (cosmos-top). Each sub-layer sits on its
+   own translateZ plane under preserve-3d, so the base shine's clip-path does
+   NOT clip them — they bleed foil past the window (visible as a mismatched
+   rectangle in a stage card's badge notch, where only the base is cut). Clip
+   each sub-layer explicitly to match the base's window. */
+.holo-card[data-rarity="rare holo cosmos"] .holo-card-shine:before,
+.holo-card[data-rarity="rare holo cosmos"] .holo-card-shine:after {
+	clip-path: var(--clip);
+}
+.holo-card[data-rarity="rare holo cosmos"][data-subtypes^="stage"]
+	.holo-card-shine:before,
+.holo-card[data-rarity="rare holo cosmos"][data-subtypes^="stage"]
+	.holo-card-shine:after {
+	clip-path: var(--clip-stage);
+}
+.holo-card[data-rarity="rare holo cosmos"][data-subtypes^="supporter"]
+	.holo-card-shine:before,
+.holo-card[data-rarity="rare holo cosmos"][data-subtypes^="supporter"]
+	.holo-card-shine:after {
+	clip-path: var(--clip-trainer);
+}
+
 /*
 
   SHINE LAYERS
@@ -3408,29 +3431,30 @@
 /* ─────────────────────────────────────────────────────────────────────────────
    OUR EXTENSION — DP era clip windows (data-frame="dp")
    ─────────────────────────────────────────────────────────────────────────────
-   Diamond & Pearl / Platinum (+ POP 6-9): stage badge TOP-left like the WotC
-   vintage frame, but a lower art window. Which series/sets get this =
-   DP_FRAME_SERIES + POP_DP_SETS in holo-style.ts. (HeartGold & SoulSilver's
+   Diamond & Pearl / Platinum (+ POP 6-9): a plain art-window rectangle. The
+   cosmos foil fills it edge to edge — including BEHIND the small circular
+   stage badge and the STAGE banner, which just sit on top of it — so unlike
+   the WotC/EX frames there is NO badge notch (a rectangular notch around a
+   circular badge only ever read as a mismatched block). Which series/sets get
+   this = DP_FRAME_SERIES + POP_DP_SETS in holo-style.ts. (HeartGold & SoulSilver's
    window is taller and Call of Legends' shorter — those get their own frames
    when reported; until then they fall back to modern clips.)
 
-   ══ TUNING GUIDE (same rules as the vintage knobs) ═══════════════════════════
+   ══ TUNING GUIDE (four knobs, same rules as the vintage window) ══════════════
 
      0%                                100%
   0% ┌──────────────────────────────────┐
      │ Dialga LV.68              HP 90   │
-     │ (🐉) STAGE 2  Evolves from…       │
-     │ ┌────┐───────────────────────┐  ◄── --dp-window-top
-     │ │▓▓▓▓│      ART WINDOW        │  │
-     │ ├────┘        = FOIL          │  │
-     │ │                             │  │
+     │ (🐉) STAGE 2  Evolves from…       │  ← badge + banner sit OVER the foil
+     │ ┌─────────────────────────────┐  ◄── --dp-window-top
+     │ │        ART WINDOW           │  │
+     │ │          = FOIL             │  │
      │ └─────────────────────────────┘  ◄── --dp-window-bottom
      │ ▲ NO. 483 · attacks / text  ▲    │
      └─┼───────────────────────────┼────┘
        --dp-window-left            --dp-window-right
 
-   ▓ = badge notch: cut from the window's TOP-left ONLY on Stage 1/2 cards.
-   Measured off the dp1 Dialga + pop6/pop9 scans.
+   Measured off dp1-1 Dialga (Basic), dp1-14 Shiftry (Stage 2), pop6/pop9.
    ═════════════════════════════════════════════════════════════════════════ */
 
 .holo-card[data-frame="dp"] {
@@ -3442,26 +3466,20 @@
 	--dp-window-bottom: 52.5%; /* foil BOTTOM edge (above the species bar) */
 	--dp-window-left: 6.5%; /* foil LEFT edge */
 	--dp-window-right: 93.5%; /* foil RIGHT edge (from card LEFT!) */
-	--dp-badge-right: 26.5%; /* badge notch: reaches this far right */
-	--dp-badge-bottom: 30%; /* badge notch: reaches this far down */
 
 	/* ── DERIVED SHAPES (no need to touch) ─────────────────────────────── */
+	/* DP foil fills the whole art rectangle — the cosmos sparkle runs behind
+	   the small circular stage badge (only the opaque badge portrait covers
+	   its own spot). So NO badge notch: stage cards use the plain window too,
+	   unlike the WotC/EX frames where the badge sits over the window edge. */
 	--clip: inset(
 		var(--dp-window-top) calc(100% - var(--dp-window-right))
 			calc(100% - var(--dp-window-bottom)) var(--dp-window-left)
 	);
+	--clip-stage: var(--clip);
 	--clip-trainer: var(--clip);
 	--clip-energy: var(--clip);
-	/* Stage 1/2: window minus the badge's top-left corner. */
-	--clip-stage: polygon(
-		var(--dp-window-right) var(--dp-window-top),
-		var(--dp-window-right) var(--dp-window-bottom),
-		var(--dp-window-left) var(--dp-window-bottom),
-		var(--dp-window-left) var(--dp-badge-bottom),
-		var(--dp-badge-right) var(--dp-badge-bottom),
-		var(--dp-badge-right) var(--dp-window-top)
-	);
-	/* Reverse holo: whole face except the plain window. */
+	/* Reverse holo: whole face except the art window. */
 	--clip-invert: polygon(
 		0% 0%,
 		100% 0%,
@@ -3474,21 +3492,7 @@
 		var(--dp-window-left) var(--dp-window-bottom),
 		0% var(--dp-window-bottom)
 	);
-	/* Reverse holo, Stage 1/2: everything except the notched window. */
-	--clip-stage-invert: polygon(
-		0% 0%,
-		100% 0%,
-		100% 100%,
-		0% 100%,
-		0% var(--dp-window-bottom),
-		var(--dp-window-right) var(--dp-window-bottom),
-		var(--dp-window-right) var(--dp-window-top),
-		var(--dp-badge-right) var(--dp-window-top),
-		var(--dp-badge-right) var(--dp-badge-bottom),
-		var(--dp-window-left) var(--dp-badge-bottom),
-		var(--dp-window-left) var(--dp-window-bottom),
-		0% var(--dp-window-bottom)
-	);
+	--clip-stage-invert: var(--clip-invert);
 	--clip-trainer-invert: var(--clip-invert);
 	--clip-energy-invert: var(--clip-invert);
 }
