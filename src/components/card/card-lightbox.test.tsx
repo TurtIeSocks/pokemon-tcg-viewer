@@ -55,4 +55,37 @@ describe("<CardLightbox />", () => {
 		fireEvent.keyDown(window, { key: "Escape" });
 		expect(closed).toBe(1);
 	});
+
+	test("re-enables pointer events on the portal root (modal stacking)", () => {
+		// When opened from the card MODAL, Radix + RemoveScroll set
+		// pointer-events: none on <body>; the portal inherits it and every click
+		// fell through to the modal underneath (dead backdrop/X, dead mouse
+		// tilt, outside clicks dismissing the whole modal). The root must opt
+		// back in.
+		render(<CardLightbox open onClose={() => {}} card={card} />);
+		const root = document.querySelector(".z-120");
+		expect(root?.className).toContain("pointer-events-auto");
+	});
+
+	test("Escape is captured so a stacked Radix dialog does not also close", () => {
+		let closed = 0;
+		let reachedDocument = 0;
+		// Stand-in for Radix's document-level Escape listener (capture, like
+		// DismissableLayer). The lightbox's window-capture listener fires first
+		// and must stop propagation so only the lightbox peels off.
+		const radixStandIn = (e: KeyboardEvent) => {
+			if (e.key === "Escape") reachedDocument++;
+		};
+		document.addEventListener("keydown", radixStandIn, { capture: true });
+		try {
+			render(<CardLightbox open onClose={() => closed++} card={card} />);
+			fireEvent.keyDown(document.body, { key: "Escape" });
+			expect(closed).toBe(1);
+			expect(reachedDocument).toBe(0);
+		} finally {
+			document.removeEventListener("keydown", radixStandIn, {
+				capture: true,
+			});
+		}
+	});
 });
