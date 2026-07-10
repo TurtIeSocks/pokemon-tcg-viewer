@@ -3378,13 +3378,26 @@
 	--ex-badge-right: 14.5%; /* badge notch: reaches this far right */
 	--ex-badge-top: 43.5%; /* badge notch: starts this far down */
 
+	/* ── TRAINER KNOBS ─────────────────────────────────────────────────────
+	   EX-era Trainers (Rocket's Admin. etc.) foil only the artwork box, which
+	   sits LOWER than the Pokémon window — the TRAINER banner + name plate above
+	   it are not foil. Measured off the cel25c-86A Rocket's Admin. scan. */
+	--ex-trainer-top: 15%; /* foil TOP edge (under the name plate) */
+	--ex-trainer-bottom: 48.5%; /* foil BOTTOM edge (above the text box) */
+	--ex-trainer-left: 7%; /* foil LEFT edge */
+	--ex-trainer-right: 92%; /* foil RIGHT edge (from card LEFT!) */
+
 	/* ── DERIVED SHAPES (no need to touch) ─────────────────────────────── */
-	/* Plain window: Basics, Trainers, Energies. */
+	/* Plain window: Basics, Energies. */
 	--clip: inset(
 		var(--ex-window-top) calc(100% - var(--ex-window-right))
 			calc(100% - var(--ex-window-bottom)) var(--ex-window-left)
 	);
-	--clip-trainer: var(--clip);
+	/* Trainer window: the artwork box (derived from TRAINER KNOBS). */
+	--clip-trainer: inset(
+		var(--ex-trainer-top) calc(100% - var(--ex-trainer-right))
+			calc(100% - var(--ex-trainer-bottom)) var(--ex-trainer-left)
+	);
 	--clip-energy: var(--clip);
 	/* Stage 1/2: the same window minus the badge's bottom-left corner. */
 	--clip-stage: polygon(
@@ -3424,7 +3437,19 @@
 		var(--ex-badge-right) var(--ex-window-bottom),
 		0% var(--ex-window-bottom)
 	);
-	--clip-trainer-invert: var(--clip-invert);
+	/* Reverse-holo trainer: everything EXCEPT the artwork box. */
+	--clip-trainer-invert: polygon(
+		0% 0%,
+		100% 0%,
+		100% 100%,
+		0% 100%,
+		0% var(--ex-trainer-bottom),
+		var(--ex-trainer-right) var(--ex-trainer-bottom),
+		var(--ex-trainer-right) var(--ex-trainer-top),
+		var(--ex-trainer-left) var(--ex-trainer-top),
+		var(--ex-trainer-left) var(--ex-trainer-bottom),
+		0% var(--ex-trainer-bottom)
+	);
 	--clip-energy-invert: var(--clip-invert);
 }
 
