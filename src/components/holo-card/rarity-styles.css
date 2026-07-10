@@ -3537,3 +3537,44 @@
 	--clip-trainer-invert: var(--clip-invert);
 	--clip-energy-invert: var(--clip-invert);
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   OUR EXTENSION — Black & White era clip windows (data-frame="bw")
+   ─────────────────────────────────────────────────────────────────────────────
+   Black & White (2011-2013): the DP/HGSS plain window (stage badge sits to the
+   LEFT, outside the art — no notch), but the SHORTEST of the trio (bottom sits
+   a touch higher). Which series get this = BW_FRAME_SERIES in holo-style.ts.
+   Four knobs; measured off bw1-26 Reshiram (Basic) + bw1-5 Serperior (Stage 2).
+───────────────────────────────────────────────────────────────────────────── */
+
+.holo-card[data-frame="bw"] {
+	/* ── THE FOUR KNOBS ────────────────────────────────────────────────── */
+	--bw-window-top: 9%; /* foil TOP edge (art border, under the name) */
+	--bw-window-bottom: 51%; /* foil BOTTOM edge (above the species bar) */
+	--bw-window-left: 6.5%; /* foil LEFT edge */
+	--bw-window-right: 93.5%; /* foil RIGHT edge (from card LEFT!) */
+
+	/* ── DERIVED SHAPES (no need to touch) — plain window, no badge notch. */
+	--clip: inset(
+		var(--bw-window-top) calc(100% - var(--bw-window-right))
+			calc(100% - var(--bw-window-bottom)) var(--bw-window-left)
+	);
+	--clip-stage: var(--clip);
+	--clip-trainer: var(--clip);
+	--clip-energy: var(--clip);
+	--clip-invert: polygon(
+		0% 0%,
+		100% 0%,
+		100% 100%,
+		0% 100%,
+		0% var(--bw-window-bottom),
+		var(--bw-window-right) var(--bw-window-bottom),
+		var(--bw-window-right) var(--bw-window-top),
+		var(--bw-window-left) var(--bw-window-top),
+		var(--bw-window-left) var(--bw-window-bottom),
+		0% var(--bw-window-bottom)
+	);
+	--clip-stage-invert: var(--clip-invert);
+	--clip-trainer-invert: var(--clip-invert);
+	--clip-energy-invert: var(--clip-invert);
+}

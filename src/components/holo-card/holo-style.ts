@@ -138,6 +138,15 @@ export const HGSS_FRAME_SERIES: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Black & White era series: the DP-style plain window (stage badge sits to
+ * the LEFT, outside the art — no notch), but the SHORTEST of the trio (its
+ * bottom sits a touch higher than DP/HGSS). Own knob set via
+ * data-frame="bw" (rarity-styles.css). Lowercased TCGdex `serie.name`
+ * strings. USER-EDITABLE.
+ */
+export const BW_FRAME_SERIES: ReadonlySet<string> = new Set(["black & white"]);
+
+/**
  * POP series (promo distribution) spans two frame eras: POP 1–5 use the EX
  * frame, POP 6–9 the DP frame. Lowercased set ids. USER-EDITABLE.
  */
@@ -208,6 +217,7 @@ export type HoloFrame =
 	| "ex"
 	| "dp"
 	| "hgss"
+	| "bw"
 	| "fullface"
 	| null;
 
@@ -236,6 +246,7 @@ function frameFor(
 	if (ser && EX_FRAME_SERIES.has(ser)) return "ex";
 	if (ser && DP_FRAME_SERIES.has(ser)) return "dp";
 	if (ser && HGSS_FRAME_SERIES.has(ser)) return "hgss";
+	if (ser && BW_FRAME_SERIES.has(ser)) return "bw";
 	if (ser && VINTAGE_FRAME_SERIES.has(ser)) return "vintage";
 	return null;
 }

@@ -342,6 +342,18 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		).toBeNull();
 	});
 
+	test("Black & White era gets its own (shortest) frame", () => {
+		expect(
+			holoPresentation({
+				rarity: "Rare Holo",
+				series: "Black & White",
+				setId: "bw1",
+				cardNumber: "26",
+				subtypes: ["Basic"],
+			}).frame,
+		).toBe("bw");
+	});
+
 	test("HGSS era gets its own (taller) frame, distinct from DP", () => {
 		// hgss1-1 Arcanine — taller window than DP.
 		expect(
