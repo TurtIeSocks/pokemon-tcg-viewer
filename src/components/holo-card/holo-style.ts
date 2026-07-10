@@ -118,14 +118,24 @@ export const EX_FRAME_SERIES: ReadonlySet<string> = new Set([
  * WotC vintage frame) but a lower, differently-sized art window. Own knob set
  * via data-frame="dp" (rarity-styles.css). Lowercased TCGdex `serie.name`
  * strings. USER-EDITABLE.
- *
- * NOT included yet (their windows differ — HGSS is taller, Call of Legends
- * shorter; add dedicated frames when reported): "heartgold & soulsilver",
- * "call of legends".
  */
 export const DP_FRAME_SERIES: ReadonlySet<string> = new Set([
 	"diamond & pearl",
 	"platinum",
+]);
+
+/**
+ * HGSS era series (HeartGold & SoulSilver, incl. the JP LEGEND line): the DP
+ * layout but with a TALLER art window (its bottom sits ~2% lower). Own knob
+ * set via data-frame="hgss" (rarity-styles.css). Lowercased TCGdex
+ * `serie.name` strings. USER-EDITABLE.
+ *
+ * NOT included (its window is SHORTER — add a dedicated frame when reported):
+ * "call of legends".
+ */
+export const HGSS_FRAME_SERIES: ReadonlySet<string> = new Set([
+	"heartgold & soulsilver",
+	"legend", // JP L series — HGSS era
 ]);
 
 /**
@@ -193,7 +203,14 @@ export const CLASSIC_FULLFACE_NUMBERS: ReadonlySet<string> = new Set([
 ]);
 
 /** Frame treatment for the procedural clip windows (data-frame attribute). */
-export type HoloFrame = "vintage" | "ecard" | "ex" | "dp" | "fullface" | null;
+export type HoloFrame =
+	| "vintage"
+	| "ecard"
+	| "ex"
+	| "dp"
+	| "hgss"
+	| "fullface"
+	| null;
 
 function frameFor(
 	series?: string,
@@ -219,6 +236,7 @@ function frameFor(
 	if (ser && ECARD_FRAME_SERIES.has(ser)) return "ecard";
 	if (ser && EX_FRAME_SERIES.has(ser)) return "ex";
 	if (ser && DP_FRAME_SERIES.has(ser)) return "dp";
+	if (ser && HGSS_FRAME_SERIES.has(ser)) return "hgss";
 	if (ser && VINTAGE_FRAME_SERIES.has(ser)) return "vintage";
 	return null;
 }

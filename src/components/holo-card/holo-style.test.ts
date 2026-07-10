@@ -317,6 +317,23 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		).toBe("fullface");
 	});
 
+	test("HGSS era gets its own (taller) frame, distinct from DP", () => {
+		// hgss1-1 Arcanine — taller window than DP.
+		expect(
+			holoPresentation({
+				rarity: "Rare Holo",
+				series: "HeartGold & SoulSilver",
+				setId: "hgss1",
+				cardNumber: "1",
+				subtypes: ["Stage 1"],
+			}).frame,
+		).toBe("hgss");
+		// JP LEGEND line shares it.
+		expect(
+			holoPresentation({ rarity: "Holo Rare", series: "LEGEND" }).frame,
+		).toBe("hgss");
+	});
+
 	test("reverse printing suffixes the base rarity (CardProxy isReverse)", () => {
 		expect(holoPresentation({ rarity: "Common", reverse: true })).toEqual({
 			effectiveRarity: "common reverse holo",

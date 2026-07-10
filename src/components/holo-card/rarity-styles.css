@@ -3496,3 +3496,44 @@
 	--clip-trainer-invert: var(--clip-invert);
 	--clip-energy-invert: var(--clip-invert);
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   OUR EXTENSION — HGSS era clip windows (data-frame="hgss")
+   ─────────────────────────────────────────────────────────────────────────────
+   HeartGold & SoulSilver (+ JP LEGEND): same layout as the DP frame (top-left
+   badge, no notch — foil runs behind the badge) but a TALLER art window (its
+   bottom sits ~2% lower). Which series get this = HGSS_FRAME_SERIES in
+   holo-style.ts. Four knobs; measured off hgss1-1 Arcanine.
+───────────────────────────────────────────────────────────────────────────── */
+
+.holo-card[data-frame="hgss"] {
+	/* ── THE FOUR KNOBS ────────────────────────────────────────────────── */
+	--hgss-window-top: 9.5%; /* foil TOP edge (art border, under the name) */
+	--hgss-window-bottom: 54%; /* foil BOTTOM edge (above the species bar) */
+	--hgss-window-left: 6%; /* foil LEFT edge */
+	--hgss-window-right: 94%; /* foil RIGHT edge (from card LEFT!) */
+
+	/* ── DERIVED SHAPES (no need to touch) — plain window, no badge notch. */
+	--clip: inset(
+		var(--hgss-window-top) calc(100% - var(--hgss-window-right))
+			calc(100% - var(--hgss-window-bottom)) var(--hgss-window-left)
+	);
+	--clip-stage: var(--clip);
+	--clip-trainer: var(--clip);
+	--clip-energy: var(--clip);
+	--clip-invert: polygon(
+		0% 0%,
+		100% 0%,
+		100% 100%,
+		0% 100%,
+		0% var(--hgss-window-bottom),
+		var(--hgss-window-right) var(--hgss-window-bottom),
+		var(--hgss-window-right) var(--hgss-window-top),
+		var(--hgss-window-left) var(--hgss-window-top),
+		var(--hgss-window-left) var(--hgss-window-bottom),
+		0% var(--hgss-window-bottom)
+	);
+	--clip-stage-invert: var(--clip-invert);
+	--clip-trainer-invert: var(--clip-invert);
+	--clip-energy-invert: var(--clip-invert);
+}
