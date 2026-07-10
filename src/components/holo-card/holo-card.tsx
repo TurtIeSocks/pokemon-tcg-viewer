@@ -387,8 +387,12 @@ export function HoloCard({
 			    (+ ::before/::after sub-layers), .card__glare → glare div
 			    (+ ::after). Real elements — CSS can't chain pseudo-elements, and
 			    the recipes need all five compositing layers. Gated on hasImage so
-			    the foil never renders over the missing-image identity placeholder. */}
-			{hasImage && (
+			    the foil never renders over the missing-image identity placeholder,
+			    and on !maskPending so a masked card paints NO foil until its CDN
+			    mask lands — otherwise the `:not(.masked)` procedural recipe flashes
+			    a full-rectangle foil for a beat. When the mask resolves, the layers
+			    mount already-masked (same render adds the `masked` class). */}
+			{hasImage && !foil.maskPending && (
 				<>
 					<div className="holo-card-shine" aria-hidden="true" />
 					<div className="holo-card-glare" aria-hidden="true" />
