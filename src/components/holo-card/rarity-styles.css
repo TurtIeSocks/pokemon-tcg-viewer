@@ -3245,3 +3245,71 @@
 	--clip-energy: none;
 	--clip-energy-invert: none;
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   OUR EXTENSION — e-Card era clip windows (data-frame="ecard")
+   ─────────────────────────────────────────────────────────────────────────────
+   Expedition / Aquapolis / Skyridge (+ JP e sets): a ROUNDED art window, and
+   the e-reader dot-code strips — a column along the LEFT edge and a row along
+   the BOTTOM — which are printed matte black and are NEVER foil. The reverse
+   holo therefore foils the body minus the art window, clipped away from both
+   strips. Which series get this = ECARD_FRAME_SERIES in holo-style.ts.
+
+   ══ TUNING GUIDE (same rules as the vintage knobs) ═══════════════════════════
+
+     0%                                100%
+  0% ┌─┬────────────────────────────────┐
+     │▓│ STAGE 1     Aerodactyl  70 HP  │
+     │▓│ ╭──────────────────────────╮ ◄── --ecard-window-top
+     │▓│ │                          │  │
+     │▓│ │    ROUNDED ART WINDOW    │  │
+     │▓│ ╰──────────────────────────╯ ◄── --ecard-window-bottom
+     │▓│ ▲ Poké-POWER · attacks…    ▲  │
+     │▓│ ◄── --ecard-strip-left        │
+     ├─┴──────────────────────────────◄── --ecard-strip-bottom
+  ▓▓▓│▓▓▓▓▓  e-reader dot code  ▓▓▓▓▓▓│      (foil stops ABOVE this line)
+     └─────────────────────────────────┘
+       --ecard-window-left        --ecard-window-right
+
+   ▓ = dot-code strips (no foil). Measured off the ecard3-1 Skyridge scan.
+   Expedition's bottom strip is taller — bump --ecard-strip-bottom down if
+   its reverses clip into the dots.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+.holo-card[data-frame="ecard"] {
+	/* ── THE SIX KNOBS ─────────────────────────────────────────────────── */
+	--ecard-window-top: 12%; /* art window TOP edge */
+	--ecard-window-bottom: 50.5%; /* art window BOTTOM edge */
+	--ecard-window-left: 9.5%; /* art window LEFT edge */
+	--ecard-window-right: 91%; /* art window RIGHT edge (from card LEFT!) */
+	--ecard-strip-left: 5%; /* foil starts RIGHT of the left dot column */
+	--ecard-strip-bottom: 92%; /* foil stops ABOVE the bottom dot row */
+
+	/* ── DERIVED SHAPES (no need to touch) ─────────────────────────────── */
+	/* Holo window: the rounded art box (crystal + holo rares). */
+	--clip: inset(
+		var(--ecard-window-top) calc(100% - var(--ecard-window-right))
+			calc(100% - var(--ecard-window-bottom)) var(--ecard-window-left) round
+			3.5%
+	);
+	/* e-Card evolution icons live in the header — no stage notch needed. */
+	--clip-stage: var(--clip);
+	--clip-trainer: var(--clip);
+	--clip-energy: var(--clip);
+	/* Reverse holo: the body minus the art window, excluding both strips. */
+	--clip-invert: polygon(
+		var(--ecard-strip-left) 0%,
+		100% 0%,
+		100% var(--ecard-strip-bottom),
+		var(--ecard-strip-left) var(--ecard-strip-bottom),
+		var(--ecard-strip-left) var(--ecard-window-bottom),
+		var(--ecard-window-right) var(--ecard-window-bottom),
+		var(--ecard-window-right) var(--ecard-window-top),
+		var(--ecard-window-left) var(--ecard-window-top),
+		var(--ecard-window-left) var(--ecard-window-bottom),
+		var(--ecard-strip-left) var(--ecard-window-bottom)
+	);
+	--clip-stage-invert: var(--clip-invert);
+	--clip-trainer-invert: var(--clip-invert);
+	--clip-energy-invert: var(--clip-invert);
+}

@@ -342,6 +342,32 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		).toBe("rare holo cosmos");
 	});
 
+	test("e-Card era gets its own frame (rounded window + dot-code strips)", () => {
+		// ecard3-1 Aerodactyl — reverse foil must dodge the e-reader strips.
+		const std = holoPresentation({
+			rarity: "Rare Holo",
+			series: "E-Card",
+			setId: "ecard3",
+			cardNumber: "1",
+		});
+		expect(std.frame).toBe("ecard");
+		expect(std.effectiveRarity).toBe("rare holo cosmos"); // era still cosmos
+		const rev = holoPresentation({
+			rarity: "Rare",
+			series: "E-Card",
+			setId: "ecard3",
+			cardNumber: "1",
+			reverse: true,
+		});
+		expect(rev.frame).toBe("ecard");
+		expect(rev.effectiveRarity).toBe("rare reverse holo");
+		// JP e series routes the same way.
+		expect(
+			holoPresentation({ rarity: "Holo Rare", series: "ポケモンカードe" })
+				.frame,
+		).toBe("ecard");
+	});
+
 	test("Legendary Collection: own TCGdex serie → cosmos + vintage frame", () => {
 		const p = holoPresentation({
 			rarity: "Rare Holo",

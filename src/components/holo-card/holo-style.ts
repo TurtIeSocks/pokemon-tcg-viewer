@@ -78,7 +78,6 @@ export const VINTAGE_FRAME_SERIES: ReadonlySet<string> = new Set([
 	"base",
 	"gym",
 	"neo",
-	"e-card",
 	"np", // Nintendo Black Star Promos — WotC-style frame
 	"legendary collection", // WotC-frame reprint set (own TCGdex serie)
 
@@ -88,7 +87,17 @@ export const VINTAGE_FRAME_SERIES: ReadonlySet<string> = new Set([
 	"ポケモンカード★neo", // neo
 	"vs", // VS
 	"web", // web
-	"ポケモンカードe", // e — e-Card era
+]);
+
+/**
+ * e-Card era series (Expedition/Aquapolis/Skyridge + the JP e sets): rounded
+ * art window plus the e-reader dot-code strips (left column + bottom row)
+ * that are never foil. Gets its own knob set via data-frame="ecard"
+ * (rarity-styles.css). Lowercased TCGdex `serie.name` strings. USER-EDITABLE.
+ */
+export const ECARD_FRAME_SERIES: ReadonlySet<string> = new Set([
+	"e-card",
+	"ポケモンカードe", // JP e series
 ]);
 
 /**
@@ -138,7 +147,7 @@ export const CLASSIC_FULLFACE_NUMBERS: ReadonlySet<string> = new Set([
 ]);
 
 /** Frame treatment for the procedural clip windows (data-frame attribute). */
-export type HoloFrame = "vintage" | "fullface" | null;
+export type HoloFrame = "vintage" | "ecard" | "fullface" | null;
 
 function frameFor(
 	series?: string,
@@ -157,8 +166,9 @@ function frameFor(
 		}
 		return "fullface";
 	}
-	if (series && VINTAGE_FRAME_SERIES.has(series.toLowerCase()))
-		return "vintage";
+	const ser = series?.toLowerCase();
+	if (ser && ECARD_FRAME_SERIES.has(ser)) return "ecard";
+	if (ser && VINTAGE_FRAME_SERIES.has(ser)) return "vintage";
 	return null;
 }
 
