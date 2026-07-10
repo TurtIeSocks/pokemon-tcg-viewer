@@ -23,6 +23,18 @@ export function hasReverseVariant(variants?: string[] | null): boolean {
 }
 
 /**
+ * True when the reverse holo is the card's ONLY printing (e.g. the WotC
+ * movie promos Scizor 33 / Entei 34 / Pichu 35 — no standard print exists).
+ * Such cards render the reverse foil by default.
+ */
+export function isReverseOnlyPrinting(variants?: string[] | null): boolean {
+	return (
+		!!variants?.length &&
+		variants.every((v) => v.toLowerCase().startsWith("reverse"))
+	);
+}
+
+/**
  * True when a stack's recorded printing is the reverse holo one. Prefers the
  * exact TCGdex printing; falls back to the coarse legacy `variant` key.
  */

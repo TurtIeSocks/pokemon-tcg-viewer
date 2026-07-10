@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { useUiPrefs } from "../../store/ui-prefs";
 import "./holo-card.css";
 import "./rarity-styles.css";
+import { isReverseOnlyPrinting } from "../../lib/card-variants";
 import { cdnImage } from "./cdn-image";
 import { cdnSetId } from "./foil-assets";
 import { holoPresentation, variantsToHolo } from "./holo-style";
@@ -145,7 +146,10 @@ export function HoloCard({
 		subtypes,
 		supertype,
 		holo: variantsToHolo(variants),
-		reverse,
+		// Cards whose ONLY printing is the reverse holo (WotC movie promos:
+		// Scizor 33 / Entei 34 / Pichu 35) render it by default — there is no
+		// standard print to show.
+		reverse: reverse || isReverseOnlyPrinting(variants),
 	});
 	// Real per-card CDN foil + mask (modern sets); 404 → procedural fallback.
 	// Keyed on the EFFECTIVE rarity so the foil URL always agrees with the CSS

@@ -2,7 +2,10 @@ import { ClientOnly, Link } from "@tanstack/react-router";
 import { type CSSProperties, type ReactNode, useEffect, useState } from "react";
 import { cardImage } from "@/lib/card-image";
 import type { CardTab } from "../../lib/card-route";
-import { hasReverseVariant } from "../../lib/card-variants";
+import {
+	hasReverseVariant,
+	isReverseOnlyPrinting,
+} from "../../lib/card-variants";
 import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import { PRICING_ENABLED } from "../../lib/pricing-flag";
 import type { FocusCardData } from "../../server/card-mappers";
@@ -82,9 +85,11 @@ export function CardCockpit({
 	const accent = getReadableAccent(getCardAccent(card.types));
 	const variants = holo.variants;
 	// Printing toggle: flip the art rail between the standard printing and the
-	// reverse holo when the card was printed in both. Ephemeral view state —
-	// reset when the modal swipes to another card.
-	const canReverse = hasReverseVariant(variants);
+	// reverse holo when the card was printed in BOTH. Reverse-only cards (WotC
+	// movie promos) render the reverse by default and need no toggle. Ephemeral
+	// view state — reset when the modal swipes to another card.
+	const canReverse =
+		hasReverseVariant(variants) && !isReverseOnlyPrinting(variants);
 	const [showReverse, setShowReverse] = useState(false);
 	// Click-to-enlarge: the focus card opens a full-bleed hi-res zoom for close
 	// inspection. Reset both view-state flags when the modal swipes to another card.

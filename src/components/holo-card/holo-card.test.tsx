@@ -158,6 +158,23 @@ describe("<HoloCard />", () => {
 		expect(root.classList.contains("reverse-holo")).toBe(true);
 	});
 
+	test("reverse-only printings render the reverse foil by default", () => {
+		// basep-34 Entei (WotC movie promo): variants = ["reverse"] only.
+		const { container } = render(
+			<HoloCard
+				{...baseProps}
+				rarity="Promo"
+				series="Base"
+				variants={["reverse"]}
+			/>,
+		);
+		const root = container.querySelector(".holo-card") as HTMLElement;
+		expect(root.getAttribute("data-rarity")).toBe("promo reverse holo");
+		expect(root.classList.contains("reverse-holo")).toBe(true);
+		// Vintage frame still applies (Base series) → vintage inverse window.
+		expect(root.getAttribute("data-frame")).toBe("vintage");
+	});
+
 	test("Japanese vintage series get data-frame=vintage too", () => {
 		const { container } = render(
 			<HoloCard
