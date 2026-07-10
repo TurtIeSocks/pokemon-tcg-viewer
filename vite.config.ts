@@ -8,7 +8,9 @@ import { defineConfig } from "vite";
 import { versionPlugin } from "./src/lib/version-check/vite-plugin-version";
 
 export default defineConfig({
-	server: { port: 3000 },
+	// PORT: honored so Claude Preview's autoPort can run several sessions'
+	// dev servers side by side (each gets its own assigned port).
+	server: { port: Number(process.env.PORT) || 3000 },
 	resolve: {
 		alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
 	},

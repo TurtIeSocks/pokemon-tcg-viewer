@@ -4,18 +4,28 @@
 		{
 			"name": "vite",
 			"runtimeExecutable": "bun",
-			"runtimeArgs": ["run", "dev:preview", "--port", "6201", "--host"],
+			"runtimeArgs": [
+				"run",
+				"dev:preview",
+				"--host"
+			],
 			"port": 6201,
 			"env": {
 				"VITE_CLAUDE_PREVIEW": "true"
-			}
+			},
+			"autoPort": true
 		},
 		{
 			"name": "preview",
 			"runtimeExecutable": "node",
-			"runtimeArgs": ["--env-file-if-exists=.env", ".output/server/index.mjs"],
+			"runtimeArgs": [
+				"--env-file-if-exists=.env",
+				".output/server/index.mjs"
+			],
 			"port": 3100,
-			"env": { "PORT": "3100" }
+			"env": {
+				"PORT": "3100"
+			}
 		}
 	]
 }
