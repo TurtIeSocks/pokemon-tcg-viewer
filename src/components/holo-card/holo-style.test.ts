@@ -379,8 +379,8 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		expect(p.effectiveRarity).toBe("rare holo cosmos");
 	});
 
-	test("XY era: full-art EX / Ultra / Secret route to fullface + cosmos", () => {
-		for (const rarity of ["Rare Holo EX", "Rare Ultra", "Rare Secret"]) {
+	test("XY era: full-art EX / Mega route to fullface + sunpillar etch", () => {
+		for (const rarity of ["Rare Holo EX", "Rare Ultra"]) {
 			const p = holoPresentation({
 				rarity,
 				series: "XY",
@@ -390,23 +390,28 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 				holo: false,
 			});
 			expect(p.frame).toBe("fullface");
-			expect(p.effectiveRarity).toBe("rare holo cosmos");
+			expect(p.effectiveRarity).toBe("rare holo v");
 		}
 	});
 
-	test("XY era: Rare BREAK is revived from no-foil (fullface cosmos)", () => {
+	test("XY era: gold secrets + BREAK route to fullface + gold foil", () => {
 		// 'Rare BREAK' isn't /holo/ and the printing is normal-only, so the
 		// downgrade would flatten it — the XY full-art path must beat that.
-		const p = holoPresentation({
-			rarity: "Rare BREAK",
-			series: "XY",
-			setId: "xy8",
-			cardNumber: "12",
-			subtypes: ["BREAK"],
-			holo: false,
-		});
-		expect(p.frame).toBe("fullface");
-		expect(p.effectiveRarity).toBe("rare holo cosmos");
+		for (const [rarity, setId, number, subtypes] of [
+			["Rare Secret", "xy2", "107", ["MEGA", "EX"]],
+			["Rare BREAK", "xy8", "12", ["BREAK"]],
+		] as const) {
+			const p = holoPresentation({
+				rarity,
+				series: "XY",
+				setId,
+				cardNumber: number,
+				subtypes: [...subtypes],
+				holo: false,
+			});
+			expect(p.frame).toBe("fullface");
+			expect(p.effectiveRarity).toBe("rare secret");
+		}
 	});
 
 	test("HGSS era gets its own (taller) frame, distinct from DP", () => {

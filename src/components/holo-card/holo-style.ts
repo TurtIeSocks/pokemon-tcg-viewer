@@ -161,9 +161,10 @@ export const XY_FRAME_SERIES: ReadonlySet<string> = new Set(["xy", "xy break"]);
  * Mega EX (Rare Holo EX, Rare Ultra), the gold/rainbow secrets (Rare Secret),
  * and the rotated gold BREAK cards (Rare BREAK). XY has no CDN foil masks
  * (buildFoilUrls only serves SWSH/SV/PGO), so these route to frame="fullface"
- * and render the procedural galaxy foil across the entire card — the closest
- * available match to their etched/gold foils. Lowercased raw rarities.
- * USER-EDITABLE.
+ * plus a procedural simey recipe matched to the physical foil: EX/Mega get the
+ * sunpillar etch ("rare holo v"), secrets + BREAK the gold-glitter geometric
+ * foil ("rare secret") — both recipes carry :not(.masked) fallbacks, so they
+ * render fully without CDN assets. Lowercased raw rarities. USER-EDITABLE.
  */
 export const XY_FULLART_RARITIES: ReadonlySet<string> = new Set([
 	"rare holo ex",
@@ -456,13 +457,22 @@ export function holoPresentation(
 	}
 
 	// XY full-art premium cards (frame="fullface" from frameFor) have no CDN
-	// mask, so give them the procedural galaxy foil over the whole face. This
-	// also revives Rare BREAK (rarity not /holo/, printing "normal"-only) which
-	// would otherwise flatten below — so it must skip the downgrade too.
+	// mask, but the simey recipes carry :not(.masked) procedural fallbacks —
+	// route each card class to its authentic foil character: EX/Mega (Rare Holo
+	// EX / Rare Ultra) get the sunpillar etch ("rare holo v"), and the gold
+	// cards (Rare Secret + the gold-framed Rare BREAK) get the gold-glitter
+	// geometric foil ("rare secret"). This also revives Rare BREAK (rarity not
+	// /holo/, printing "normal"-only) which would otherwise flatten below — so
+	// it must skip the downgrade too.
+	const rarityLower = (rarity ?? "").toLowerCase();
 	const isXyFullArt =
-		frame === "fullface" &&
-		XY_FULLART_RARITIES.has((rarity ?? "").toLowerCase());
-	if (isXyFullArt) eff = "rare holo cosmos";
+		frame === "fullface" && XY_FULLART_RARITIES.has(rarityLower);
+	if (isXyFullArt) {
+		eff =
+			rarityLower === "rare secret" || rarityLower === "rare break"
+				? "rare secret"
+				: "rare holo v";
+	}
 
 	// Known non-holo printing (TCGplayer variants say "normal", no holo). Only
 	// the classic-holo families genuinely come in non-holo printings (basep-8
