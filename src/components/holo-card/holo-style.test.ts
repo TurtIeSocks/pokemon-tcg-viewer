@@ -317,6 +317,31 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		).toBe("fullface");
 	});
 
+	test("explicit 'Rare Holo' rarity is never downgraded by a normal-only variant", () => {
+		// Call of Legends: 33 cards are rarity "Rare Holo" but TCGdex lists only
+		// ['normal'] (a data gap). The explicit holo rarity must win.
+		expect(
+			holoPresentation({
+				rarity: "Rare Holo",
+				series: "Call of Legends",
+				setId: "col1",
+				cardNumber: "1",
+				subtypes: ["Stage 1"],
+				holo: false, // variantsToHolo(['normal'])
+			}).effectiveRarity,
+		).toBe("rare holo cosmos");
+		// …but a non-committal rarity (Promo) still downgrades on holo=false.
+		expect(
+			holoPresentation({
+				rarity: "Promo",
+				series: "Base",
+				setId: "basep",
+				cardNumber: "8",
+				holo: false,
+			}).effectiveRarity,
+		).toBeNull();
+	});
+
 	test("HGSS era gets its own (taller) frame, distinct from DP", () => {
 		// hgss1-1 Arcanine — taller window than DP.
 		expect(

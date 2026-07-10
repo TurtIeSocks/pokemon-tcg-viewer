@@ -125,17 +125,16 @@ export const DP_FRAME_SERIES: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * HGSS era series (HeartGold & SoulSilver, incl. the JP LEGEND line): the DP
- * layout but with a TALLER art window (its bottom sits ~2% lower). Own knob
- * set via data-frame="hgss" (rarity-styles.css). Lowercased TCGdex
- * `serie.name` strings. USER-EDITABLE.
- *
- * NOT included (its window is SHORTER — add a dedicated frame when reported):
- * "call of legends".
+ * HGSS era series (HeartGold & SoulSilver, the JP LEGEND line, and Call of
+ * Legends — same-era frame, verified off col1-1): the DP layout but with a
+ * TALLER art window (its bottom sits ~2% lower). Own knob set via
+ * data-frame="hgss" (rarity-styles.css). Lowercased TCGdex `serie.name`
+ * strings. USER-EDITABLE.
  */
 export const HGSS_FRAME_SERIES: ReadonlySet<string> = new Set([
 	"heartgold & soulsilver",
 	"legend", // JP L series — HGSS era
+	"call of legends", // shares the HGSS window
 ]);
 
 /**
@@ -417,7 +416,19 @@ export function holoPresentation(
 	// are ALWAYS physically foil, and TCGdex variant flags are noisy there
 	// (shiny-vault + V promos arrive flagged "normal"). Applied AFTER the
 	// pipeline so a promo remapped to a foil family keeps its foil.
-	if (holo === false && (eff === null || DOWNGRADABLE_EFFECTIVE.has(eff))) {
+	//
+	// NEVER downgrade a card whose RARITY itself says holo ("Rare Holo",
+	// "Holo Rare", …). That rarity is ground truth; the "normal"-only variant
+	// list is a TCGdex data gap (whole sets like Call of Legends list no holo
+	// printing at all), not a real non-holo printing. The downgrade is only
+	// for non-committal rarities (Promo / Rare / None) that we UPGRADED into a
+	// foil family — where the printing is the tie-breaker.
+	const rarityIsExplicitHolo = /holo/i.test(rarity ?? "");
+	if (
+		holo === false &&
+		!rarityIsExplicitHolo &&
+		(eff === null || DOWNGRADABLE_EFFECTIVE.has(eff))
+	) {
 		return {
 			effectiveRarity: null,
 			trainerGallery: isGallery,
