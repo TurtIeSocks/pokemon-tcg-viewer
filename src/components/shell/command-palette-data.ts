@@ -9,7 +9,10 @@ import {
 	type LucideIcon,
 	ScanLine,
 	Search,
+	Sparkles,
 	UserRound,
+	Users,
+	Zap,
 } from "lucide-react";
 import { m } from "@/paraglide/messages";
 
@@ -64,6 +67,24 @@ export const NAV_DESTINATIONS: readonly NavDestination[] = [
 		to: "/scan",
 		icon: ScanLine,
 		keywords: "camera ocr add",
+	},
+	{
+		label: () => m.home_supertype_pokemon(),
+		to: "/pokemon",
+		icon: Sparkles,
+		keywords: "pokedex browse creatures supertype",
+	},
+	{
+		label: () => m.home_supertype_trainers(),
+		to: "/trainer",
+		icon: Users,
+		keywords: "browse supporter item stadium supertype",
+	},
+	{
+		label: () => m.home_supertype_energy(),
+		to: "/energy",
+		icon: Zap,
+		keywords: "browse basic special supertype",
 	},
 	{
 		label: () => m.command_palette_nav_profile(),

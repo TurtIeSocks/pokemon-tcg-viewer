@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { HoloCardData } from "../components/holo-card";
 import type { PokemonListEntry } from "./card-mappers";
-import { buildPokedex, dexByName, nameByDex } from "./pokemon-dex";
+import { buildPokedex, dexByName, nameByDex, resolveDex } from "./pokemon-dex";
 
 const list: PokemonListEntry[] = [
 	{ name: "bulbasaur", url: "https://pokeapi.co/api/v2/pokemon/1/" },
@@ -28,6 +28,33 @@ describe("nameByDex", () => {
 	});
 	test("returns null for unknown dex", () => {
 		expect(nameByDex(list, 9999)).toBeNull();
+	});
+});
+
+describe("resolveDex", () => {
+	test("numeric id resolves to dex + canonical species name", () => {
+		expect(resolveDex(list, "6")).toEqual({ dex: 6, name: "charizard" });
+	});
+	test("numeric id ignores leading zeros (Number('006') === 6)", () => {
+		expect(resolveDex(list, "006")).toEqual({ dex: 6, name: "charizard" });
+	});
+	test("species slug resolves to dex + name", () => {
+		expect(resolveDex(list, "charizard")).toEqual({
+			dex: 6,
+			name: "charizard",
+		});
+	});
+	test("slug is case-insensitive (name preserves the input casing)", () => {
+		expect(resolveDex(list, "Charizard")).toEqual({
+			dex: 6,
+			name: "Charizard",
+		});
+	});
+	test("unknown numeric id → null", () => {
+		expect(resolveDex(list, "9999")).toBeNull();
+	});
+	test("unknown slug → null", () => {
+		expect(resolveDex(list, "missingno")).toBeNull();
 	});
 });
 

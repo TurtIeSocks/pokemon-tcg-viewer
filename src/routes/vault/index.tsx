@@ -82,37 +82,6 @@ export function VaultOverviewInner({ tree }: { tree: NavTree }) {
 				<VaultSummaryHero />
 			</div>
 
-			{/* Set completion */}
-			<VaultSection
-				title={m.vault_set_completion()}
-				action={
-					<Link
-						to="/vault/sets"
-						className="text-[12.5px] font-medium text-(--primary) hover:underline"
-					>
-						{m.vault_view_all_sets()}
-					</Link>
-				}
-			>
-				{hasOwnedCards ? (
-					<div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-						{ownedSetEntries.map(({ series, set }) => (
-							<SetTile
-								key={set.id}
-								seriesSlug={series.slug}
-								set={set}
-								ownedCount={countBySet.get(set.id) ?? 0}
-								vaultLink
-							/>
-						))}
-					</div>
-				) : (
-					<GlassPanel className="py-10 text-center">
-						<p className="text-(--ink-muted)">{m.vault_no_owned_cards()}</p>
-					</GlassPanel>
-				)}
-			</VaultSection>
-
 			{/* Binders */}
 			<VaultSection
 				title={m.vault_binders_heading()}
@@ -143,6 +112,37 @@ export function VaultOverviewInner({ tree }: { tree: NavTree }) {
 							<BinderCard key={id} binderId={id} />
 						))}
 					</div>
+				)}
+			</VaultSection>
+
+			{/* Set completion */}
+			<VaultSection
+				title={m.vault_set_completion()}
+				action={
+					<Link
+						to="/vault/sets"
+						className="text-[12.5px] font-medium text-(--primary) hover:underline"
+					>
+						{m.vault_view_all_sets()}
+					</Link>
+				}
+			>
+				{hasOwnedCards ? (
+					<div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+						{ownedSetEntries.map(({ series, set }) => (
+							<SetTile
+								key={set.id}
+								seriesSlug={series.slug}
+								set={set}
+								ownedCount={countBySet.get(set.id) ?? 0}
+								vaultLink
+							/>
+						))}
+					</div>
+				) : (
+					<GlassPanel className="py-10 text-center">
+						<p className="text-(--ink-muted)">{m.vault_no_owned_cards()}</p>
+					</GlassPanel>
 				)}
 			</VaultSection>
 

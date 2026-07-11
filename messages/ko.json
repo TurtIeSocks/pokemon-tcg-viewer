@@ -81,8 +81,13 @@
 	"home_browse_aria": "{name} 둘러보기",
 	"home_set_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "세트 {count}개"
 			}
@@ -184,8 +189,13 @@
 	"vault_bulk_add_cards_to_binder_item": "Binder에 카드 {count}장 추가",
 	"vault_bulk_add_to_binder_title": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "Binder에 카드 {count}장 추가"
 			}
@@ -223,8 +233,13 @@
 	"vault_import_backup_button": "백업 가져오기",
 	"vault_claim_local_cards": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "클라우드 Vault에 없는 로컬 카드가 {count}장 있어요."
 			}
@@ -258,8 +273,13 @@
 	"vault_csv_merge_duplicates": "중복 Stack 합치기",
 	"vault_csv_import_button": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "Stack {count}개 가져오기"
 			}
@@ -296,8 +316,13 @@
 	"binder_progress_label": "진행률",
 	"binder_rule_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "규칙 {count}개"
 			}
@@ -305,8 +330,13 @@
 	],
 	"binder_card_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "카드 {count}장"
 			}
@@ -358,34 +388,22 @@
 	"binder_print_taller_title": "표준 카드보다 높음",
 	"binder_print_oversize_width_desc": "표준 너비는 {standard}mm예요. 이보다 넓은 플레이스홀더는 Binder 포켓에 맞지 않을 수 있어요.",
 	"binder_print_oversize_height_desc": "표준 높이는 {standard}mm예요. 이보다 높은 플레이스홀더는 Binder 포켓에 맞지 않을 수 있어요.",
-	"binder_print_group_colors": "색상",
-	"binder_print_group_font_sizes": "글꼴 크기",
-	"binder_print_group_card_size": "카드 크기",
-	"binder_print_group_style": "스타일",
 	"binder_print_label_background": "배경",
-	"binder_print_label_text": "텍스트",
 	"binder_print_label_border": "테두리",
-	"binder_print_label_qr_color": "QR 색상",
-	"binder_print_label_qr_backdrop": "QR 배경",
-	"binder_print_label_card_name": "카드 이름",
-	"binder_print_label_card_number": "카드 번호",
-	"binder_print_label_set_name": "세트 이름",
-	"binder_print_label_price": "가격",
-	"binder_print_show_field": "{field} 표시",
-	"binder_print_field_font_size": "{field} 글꼴 크기",
-	"binder_print_field_size": "{field} 크기",
 	"binder_print_label_width": "너비",
 	"binder_print_label_height": "높이",
 	"binder_print_label_spacing": "간격",
-	"binder_print_label_row_gap": "행 간격",
 	"binder_print_label_corner_radius": "모서리 반경",
 	"binder_print_label_border_width": "테두리 두께",
-	"binder_print_label_text_size": "텍스트 크기",
-	"binder_print_label_qr_code": "QR 코드",
 	"binder_print_count_label": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "인쇄할 카드 {count}장"
 			}
@@ -394,8 +412,13 @@
 	"binder_print_fits_per_sheet": "한 장에 {count}개 배치 ({columns} × {rows})",
 	"binder_print_pages_of_paper": [
 		{
-			"declarations": ["input pages", "local pagesPlural = pages: plural"],
-			"selectors": ["pagesPlural"],
+			"declarations": [
+				"input pages",
+				"local pagesPlural = pages: plural"
+			],
+			"selectors": [
+				"pagesPlural"
+			],
 			"match": {
 				"pagesPlural=other": "용지 약 {pages}장."
 			}
@@ -496,9 +519,13 @@
 	"shell_credit_pokemon_title": "Pokémon",
 	"shell_credit_pokemon_body": "Pokémon 및 관련 명칭은 Nintendo, Creatures Inc., GAME FREAK inc.의 상표예요. Cardstack은 비공식, 비상업적 팬 프로젝트이며 이들 회사와 제휴, 승인, 후원 관계가 없어요.",
 	"shell_credit_card_data_title": "카드 데이터 및 이미지",
-	"shell_credit_card_data_body": "둘러보고 수집하는 모든 카드는 Pokémon TCG API에서 제공돼요.",
+	"shell_credit_card_data_body": "둘러보고 수집하는 모든 카드는 개방형 커뮤니티 운영 카드 데이터베이스인 TCGdex에서 가져와요. 일부 세트 로고와 서구권 시세는 pokemontcg.io를 보조 출처로 사용해요.",
 	"shell_credit_holo_title": "홀로그래픽 카드 효과",
 	"shell_credit_holo_body": "레어 카드를 반짝이게 만드는 홀로 및 포일 셰이더는 Simon Goellner(@simeydotme)의 Pokémon Cards CSS를 참고했어요.",
+	"shell_credit_pricing_title": "가격 데이터",
+	"shell_credit_pricing_body": "실시간 시세는 TCGplayer와 Cardmarket에서 가져오며, pokemontcg.io의 가격 필드를 통해 표시돼요.",
+	"shell_credit_fonts_title": "서체",
+	"shell_credit_fonts_body": "Clash Display는 Indian Type Foundry(Fontshare 경유)에서, Space Grotesk와 Geist Mono는 모두 SIL 오픈 폰트 라이선스로 제공돼요.",
 	"shell_open_source_note": "처음부터 끝까지 오픈소스. 관리자도 없고, 잠금도 없어요.",
 	"shell_view_source_github": "GitHub에서 소스 보기",
 	"route_loading_aria": "불러오는 중",
@@ -616,5 +643,39 @@
 	"subtype_group_stage": "진화 단계",
 	"subtype_group_mechanic": "포켓몬 메커니즘",
 	"subtype_group_trainer": "트레이너",
-	"subtype_group_other": "기타"
+	"subtype_group_other": "기타",
+	"binder_excluded_heading": "제외됨",
+	"binder_restore": "복원",
+	"binder_restore_aria": "{name}을(를) Binder에 복원",
+	"binder_bulk_remove": "Binder에서 제거",
+	"binder_bulk_move": "Binder로 이동",
+	"binder_toast_removed": "Binder에서 제거됨",
+	"binder_toast_moved": "이동됨",
+	"binder_toast_removed_count": "카드 {count}장 제거됨",
+	"binder_toast_moved_count": "카드 {count}장 이동됨",
+	"binder_toast_undo": "실행 취소",
+	"binder_print_row_card_name": "카드 이름",
+	"binder_print_row_number": "번호",
+	"binder_print_row_set_name": "세트 이름",
+	"binder_print_row_series_name": "시리즈",
+	"binder_print_row_rarity": "희귀도",
+	"binder_print_row_price": "가격",
+	"binder_print_row_custom_text": "사용자 지정 텍스트",
+	"binder_print_row_card_image": "카드 이미지",
+	"binder_print_row_qr": "QR 코드",
+	"binder_print_column_card": "카드",
+	"binder_print_column_content": "내용",
+	"binder_print_add_row": "행 추가",
+	"binder_print_row_edit": "편집",
+	"binder_print_row_remove": "제거",
+	"binder_print_row_move_up": "위로 이동",
+	"binder_print_row_move_down": "아래로 이동",
+	"binder_print_row_field_color": "색상",
+	"binder_print_row_field_size": "크기",
+	"binder_print_row_field_y_spacing": "아래 간격",
+	"binder_print_row_field_backdrop": "배경",
+	"binder_print_row_field_text": "텍스트",
+	"binder_print_row_field_type": "유형",
+	"binder_print_row_editor_edit_title": "행 편집",
+	"binder_print_row_save": "저장"
 }

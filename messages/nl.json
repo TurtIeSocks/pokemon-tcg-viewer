@@ -81,8 +81,13 @@
 	"home_browse_aria": "Blader door {name}",
 	"home_set_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} set",
 				"countPlural=other": "{count} sets"
@@ -185,8 +190,13 @@
 	"vault_bulk_add_cards_to_binder_item": "{count} kaarten toevoegen aan binder",
 	"vault_bulk_add_to_binder_title": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} kaart toevoegen aan een binder",
 				"countPlural=other": "{count} kaarten toevoegen aan een binder"
@@ -225,8 +235,13 @@
 	"vault_import_backup_button": "Back-up importeren",
 	"vault_claim_local_cards": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "Je hebt {count} lokale kaart die niet in je cloud-Vault staat.",
 				"countPlural=other": "Je hebt {count} lokale kaarten die niet in je cloud-Vault staan."
@@ -261,8 +276,13 @@
 	"vault_csv_merge_duplicates": "Dubbele Stacks samenvoegen",
 	"vault_csv_import_button": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} Stack importeren",
 				"countPlural=other": "{count} Stacks importeren"
@@ -300,8 +320,13 @@
 	"binder_progress_label": "Voortgang",
 	"binder_rule_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} regel",
 				"countPlural=other": "{count} regels"
@@ -310,8 +335,13 @@
 	],
 	"binder_card_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} kaart",
 				"countPlural=other": "{count} kaarten"
@@ -364,34 +394,22 @@
 	"binder_print_taller_title": "Hoger dan een standaardkaart",
 	"binder_print_oversize_width_desc": "De standaardbreedte is {standard}mm. Zo brede plaatshouders passen mogelijk niet in binderhoesjes.",
 	"binder_print_oversize_height_desc": "De standaardhoogte is {standard}mm. Zo hoge plaatshouders passen mogelijk niet in binderhoesjes.",
-	"binder_print_group_colors": "Kleuren",
-	"binder_print_group_font_sizes": "Lettergroottes",
-	"binder_print_group_card_size": "Kaartgrootte",
-	"binder_print_group_style": "Stijl",
 	"binder_print_label_background": "Achtergrond",
-	"binder_print_label_text": "Tekst",
 	"binder_print_label_border": "Rand",
-	"binder_print_label_qr_color": "QR-kleur",
-	"binder_print_label_qr_backdrop": "QR-achtergrond",
-	"binder_print_label_card_name": "Kaartnaam",
-	"binder_print_label_card_number": "Kaart #",
-	"binder_print_label_set_name": "Setnaam",
-	"binder_print_label_price": "Prijs",
-	"binder_print_show_field": "{field} tonen",
-	"binder_print_field_font_size": "Lettergrootte {field}",
-	"binder_print_field_size": "Grootte {field}",
 	"binder_print_label_width": "Breedte",
 	"binder_print_label_height": "Hoogte",
 	"binder_print_label_spacing": "Tussenruimte",
-	"binder_print_label_row_gap": "Rijafstand",
 	"binder_print_label_corner_radius": "Hoekradius",
 	"binder_print_label_border_width": "Randbreedte",
-	"binder_print_label_text_size": "Tekstgrootte",
-	"binder_print_label_qr_code": "QR-code",
 	"binder_print_count_label": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} kaart om af te drukken",
 				"countPlural=other": "{count} kaarten om af te drukken"
@@ -401,8 +419,13 @@
 	"binder_print_fits_per_sheet": "Past {count} per vel ({columns} × {rows})",
 	"binder_print_pages_of_paper": [
 		{
-			"declarations": ["input pages", "local pagesPlural = pages: plural"],
-			"selectors": ["pagesPlural"],
+			"declarations": [
+				"input pages",
+				"local pagesPlural = pages: plural"
+			],
+			"selectors": [
+				"pagesPlural"
+			],
 			"match": {
 				"pagesPlural=one": "Ongeveer {pages} vel papier.",
 				"pagesPlural=other": "Ongeveer {pages} vellen papier."
@@ -504,9 +527,13 @@
 	"shell_credit_pokemon_title": "Pokémon",
 	"shell_credit_pokemon_body": "Pokémon en alle gerelateerde namen zijn handelsmerken van Nintendo, Creatures Inc. en GAME FREAK inc. Cardstack is een onofficieel, niet-commercieel fanproject. Het is niet verbonden met, goedgekeurd door of gesponsord door hen.",
 	"shell_credit_card_data_title": "Kaartgegevens en afbeeldingen",
-	"shell_credit_card_data_body": "Elke kaart die je bekijkt en verzamelt wordt geleverd door de Pokémon TCG API.",
+	"shell_credit_card_data_body": "Elke kaart die je bekijkt en verzamelt komt van TCGdex, een open, door de community beheerde kaartendatabase. Sommige set-logo's en westerse prijzen komen als terugval van pokemontcg.io.",
 	"shell_credit_holo_title": "Holografische kaarteffecten",
 	"shell_credit_holo_body": "De holo- en foil-shaders die de jachtkaarten laten glinsteren zijn aangepast van Pokémon Cards CSS door Simon Goellner (@simeydotme).",
+	"shell_credit_pricing_title": "Prijsgegevens",
+	"shell_credit_pricing_body": "Actuele marktprijzen komen van TCGplayer en Cardmarket, weergegeven via de prijsvelden van pokemontcg.io.",
+	"shell_credit_fonts_title": "Lettertypen",
+	"shell_credit_fonts_body": "Clash Display van de Indian Type Foundry (via Fontshare), plus Space Grotesk en Geist Mono, beide onder de SIL Open Font License.",
 	"shell_open_source_note": "Open source, van boven tot onder. Geen huisbaas, geen lock-in.",
 	"shell_view_source_github": "Broncode bekijken op GitHub",
 	"route_loading_aria": "Laden",
@@ -624,5 +651,39 @@
 	"subtype_group_stage": "Fase",
 	"subtype_group_mechanic": "Pokémon-mechaniek",
 	"subtype_group_trainer": "Trainer",
-	"subtype_group_other": "Overig"
+	"subtype_group_other": "Overig",
+	"binder_excluded_heading": "Uitgesloten",
+	"binder_restore": "Herstellen",
+	"binder_restore_aria": "{name} in binder herstellen",
+	"binder_bulk_remove": "Uit binder verwijderen",
+	"binder_bulk_move": "Naar binder verplaatsen",
+	"binder_toast_removed": "Uit binder verwijderd",
+	"binder_toast_moved": "Verplaatst",
+	"binder_toast_removed_count": "{count} kaarten verwijderd",
+	"binder_toast_moved_count": "{count} kaarten verplaatst",
+	"binder_toast_undo": "Ongedaan maken",
+	"binder_print_row_card_name": "Kaartnaam",
+	"binder_print_row_number": "Nummer",
+	"binder_print_row_set_name": "Setnaam",
+	"binder_print_row_series_name": "Serie",
+	"binder_print_row_rarity": "Zeldzaamheid",
+	"binder_print_row_price": "Prijs",
+	"binder_print_row_custom_text": "Aangepaste tekst",
+	"binder_print_row_card_image": "Kaartafbeelding",
+	"binder_print_row_qr": "QR-code",
+	"binder_print_column_card": "Kaart",
+	"binder_print_column_content": "Inhoud",
+	"binder_print_add_row": "Rij toevoegen",
+	"binder_print_row_edit": "Bewerken",
+	"binder_print_row_remove": "Verwijderen",
+	"binder_print_row_move_up": "Omhoog",
+	"binder_print_row_move_down": "Omlaag",
+	"binder_print_row_field_color": "Kleur",
+	"binder_print_row_field_size": "Grootte",
+	"binder_print_row_field_y_spacing": "Ruimte eronder",
+	"binder_print_row_field_backdrop": "Achtergrond",
+	"binder_print_row_field_text": "Tekst",
+	"binder_print_row_field_type": "Type",
+	"binder_print_row_editor_edit_title": "Rij bewerken",
+	"binder_print_row_save": "Opslaan"
 }

@@ -4,6 +4,8 @@ import {
 	CARD_HEIGHT_MM,
 	CARD_WIDTH_MM,
 	missingCardViews,
+	mm,
+	moveRow,
 	PRINTABLE_HEIGHT_MM,
 	PRINTABLE_WIDTH_MM,
 	pageCount,
@@ -129,4 +131,30 @@ test("placeholderMeta contains no em-dash", () => {
 	expect(
 		placeholderMeta({ cardNumber: "1", setName: "Base Set" }),
 	).not.toContain("—");
+});
+
+// --- mm ---
+
+test("mm rounds to 0.01mm and appends the unit", () => {
+	expect(mm(3.6 * 1.3)).toBe("4.68mm");
+	expect(mm(5.4)).toBe("5.4mm");
+	expect(mm(0)).toBe("0mm");
+});
+
+// --- moveRow ---
+
+test("moveRow shifts an item up/down, returning a new array", () => {
+	const base = ["a", "b", "c", "d"];
+	expect(moveRow(base, 1, -1)).toEqual(["b", "a", "c", "d"]);
+	expect(moveRow(base, 1, 1)).toEqual(["a", "c", "b", "d"]);
+	// Source is never mutated.
+	expect(base).toEqual(["a", "b", "c", "d"]);
+});
+
+test("moveRow is a safe no-op past the ends (first up / last down)", () => {
+	const base = ["a", "b", "c"];
+	expect(moveRow(base, 0, -1)).toEqual(["a", "b", "c"]);
+	expect(moveRow(base, 2, 1)).toEqual(["a", "b", "c"]);
+	// Still a fresh copy, not the same reference.
+	expect(moveRow(base, 0, -1)).not.toBe(base);
 });

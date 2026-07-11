@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef } from "react";
 import type { SearchMode } from "../store/corpus/fuzzy";
 import type {
 	CardSortMode,
@@ -131,4 +132,86 @@ export function listSearchToUrl(
 	if (s.lang !== undefined) out.lang = s.lang ?? undefined;
 
 	return out;
+}
+
+/**
+ * True when a patch is a lone `q` write — the search-as-you-type case. Every
+ * keystroke sends `{ q }` and nothing else; a filter/sort/view/mode/lang change
+ * sends those keys (and never a bare `q`). Used to route typing through the
+ * debounce + history-replace path while filter changes stay immediate, Back-able
+ * pushes. Exported so the classification is unit-testable in isolation.
+ */
+export function isLoneQPatch(patch: Partial<ListSearch>): boolean {
+	return "q" in patch && Object.keys(patch).length === 1;
+}
+
+/**
+ * The slice of a route's `navigate()` that {@link useListSearchOnChange} drives.
+ * Every list route's `useNavigate({ from })` result is structurally compatible:
+ * the search reducer reads the validated `ListSearch` and returns the merged
+ * URL-input patch, plus the two history knobs the hook toggles.
+ */
+type ListSearchNavigate = (opts: {
+	search: (prev: ListSearch) => ListSearch;
+	replace?: boolean;
+	viewTransition?: boolean;
+}) => unknown;
+
+/** Base navigate() options merged into every list-search write. */
+interface ListSearchNavigateOptions {
+	/**
+	 * Passed through to navigate() on every write. Defaults to `false`: an in-page
+	 * filter/view/typing change shouldn't crossfade the whole route.
+	 */
+	viewTransition?: boolean;
+}
+
+/**
+ * Shared `onChange` for every card-list route ({@link listSearchToUrl} consumers).
+ * Two distinct history behaviors keep the Back button honest:
+ *
+ * - **Typing (a lone `q`)** — coalesced behind a 250ms debounce, then written
+ *   with `replace: true`, so an entire "b → be → ber → …" run collapses onto ONE
+ *   history entry. Back then returns to wherever the user came from instead of
+ *   walking back through every keystroke. On the `/search` route `q` is also a
+ *   loaderDep, so the debounce additionally coalesces the per-keystroke server
+ *   RPC; on the other list routes `q` filters the in-memory grid, so `replace`
+ *   is the load-bearing part (no more polluted history).
+ * - **Everything else (filters/sort/view/mode/lang)** — written immediately with
+ *   a normal push, so each stays a distinct, Back-able step.
+ *
+ * The pending debounce timer is cleared on unmount. `navigate` is expected to be
+ * stable (TanStack's `useNavigate` result is), so the returned callback is too.
+ */
+export function useListSearchOnChange(
+	navigate: ListSearchNavigate,
+	{ viewTransition = false }: ListSearchNavigateOptions = {},
+): (patch: Partial<ListSearch>) => void {
+	const qTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+	useEffect(
+		() => () => {
+			if (qTimer.current) clearTimeout(qTimer.current);
+		},
+		[],
+	);
+	return useCallback(
+		(patch: Partial<ListSearch>) => {
+			const commit = (replace: boolean) =>
+				navigate({
+					search: (prev) => ({ ...prev, ...listSearchToUrl(patch) }),
+					replace,
+					viewTransition,
+				});
+			// Filter/sort/view/mode/lang change: push immediately so each is Back-able.
+			if (!isLoneQPatch(patch)) {
+				commit(false);
+				return;
+			}
+			// Search-as-you-type: coalesce keystrokes, then replace so the whole run
+			// is one history entry.
+			if (qTimer.current) clearTimeout(qTimer.current);
+			qTimer.current = setTimeout(() => commit(true), 250);
+		},
+		[navigate, viewTransition],
+	);
 }

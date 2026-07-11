@@ -20,7 +20,7 @@ import {
 } from "../../lib/card-route";
 import {
 	LIST_SEARCH_DEFAULTS,
-	listSearchToUrl,
+	useListSearchOnChange,
 	validateListSearch,
 } from "../../lib/list-search";
 import { toSerializedQuery } from "../../lib/serialized-query";
@@ -28,7 +28,7 @@ import { titleCaseSlug } from "../../lib/slug";
 import { m } from "../../paraglide/messages";
 import { getPokemonListFn } from "../../server/card-data";
 import { getDexCardRoutesFn, getDexCardsFn } from "../../server/corpus-server";
-import { dexByName } from "../../server/pokemon-dex";
+import { resolveDex } from "../../server/pokemon-dex";
 import { deriveFacets, type SetFacets } from "../../server/set-facets";
 
 export const Route = createFileRoute("/pokemon/$name")({
@@ -36,8 +36,12 @@ export const Route = createFileRoute("/pokemon/$name")({
 	search: { middlewares: [stripSearchParams(LIST_SEARCH_DEFAULTS)] },
 	loader: async ({ params }) => {
 		const list = await getPokemonListFn();
-		const dex = dexByName(list, params.name);
-		if (dex === null) throw notFound();
+		// The param is EITHER a species slug ("charizard") OR a national-dex id
+		// ("6", leading zeros ok). Resolve both to the canonical { dex, name } so a
+		// numeric URL still shows the species name, and everything below keys off dex.
+		const resolved = resolveDex(list, params.name);
+		if (!resolved) throw notFound();
+		const { dex, name } = resolved;
 		// Resolve card links server-side: cards span many sets, so the page can't
 		// derive /$series/$set/$card from the URL. Runs in parallel with the card
 		// fetch; both hit the same in-memory server corpus.
@@ -46,7 +50,7 @@ export const Route = createFileRoute("/pokemon/$name")({
 			getDexCardRoutesFn({ data: dex }),
 		]);
 		return {
-			display: titleCaseSlug(params.name),
+			display: titleCaseSlug(name),
 			dex,
 			cards: all.slice(0, 60),
 			total: all.length,
@@ -80,12 +84,7 @@ function PokemonPage() {
 	const search = Route.useSearch();
 	const params = Route.useParams();
 	const navigate = useNavigate({ from: Route.fullPath });
-	const onChange = (patch: Parameters<typeof listSearchToUrl>[0]) =>
-		navigate({
-			search: (prev) => ({ ...prev, ...listSearchToUrl(patch) }),
-			// In-page filter/view change: keep it instant, don't crossfade.
-			viewTransition: false,
-		});
+	const onChange = useListSearchOnChange(navigate);
 	const options = deriveFacets(cards);
 
 	// Cards for one Pokémon span many sets, so the URL can't supply the set —
@@ -122,7 +121,7 @@ interface PokemonPageInnerProps {
 	cards: HoloCardData[];
 	total: number;
 	search: ReturnType<typeof Route.useSearch>;
-	onChange: (patch: Parameters<typeof listSearchToUrl>[0]) => void;
+	onChange: ReturnType<typeof useListSearchOnChange>;
 	options: SetFacets;
 	cardHref: (card: HoloCardData) => LinkProps;
 }

@@ -81,8 +81,13 @@
 	"home_browse_aria": "Sfoglia {name}",
 	"home_set_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} set",
 				"countPlural=other": "{count} set"
@@ -185,8 +190,13 @@
 	"vault_bulk_add_cards_to_binder_item": "Aggiungi {count} carte a un Binder",
 	"vault_bulk_add_to_binder_title": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "Aggiungi {count} carta a un Binder",
 				"countPlural=other": "Aggiungi {count} carte a un Binder"
@@ -225,8 +235,13 @@
 	"vault_import_backup_button": "Importa backup",
 	"vault_claim_local_cards": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "Hai {count} carta locale non presente nel tuo Vault cloud.",
 				"countPlural=other": "Hai {count} carte locali non presenti nel tuo Vault cloud."
@@ -261,8 +276,13 @@
 	"vault_csv_merge_duplicates": "Unisci gli Stack duplicati",
 	"vault_csv_import_button": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "Importa {count} Stack",
 				"countPlural=other": "Importa {count} Stack"
@@ -300,8 +320,13 @@
 	"binder_progress_label": "Progresso",
 	"binder_rule_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} regola",
 				"countPlural=other": "{count} regole"
@@ -310,8 +335,13 @@
 	],
 	"binder_card_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} carta",
 				"countPlural=other": "{count} carte"
@@ -364,34 +394,22 @@
 	"binder_print_taller_title": "Più alto di una carta standard",
 	"binder_print_oversize_width_desc": "La larghezza standard è {standard}mm. Segnaposto così larghi potrebbero non entrare nelle tasche del Binder.",
 	"binder_print_oversize_height_desc": "L'altezza standard è {standard}mm. Segnaposto così alti potrebbero non entrare nelle tasche del Binder.",
-	"binder_print_group_colors": "Colori",
-	"binder_print_group_font_sizes": "Dimensioni del carattere",
-	"binder_print_group_card_size": "Dimensioni carta",
-	"binder_print_group_style": "Stile",
 	"binder_print_label_background": "Sfondo",
-	"binder_print_label_text": "Testo",
 	"binder_print_label_border": "Bordo",
-	"binder_print_label_qr_color": "Colore del QR",
-	"binder_print_label_qr_backdrop": "Sfondo del QR",
-	"binder_print_label_card_name": "Nome carta",
-	"binder_print_label_card_number": "N. carta",
-	"binder_print_label_set_name": "Nome set",
-	"binder_print_label_price": "Prezzo",
-	"binder_print_show_field": "Mostra {field}",
-	"binder_print_field_font_size": "Dimensione carattere {field}",
-	"binder_print_field_size": "Dimensione {field}",
 	"binder_print_label_width": "Larghezza",
 	"binder_print_label_height": "Altezza",
 	"binder_print_label_spacing": "Spaziatura",
-	"binder_print_label_row_gap": "Spaziatura righe",
 	"binder_print_label_corner_radius": "Raggio angoli",
 	"binder_print_label_border_width": "Spessore bordo",
-	"binder_print_label_text_size": "Dimensione testo",
-	"binder_print_label_qr_code": "Codice QR",
 	"binder_print_count_label": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} carta da stampare",
 				"countPlural=other": "{count} carte da stampare"
@@ -401,8 +419,13 @@
 	"binder_print_fits_per_sheet": "Ne entrano {count} per foglio ({columns} × {rows})",
 	"binder_print_pages_of_paper": [
 		{
-			"declarations": ["input pages", "local pagesPlural = pages: plural"],
-			"selectors": ["pagesPlural"],
+			"declarations": [
+				"input pages",
+				"local pagesPlural = pages: plural"
+			],
+			"selectors": [
+				"pagesPlural"
+			],
 			"match": {
 				"pagesPlural=one": "Circa {pages} foglio di carta.",
 				"pagesPlural=other": "Circa {pages} fogli di carta."
@@ -504,9 +527,13 @@
 	"shell_credit_pokemon_title": "Pokémon",
 	"shell_credit_pokemon_body": "Pokémon e tutti i nomi correlati sono marchi di Nintendo, Creatures Inc. e GAME FREAK inc. Cardstack è un progetto amatoriale non ufficiale e non commerciale. Non è affiliato, approvato o sponsorizzato da loro.",
 	"shell_credit_card_data_title": "Dati e immagini delle carte",
-	"shell_credit_card_data_body": "Ogni carta che sfogli e collezioni è fornita dalla Pokémon TCG API.",
+	"shell_credit_card_data_body": "Ogni carta che sfogli e collezioni proviene da TCGdex, un database di carte aperto e gestito dalla community. Alcuni loghi dei set e i prezzi occidentali arrivano da pokemontcg.io come ripiego.",
 	"shell_credit_holo_title": "Effetti olografici delle carte",
 	"shell_credit_holo_body": "Gli shader holo e foil che fanno scintillare le carte più rare sono adattati da Pokémon Cards CSS di Simon Goellner (@simeydotme).",
+	"shell_credit_pricing_title": "Dati sui prezzi",
+	"shell_credit_pricing_body": "I prezzi di mercato in tempo reale provengono da TCGplayer e Cardmarket, mostrati tramite i campi prezzo di pokemontcg.io.",
+	"shell_credit_fonts_title": "Caratteri tipografici",
+	"shell_credit_fonts_body": "Clash Display di Indian Type Foundry (tramite Fontshare), oltre a Space Grotesk e Geist Mono, entrambi con licenza SIL Open Font.",
 	"shell_open_source_note": "Open source, dalla testa ai piedi. Nessun padrone, nessun vincolo.",
 	"shell_view_source_github": "Vedi il codice sorgente su GitHub",
 	"route_loading_aria": "Caricamento",
@@ -624,5 +651,39 @@
 	"subtype_group_stage": "Stadio",
 	"subtype_group_mechanic": "Meccanica Pokémon",
 	"subtype_group_trainer": "Alleato",
-	"subtype_group_other": "Altro"
+	"subtype_group_other": "Altro",
+	"binder_excluded_heading": "Escluse",
+	"binder_restore": "Ripristina",
+	"binder_restore_aria": "Ripristina {name} nel Binder",
+	"binder_bulk_remove": "Rimuovi dal Binder",
+	"binder_bulk_move": "Sposta nel Binder",
+	"binder_toast_removed": "Rimossa dal Binder",
+	"binder_toast_moved": "Spostata",
+	"binder_toast_removed_count": "{count} carte rimosse",
+	"binder_toast_moved_count": "{count} carte spostate",
+	"binder_toast_undo": "Annulla",
+	"binder_print_row_card_name": "Nome della carta",
+	"binder_print_row_number": "Numero",
+	"binder_print_row_set_name": "Nome del set",
+	"binder_print_row_series_name": "Serie",
+	"binder_print_row_rarity": "Rarità",
+	"binder_print_row_price": "Prezzo",
+	"binder_print_row_custom_text": "Testo personalizzato",
+	"binder_print_row_card_image": "Immagine della carta",
+	"binder_print_row_qr": "Codice QR",
+	"binder_print_column_card": "Carta",
+	"binder_print_column_content": "Contenuto",
+	"binder_print_add_row": "Aggiungi riga",
+	"binder_print_row_edit": "Modifica",
+	"binder_print_row_remove": "Rimuovi",
+	"binder_print_row_move_up": "Sposta su",
+	"binder_print_row_move_down": "Sposta giù",
+	"binder_print_row_field_color": "Colore",
+	"binder_print_row_field_size": "Dimensione",
+	"binder_print_row_field_y_spacing": "Spaziatura sotto",
+	"binder_print_row_field_backdrop": "Sfondo",
+	"binder_print_row_field_text": "Testo",
+	"binder_print_row_field_type": "Tipo",
+	"binder_print_row_editor_edit_title": "Modifica riga",
+	"binder_print_row_save": "Salva"
 }

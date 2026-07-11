@@ -7,6 +7,9 @@ import {
 	LayoutDashboard,
 	type LucideIcon,
 	ScanLine,
+	Sparkles,
+	Users,
+	Zap,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
@@ -40,6 +43,7 @@ import {
 	type NavTree,
 	seriesMonogram,
 } from "../../lib/nav-tree";
+import { POKEDEX_FILTER_DEFAULTS } from "../../lib/pokedex";
 import { GlobalLanguageControl } from "../islands/global-language-control";
 import { SidebarUserMenu } from "./sidebar-user-menu";
 
@@ -61,6 +65,7 @@ export function AppSidebar({ tree }: AppSidebarProps) {
 
 			<SidebarContent>
 				<VaultGroup />
+				<BrowseGroup />
 				<SeriesGroup tree={tree} />
 			</SidebarContent>
 
@@ -125,12 +130,12 @@ const VAULT_CHILDREN: readonly VaultChild[] = [
 		to: "/vault/cards",
 		icon: Layers,
 	},
-	{ label: () => m.sidebar_vault_sets(), to: "/vault/sets", icon: Boxes },
 	{
 		label: () => m.command_palette_nav_binders(),
 		to: "/vault/binders",
 		icon: BookOpen,
 	},
+	{ label: () => m.sidebar_vault_sets(), to: "/vault/sets", icon: Boxes },
 	{
 		label: () => m.command_palette_nav_scan_cards(),
 		to: "/scan",
@@ -172,6 +177,83 @@ function VaultItem({ item }: { item: VaultChild }) {
 			)}
 			<span>{item.label()}</span>
 		</SidebarMenuLink>
+	);
+}
+
+/** Icon + label body of a Browse row — mirrors {@link VaultItem}'s inner markup
+ *  (direct lucide child so the menu-button's `[&>svg]:size-4` rule sizes it). */
+function BrowseRow({
+	icon: Icon,
+	label,
+	active,
+}: {
+	icon: LucideIcon;
+	label: string;
+	active: boolean;
+}) {
+	return (
+		<>
+			<Icon
+				className={cn(
+					"transition-colors",
+					active ? "text-primary" : "text-(--ink-muted)",
+				)}
+			/>
+			<span>{label}</span>
+		</>
+	);
+}
+
+/**
+ * Browse-by-supertype entry points (Pokémon / Trainer / Energy), placed above
+ * the Series & Sets group — a broader lens than drilling into one set. Each row
+ * carries its route's required search param (typed `<Link>` errors without it).
+ * Prefix `useIsActive` (no `exact`) keeps the tab lit while drilling into a card,
+ * matching {@link SeriesItem}'s browse-entry behavior.
+ */
+function BrowseGroup() {
+	const pokemonActive = useIsActive("/pokemon");
+	const trainerActive = useIsActive("/trainer");
+	const energyActive = useIsActive("/energy");
+	return (
+		<SidebarGroup>
+			<SidebarGroupLabel>{m.command_palette_nav_browse()}</SidebarGroupLabel>
+			<SidebarMenu>
+				<SidebarMenuLink
+					to="/pokemon"
+					search={POKEDEX_FILTER_DEFAULTS}
+					isActive={pokemonActive}
+				>
+					<BrowseRow
+						icon={Sparkles}
+						label={m.home_supertype_pokemon()}
+						active={pokemonActive}
+					/>
+				</SidebarMenuLink>
+				<SidebarMenuLink
+					to="/trainer"
+					search={LIST_SEARCH_DEFAULTS}
+					isActive={trainerActive}
+				>
+					<BrowseRow
+						icon={Users}
+						label={m.home_supertype_trainers()}
+						active={trainerActive}
+					/>
+				</SidebarMenuLink>
+				<SidebarMenuLink
+					to="/energy"
+					search={LIST_SEARCH_DEFAULTS}
+					isActive={energyActive}
+				>
+					<BrowseRow
+						icon={Zap}
+						label={m.home_supertype_energy()}
+						active={energyActive}
+					/>
+				</SidebarMenuLink>
+			</SidebarMenu>
+		</SidebarGroup>
 	);
 }
 

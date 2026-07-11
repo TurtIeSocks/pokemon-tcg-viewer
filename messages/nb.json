@@ -81,8 +81,13 @@
 	"home_browse_aria": "Bla gjennom {name}",
 	"home_set_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} sett",
 				"countPlural=other": "{count} sett"
@@ -185,8 +190,13 @@
 	"vault_bulk_add_cards_to_binder_item": "Legg til {count} kort i binder",
 	"vault_bulk_add_to_binder_title": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "Legg til {count} kort i en binder",
 				"countPlural=other": "Legg til {count} kort i en binder"
@@ -225,8 +235,13 @@
 	"vault_import_backup_button": "Importer sikkerhetskopi",
 	"vault_claim_local_cards": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "Du har {count} lokalt kort som ikke er i cloud-Vaultet ditt.",
 				"countPlural=other": "Du har {count} lokale kort som ikke er i cloud-Vaultet ditt."
@@ -261,8 +276,13 @@
 	"vault_csv_merge_duplicates": "Slå sammen dupliserte stacks",
 	"vault_csv_import_button": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "Importer {count} stack",
 				"countPlural=other": "Importer {count} stacks"
@@ -300,8 +320,13 @@
 	"binder_progress_label": "Fremdrift",
 	"binder_rule_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} regel",
 				"countPlural=other": "{count} regler"
@@ -310,8 +335,13 @@
 	],
 	"binder_card_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} kort",
 				"countPlural=other": "{count} kort"
@@ -364,34 +394,22 @@
 	"binder_print_taller_title": "Høyere enn et standardkort",
 	"binder_print_oversize_width_desc": "Standardbredden er {standard} mm. Plassholdere så brede passer kanskje ikke i binderlommer.",
 	"binder_print_oversize_height_desc": "Standardhøyden er {standard} mm. Plassholdere så høye passer kanskje ikke i binderlommer.",
-	"binder_print_group_colors": "Farger",
-	"binder_print_group_font_sizes": "Skriftstørrelser",
-	"binder_print_group_card_size": "Kortstørrelse",
-	"binder_print_group_style": "Stil",
 	"binder_print_label_background": "Bakgrunn",
-	"binder_print_label_text": "Tekst",
 	"binder_print_label_border": "Kantlinje",
-	"binder_print_label_qr_color": "QR-farge",
-	"binder_print_label_qr_backdrop": "QR-bakgrunn",
-	"binder_print_label_card_name": "Kortnavn",
-	"binder_print_label_card_number": "Kortnr.",
-	"binder_print_label_set_name": "Settnavn",
-	"binder_print_label_price": "Pris",
-	"binder_print_show_field": "Vis {field}",
-	"binder_print_field_font_size": "Skriftstørrelse for {field}",
-	"binder_print_field_size": "Størrelse på {field}",
 	"binder_print_label_width": "Bredde",
 	"binder_print_label_height": "Høyde",
 	"binder_print_label_spacing": "Avstand",
-	"binder_print_label_row_gap": "Radavstand",
 	"binder_print_label_corner_radius": "Hjørneradius",
 	"binder_print_label_border_width": "Kantlinjebredde",
-	"binder_print_label_text_size": "Tekststørrelse",
-	"binder_print_label_qr_code": "QR-kode",
 	"binder_print_count_label": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} kort å skrive ut",
 				"countPlural=other": "{count} kort å skrive ut"
@@ -401,8 +419,13 @@
 	"binder_print_fits_per_sheet": "Får plass til {count} per ark ({columns} × {rows})",
 	"binder_print_pages_of_paper": [
 		{
-			"declarations": ["input pages", "local pagesPlural = pages: plural"],
-			"selectors": ["pagesPlural"],
+			"declarations": [
+				"input pages",
+				"local pagesPlural = pages: plural"
+			],
+			"selectors": [
+				"pagesPlural"
+			],
 			"match": {
 				"pagesPlural=one": "Omtrent {pages} ark papir.",
 				"pagesPlural=other": "Omtrent {pages} ark papir."
@@ -504,9 +527,13 @@
 	"shell_credit_pokemon_title": "Pokémon",
 	"shell_credit_pokemon_body": "Pokémon og alle relaterte navn er varemerker for Nintendo, Creatures Inc. og GAME FREAK inc. Cardstack er et uoffisielt, ikke-kommersielt fanprosjekt. Det er ikke tilknyttet, godkjent eller sponset av dem.",
 	"shell_credit_card_data_title": "Kortdata og bilder",
-	"shell_credit_card_data_body": "Hvert kort du blar gjennom og samler leveres av Pokémon TCG API.",
+	"shell_credit_card_data_body": "Hvert kort du blar gjennom og samler hentes fra TCGdex, en åpen, fellesskapsdrevet kortdatabase. Noen sett-logoer og vestlige priser kommer fra pokemontcg.io som reserve.",
 	"shell_credit_holo_title": "Holografiske korteffekter",
 	"shell_credit_holo_body": "Holo- og foil-shaderne som får jaktkortene til å glitre er tilpasset fra Pokémon Cards CSS av Simon Goellner (@simeydotme).",
+	"shell_credit_pricing_title": "Prisdata",
+	"shell_credit_pricing_body": "Sanntids markedspriser kommer fra TCGplayer og Cardmarket, hentet via prisfeltene til pokemontcg.io.",
+	"shell_credit_fonts_title": "Skrifttyper",
+	"shell_credit_fonts_body": "Clash Display av Indian Type Foundry (via Fontshare), pluss Space Grotesk og Geist Mono, begge under SIL Open Font License.",
 	"shell_open_source_note": "Åpen kildekode, fra topp til bunn. Ingen huseier, ingen innlåsing.",
 	"shell_view_source_github": "Se kildekoden på GitHub",
 	"route_loading_aria": "Laster",
@@ -624,5 +651,39 @@
 	"subtype_group_stage": "Trinn",
 	"subtype_group_mechanic": "Pokémon-mekanikk",
 	"subtype_group_trainer": "Trener",
-	"subtype_group_other": "Annet"
+	"subtype_group_other": "Annet",
+	"binder_excluded_heading": "Ekskludert",
+	"binder_restore": "Gjenopprett",
+	"binder_restore_aria": "Gjenopprett {name} i binder",
+	"binder_bulk_remove": "Fjern fra binder",
+	"binder_bulk_move": "Flytt til binder",
+	"binder_toast_removed": "Fjernet fra binder",
+	"binder_toast_moved": "Flyttet",
+	"binder_toast_removed_count": "Fjernet {count} kort",
+	"binder_toast_moved_count": "Flyttet {count} kort",
+	"binder_toast_undo": "Angre",
+	"binder_print_row_card_name": "Kortnavn",
+	"binder_print_row_number": "Nummer",
+	"binder_print_row_set_name": "Settnavn",
+	"binder_print_row_series_name": "Serie",
+	"binder_print_row_rarity": "Sjeldenhet",
+	"binder_print_row_price": "Pris",
+	"binder_print_row_custom_text": "Egendefinert tekst",
+	"binder_print_row_card_image": "Kortbilde",
+	"binder_print_row_qr": "QR-kode",
+	"binder_print_column_card": "Kort",
+	"binder_print_column_content": "Innhold",
+	"binder_print_add_row": "Legg til rad",
+	"binder_print_row_edit": "Rediger",
+	"binder_print_row_remove": "Fjern",
+	"binder_print_row_move_up": "Flytt opp",
+	"binder_print_row_move_down": "Flytt ned",
+	"binder_print_row_field_color": "Farge",
+	"binder_print_row_field_size": "Størrelse",
+	"binder_print_row_field_y_spacing": "Avstand under",
+	"binder_print_row_field_backdrop": "Bakgrunn",
+	"binder_print_row_field_text": "Tekst",
+	"binder_print_row_field_type": "Type",
+	"binder_print_row_editor_edit_title": "Rediger rad",
+	"binder_print_row_save": "Lagre"
 }

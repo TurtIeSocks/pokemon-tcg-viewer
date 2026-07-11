@@ -10,6 +10,18 @@ export type PriceIdsMap = Record<string, PriceIdEntry>;
 /** N Normal · H Holofoil · R Reverse Holofoil · 1H/1N 1st Edition Holofoil/Normal. */
 export type FinishCode = "N" | "H" | "R" | "1H" | "1N";
 
+/**
+ * Canonical fallback order for picking ONE representative finish when a card's
+ * printing is unknown (every quick-add / scan / CSV / legacy stack has
+ * `printing: null`). Normal ('N') leads because Holofoil often prices ~10x the
+ * Normal a collector actually owns, so preferring H first inflated those stacks.
+ * SINGLE SOURCE OF TRUTH: both `valuation.ts` (portfolio value) and
+ * `price-history.ts` (the sparkline) must use this, or a card's history reads a
+ * different finish than its portfolio value — they drifted (H-first vs N-first)
+ * and disagreed ~10x until this was unified.
+ */
+export const MARKET_FINISH_ORDER: FinishCode[] = ["N", "H", "1N", "1H"];
+
 /** tcgcsv subTypeName → finish code. Unknown names are logged + skipped at join. */
 export const TP_SUBTYPE_TO_CODE: Partial<Record<string, FinishCode>> = {
 	Normal: "N",
@@ -36,6 +48,14 @@ export interface CardPriceEntry {
 	tp?: Partial<Record<FinishCode, TpPricePair>>;
 	/** cardmarket [trend, avg1, avg7, avg30], EUR cents. */
 	cm?: CmTuple;
+	/**
+	 * tcgplayer product id, for a DIRECT product-page link
+	 * (`tcgplayer.com/product/{tpId}`, no slug needed) instead of a search URL.
+	 * Present only after a blob rebuild carries it; consumers fall back to the
+	 * search URL when absent, so links upgrade gracefully. Cardmarket has no
+	 * equivalent (its URLs are slug-based, not id-addressable).
+	 */
+	tpId?: number;
 }
 
 /** ECB reference table (frankfurter.dev shape), EUR-based. */

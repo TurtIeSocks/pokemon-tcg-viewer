@@ -9,6 +9,7 @@ import type {
 	FinishCode,
 	FxTable,
 } from "@/lib/corpus/price-types";
+import { MARKET_FINISH_ORDER } from "@/lib/corpus/price-types";
 import type { CardCondition, Stack } from "./types";
 
 /**
@@ -67,8 +68,9 @@ function finishOrder(printing: CardVariant | null): FinishCode[] {
 	const order: FinishCode[] = [];
 	const resolved = finishForPrinting(printing);
 	if (resolved) order.push(resolved);
-	for (const f of ["N", "H", "1N", "1H"] as const)
-		if (!order.includes(f)) order.push(f);
+	// Shared canonical fallback (Normal-first) — see MARKET_FINISH_ORDER. The
+	// sparkline in price-history.ts uses the same constant so they can't drift.
+	for (const f of MARKET_FINISH_ORDER) if (!order.includes(f)) order.push(f);
 	return order;
 }
 

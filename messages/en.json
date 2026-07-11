@@ -81,8 +81,13 @@
 	"home_browse_aria": "Browse {name}",
 	"home_set_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} set",
 				"countPlural=other": "{count} sets"
@@ -185,8 +190,13 @@
 	"vault_bulk_add_cards_to_binder_item": "Add {count} cards to binder",
 	"vault_bulk_add_to_binder_title": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "Add {count} card to a binder",
 				"countPlural=other": "Add {count} cards to a binder"
@@ -225,8 +235,13 @@
 	"vault_import_backup_button": "Import backup",
 	"vault_claim_local_cards": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "You have {count} local card not in your cloud Vault.",
 				"countPlural=other": "You have {count} local cards not in your cloud Vault."
@@ -261,8 +276,13 @@
 	"vault_csv_merge_duplicates": "Merge duplicate stacks",
 	"vault_csv_import_button": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "Import {count} stack",
 				"countPlural=other": "Import {count} stacks"
@@ -300,8 +320,13 @@
 	"binder_progress_label": "Progress",
 	"binder_rule_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} rule",
 				"countPlural=other": "{count} rules"
@@ -310,8 +335,13 @@
 	],
 	"binder_card_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} card",
 				"countPlural=other": "{count} cards"
@@ -364,34 +394,22 @@
 	"binder_print_taller_title": "Taller than a standard card",
 	"binder_print_oversize_width_desc": "Standard width is {standard}mm. Placeholders this wide may not fit in binder pockets.",
 	"binder_print_oversize_height_desc": "Standard height is {standard}mm. Placeholders this tall may not fit in binder pockets.",
-	"binder_print_group_colors": "Colors",
-	"binder_print_group_font_sizes": "Font sizes",
-	"binder_print_group_card_size": "Card size",
-	"binder_print_group_style": "Style",
 	"binder_print_label_background": "Background",
-	"binder_print_label_text": "Text",
 	"binder_print_label_border": "Border",
-	"binder_print_label_qr_color": "QR color",
-	"binder_print_label_qr_backdrop": "QR backdrop",
-	"binder_print_label_card_name": "Card name",
-	"binder_print_label_card_number": "Card #",
-	"binder_print_label_set_name": "Set name",
-	"binder_print_label_price": "Price",
-	"binder_print_show_field": "Show {field}",
-	"binder_print_field_font_size": "{field} font size",
-	"binder_print_field_size": "{field} size",
 	"binder_print_label_width": "Width",
 	"binder_print_label_height": "Height",
 	"binder_print_label_spacing": "Spacing",
-	"binder_print_label_row_gap": "Row gap",
 	"binder_print_label_corner_radius": "Corner radius",
 	"binder_print_label_border_width": "Border width",
-	"binder_print_label_text_size": "Text size",
-	"binder_print_label_qr_code": "QR code",
 	"binder_print_count_label": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} card to print",
 				"countPlural=other": "{count} cards to print"
@@ -401,8 +419,13 @@
 	"binder_print_fits_per_sheet": "Fits {count} per sheet ({columns} × {rows})",
 	"binder_print_pages_of_paper": [
 		{
-			"declarations": ["input pages", "local pagesPlural = pages: plural"],
-			"selectors": ["pagesPlural"],
+			"declarations": [
+				"input pages",
+				"local pagesPlural = pages: plural"
+			],
+			"selectors": [
+				"pagesPlural"
+			],
 			"match": {
 				"pagesPlural=one": "About {pages} sheet of paper.",
 				"pagesPlural=other": "About {pages} sheets of paper."
@@ -504,9 +527,13 @@
 	"shell_credit_pokemon_title": "Pokémon",
 	"shell_credit_pokemon_body": "Pokémon and all related names are trademarks of Nintendo, Creatures Inc., and GAME FREAK inc. Cardstack is an unofficial, non-commercial fan project. It is not affiliated with, endorsed, or sponsored by them.",
 	"shell_credit_card_data_title": "Card data & images",
-	"shell_credit_card_data_body": "Every card you browse and collect is served by the Pokémon TCG API.",
+	"shell_credit_card_data_body": "Every card you browse and collect is sourced from TCGdex, an open, community-run card database. Some set logos and Western pricing come from pokemontcg.io as a fallback.",
 	"shell_credit_holo_title": "Holographic card effects",
 	"shell_credit_holo_body": "The holo and foil shaders that make the chase cards glint are adapted from Pokémon Cards CSS by Simon Goellner (@simeydotme).",
+	"shell_credit_pricing_title": "Pricing data",
+	"shell_credit_pricing_body": "Live market prices come from TCGplayer and Cardmarket, surfaced through the pokemontcg.io pricing fields.",
+	"shell_credit_fonts_title": "Typefaces",
+	"shell_credit_fonts_body": "Clash Display by the Indian Type Foundry (via Fontshare), plus Space Grotesk and Geist Mono, both under the SIL Open Font License.",
 	"shell_open_source_note": "Open source, top to bottom. No landlord, no lock-in.",
 	"shell_view_source_github": "View source on GitHub",
 	"route_loading_aria": "Loading",
@@ -624,5 +651,39 @@
 	"subtype_group_stage": "Stage",
 	"subtype_group_mechanic": "Pokémon Mechanic",
 	"subtype_group_trainer": "Trainer",
-	"subtype_group_other": "Other"
+	"subtype_group_other": "Other",
+	"binder_excluded_heading": "Excluded",
+	"binder_restore": "Restore",
+	"binder_restore_aria": "Restore {name} to binder",
+	"binder_bulk_remove": "Remove from binder",
+	"binder_bulk_move": "Move to binder",
+	"binder_toast_removed": "Removed from binder",
+	"binder_toast_moved": "Moved",
+	"binder_toast_removed_count": "Removed {count} cards",
+	"binder_toast_moved_count": "Moved {count} cards",
+	"binder_toast_undo": "Undo",
+	"binder_print_row_card_name": "Card name",
+	"binder_print_row_number": "Number",
+	"binder_print_row_set_name": "Set name",
+	"binder_print_row_series_name": "Series",
+	"binder_print_row_rarity": "Rarity",
+	"binder_print_row_price": "Price",
+	"binder_print_row_custom_text": "Custom text",
+	"binder_print_row_card_image": "Card image",
+	"binder_print_row_qr": "QR code",
+	"binder_print_column_card": "Card",
+	"binder_print_column_content": "Content",
+	"binder_print_add_row": "Add row",
+	"binder_print_row_edit": "Edit",
+	"binder_print_row_remove": "Remove",
+	"binder_print_row_move_up": "Move up",
+	"binder_print_row_move_down": "Move down",
+	"binder_print_row_field_color": "Color",
+	"binder_print_row_field_size": "Size",
+	"binder_print_row_field_y_spacing": "Spacing below",
+	"binder_print_row_field_backdrop": "Backdrop",
+	"binder_print_row_field_text": "Text",
+	"binder_print_row_field_type": "Type",
+	"binder_print_row_editor_edit_title": "Edit row",
+	"binder_print_row_save": "Save"
 }

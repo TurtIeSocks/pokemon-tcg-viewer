@@ -4,7 +4,9 @@ import { makeBinder, makeCorpusCard } from "../../test-utils";
 import { buildIndex } from "../corpus/corpus-engine";
 import type { CorpusCard } from "../corpus/corpus-types";
 import {
+	binderMemberSource,
 	binderMembers,
+	bindersContainingCard,
 	computeBinderProgress,
 	type RegionCorpus,
 	toCorpusQuery,
@@ -341,4 +343,82 @@ test("computeBinderProgress: owned counts span regions", () => {
 	const progress = computeBinderProgress(b, nameRegions, new Set(["SV1a-1"]));
 	expect(progress.total).toBe(2);
 	expect(progress.owned).toBe(1);
+});
+
+// --- binderMemberSource ---
+
+test("binderMemberSource: an explicitly-included card → 'manual'", () => {
+	const b = binder({ includeCardIds: ["pika-1"] });
+	expect(binderMemberSource(b, "pika-1")).toBe("manual");
+});
+
+test("binderMemberSource: a rule-only member → 'rule'", () => {
+	// pika-1 is matched by the Pokémon rule, not present in includeCardIds.
+	const b = binder({
+		rules: [{ id: "r1", query: sq({ supertypes: ["Pokémon"] }) }],
+	});
+	expect(binderMemberSource(b, "pika-1")).toBe("rule");
+});
+
+// --- bindersContainingCard ---
+
+test("bindersContainingCard: returns a binder that manually includes the card", () => {
+	const A = binder({ id: "A", includeCardIds: ["pika-1"] });
+	const B = binder({
+		id: "B",
+		rules: [{ id: "r1", query: sq({ supertypes: ["Trainer"] }) }],
+	});
+	// C's Pokémon rule would match pika-1, but it is excluded → C must NOT appear.
+	const C = binder({
+		id: "C",
+		rules: [{ id: "r1", query: sq({ supertypes: ["Pokémon"] }) }],
+		excludeCardIds: ["pika-1"],
+	});
+	expect(bindersContainingCard([A, B, C], regions, "pika-1")).toEqual(["A"]);
+});
+
+test("bindersContainingCard: returns a binder that matches the card via a rule", () => {
+	const A = binder({ id: "A", includeCardIds: ["pika-1"] });
+	const B = binder({
+		id: "B",
+		rules: [{ id: "r1", query: sq({ supertypes: ["Trainer"] }) }],
+	});
+	// trainer-1 is only matched by B's Trainer rule.
+	expect(bindersContainingCard([A, B], regions, "trainer-1")).toEqual(["B"]);
+});
+
+test("bindersContainingCard: a binder that excludes the card is not returned", () => {
+	// C's rule matches pika-1 but the exclude wins.
+	const C = binder({
+		id: "C",
+		rules: [{ id: "r1", query: sq({ supertypes: ["Pokémon"] }) }],
+		excludeCardIds: ["pika-1"],
+	});
+	expect(bindersContainingCard([C], regions, "pika-1")).toEqual([]);
+});
+
+test("bindersContainingCard: a card in no binder → []", () => {
+	const A = binder({ id: "A", includeCardIds: ["pika-1"] });
+	const B = binder({
+		id: "B",
+		rules: [{ id: "r1", query: sq({ supertypes: ["Trainer"] }) }],
+	});
+	expect(bindersContainingCard([A, B], regions, "ghost-x")).toEqual([]);
+});
+
+test("bindersContainingCard: preserves input order for a card in several binders", () => {
+	// Both contain trainer-1: B via rule, D via manual include.
+	const B = binder({
+		id: "B",
+		rules: [{ id: "r1", query: sq({ supertypes: ["Trainer"] }) }],
+	});
+	const D = binder({ id: "D", includeCardIds: ["trainer-1"] });
+	expect(bindersContainingCard([B, D], regions, "trainer-1")).toEqual([
+		"B",
+		"D",
+	]);
+	expect(bindersContainingCard([D, B], regions, "trainer-1")).toEqual([
+		"D",
+		"B",
+	]);
 });

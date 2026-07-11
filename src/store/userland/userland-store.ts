@@ -842,6 +842,22 @@ export async function restoreCardToBinder(
 	});
 }
 
+/**
+ * Move a card from one binder to another: hide it in the source (exclude) and
+ * add it as a manual member of the target. Composes the existing actions, so a
+ * missing binder simply no-ops on that side (both underlying actions guard on
+ * `getState().binders[id]`). Same-binder moves are a no-op.
+ */
+export async function moveCardBetweenBinders(
+	cardId: string,
+	fromId: string,
+	toId: string,
+): Promise<void> {
+	if (fromId === toId) return;
+	await removeCardFromBinder(fromId, cardId);
+	await addCardsToBinder(toId, [cardId]);
+}
+
 // --- Profile actions ---
 /** Persist a patch to the profile (upsert) and commit the returned record. */
 export async function updateProfile(patch: ProfilePatch): Promise<Profile> {

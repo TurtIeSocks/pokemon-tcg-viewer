@@ -2,7 +2,6 @@ import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { SetTile } from "@/components/shell/set-tile";
 import { Stagger } from "@/components/ui/motion";
-import { LIST_SEARCH_DEFAULTS } from "../../lib/list-search";
 import type { NavTree } from "../../lib/nav-tree";
 import { m } from "../../paraglide/messages";
 
@@ -73,7 +72,7 @@ function EraTile({ series }: { series: NavTree[number] }) {
 		<Link
 			to="/$series"
 			params={{ series: series.slug }}
-			search={LIST_SEARCH_DEFAULTS}
+			search={{ lang: null }}
 			aria-label={m.home_browse_aria({ name: series.name })}
 			className="group relative block aspect-4/5 w-full overflow-hidden rounded-2xl transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-8px_rgba(0,0,0,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none motion-reduce:hover:translate-y-0"
 		>

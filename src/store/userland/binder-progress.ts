@@ -68,6 +68,36 @@ export function binderMembers(
 	return members;
 }
 
+/**
+ * Classify how a card belongs to a binder: `"manual"` if it is in
+ * `includeCardIds`, otherwise `"rule"` (matched by one of the binder's rules).
+ * The caller guarantees `cardId` is a current member (see {@link binderMembers});
+ * this only distinguishes the two membership sources.
+ */
+export function binderMemberSource(
+	binder: Binder,
+	cardId: string,
+): "manual" | "rule" {
+	return binder.includeCardIds.includes(cardId) ? "manual" : "rule";
+}
+
+/**
+ * Given a card, return the ids of every binder that currently contains it —
+ * i.e. whose {@link binderMembers} set includes `cardId` (rule matches plus
+ * manual includes, minus excludes). Preserves the input `binders` order.
+ */
+export function bindersContainingCard(
+	binders: Binder[],
+	regions: RegionCorpus[],
+	cardId: string,
+): string[] {
+	const out: string[] = [];
+	for (const binder of binders) {
+		if (binderMembers(binder, regions).has(cardId)) out.push(binder.id);
+	}
+	return out;
+}
+
 export interface BinderProgress {
 	/** All card ids that belong to this binder (after rules + include/exclude). */
 	members: Set<string>;

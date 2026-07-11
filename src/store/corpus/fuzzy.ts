@@ -1,3 +1,5 @@
+import type { NameExpr } from "./search-grammar";
+
 /** Lowercase, strip diacritics, drop all non-alphanumerics (incl. spaces). */
 export function normalize(s: string): string {
 	return s
@@ -82,4 +84,76 @@ export function matchName(
 		if (dd < best) best = dd;
 	}
 	return best <= maxDist ? { tier: 3, distance: best } : null;
+}
+
+/** Result of evaluating a whole {@link NameExpr} against one card name. */
+export interface ExprMatch {
+	matched: boolean;
+	tier: MatchTier;
+	distance: number;
+}
+
+/** Neutral "matches all" result — mirrors matchName's empty-query return. */
+const MATCH_ALL: ExprMatch = { matched: true, tier: 2, distance: 0 };
+
+/**
+ * Evaluate a parsed {@link NameExpr} against one already-normalized card name.
+ * Runs the existing tiered {@link matchName} on each positive/negated leaf and
+ * combines per the grammar rules:
+ *  - a term with a leading `!` (negated) must NOT match;
+ *  - an arm (AND) matches when every positive term matches and every negated
+ *    term does not — its tier is the WORST (highest) positive term's tier;
+ *  - the expression (OR) matches when any arm matches — its tier is the BEST
+ *    (lowest) matching arm's tier.
+ *
+ * An empty expression (no arms) applies no name filter and matches everything.
+ */
+export function matchNameExpr(
+	expr: NameExpr,
+	nameNorm: string,
+	nameTokens: string[],
+	mode: SearchMode = "fuzzy",
+): ExprMatch {
+	if (expr.arms.length === 0) return MATCH_ALL;
+
+	let best: ExprMatch | null = null;
+	for (const arm of expr.arms) {
+		let armTier = 0;
+		let armDistance = 0;
+		let hadPositive = false;
+		let armOk = true;
+		for (const term of arm.terms) {
+			const q = normalize(term.text);
+			if (!q) continue; // empty leaf → no constraint (defensive)
+			const m = matchName(q, nameNorm, nameTokens, mode);
+			if (term.negated) {
+				if (m) {
+					armOk = false;
+					break;
+				}
+				continue;
+			}
+			if (!m) {
+				armOk = false;
+				break;
+			}
+			hadPositive = true;
+			if (m.tier > armTier) armTier = m.tier;
+			if (m.distance > armDistance) armDistance = m.distance;
+		}
+		if (!armOk) continue;
+		// A pure-negation arm (all terms excluded, none positive) matched every
+		// non-excluded card — report the neutral tier 2, like an empty query.
+		const tier: MatchTier = hadPositive ? (armTier as MatchTier) : 2;
+		const distance = hadPositive ? armDistance : 0;
+		if (
+			best === null ||
+			tier < best.tier ||
+			(tier === best.tier && distance < best.distance)
+		) {
+			best = { matched: true, tier, distance };
+		}
+	}
+
+	return best ?? { matched: false, tier: 3, distance: 0 };
 }

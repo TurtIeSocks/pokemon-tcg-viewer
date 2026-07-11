@@ -9,10 +9,11 @@ import { DEFAULT_PRINT_PREFS, useUiPrefs } from "@/store/ui-prefs";
 import type { HoloCardData } from "../holo-card/types";
 import { PrintMissingDialog } from "./print-missing-dialog";
 
-// Print settings now live in a persisted (singleton) store, so reset them before
-// every test — otherwise one test's slider change leaks into the next.
+// Print settings live in a persisted (singleton) store, so reset them before every
+// test — otherwise one test's edit leaks into the next. structuredClone so the
+// shared DEFAULT constant can never be mutated through the store.
 beforeEach(() => {
-	useUiPrefs.setState({ printPrefs: { ...DEFAULT_PRINT_PREFS } });
+	useUiPrefs.setState({ printPrefs: structuredClone(DEFAULT_PRINT_PREFS) });
 	// The dialog loads prices when it opens; stub the fetchers so tests never hit
 	// the wire, and start from a "ready" (empty) cache so loadPrices early-returns.
 	setPricesFetchersForTests({
@@ -56,46 +57,12 @@ function firstPlaceholder(): HTMLElement {
 	return el as HTMLElement;
 }
 
-test("lists the correct 'N cards to print' count", () => {
-	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
-	expect(screen.getByText("3 cards to print")).toBeDefined();
-});
-
-test("renders one placeholder per missing card with name, number, and set lines", () => {
-	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
-	const p = preview();
-	expect(p.querySelectorAll(".tcgv-placeholder")).toHaveLength(3);
-	expect(within(p).getByText("Bulbasaur")).toBeDefined();
-	// Number and set name are now independent lines (not "#1 / Base Set").
-	expect(within(p).getByText("#1")).toBeDefined();
-	expect(within(p).getAllByText("Base Set").length).toBe(3);
-});
-
-test("exposes background, text, and border color controls", () => {
-	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
-	// The registry ColorPicker is a popover trigger, not a native input; assert the
-	// three labelled controls (background, text, border) are present.
-	expect(screen.getByText("Background")).toBeDefined();
-	expect(screen.getByText("Text")).toBeDefined();
-	expect(screen.getByText("Border")).toBeDefined();
-});
-
-test("placeholder paints fill + border as an SVG rect (prints reliably), from the print defaults", () => {
-	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
-	const ph = firstPlaceholder();
-	// Fill + border are an SVG <rect> (foreground paint), not a CSS background —
-	// CSS backgrounds are dropped by the print pipeline. Values are read from
-	// DEFAULT_PRINT_PREFS so this tracks the defaults instead of rotting when they change.
-	const rect = ph.querySelector("rect");
-	if (!rect) throw new Error("no fill rect rendered");
-	expect(rect.getAttribute("fill")).toBe(DEFAULT_PRINT_PREFS.background);
-	expect(rect.getAttribute("stroke")).toBe(DEFAULT_PRINT_PREFS.borderColor);
-	expect(rect.getAttribute("stroke-width")).toBe(
-		String(DEFAULT_PRINT_PREFS.borderMm),
-	);
-	// Rounded corners (mm units) give the card-silhouette look.
-	expect(rect.getAttribute("rx")).toBe(String(DEFAULT_PRINT_PREFS.radiusMm));
-});
+/** Ordered text of each content row rendered in the first placeholder. */
+function firstPlaceholderRowText(): string[] {
+	const content = firstPlaceholder().querySelector(".tcgv-placeholder-content");
+	if (!content) throw new Error("no content column rendered");
+	return Array.from(content.children).map((c) => c.textContent ?? "");
+}
 
 /** Type a value into a UnitInput and commit it (blur). */
 function setUnit(labelText: string, value: string) {
@@ -106,37 +73,83 @@ function setUnit(labelText: string, value: string) {
 	});
 }
 
-test("the text-size field (%) master-scales every line by the same factor", () => {
+const rows = () => useUiPrefs.getState().printPrefs.rows;
+
+test("lists the correct 'N cards to print' count", () => {
 	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
-	// Base 3.6mm name / 2.8mm number, scaled by the 1.3x default → 4.68 / 3.64.
+	expect(screen.getByText("3 cards to print")).toBeDefined();
+});
+
+test("renders one placeholder per missing card with name, number, and set lines", () => {
+	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
+	const p = preview();
+	expect(p.querySelectorAll(".tcgv-placeholder")).toHaveLength(3);
+	expect(within(p).getByText("Bulbasaur")).toBeDefined();
+	expect(within(p).getByText("#1")).toBeDefined();
+	expect(within(p).getAllByText("Base Set").length).toBe(3);
+});
+
+test("the renderer stacks the rows in order (default: name, number, set)", () => {
+	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
+	// Price + QR default rows collapse (no price data, no slug) so the visible
+	// order is exactly name, number, set.
+	expect(firstPlaceholderRowText()).toEqual(["Bulbasaur", "#1", "Base Set"]);
+});
+
+test("text rows render at their mm size (default card-name 4.68mm, number 3.64mm)", () => {
+	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
 	expect(within(preview()).getByText("Bulbasaur").style.fontSize).toBe(
 		"4.68mm",
 	);
 	expect(within(preview()).getByText("#1").style.fontSize).toBe("3.64mm");
-
-	// 150% → 1.5x multiplier; ratio preserved (5.4 / 4.2 === 3.6 / 2.8).
-	setUnit("Text size", "150");
-	expect(within(preview()).getByText("Bulbasaur").style.fontSize).toBe("5.4mm");
-	expect(within(preview()).getByText("#1").style.fontSize).toBe("4.2mm");
 });
 
-test("a per-line font-size field sets that line's base size (x textScale)", () => {
-	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
-	setUnit("Card name size", "6"); // 6mm base * 1.3 default scale = 7.8mm
-	expect(within(preview()).getByText("Bulbasaur").style.fontSize).toBe("7.8mm");
-});
-
-test("unchecking a font-size line hides it on every placeholder", () => {
-	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
-	expect(within(preview()).getByText("#1")).toBeDefined();
-	act(() => {
-		fireEvent.click(screen.getByLabelText("Show Card #"));
+test("null-content rows collapse: an unpriced card drops its price row", () => {
+	// Price only for card "a"; b + c stay unpriced and must omit the price row.
+	usePricesRuntime.setState({
+		byId: new Map([["a", { tp: { N: [420, 300] } }]]),
+		meta: {
+			date: "2026-07-03",
+			sources: { tp: "2026-07-03", cm: null },
+			fx: { base: "EUR", date: "2026-07-03", rates: { USD: 1.09 } },
+		},
+		status: "ready",
 	});
-	expect(within(preview()).queryByText("#1")).toBeNull();
-	// The line's size input is disabled while hidden.
-	expect(
-		(screen.getByLabelText("Card # size") as HTMLInputElement).disabled,
-	).toBe(true);
+	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
+	// Exactly one placeholder (card a) shows the price line.
+	expect(within(preview()).getAllByText("$4.20")).toHaveLength(1);
+	// Card a's rows include the price; card b's do not (row omitted, not blank).
+	const placeholders = preview().querySelectorAll(".tcgv-placeholder");
+	expect(placeholders[0].textContent).toContain("$4.20");
+	expect(placeholders[1].textContent).not.toContain("$4.20");
+});
+
+test("placeholder paints fill + border as an SVG rect (prints reliably), from the card defaults", () => {
+	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
+	const rect = firstPlaceholder().querySelector("rect");
+	if (!rect) throw new Error("no fill rect rendered");
+	const c = DEFAULT_PRINT_PREFS.card;
+	expect(rect.getAttribute("fill")).toBe(c.fillColor);
+	expect(rect.getAttribute("stroke")).toBe(c.borderColor);
+	expect(rect.getAttribute("stroke-width")).toBe(String(c.borderMm));
+	expect(rect.getAttribute("rx")).toBe(String(c.radiusMm));
+});
+
+test("Column A width patches card.widthMm and re-fits the grid", () => {
+	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
+	const sheet = () =>
+		preview().querySelector(".tcgv-print-sheet") as HTMLElement;
+	expect(sheet().style.gridTemplateColumns).toBe("repeat(2, 63mm)");
+
+	setUnit("Width", "120"); // floor((190 + 5) / (120 + 5)) = 1 column
+	expect(useUiPrefs.getState().printPrefs.card.widthMm).toBe(120);
+	expect(sheet().style.gridTemplateColumns).toBe("repeat(1, 120mm)");
+});
+
+test("Column A height patches card.heightMm", () => {
+	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
+	setUnit("Height", "100");
+	expect(useUiPrefs.getState().printPrefs.card.heightMm).toBe(100);
 });
 
 test("spacing feeds both the grid gap and the auto-fit", () => {
@@ -144,50 +157,29 @@ test("spacing feeds both the grid gap and the auto-fit", () => {
 	const sheet = () =>
 		preview().querySelector(".tcgv-print-sheet") as HTMLElement;
 	expect(sheet().style.gap).toBe("5mm");
-	// Gap 0 → the 3rd column fits again (3 * 63 = 189 <= 190mm printable).
-	setUnit("Spacing", "0");
+	setUnit("Spacing", "0"); // 3 * 63 = 189 <= 190mm → 3rd column fits again
+	expect(useUiPrefs.getState().printPrefs.card.spacingMm).toBe(0);
 	expect(sheet().style.gap).toBe("0mm");
 	expect(sheet().style.gridTemplateColumns).toBe("repeat(3, 63mm)");
 });
 
-test("the corner-radius field updates the placeholder rounding (SVG rect rx)", () => {
+test("corner-radius + border-width patch the placeholder rect", () => {
 	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
-	expect(firstPlaceholder().querySelector("rect")?.getAttribute("rx")).toBe(
-		"3",
-	);
-
 	setUnit("Corner radius", "6");
 	expect(firstPlaceholder().querySelector("rect")?.getAttribute("rx")).toBe(
 		"6",
 	);
-});
-
-test("the border-width field updates the placeholder stroke", () => {
-	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
-	setUnit("Border width", "1");
+	setUnit("Border width", "2");
 	expect(
 		firstPlaceholder().querySelector("rect")?.getAttribute("stroke-width"),
-	).toBe("1");
+	).toBe("2");
 });
 
-test("card size drives the grid: wider cards fit fewer columns (auto-fit)", () => {
+test("Column A exposes a fill + border color control", () => {
 	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
-	const sheet = () =>
-		preview().querySelector(".tcgv-print-sheet") as HTMLElement;
-	expect(sheet().style.gridTemplateColumns).toBe("repeat(2, 63mm)");
-
-	// 120mm wide → floor((190 + 5) / (120 + 5)) = 1 column.
-	setUnit("Width", "120");
-	expect(sheet().style.gridTemplateColumns).toBe("repeat(1, 120mm)");
-	// The "fits N per sheet" read-out reflects the re-fit (text spans nodes).
-	const fits = screen.getByText(
-		(_, el) =>
-			el?.tagName === "P" &&
-			(el.textContent ?? "").replace(/\s+/g, " ").includes("Fits 3 per sheet"),
-	);
-	expect(fits.textContent?.replace(/\s+/g, " ")).toContain(
-		"Fits 3 per sheet (1 × 3)",
-	);
+	// The registry ColorPicker trigger is labelled by its aria-label.
+	expect(screen.getByLabelText("Background")).toBeDefined();
+	expect(screen.getByLabelText("Border")).toBeDefined();
 });
 
 test("warns when a card dimension exceeds the standard size", () => {
@@ -215,48 +207,113 @@ test("no oversize warning at or below the standard size", () => {
 	}
 });
 
-test("Reset to defaults restores every setting", () => {
+test("Column B lists a row per content row with a type label", () => {
+	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
+	// Default rows: Card name, Number, Set name, Price, QR code.
+	const list = screen.getByRole("list");
+	expect(within(list).getByText("Card name")).toBeDefined();
+	expect(within(list).getByText("Number")).toBeDefined();
+	expect(within(list).getByText("QR code")).toBeDefined();
+});
+
+test("reorder: move-up swaps two rows in the persisted array", () => {
+	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
+	expect(rows().map((r) => r.type)).toEqual([
+		"cardName",
+		"number",
+		"setName",
+		"price",
+		"qr",
+	]);
+	// The 2nd row (number) is index 1 in the enabled move-up buttons list.
+	act(() => {
+		fireEvent.click(screen.getAllByLabelText("Move up")[1]);
+	});
+	expect(rows().map((r) => r.type)).toEqual([
+		"number",
+		"cardName",
+		"setName",
+		"price",
+		"qr",
+	]);
+	// Preview reflects the new order (number now first).
+	expect(firstPlaceholderRowText()).toEqual(["#1", "Bulbasaur", "Base Set"]);
+});
+
+test("remove: drops a row from the persisted array", () => {
+	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
+	// Remove the first row (Card name).
+	act(() => {
+		fireEvent.click(screen.getAllByLabelText("Remove")[0]);
+	});
+	const types = rows().map((r) => r.type);
+	expect(types).toHaveLength(4);
+	expect(types).not.toContain("cardName");
+});
+
+test("add row: the editor appends a row of the chosen type with default fields", () => {
+	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
+	act(() => {
+		fireEvent.click(screen.getByRole("button", { name: "Add row" }));
+	});
+	// Choose a rarity row, then save.
+	act(() => {
+		fireEvent.change(screen.getByLabelText("Type"), {
+			target: { value: "rarity" },
+		});
+	});
+	act(() => {
+		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+	});
+	const all = rows();
+	expect(all).toHaveLength(6);
+	const added = all[all.length - 1];
+	expect(added.type).toBe("rarity");
+	expect(added.sizeMm).toBe(3.64); // CONTENT_TYPES.rarity.defaultSizeMm
+	expect(added.ySpacingMm).toBe(3);
+});
+
+test("Reset to defaults restores the card + rows", () => {
 	useUiPrefs.setState({
 		printPrefs: {
-			...DEFAULT_PRINT_PREFS,
-			background: "#123456",
-			cardWidthMm: 120,
+			card: { ...DEFAULT_PRINT_PREFS.card, fillColor: "#123456", widthMm: 120 },
+			rows: [],
 		},
 	});
 	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
-	// Sanity: the overridden fill + single-column grid are in effect.
+	const sheet = () =>
+		preview().querySelector(".tcgv-print-sheet") as HTMLElement;
 	expect(firstPlaceholder().querySelector("rect")?.getAttribute("fill")).toBe(
 		"#123456",
 	);
+	expect(sheet().style.gridTemplateColumns).toBe("repeat(1, 120mm)");
 
 	act(() => {
 		fireEvent.click(screen.getByRole("button", { name: /reset to defaults/i }));
 	});
 
 	expect(firstPlaceholder().querySelector("rect")?.getAttribute("fill")).toBe(
-		DEFAULT_PRINT_PREFS.background,
+		DEFAULT_PRINT_PREFS.card.fillColor,
 	);
-	const sheet = preview().querySelector(".tcgv-print-sheet") as HTMLElement;
-	expect(sheet.style.gridTemplateColumns).toBe("repeat(2, 63mm)");
+	expect(sheet().style.gridTemplateColumns).toBe("repeat(2, 63mm)");
+	expect(rows()).toHaveLength(DEFAULT_PRINT_PREFS.rows.length);
 });
 
 test("print settings persist across dialog remounts (saved in the store)", () => {
 	const { unmount } = render(
 		<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />,
 	);
-	setUnit("Text size", "150");
+	setUnit("Width", "120");
 	unmount();
-
-	// Remount reads the persisted store, not a fresh local default → still scaled.
 	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
-	expect(within(preview()).getByText("Bulbasaur").style.fontSize).toBe("5.4mm");
+	const sheet = preview().querySelector(".tcgv-print-sheet") as HTMLElement;
+	expect(sheet.style.gridTemplateColumns).toBe("repeat(1, 120mm)");
 });
 
 test("preview sheet is an explicit 2-col grid with a cutting gap (Firefox-safe, not flex)", () => {
 	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
 	const sheet = preview().querySelector(".tcgv-print-sheet") as HTMLElement;
 	expect(sheet.style.gap).toBe("5mm");
-	// Explicit column count, not flex-wrap — Firefox print won't wrap flex columns.
 	expect(sheet.style.display).toBe("grid");
 	expect(sheet.style.gridTemplateColumns).toBe("repeat(2, 63mm)");
 });
@@ -268,12 +325,9 @@ test("Print button calls window.print (stubbed)", () => {
 	window.print = () => {
 		called += 1;
 	};
-
-	const printBtn = screen.getByRole("button", { name: "Print" });
 	act(() => {
-		fireEvent.click(printBtn);
+		fireEvent.click(screen.getByRole("button", { name: "Print" }));
 	});
-
 	expect(called).toBe(1);
 	window.print = orig;
 });
@@ -285,34 +339,7 @@ test("empty state: shows a nothing-to-print message and disables Print", () => {
 		(screen.getByRole("button", { name: "Print" }) as HTMLButtonElement)
 			.disabled,
 	).toBe(true);
-	// No preview sheet when there is nothing to print.
 	expect(
 		screen.queryByRole("region", { name: "Placeholder preview" }),
 	).toBeNull();
-});
-
-test("shows a market price line for a priced card and hides it when toggled off", () => {
-	usePricesRuntime.setState({
-		byId: new Map([["a", { tp: { N: [420, 300] } }]]),
-		meta: {
-			date: "2026-07-03",
-			sources: { tp: "2026-07-03", cm: null },
-			fx: { base: "EUR", date: "2026-07-03", rates: { USD: 1.09 } },
-		},
-		status: "ready",
-	});
-	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
-	// Card "a" (Bulbasaur) is priced at 420 cents → $4.20; b/c are unpriced.
-	expect(within(preview()).getByText("$4.20")).toBeDefined();
-
-	act(() => {
-		fireEvent.click(screen.getByLabelText("Show Price"));
-	});
-	expect(within(preview()).queryByText("$4.20")).toBeNull();
-});
-
-test("exposes a QR-code toggle, on by default", () => {
-	render(<PrintMissingDialog open onOpenChange={() => {}} cards={missing} />);
-	const qr = screen.getByLabelText("Show QR code") as HTMLInputElement;
-	expect(qr.checked).toBe(true);
 });

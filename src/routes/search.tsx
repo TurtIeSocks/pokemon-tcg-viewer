@@ -4,7 +4,7 @@ import {
 	stripSearchParams,
 	useNavigate,
 } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { m } from "@/paraglide/messages";
 import type { HoloCardData } from "../components/holo-card";
 import { CardGridIsland } from "../components/islands/card-grid-island";
@@ -17,7 +17,7 @@ import { SelectAndBulkAdd } from "../components/vault/select-and-bulk-add";
 import { buildCorpusQuery } from "../lib/card-query";
 import {
 	LIST_SEARCH_DEFAULTS,
-	listSearchToUrl,
+	useListSearchOnChange,
 	validateListSearch,
 } from "../lib/list-search";
 import { toSerializedQuery } from "../lib/serialized-query";
@@ -93,36 +93,12 @@ function SearchPage() {
 	useEffect(() => {
 		addRecentSearch(q);
 	}, [q, addRecentSearch]);
-	// Push a search-param patch to the URL (re-runs the loader). viewTransition off:
-	// in-page filter/view changes shouldn't crossfade.
-	const applyPatch = useCallback(
-		(patch: Parameters<typeof listSearchToUrl>[0]) =>
-			navigate({
-				search: (prev) => ({ ...prev, ...listSearchToUrl(patch) }),
-				viewTransition: false,
-			}),
-		[navigate],
-	);
-	// Debounce search-as-you-type: the q loader re-runs a server-fn RPC on every URL
-	// change, while the live grid already filters the in-memory corpus instantly — so
-	// only the URL/loader waits for a typing pause (filter/view/sort apply at once).
-	// The uncontrolled search input shows each keystroke live regardless.
-	const qTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-	useEffect(
-		() => () => {
-			if (qTimer.current) clearTimeout(qTimer.current);
-		},
-		[],
-	);
-	const onChange = useCallback(
-		(patch: Parameters<typeof listSearchToUrl>[0]) => {
-			const isTyping = "q" in patch && Object.keys(patch).length === 1;
-			if (!isTyping) return applyPatch(patch);
-			if (qTimer.current) clearTimeout(qTimer.current);
-			qTimer.current = setTimeout(() => applyPatch(patch), 250);
-		},
-		[applyPatch],
-	);
+	// Search-param onChange: debounces the lone-`q` typing run (here `q` is also a
+	// loaderDep, so the debounce coalesces the per-keystroke server-fn RPC too) and
+	// writes it with `replace` so the whole run is one Back-able history entry;
+	// filter/view/sort/mode changes push immediately. The uncontrolled search input
+	// shows each keystroke live regardless.
+	const onChange = useListSearchOnChange(navigate);
 
 	// Corpus + sets for BulkAddMenu cardIds derivation. Search is scoped to the
 	// active-region catalog, so this reads that region's sets (not always west).
@@ -163,7 +139,7 @@ interface SearchPageInnerProps {
 	total: number;
 	cards: HoloCardData[];
 	search: ReturnType<typeof Route.useSearch>;
-	onChange: (patch: Parameters<typeof listSearchToUrl>[0]) => void;
+	onChange: ReturnType<typeof useListSearchOnChange>;
 	options: SetFacets;
 	bulkCardIds: string[];
 	cardHref: (card: HoloCardData) => LinkProps;

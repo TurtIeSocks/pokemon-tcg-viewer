@@ -72,6 +72,7 @@ test("joinPrices joins both sources into cents", () => {
 	expect(blob.cards["base1-4"]).toEqual({
 		tp: { H: [72034, 53499] },
 		cm: [50168, 27674, 40096, 56391],
+		tpId: 42382, // kept for the direct product link
 	});
 });
 
@@ -87,6 +88,7 @@ test("joinPrices handles single-source cards and multi-finish products", () => {
 	expect(blob.cards["sv2a-151"]).toEqual({ cm: [94, 150, null, 92] });
 	expect(blob.cards["swsh3-136"]).toEqual({
 		tp: { N: [7, 4], R: [36, 15] },
+		tpId: 219333,
 	});
 });
 

@@ -16,6 +16,7 @@ import { SignIn } from "@/components/auth/sign-in";
 import { useAuthSession } from "@/components/auth/use-auth-session";
 import { DEFAULT_AVATAR_PRESET_ID } from "@/components/profile/avatar-presets";
 import { CollectorAvatar } from "@/components/profile/collector-avatar";
+import { ProfileFormDialog } from "@/components/profile/profile-form-dialog";
 import { useAccountStatusDisplay } from "@/components/sync/sync-status-display";
 import {
 	Dialog,
@@ -29,7 +30,6 @@ import {
 	DropdownMenuContent,
 	DropdownMenuGroup,
 	DropdownMenuItem,
-	DropdownMenuLabel,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -60,6 +60,7 @@ export function SidebarUserMenu() {
 	const { isMobile, setOpenMobile } = useSidebar();
 	const { session, email, ready } = useAuthSession();
 	const [signInOpen, setSignInOpen] = useState(false);
+	const [editOpen, setEditOpen] = useState(false);
 
 	const cloud = isCloudEnabled();
 	const displayName = profile?.displayName || m.profile_default_display_name();
@@ -99,9 +100,15 @@ export function SidebarUserMenu() {
 							align="end"
 							sideOffset={8}
 						>
-							{/* Info group: identity + live sync status. */}
-							<DropdownMenuLabel className="p-0 font-normal">
-								<div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+							{/* Info group: identity links to the full profile page. Rendered
+							    as a real menu item (not a bare label) so it's keyboard- and
+							    pointer-focusable. */}
+							<DropdownMenuItem asChild className="font-normal">
+								<Link
+									to="/profile"
+									onClick={() => setOpenMobile(false)}
+									className="text-left"
+								>
 									<SyncAvatar
 										displayName={displayName}
 										preset={preset}
@@ -115,8 +122,8 @@ export function SidebarUserMenu() {
 											</span>
 										)}
 									</div>
-								</div>
-							</DropdownMenuLabel>
+								</Link>
+							</DropdownMenuItem>
 
 							<DropdownMenuSeparator />
 
@@ -132,11 +139,9 @@ export function SidebarUserMenu() {
 										{m.shell_settings()}
 									</Link>
 								</DropdownMenuItem>
-								<DropdownMenuItem asChild>
-									<Link to="/profile" onClick={() => setOpenMobile(false)}>
-										<UserRound />
-										{m.profile_edit_button()}
-									</Link>
+								<DropdownMenuItem onSelect={() => setEditOpen(true)}>
+									<UserRound />
+									{m.profile_edit_button()}
 								</DropdownMenuItem>
 								{signedIn && (
 									<DropdownMenuItem asChild>
@@ -182,6 +187,14 @@ export function SidebarUserMenu() {
 					<SignIn />
 				</DialogContent>
 			</Dialog>
+
+			{/* Edit-profile modal, opened straight from the menu (no route nav) and
+			    controlled so the menu closing on select can't unmount it. */}
+			<ProfileFormDialog
+				open={editOpen}
+				onOpenChange={setEditOpen}
+				profile={profile}
+			/>
 		</>
 	);
 }

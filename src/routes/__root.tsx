@@ -2,19 +2,28 @@ import {
 	ClientOnly,
 	createRootRoute,
 	HeadContent,
+	Link,
 	Outlet,
 	Scripts,
 	useRouterState,
 } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 import type { ReactNode } from "react";
-import { useEffect } from "react";
+import { Fragment, useEffect } from "react";
 import { PreviewLogin } from "@/components/dev/preview-login";
 import { AboutDialog } from "@/components/shell/about-dialog";
 import { CommandPalette } from "@/components/shell/command-palette";
 import { OnlineIndicator } from "@/components/shell/online-indicator";
 import { RepoLink } from "@/components/shell/repo-link";
 import { SyncToastsWatcher } from "@/components/sync/sync-toasts";
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import {
 	SidebarInset,
@@ -34,6 +43,7 @@ import { HeaderLanguageControl } from "../components/islands/header-language-con
 import { AppSidebar } from "../components/shell/app-sidebar";
 import { BottomNav } from "../components/shell/bottom-nav";
 import { bcp47 } from "../lib/bcp47";
+import { LIST_SEARCH_DEFAULTS } from "../lib/list-search";
 import type { NavTree } from "../lib/nav-tree";
 import { titleCaseSlug } from "../lib/slug";
 import { isCloudEnabled } from "../lib/supabase/client";
@@ -126,28 +136,84 @@ export const Route = createRootRoute({
 	component: RootComponent,
 });
 
-/** Derive human-readable breadcrumb segments from the current pathname + nav tree. */
-function useBreadcrumb(tree: NavTree): string[] {
+/**
+ * Derive breadcrumb segments — each a `{ label, linkProps }` pair — from the
+ * current pathname + nav tree. `linkProps` is a TanStack link target (built with
+ * per-crumb `as const` literals so `to`/`params`/`search` inference survives, the
+ * set-tile pattern) or `null` for a crumb with no standalone route (e.g. the
+ * "Pokémon" supertype middle crumb). The consumer renders navigable crumbs as
+ * real <Link>s and terminal/null crumbs as a non-clickable page label.
+ */
+function useBreadcrumb(tree: NavTree) {
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
 	const parts = pathname.split("/").filter(Boolean);
-	if (parts.length === 0) return [m.command_palette_nav_browse()];
+	if (parts.length === 0)
+		return [
+			{
+				label: m.command_palette_nav_browse(),
+				linkProps: { to: "/" } as const,
+			},
+		];
 
 	if (parts[0] === "vault") {
 		const sub = parts[1];
-		if (sub === "sets") return [m.bottom_nav_vault(), m.sidebar_vault_sets()];
+		const vaultCrumb = {
+			label: m.bottom_nav_vault(),
+			linkProps: { to: "/vault" } as const,
+		};
+		if (sub === "sets")
+			return [
+				vaultCrumb,
+				{
+					label: m.sidebar_vault_sets(),
+					linkProps: { to: "/vault/sets" } as const,
+				},
+			];
 		if (sub === "binders")
-			return [m.bottom_nav_vault(), m.command_palette_nav_binders()];
+			return [
+				vaultCrumb,
+				{
+					label: m.command_palette_nav_binders(),
+					linkProps: { to: "/vault/binders" } as const,
+				},
+			];
 		if (sub)
-			return [m.bottom_nav_vault(), sub.charAt(0).toUpperCase() + sub.slice(1)];
-		return [m.bottom_nav_vault()];
+			return [
+				vaultCrumb,
+				{
+					label: sub.charAt(0).toUpperCase() + sub.slice(1),
+					linkProps: null,
+				},
+			];
+		return [vaultCrumb];
 	}
-	if (parts[0] === "search") return [m.nav_search()];
-	// /pokemon/{name} — species page (not in the series/set nav tree).
+	if (parts[0] === "search")
+		return [
+			{
+				label: m.nav_search(),
+				linkProps: {
+					to: "/search",
+					search: { ...LIST_SEARCH_DEFAULTS },
+				} as const,
+			},
+		];
+	// /pokemon/{name} — species page (not in the series/set nav tree). The
+	// "Pokémon" supertype crumb has no standalone route → linkProps null.
 	if (parts[0] === "pokemon" && parts[1]) {
 		return [
-			m.command_palette_nav_browse(),
-			m.home_supertype_pokemon(),
-			titleCaseSlug(parts[1]),
+			{
+				label: m.command_palette_nav_browse(),
+				linkProps: { to: "/" } as const,
+			},
+			{ label: m.home_supertype_pokemon(), linkProps: null },
+			{
+				label: titleCaseSlug(parts[1]),
+				linkProps: {
+					to: "/pokemon/$name",
+					params: { name: parts[1] },
+					search: LIST_SEARCH_DEFAULTS,
+				} as const,
+			},
 		];
 	}
 
@@ -159,24 +225,65 @@ function useBreadcrumb(tree: NavTree): string[] {
 	const series = tree.find((s) => s.slug === seriesSlug);
 	const set = series?.sets.find((s) => s.slug === setSlug);
 
-	// Unknown single segment (e.g. /profile) → just the capitalised label.
-	if (!series && parts.length === 1) return [capitalize(seriesSlug)];
+	// Unknown single segment (e.g. /profile) → just the capitalised label, no link.
+	if (!series && parts.length === 1)
+		return [{ label: capitalize(seriesSlug), linkProps: null }];
 
-	const crumbs: string[] = [m.command_palette_nav_browse()];
-	if (series) crumbs.push(series.name);
-	if (set) crumbs.push(set.name);
-	if (cardSlug && cardSlug !== "manage") crumbs.push(cardSlug.toUpperCase());
-
-	return crumbs;
+	return [
+		{
+			label: m.command_palette_nav_browse(),
+			linkProps: { to: "/" } as const,
+		},
+		// The /$series index validates only `{ lang }` (not the full list-search),
+		// so its crumb link carries no search — matching every other /$series link.
+		...(series
+			? [
+					{
+						label: series.name,
+						linkProps: {
+							to: "/$series",
+							params: { series: seriesSlug },
+						} as const,
+					},
+				]
+			: []),
+		...(set
+			? [
+					{
+						label: set.name,
+						linkProps: {
+							to: "/$series/$set",
+							params: { series: seriesSlug, set: setSlug },
+							search: LIST_SEARCH_DEFAULTS,
+						} as const,
+					},
+				]
+			: []),
+		// Terminal card crumb links to the REAL card page (not the overlay).
+		...(cardSlug && cardSlug !== "manage"
+			? [
+					{
+						label: cardSlug.toUpperCase(),
+						linkProps: {
+							to: "/$series/$set/$card",
+							params: { series: seriesSlug, set: setSlug, card: cardSlug },
+						} as const,
+					},
+				]
+			: []),
+	];
 }
 
 function ShellHeader({ tree }: { tree: NavTree }) {
 	const crumbs = useBreadcrumb(tree);
-	// Pair each label with a cumulative-path key so duplicate labels (e.g. a base
+	// Pair each crumb with a cumulative-path key so duplicate labels (e.g. a base
 	// set sharing its series name) stay distinct without an array-index key.
-	const crumbItems = crumbs.map((label, i) => ({
-		label,
-		key: crumbs.slice(0, i + 1).join(" / "),
+	const crumbItems = crumbs.map((crumb, i) => ({
+		...crumb,
+		key: crumbs
+			.slice(0, i + 1)
+			.map((c) => c.label)
+			.join(" / "),
 		isFirst: i === 0,
 		isLast: i === crumbs.length - 1,
 	}));
@@ -186,27 +293,46 @@ function ShellHeader({ tree }: { tree: NavTree }) {
 		<header className="sticky top-0 z-30 flex h-14 items-center gap-2 justify-between border-b border-(--hairline) px-4 backdrop-blur-md">
 			<SidebarTrigger />
 
-			{/* Breadcrumb */}
-			<div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
-				{crumbItems.map((item) => (
-					<span key={item.key} className="flex items-center gap-1.5 min-w-0">
-						{!item.isFirst && (
-							<span className="font-mono text-(--faint) text-xs opacity-60 shrink-0">
-								›
-							</span>
-						)}
-						<span
-							className={
-								item.isLast
-									? "truncate text-sm font-semibold text-(--ink)"
-									: "truncate text-sm text-(--faint) hidden sm:block"
-							}
-						>
-							{item.label}
-						</span>
-					</span>
-				))}
-			</div>
+			{/* Breadcrumb — shadcn primitives, each navigable crumb a real <Link>.
+			    Non-terminal crumbs collapse on mobile (hidden sm:inline-flex) so only
+			    the current page shows; the "›" separators stay to hint at depth. */}
+			<Breadcrumb className="flex min-w-0 flex-1 items-center overflow-hidden">
+				<BreadcrumbList className="flex-nowrap gap-1.5 overflow-hidden sm:gap-1.5">
+					{crumbItems.map((item) => (
+						<Fragment key={item.key}>
+							{!item.isFirst && (
+								<BreadcrumbSeparator className="font-mono text-(--faint) text-xs opacity-60 shrink-0">
+									›
+								</BreadcrumbSeparator>
+							)}
+							{item.isLast || item.linkProps === null ? (
+								<BreadcrumbItem
+									className={item.isLast ? undefined : "hidden sm:inline-flex"}
+								>
+									<BreadcrumbPage
+										className={
+											item.isLast
+												? "truncate text-sm font-semibold text-(--ink)"
+												: "truncate text-sm font-normal text-(--faint)"
+										}
+									>
+										{item.label}
+									</BreadcrumbPage>
+								</BreadcrumbItem>
+							) : (
+								<BreadcrumbItem className="hidden sm:inline-flex">
+									<BreadcrumbLink
+										asChild
+										className="truncate text-sm text-(--faint) hover:text-(--ink)"
+									>
+										<Link {...item.linkProps}>{item.label}</Link>
+									</BreadcrumbLink>
+								</BreadcrumbItem>
+							)}
+						</Fragment>
+					))}
+				</BreadcrumbList>
+			</Breadcrumb>
 
 			{/* Search / command palette (⌘K) — md:+ only; on mobile the bottom nav
 			    carries the Search slot, so this duplicate header button is hidden. */}
