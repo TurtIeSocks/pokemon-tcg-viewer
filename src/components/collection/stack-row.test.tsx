@@ -40,6 +40,60 @@ test("edit form is hidden initially; clicking Edit button reveals price/variant 
 	expect(screen.getByRole("button", { name: /cancel/i })).toBeDefined();
 });
 
+test("edit: printing segmented control renders when variantsDetailed is passed", async () => {
+	const item = await addStack("c");
+	render(
+		<StackRow
+			item={useUserland.getState().items[item.id]}
+			variantsDetailed={[
+				{
+					variantId: "a",
+					type: "holo",
+					subtype: null,
+					size: "standard",
+					stamp: null,
+				},
+				{
+					variantId: "r",
+					type: "reverse",
+					subtype: null,
+					size: "standard",
+					stamp: null,
+				},
+			]}
+		/>,
+	);
+	fireEvent.click(screen.getByRole("button", { name: /edit/i }));
+	// m.stack_field_printing() labels the segmented control group
+	await waitFor(() =>
+		expect(screen.getByRole("group", { name: /printing/i })).toBeDefined(),
+	);
+	expect(screen.getByRole("radio", { name: "Holo" })).toBeDefined();
+	expect(screen.getByRole("radio", { name: "Reverse" })).toBeDefined();
+});
+
+test("edit: untouched save without variantsDetailed preserves printing (wipe regression)", async () => {
+	// Pins the onSubmit → formToPatch ctx wiring, the locus of the original
+	// wipe bug: a synthesized printing (variantId "") has no picker
+	// representation, so a save that never touched the form must echo it back.
+	const printing = {
+		variantId: "",
+		type: "reverse",
+		subtype: null,
+		size: null,
+		stamp: null,
+	};
+	const item = await addStack("c", { printing });
+	render(<StackRow item={useUserland.getState().items[item.id]} />);
+	fireEvent.click(screen.getByRole("button", { name: /edit/i }));
+	await screen.findByRole("button", { name: /save/i });
+	fireEvent.click(screen.getByRole("button", { name: /save/i }));
+	await waitFor(() =>
+		expect(screen.queryByRole("button", { name: /save/i })).toBeNull(),
+	);
+	expect(useUserland.getState().items[item.id].printing).toEqual(printing);
+});
+
 test("edit: changing price does NOT update store until Save is clicked", async () => {
 	const item = await addStack("c");
 	render(<StackRow item={useUserland.getState().items[item.id]} />);

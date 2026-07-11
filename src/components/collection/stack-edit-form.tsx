@@ -1,4 +1,5 @@
 import { useForm } from "@tanstack/react-form";
+import { useRef } from "react";
 import { DatePicker } from "@/components/islands/date-picker";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
@@ -397,8 +398,14 @@ export function StackEditForm({
 	const profileCurrency = useUserland((s) => s.profile?.displayCurrency);
 	const defaultValues =
 		mode === "edit" && item
-			? itemToForm(item)
+			? itemToForm(item, variantsDetailed)
 			: { ...BLANK_DEFAULTS, currency: toSupportedCurrency(profileCurrency) };
+	// Captured ONCE at mount: `defaultValues` is recomputed from props every
+	// render, but the form only seeds from it once. If `variantsDetailed`
+	// arrives/changes while the form is open, a recomputed initial variantId
+	// would misclassify an untouched picker as an "active clear" (or swallow a
+	// real one) at submit time — compare against what the form actually opened with.
+	const seededVariantId = useRef(defaultValues.variantId).current;
 	// Built at render time (not module scope) so its .refine() messages resolve
 	// against the active locale — see makeStackFormSchema's doc comment.
 	const stackFormSchema = makeStackFormSchema();
@@ -407,7 +414,12 @@ export function StackEditForm({
 		defaultValues,
 		validators: { onSubmit: stackFormSchema },
 		onSubmit: async ({ value }) => {
-			const patch = formToPatch(value, variantsDetailed);
+			// Preserve semantics: an untouched (or unrepresentable) printing must
+			// survive the save; only an active clear of a real initial pick wipes it.
+			const patch = formToPatch(value, variantsDetailed, {
+				existingPrinting: item?.printing ?? null,
+				initialVariantId: seededVariantId,
+			});
 			if (mode === "edit" && item) {
 				await updateStack(item.id, patch);
 			} else {

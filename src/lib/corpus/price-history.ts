@@ -21,8 +21,9 @@ export function epochDayUtc(dateYmd: string): number {
 
 /**
  * One representative USD-cents market for a card on a given day: tcgplayer
- * market via the shared MARKET_FINISH_ORDER (Normal-first), else cardmarket
- * trend (EUR) converted to USD. null when unpriced or FX can't reach USD.
+ * market via the shared MARKET_FINISH_ORDER (Normal-first, Reverse Holofoil as
+ * the last resort), else cardmarket trend (EUR) converted to USD. null when
+ * unpriced or FX can't reach USD.
  * MUST use the same finish order as valuation.ts — sharing MARKET_FINISH_ORDER
  * is what keeps the sparkline and the portfolio value from disagreeing (they
  * were Holo-first vs Normal-first and read ~10x apart).

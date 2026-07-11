@@ -285,6 +285,34 @@ test("round-trip: language and grading_cert survive export → parse → import"
 	expect(ns.grading?.cert).toBe("CERT99");
 });
 
+// --- printing: variant text parsed into a structured printing on import ---
+
+test("csvToImport: foil column text yields a structured printing + raw variant", () => {
+	const map = detectColumns(["card_id", "quantity", "foil"]);
+	const row = applyMapping(
+		{ card_id: "base1-4", quantity: "1", foil: "Reverse Holofoil" },
+		map,
+	);
+	const { matched } = csvToImport([row], importResolver);
+	expect(matched[0].printing?.type).toBe("reverse");
+	expect(matched[0].variant).toBe("Reverse Holofoil");
+});
+
+test("rowToNewStack: unrecognized variant text → printing null, variant kept", () => {
+	const ns = rowToNewStack("base1-4", {
+		quantity: "1",
+		variant: "Special Illustration Rare",
+	});
+	expect(ns.printing).toBeNull();
+	expect(ns.variant).toBe("Special Illustration Rare");
+});
+
+test("rowToNewStack: blank variant → printing and variant both null", () => {
+	const ns = rowToNewStack("base1-4", { quantity: "1", variant: "" });
+	expect(ns.printing).toBeNull();
+	expect(ns.variant).toBeNull();
+});
+
 // --- currency: exponent-aware CSV export/import ---
 
 test("stacksToCsv exports price_paid_unit at the stack's currency exponent (JPY, 0-decimal)", () => {

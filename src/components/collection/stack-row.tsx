@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { m } from "@/paraglide/messages";
+import type { CardVariant } from "../../lib/card-variants";
 import { formatPrice, formatSignedPrice } from "../../store/userland/money";
 import type { Stack } from "../../store/userland/types";
 import {
@@ -25,6 +26,8 @@ interface StackRowProps {
 	item: Stack;
 	/** Optional known variant strings for this card; forwarded to StackEditForm. */
 	variants?: string[];
+	/** Exact printings from the live card detail; forwarded to the edit-mode form. */
+	variantsDetailed?: CardVariant[];
 }
 
 /** Returns true if any optional field on the item is non-null; used to gate the delete confirmation prompt. */
@@ -43,7 +46,7 @@ function hasNonNullOptional(item: Stack): boolean {
  * A filled-star Primary toggle marks the primary stack with a gold ring.
  * An explicit Edit button (not "click row to expand") reveals the inline StackEditForm.
  */
-export function StackRow({ item, variants }: StackRowProps) {
+export function StackRow({ item, variants, variantsDetailed }: StackRowProps) {
 	const [editOpen, setEditOpen] = useState(false);
 	const [splitOpen, setSplitOpen] = useState(false);
 	const [splitN, setSplitN] = useState(1);
@@ -252,6 +255,7 @@ export function StackRow({ item, variants }: StackRowProps) {
 						item={item}
 						cardId={item.cardId}
 						variants={variants}
+						variantsDetailed={variantsDetailed}
 						onSaved={() => setEditOpen(false)}
 						onCancel={() => setEditOpen(false)}
 					/>

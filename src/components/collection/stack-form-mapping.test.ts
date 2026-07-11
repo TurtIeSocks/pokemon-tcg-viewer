@@ -282,6 +282,104 @@ test("itemToForm seeds variantId from the stack's printing", () => {
 	expect(itemToForm(item).variantId).toBe("b");
 });
 
+// --- v7: edit-mode preserve semantics + finish-match upgrade ---
+
+/** A CSV/legacy-synthesized printing: real finish, no TCGdex variantId. */
+const SYNTH_REVERSE: CardVariant = {
+	variantId: "",
+	type: "reverse",
+	subtype: null,
+	size: null,
+	stamp: null,
+};
+
+const VARIANTS_WITH_REVERSE: CardVariant[] = [
+	{
+		variantId: "n1",
+		type: "normal",
+		subtype: null,
+		size: "standard",
+		stamp: null,
+	},
+	{
+		variantId: "r1",
+		type: "reverse",
+		subtype: null,
+		size: "standard",
+		stamp: null,
+	},
+];
+
+test("formToPatch: untouched edit save without variantsDetailed preserves printing (wipe-bug regression)", () => {
+	const stack = item({ printing: VARIANTS[1] });
+	const f = itemToForm(stack); // edit mode before the fix: no variantsDetailed
+	const p = formToPatch(f, undefined, {
+		existingPrinting: stack.printing,
+		initialVariantId: f.variantId,
+	});
+	expect(p.printing).toEqual(VARIANTS[1]);
+});
+
+test("itemToForm: stored variantId found in variantsDetailed preselects it", () => {
+	const f = itemToForm(item({ printing: VARIANTS[0] }), VARIANTS);
+	expect(f.variantId).toBe("a");
+});
+
+test("itemToForm: synthesized printing finish-matches the detailed reverse entry", () => {
+	const f = itemToForm(
+		item({ printing: SYNTH_REVERSE }),
+		VARIANTS_WITH_REVERSE,
+	);
+	expect(f.variantId).toBe("r1");
+});
+
+test("finish-match upgrade: saving stores the exact detailed variant", () => {
+	const stack = item({ printing: SYNTH_REVERSE });
+	const f = itemToForm(stack, VARIANTS_WITH_REVERSE);
+	const p = formToPatch(f, VARIANTS_WITH_REVERSE, {
+		existingPrinting: stack.printing,
+		initialVariantId: f.variantId,
+	});
+	expect(p.printing).toEqual(VARIANTS_WITH_REVERSE[1]);
+});
+
+test("itemToForm: printing with no finish match in variantsDetailed → empty variantId", () => {
+	// Reverse finish, but the detailed list only carries normal — unrepresentable.
+	const f = itemToForm(item({ printing: SYNTH_REVERSE }), [
+		VARIANTS_WITH_REVERSE[0],
+	]);
+	expect(f.variantId).toBe("");
+});
+
+test("formToPatch: unrepresentable printing is preserved on an untouched save", () => {
+	const stack = item({ printing: SYNTH_REVERSE });
+	const only = [VARIANTS_WITH_REVERSE[0]];
+	const f = itemToForm(stack, only); // variantId "" — picker can't show it
+	const p = formToPatch(f, only, {
+		existingPrinting: stack.printing,
+		initialVariantId: f.variantId,
+	});
+	expect(p.printing).toEqual(SYNTH_REVERSE);
+});
+
+test("formToPatch: actively clearing a real initial variantId → printing null", () => {
+	const stack = item({ printing: VARIANTS[0] });
+	const f = itemToForm(stack, VARIANTS); // variantId "a"
+	const p = formToPatch({ ...f, variantId: "" }, VARIANTS, {
+		existingPrinting: stack.printing,
+		initialVariantId: f.variantId,
+	});
+	expect(p.printing).toBeNull();
+});
+
+test("formToPatch: create mode (no ctx) is unchanged — pick resolves, empty clears", () => {
+	expect(
+		formToPatch({ ...baseValues, variantId: "b" }, VARIANTS).printing,
+	).toEqual(VARIANTS[1]);
+	expect(formToPatch({ ...baseValues }, VARIANTS).printing).toBeNull();
+	expect(formToPatch({ ...baseValues }).printing).toBeNull();
+});
+
 // --- currency: per-stack currency picker + exponent-aware pricePaid ---
 
 test("itemToForm carries currency and renders pricePaid at its exponent", () => {

@@ -15,12 +15,16 @@ export type FinishCode = "N" | "H" | "R" | "1H" | "1N";
  * printing is unknown (every quick-add / scan / CSV / legacy stack has
  * `printing: null`). Normal ('N') leads because Holofoil often prices ~10x the
  * Normal a collector actually owns, so preferring H first inflated those stacks.
+ * Reverse Holofoil ('R') is appended LAST as a pure last resort: it is only
+ * reached when no other finish has a price, so reverse-only cards (no N/H/1N/1H
+ * entry) resolve instead of skipping tcgplayer pricing entirely — and it never
+ * inflates a card that has a Normal/Holo entry.
  * SINGLE SOURCE OF TRUTH: both `valuation.ts` (portfolio value) and
  * `price-history.ts` (the sparkline) must use this, or a card's history reads a
  * different finish than its portfolio value — they drifted (H-first vs N-first)
  * and disagreed ~10x until this was unified.
  */
-export const MARKET_FINISH_ORDER: FinishCode[] = ["N", "H", "1N", "1H"];
+export const MARKET_FINISH_ORDER: FinishCode[] = ["N", "H", "1N", "1H", "R"];
 
 /** tcgcsv subTypeName → finish code. Unknown names are logged + skipped at join. */
 export const TP_SUBTYPE_TO_CODE: Partial<Record<string, FinishCode>> = {

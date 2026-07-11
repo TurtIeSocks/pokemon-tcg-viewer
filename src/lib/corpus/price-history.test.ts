@@ -37,6 +37,17 @@ test("representativeMarketUsdCents prefers tcgplayer Normal→Holo (matches valu
 	expect(representativeMarketUsdCents({}, fx)).toBeNull();
 });
 
+test("representativeMarketUsdCents: reverse-only entry resolves via the shared R last-resort", () => {
+	// Reverse-only card: tcgplayer prices ONLY the R finish. The shared
+	// MARKET_FINISH_ORDER ends with R as a pure last resort, so the sparkline
+	// produces a series instead of a gap — in lockstep with valuation.ts.
+	expect(representativeMarketUsdCents({ tp: { R: [1234, 1] } }, fx)).toBe(1234);
+	// R never outranks Normal: both priced → still Normal.
+	expect(
+		representativeMarketUsdCents({ tp: { R: [1234, 1], N: [700, 1] } }, fx),
+	).toBe(700);
+});
+
 test("appendDailyPoint appends a new day, replaces the same day (idempotent)", () => {
 	const a = appendDailyPoint([], 100, 500);
 	expect(a).toEqual([[100, 500]]);

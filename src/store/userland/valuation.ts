@@ -14,9 +14,9 @@ import type { CardCondition, Stack } from "./types";
 
 /**
  * Best-effort tcgplayer finish for a stack's structured printing; null when
- * unknown (the caller's fallback chain then tries H→N). tcgplayer's finish axis
- * is coarse (N/H/R + 1st-edition), so fine TCGdex printings collapse here — a
- * miss just falls back, never throws.
+ * unknown (the caller then walks the shared MARKET_FINISH_ORDER fallback,
+ * N→H→1N→1H→R). tcgplayer's finish axis is coarse (N/H/R + 1st-edition), so
+ * fine TCGdex printings collapse here — a miss just falls back, never throws.
  */
 export function finishForPrinting(
 	printing: CardVariant | null,
@@ -56,13 +56,15 @@ export function conditionMultiplier(
 /**
  * Finish fallback order: the resolved printing finish first, then a conservative
  * base-before-premium fallback for unresolved printings — Normal ('N') before
- * Holofoil ('H'), and 1st-edition Normal ('1N') before 1st-edition Holofoil
- * ('1H'). Every quick-add / scan / CSV / legacy stack has `printing: null`, so
- * `finishForPrinting` returns null and this fallback decides the value. Holofoil
- * often prices ~10x the Normal a collector actually owns, so preferring H first
- * inflated those stacks ~10x — hence Normal leads. The list still falls through
- * to whatever finish DOES have a price, so a holo-only vintage card (no Normal
- * entry) still resolves to H.
+ * Holofoil ('H'), 1st-edition Normal ('1N') before 1st-edition Holofoil ('1H'),
+ * and Reverse Holofoil ('R') dead last as a pure last resort. Every quick-add /
+ * scan / CSV / legacy stack has `printing: null`, so `finishForPrinting` returns
+ * null and this fallback decides the value. Holofoil often prices ~10x the
+ * Normal a collector actually owns, so preferring H first inflated those stacks
+ * ~10x — hence Normal leads. The list still falls through to whatever finish
+ * DOES have a price, so a holo-only vintage card (no Normal entry) still
+ * resolves to H, and a reverse-only card (no N/H/1N/1H entry) resolves to R
+ * instead of skipping tcgplayer pricing.
  */
 function finishOrder(printing: CardVariant | null): FinishCode[] {
 	const order: FinishCode[] = [];

@@ -105,6 +105,23 @@ test("unitMarketValueUsdCents fallthrough: holo-only card still resolves to H wh
 	expect(unitMarketValueUsdCents({ printing: null }, entry, fx)).toBe(72034);
 });
 
+test("unitMarketValueUsdCents: reverse-only card resolves via the R last-resort fallback", () => {
+	// Reverse-only card (e.g. WotC movie promos Scizor 33 / Entei 34 / Pichu 35):
+	// tcgplayer prices ONLY the Reverse Holofoil finish. Before "R" was appended
+	// to MARKET_FINISH_ORDER, a null-printing stack skipped tcgplayer pricing
+	// entirely (returned null); now it falls all the way through to R.
+	const entry: CardPriceEntry = { tp: { R: [1234, 1000] } };
+	expect(unitMarketValueUsdCents({ printing: null }, entry, fx)).toBe(1234);
+});
+
+test("unitMarketValueUsdCents: R stays a pure last resort — Normal still wins when priced", () => {
+	// A card with BOTH a Normal and a Reverse Holofoil price must still resolve
+	// to Normal for a null printing: R is appended LAST, never inserted, so it
+	// can't inflate any card that has a Normal/Holo entry.
+	const entry: CardPriceEntry = { tp: { N: [700, 400], R: [1234, 1000] } };
+	expect(unitMarketValueUsdCents({ printing: null }, entry, fx)).toBe(700);
+});
+
 test("unitMarketValueUsdCents falls back to cardmarket trend converted EUR→USD", () => {
 	const entry: CardPriceEntry = { cm: [1000, null, null, null] }; // €10.00 trend
 	expect(unitMarketValueUsdCents({ printing: null }, entry, fx)).toBe(1090); // → $10.90

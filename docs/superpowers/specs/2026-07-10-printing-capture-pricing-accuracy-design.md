@@ -65,8 +65,12 @@ but drops the value into the coarse `variant` display string only. Add a pure
 - anything else → `null`
 
 Matching precedence is load-bearing ("Reverse Holofoil" contains both "holo" and "foil";
-"non-holo" contains "holo"): test **reverse first**, then the normal-family negations
-("non-holo", "non holo"), then 1st-edition stamps, then holo/foil, then normal tokens.
+"Non-Holo"/"Non-Foil" contain the positive token they negate): test **reverse first**; then
+compute the normal-family negation ("non-holo", "non foil", "nonfoil" — the foil spelling
+matters, Foil/Non-Foil is the standard value pair for CSV columns aliased "foil") as a flag
+that forces holo=false rather than early-returning, so a 1st-edition stamp still applies
+("1st Edition Non-Holo" → 1st-edition Normal → "1N"); then 1st-edition stamps, then
+holo/foil, then normal tokens (a bare negation also resolves to normal).
 
 Synthesized variants use `variantId: ""` (not a price key per `card-variants.ts` doc),
 `subtype: null`, `size: null`. `rowToNewStack` (`src/store/userland/csv.ts`) sets

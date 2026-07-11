@@ -19,7 +19,7 @@ interface StackManagerProps {
 	cardId: string;
 	/** Optional known variant strings for the card; forwarded to each StackRow. */
 	variants?: string[];
-	/** Exact printings from the live card detail; forwarded to the create-mode form. */
+	/** Exact printings from the live card detail; forwarded to the create-mode form and each StackRow. */
 	variantsDetailed?: CardVariant[];
 }
 
@@ -113,7 +113,12 @@ export function StackManager({
 			) : (
 				<div className="flex flex-col gap-2">
 					{stacks.map((item) => (
-						<StackRow key={item.id} item={item} variants={variants} />
+						<StackRow
+							key={item.id}
+							item={item}
+							variants={variants}
+							variantsDetailed={variantsDetailed}
+						/>
 					))}
 				</div>
 			)}

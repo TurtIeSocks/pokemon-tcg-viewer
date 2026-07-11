@@ -47,6 +47,45 @@ export function isReversePrinting(stack: {
 }
 
 /**
+ * Parse free-form variant/foil text (e.g. a CSV "Foil" column) into a
+ * synthesized printing, or null when no finish token is recognized. Matching
+ * is case-insensitive on the trimmed text; precedence is load-bearing
+ * ("Reverse Holofoil" contains "holo" and "foil"; "Non-Foil" contains "foil"):
+ * reverse first, then a negation ("Non-Holo"/"Non-Foil") forces the normal
+ * family WITHOUT short-circuiting, so a 1st-edition stamp still applies
+ * ("1st Edition Non-Holo" → 1st-edition Normal), then holo/foil, then normal.
+ *
+ * Synthesized printings carry `variantId: ""` — that's fine: `variantId` is a
+ * TCGdex back-reference, not a price key (see the CardVariant doc at the top
+ * of this file). `finishForPrinting` (valuation.ts) resolves these by
+ * `type`/`stamp` alone.
+ */
+export function printingFromVariantText(text: string): CardVariant | null {
+	const t = text.trim().toLowerCase();
+	if (!t) return null;
+	const base: CardVariant = {
+		variantId: "",
+		type: "",
+		subtype: null,
+		size: null,
+		stamp: null,
+	};
+	if (t.includes("reverse")) return { ...base, type: "reverse" };
+	// "Non-Foil"/"Non-Holo" negate the positive tokens they contain; a negation
+	// is itself a recognized normal-family finish (Foil/Non-Foil column pairs).
+	const negated = /non[-\s]?(holo|foil)/.test(t);
+	const holo = !negated && (t.includes("holo") || t.includes("foil"));
+	if (/\b1st\b/.test(t) || t.includes("first edition")) {
+		return { ...base, type: holo ? "holo" : "normal", stamp: ["1st-edition"] };
+	}
+	if (holo) return { ...base, type: "holo" };
+	if (negated || /\b(normal|regular|unlimited)\b/.test(t)) {
+		return { ...base, type: "normal" };
+	}
+	return null;
+}
+
+/**
  * Humanize a kebab token: "1st-edition" -> "1st Edition", "shadowless" ->
  * "Shadowless". A hyphen BETWEEN two digits is kept (year ranges like
  * "1999-2000-copyright" -> "1999-2000 Copyright"); every other hyphen is a

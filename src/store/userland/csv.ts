@@ -1,4 +1,5 @@
 import Papa from "papaparse";
+import { printingFromVariantText } from "../../lib/card-variants";
 import { dayMsToInput } from "../../utils/day";
 import { inputToMinorUnits, minorUnitsToInput } from "./money";
 import type { CardCondition, NewStack, Stack } from "./types";
@@ -286,7 +287,10 @@ export function rowToNewStack(
 		),
 		currency: row.currency?.trim() || "USD",
 		language: row.language?.trim() || "en",
+		// Raw source text stays in `variant` for display; recognized finish
+		// tokens also synthesize a structured printing for exact pricing.
 		variant: row.variant?.trim() || null,
+		printing: printingFromVariantText(row.variant ?? ""),
 		notes: row.notes?.trim() || null,
 		condition: cond && CONDITIONS.has(cond) ? (cond as CardCondition) : null,
 		grading: company ? { company, grade: grade ?? 0, cert } : null,
