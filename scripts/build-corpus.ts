@@ -12,6 +12,7 @@ import {
 import type { CorpusCard, DetailCard } from "../src/store/corpus/corpus-types";
 import { mergePtcgOverlay } from "./merge-overlay";
 import { fetchPtcgOverlay } from "./ptcg-overlay";
+import { harvestTcgcsvTpIds, mergeTpIds } from "./tcgcsv-tp-harvest";
 
 const PTCG_HOST = "https://images.pokemontcg.io/";
 
@@ -650,15 +651,10 @@ if (import.meta.main) {
 		baseLang,
 		{ onRetry },
 	);
-	assertCrosswalkOk(Object.keys(priceIds).length, raw.length, baseLang);
-	const priceIdsFile = isAsia ? "price-ids.asia.json.gz" : "price-ids.json.gz";
-	await Bun.write(
-		priceIdsFile,
-		gzipSync(Buffer.from(JSON.stringify(priceIds))),
-	);
-	console.log(
-		`price crosswalk: ${Object.keys(priceIds).length}/${raw.length} cards carry marketplace ids → ${priceIdsFile}`,
-	);
+	// The tcgcsv tp-id harvest that fills this crosswalk's gaps runs AFTER the
+	// corpus overlays below, against the FINAL `served` cards — the JA dead-set
+	// cards it needs are added by the tcgcsv overlay (Phase 4), not present in the
+	// raw TCGdex crawl. See the "Finalize price crosswalk" block near the writes.
 
 	const trimmed = raw.map((c) => trimCard(c, baseLang));
 	const detail = raw.map(detailCard).sort((a, b) => a.id.localeCompare(b.id));
@@ -736,6 +732,54 @@ if (import.meta.main) {
 			);
 		}
 	}
+
+	// Finalize the price crosswalk: fill tcgplayer-id gaps from tcgcsv by exact
+	// set+number (EN cat 3 / tcgcsv-en-crosswalk.json, JA cat 85 /
+	// tcgcsv-crosswalk.json). Runs against `served` — the post-overlay corpus — so
+	// the JA dead-set cards the overlay just ADDED are matchable (they carry
+	// tcgcsv-derived numbers). TCGdex's own ids win; this only fills nulls + adds
+	// tcgplayer-only entries. Keep-last-good: any failure keeps the TCGdex-only
+	// crosswalk. Spec: docs/superpowers/specs/2026-07-10-pricing-crosswalk-coverage-design.md
+	let mergedPriceIds = priceIds;
+	try {
+		const mapFile = isAsia
+			? "scripts/data/tcgcsv-crosswalk.json"
+			: "scripts/data/tcgcsv-en-crosswalk.json";
+		const setToGroup = (await Bun.file(mapFile).exists())
+			? (JSON.parse(await Bun.file(mapFile).text()) as Record<string, number>)
+			: {};
+		if (Object.keys(setToGroup).length) {
+			const { tpIdByCardId, report } = await harvestTcgcsvTpIds(
+				served.map((c) => ({ id: c.id, setId: c.setId, number: c.number })),
+				setToGroup,
+				isAsia ? 85 : 3,
+				{ refresh: true },
+			);
+			const { map, filled } = mergeTpIds(priceIds, tpIdByCardId);
+			mergedPriceIds = map;
+			console.log(
+				`tcgcsv tp harvest [${baseLang}]: ${report.cardsMatched} matched over ${report.setsHarvested} sets (+${filled} crosswalk gaps filled, ${report.ambiguousSkipped} ambiguous skipped, ${report.groupsUnfetched} groups unfetched)`,
+			);
+		}
+	} catch (e) {
+		console.warn(
+			`tcgcsv tp harvest failed, keeping TCGdex-only crosswalk: ${e instanceof Error ? e.message : String(e)}`,
+		);
+	}
+
+	assertCrosswalkOk(
+		Object.keys(mergedPriceIds).length,
+		served.length,
+		baseLang,
+	);
+	const priceIdsFile = isAsia ? "price-ids.asia.json.gz" : "price-ids.json.gz";
+	await Bun.write(
+		priceIdsFile,
+		gzipSync(Buffer.from(JSON.stringify(mergedPriceIds))),
+	);
+	console.log(
+		`price crosswalk: ${Object.keys(mergedPriceIds).length}/${served.length} cards carry marketplace ids → ${priceIdsFile}`,
+	);
 
 	const gz = gzipSync(Buffer.from(JSON.stringify(served)));
 	const detailGz = gzipSync(Buffer.from(JSON.stringify(detail)));

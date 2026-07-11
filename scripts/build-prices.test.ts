@@ -165,7 +165,7 @@ test("fetchCmGuide extracts records + guide date", async () => {
 	]);
 });
 
-test("fetchTpPrices fans out over every group and flattens results", async () => {
+test("fetchTpPrices fans out over EN (cat 3) + JP (cat 85) groups and flattens", async () => {
 	const { records, groupCount } = await fetchTpPrices(
 		fakeFetch({
 			"https://tcgcsv.com/tcgplayer/3/groups": {
@@ -203,9 +203,28 @@ test("fetchTpPrices fans out over every group and flattens results", async () =>
 					},
 				],
 			},
+			// JP (category 85) — a productId only this feed carries.
+			"https://tcgcsv.com/tcgplayer/85/groups": {
+				success: true,
+				errors: [],
+				results: [{ groupId: 24117 }],
+			},
+			"https://tcgcsv.com/tcgplayer/85/24117/prices": {
+				success: true,
+				errors: [],
+				results: [
+					{
+						productId: 900001,
+						lowPrice: 1.5,
+						marketPrice: 2.25,
+						subTypeName: "Holofoil",
+					},
+				],
+			},
 		}),
 	);
-	expect(groupCount).toBe(2);
+	// 2 EN groups + 1 JP group.
+	expect(groupCount).toBe(3);
 	expect(records).toEqual([
 		{
 			productId: 42382,
@@ -218,6 +237,12 @@ test("fetchTpPrices fans out over every group and flattens results", async () =>
 			marketPrice: 0.07,
 			lowPrice: 0.04,
 			subTypeName: "Normal",
+		},
+		{
+			productId: 900001,
+			marketPrice: 2.25,
+			lowPrice: 1.5,
+			subTypeName: "Holofoil",
 		},
 	]);
 });

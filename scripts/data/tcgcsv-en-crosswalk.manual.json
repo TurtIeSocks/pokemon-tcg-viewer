@@ -1,0 +1,4 @@
+{
+	"_comment": "Hand-resolved TCGdex-en setId -> tcgcsv(cat 3) groupId picks the name+date matcher can't make (era-prefixed / divergent tcgcsv names). Merged over the auto-generated map by scripts/tcgcsv-en-crosswalk.ts; survives re-runs. Keys starting with _ are ignored. VERIFY each groupId by its tcgcsv group name before adding.",
+	"sv03.5": 23237
+}

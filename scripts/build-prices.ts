@@ -101,7 +101,15 @@ export function joinPrices(input: {
 
 const CM_GUIDE_URL =
 	"https://downloads.s3.cardmarket.com/productCatalog/priceGuide/price_guide_6.json";
-const TCGCSV_BASE = "https://tcgcsv.com/tcgplayer/3"; // Pokemon (EN) category
+// Pokemon EN = tcgplayer category 3, Pokemon Japan = category 85. We fetch BOTH so
+// JP cards (whose tcgplayer productIds the corpus build harvests from cat-85, see
+// scripts/tcgcsv-tp-harvest.ts) resolve to USD prices — not just cardmarket EUR.
+// productIds are globally unique across categories, so the two feeds merge into one
+// index with no collision.
+const TCGCSV_BASES = [
+	"https://tcgcsv.com/tcgplayer/3",
+	"https://tcgcsv.com/tcgplayer/85",
+];
 const FX_URL = "https://api.frankfurter.dev/v1/latest";
 const TP_GROUP_CONCURRENCY = 8;
 /** Catastrophic-shortfall floor: EN corpus alone yields ~19k priced cards. */
@@ -131,33 +139,39 @@ export async function fetchCmGuide(
 	return { records, date: raw.createdAt.slice(0, 10) };
 }
 
-/** All tcgcsv Pokemon-EN group price feeds, flattened. */
+/** All tcgcsv Pokemon group price feeds (EN cat 3 + JP cat 85), flattened. */
 export async function fetchTpPrices(
 	fetchJsonFn: FetchJsonFn = fetchJson,
 ): Promise<{ records: TcgcsvPriceRecord[]; groupCount: number }> {
-	const groups = (await fetchJsonFn(`${TCGCSV_BASE}/groups`)) as {
-		results: { groupId: number }[];
-	};
-	const lists = await pLimit(
-		groups.results.map((g) => async () => {
-			const res = (await fetchJsonFn(`${TCGCSV_BASE}/${g.groupId}/prices`)) as {
-				results: Array<
-					{ productId: number; subTypeName: string } & Partial<
-						Record<"marketPrice" | "lowPrice", number | null>
-					>
-				>;
-			};
-			return res.results;
-		}),
-		TP_GROUP_CONCURRENCY,
-	);
-	const records = lists.flat().map((r) => ({
-		productId: r.productId,
-		marketPrice: r.marketPrice ?? null,
-		lowPrice: r.lowPrice ?? null,
-		subTypeName: r.subTypeName,
-	}));
-	return { records, groupCount: groups.results.length };
+	const records: TcgcsvPriceRecord[] = [];
+	let groupCount = 0;
+	for (const base of TCGCSV_BASES) {
+		const groups = (await fetchJsonFn(`${base}/groups`)) as {
+			results: { groupId: number }[];
+		};
+		groupCount += groups.results.length;
+		const lists = await pLimit(
+			groups.results.map((g) => async () => {
+				const res = (await fetchJsonFn(`${base}/${g.groupId}/prices`)) as {
+					results: Array<
+						{ productId: number; subTypeName: string } & Partial<
+							Record<"marketPrice" | "lowPrice", number | null>
+						>
+					>;
+				};
+				return res.results;
+			}),
+			TP_GROUP_CONCURRENCY,
+		);
+		for (const r of lists.flat())
+			records.push({
+				productId: r.productId,
+				marketPrice: r.marketPrice ?? null,
+				lowPrice: r.lowPrice ?? null,
+				subTypeName: r.subTypeName,
+			});
+	}
+	return { records, groupCount };
 }
 
 /** ECB reference rates via frankfurter.dev. USD is load-bearing (rollup currency). */

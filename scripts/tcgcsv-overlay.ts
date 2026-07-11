@@ -31,7 +31,7 @@ const UA =
 	"cardstack-jp-overlay/1.0 (+https://github.com/rin/pokemon-tcg-viewer)";
 const POLITE_DELAY_MS = 150;
 
-interface TcgcsvProduct {
+export interface TcgcsvProduct {
 	productId: number;
 	name: string;
 	extendedData?: { name: string; value: string }[];
@@ -51,15 +51,23 @@ const ENERGY_TYPES = new Set([
 	"Colorless",
 ]);
 
-function ext(p: TcgcsvProduct, key: string): string | undefined {
+export function ext(p: TcgcsvProduct, key: string): string | undefined {
 	return p.extendedData?.find((e) => e.name === key)?.value;
+}
+
+/** Our local card number for a tcgcsv product: the leading, zero-stripped part of
+ * its "Number" extendedData ("014/055" → "14"); the productId when it has none.
+ * Shared by productToCard and the crosswalk harvest so their set+number match keys
+ * can never drift. */
+export function tcgcsvLocalId(p: TcgcsvProduct): string {
+	const num = ext(p, "Number"); // e.g. "014/055"
+	return num ? String(Number(num.split("/")[0])) : String(p.productId);
 }
 
 /** Map one tcgcsv product to a CorpusCard for the given TCGdex set id. Exported
  * for the unit test. `region` is intentionally omitted — buildIndex stamps it. */
 export function productToCard(p: TcgcsvProduct, setId: string): CorpusCard {
-	const num = ext(p, "Number"); // e.g. "014/055"
-	const localId = num ? String(Number(num.split("/")[0])) : String(p.productId);
+	const localId = tcgcsvLocalId(p);
 	const cardType = ext(p, "CardType");
 	const hp = ext(p, "HP");
 	// tcgcsv CardType for a Pokemon IS its energy type (Water/Fire/...), not a
@@ -90,7 +98,7 @@ export function productToCard(p: TcgcsvProduct, setId: string): CorpusCard {
 
 /** Match key = setId + leading-zero-normalized number. TCGdex uses zero-padded
  * localIds ("001"); tcgcsv's minted number strips them ("1"). Fold both. */
-function setNumKey(setId: string, number: string): string {
+export function setNumKey(setId: string, number: string): string {
 	const n = /^\d+$/.test(number) ? String(Number.parseInt(number, 10)) : number;
 	return `${setId}:${n.toLowerCase()}`;
 }
