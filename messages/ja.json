@@ -81,8 +81,13 @@
 	"home_browse_aria": "{name}を見る",
 	"home_set_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "{count}セット"
 			}
@@ -184,8 +189,13 @@
 	"vault_bulk_add_cards_to_binder_item": "{count}枚のカードをBinderに追加",
 	"vault_bulk_add_to_binder_title": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "{count}枚のカードをBinderに追加"
 			}
@@ -223,8 +233,13 @@
 	"vault_import_backup_button": "バックアップをインポート",
 	"vault_claim_local_cards": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "クラウドVaultにない、ローカルのカードが{count}枚あります。"
 			}
@@ -258,8 +273,13 @@
 	"vault_csv_merge_duplicates": "重複するStackをまとめる",
 	"vault_csv_import_button": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "{count}件のStackをインポート"
 			}
@@ -296,8 +316,13 @@
 	"binder_progress_label": "進捗",
 	"binder_rule_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "{count}件のルール"
 			}
@@ -305,8 +330,13 @@
 	],
 	"binder_card_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "{count}枚のカード"
 			}
@@ -358,34 +388,22 @@
 	"binder_print_taller_title": "標準サイズのカードより丈長",
 	"binder_print_oversize_width_desc": "標準の幅は{standard}mmです。これより幅広いプレースホルダーはBinderのポケットに収まらない場合があります。",
 	"binder_print_oversize_height_desc": "標準の高さは{standard}mmです。これより丈が長いプレースホルダーはBinderのポケットに収まらない場合があります。",
-	"binder_print_group_colors": "色",
-	"binder_print_group_font_sizes": "フォントサイズ",
-	"binder_print_group_card_size": "カードサイズ",
-	"binder_print_group_style": "スタイル",
 	"binder_print_label_background": "背景",
-	"binder_print_label_text": "テキスト",
 	"binder_print_label_border": "枠線",
-	"binder_print_label_qr_color": "QRの色",
-	"binder_print_label_qr_backdrop": "QRの背景",
-	"binder_print_label_card_name": "カード名",
-	"binder_print_label_card_number": "カード番号",
-	"binder_print_label_set_name": "セット名",
-	"binder_print_label_price": "価格",
-	"binder_print_show_field": "{field}を表示",
-	"binder_print_field_font_size": "{field}のフォントサイズ",
-	"binder_print_field_size": "{field}のサイズ",
 	"binder_print_label_width": "幅",
 	"binder_print_label_height": "高さ",
 	"binder_print_label_spacing": "間隔",
-	"binder_print_label_row_gap": "行間隔",
 	"binder_print_label_corner_radius": "角丸半径",
 	"binder_print_label_border_width": "枠線の太さ",
-	"binder_print_label_text_size": "文字サイズ",
-	"binder_print_label_qr_code": "QRコード",
 	"binder_print_count_label": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "印刷するカード{count}枚"
 			}
@@ -394,8 +412,13 @@
 	"binder_print_fits_per_sheet": "1枚のシートに{count}件収まります({columns} × {rows})",
 	"binder_print_pages_of_paper": [
 		{
-			"declarations": ["input pages", "local pagesPlural = pages: plural"],
-			"selectors": ["pagesPlural"],
+			"declarations": [
+				"input pages",
+				"local pagesPlural = pages: plural"
+			],
+			"selectors": [
+				"pagesPlural"
+			],
 			"match": {
 				"pagesPlural=other": "用紙は約{pages}枚です。"
 			}
@@ -630,5 +653,29 @@
 	"binder_toast_moved": "移動しました",
 	"binder_toast_removed_count": "{count}枚のカードを削除しました",
 	"binder_toast_moved_count": "{count}枚のカードを移動しました",
-	"binder_toast_undo": "元に戻す"
+	"binder_toast_undo": "元に戻す",
+	"binder_print_row_card_name": "カード名",
+	"binder_print_row_number": "番号",
+	"binder_print_row_set_name": "セット名",
+	"binder_print_row_series_name": "シリーズ",
+	"binder_print_row_rarity": "レアリティ",
+	"binder_print_row_price": "価格",
+	"binder_print_row_custom_text": "カスタムテキスト",
+	"binder_print_row_card_image": "カード画像",
+	"binder_print_row_qr": "QRコード",
+	"binder_print_column_card": "カード",
+	"binder_print_column_content": "内容",
+	"binder_print_add_row": "行を追加",
+	"binder_print_row_edit": "編集",
+	"binder_print_row_remove": "削除",
+	"binder_print_row_move_up": "上へ移動",
+	"binder_print_row_move_down": "下へ移動",
+	"binder_print_row_field_color": "色",
+	"binder_print_row_field_size": "サイズ",
+	"binder_print_row_field_y_spacing": "下の間隔",
+	"binder_print_row_field_backdrop": "背景",
+	"binder_print_row_field_text": "テキスト",
+	"binder_print_row_field_type": "種類",
+	"binder_print_row_editor_edit_title": "行を編集",
+	"binder_print_row_save": "保存"
 }

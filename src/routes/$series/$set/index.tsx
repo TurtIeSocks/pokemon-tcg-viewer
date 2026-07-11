@@ -7,7 +7,10 @@ import {
 	stripSearchParams,
 	useNavigate,
 } from "@tanstack/react-router";
+import { Printer } from "lucide-react";
 import { useMemo, useState } from "react";
+import { missingCardViews } from "../../../components/binders/print-missing";
+import { PrintMissingDialog } from "../../../components/binders/print-missing-dialog";
 import type { HoloCardData } from "../../../components/holo-card";
 import { CardGridIsland } from "../../../components/islands/card-grid-island";
 import { CardSelectionProvider } from "../../../components/islands/card-selection";
@@ -15,6 +18,7 @@ import { CardSortControl } from "../../../components/islands/card-sort-control";
 import { PackDialog } from "../../../components/islands/pack-dialog";
 import { SearchControls } from "../../../components/islands/search-controls";
 import { ResultsBar } from "../../../components/results-bar";
+import { Button } from "../../../components/ui/button";
 import { SelectAndBulkAdd } from "../../../components/vault/select-and-bulk-add";
 import { cardModalLinkPropsFor } from "../../../lib/card-route";
 import { buildSetCardSlugs } from "../../../lib/card-slugs";
@@ -40,6 +44,7 @@ import {
 } from "../../../server/nav-tree";
 import { nameByDex } from "../../../server/pokemon-dex";
 import { deriveFacets } from "../../../server/set-facets";
+import { useOwnedCardIdSet } from "../../../store/userland/selectors";
 
 export const Route = createFileRoute("/$series/$set/")({
 	validateSearch: validateListSearch,
@@ -190,6 +195,7 @@ function SetPageInner({
 						search={search}
 						context={{ setId: set.id }}
 					/>
+					<SetPrintMissing cards={cards} />
 					{/* <Button variant="outline" size="sm" onClick={() => setPackOpen(true)}>
 						<Package className="size-4 sm:mr-2" />
 						<span className="hidden sm:inline">Open Packs</span>
@@ -259,5 +265,45 @@ function SetPageInner({
 				/>
 			</ClientOnly>
 		</div>
+	);
+}
+
+/**
+ * Toolbar action + dialog for printing the cards the collector is MISSING from
+ * this set (all set cards minus owned). Owned state is local userland, so this
+ * lives inside the ResultsBar's <ClientOnly> boundary — the same gate the page
+ * uses for every other userland read (e.g. SelectAndBulkAdd) — and never runs on
+ * the server. Mirrors the binder-detail print button's disabled/aria/title logic.
+ */
+function SetPrintMissing({ cards }: { cards: HoloCardData[] }) {
+	const [printOpen, setPrintOpen] = useState(false);
+	const ownedCardIds = useOwnedCardIdSet();
+	const missing = useMemo(
+		() => missingCardViews(cards, ownedCardIds),
+		[cards, ownedCardIds],
+	);
+	return (
+		<>
+			<Button
+				variant="outline"
+				size="sm"
+				onClick={() => setPrintOpen(true)}
+				aria-label={m.binder_print_missing_cards()}
+				disabled={missing.length === 0}
+				title={
+					missing.length === 0 ? m.binder_print_disabled_title() : undefined
+				}
+			>
+				<Printer className="size-4 sm:mr-2" />
+				<span className="hidden sm:inline">
+					{m.binder_print_missing_button()}
+				</span>
+			</Button>
+			<PrintMissingDialog
+				open={printOpen}
+				onOpenChange={setPrintOpen}
+				cards={missing}
+			/>
+		</>
 	);
 }

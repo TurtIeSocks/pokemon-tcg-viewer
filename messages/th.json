@@ -81,8 +81,13 @@
 	"home_browse_aria": "เรียกดู {name}",
 	"home_set_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "{count} เซ็ต"
 			}
@@ -184,8 +189,13 @@
 	"vault_bulk_add_cards_to_binder_item": "เพิ่มการ์ด {count} ใบลงใน Binder",
 	"vault_bulk_add_to_binder_title": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "เพิ่มการ์ด {count} ใบลงใน Binder"
 			}
@@ -223,8 +233,13 @@
 	"vault_import_backup_button": "นำเข้าข้อมูลสำรอง",
 	"vault_claim_local_cards": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "คุณมีการ์ดในเครื่อง {count} ใบที่ยังไม่อยู่ใน Vault บนคลาวด์"
 			}
@@ -258,8 +273,13 @@
 	"vault_csv_merge_duplicates": "รวม Stack ที่ซ้ำกัน",
 	"vault_csv_import_button": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "นำเข้า {count} Stack"
 			}
@@ -296,8 +316,13 @@
 	"binder_progress_label": "ความคืบหน้า",
 	"binder_rule_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "{count} กฎ"
 			}
@@ -305,8 +330,13 @@
 	],
 	"binder_card_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "{count} การ์ด"
 			}
@@ -358,34 +388,22 @@
 	"binder_print_taller_title": "สูงกว่าการ์ดมาตรฐาน",
 	"binder_print_oversize_width_desc": "ความกว้างมาตรฐานคือ {standard}มม. ตัวแทนที่ที่กว้างขนาดนี้อาจใส่ในช่อง Binder ไม่พอดี",
 	"binder_print_oversize_height_desc": "ความสูงมาตรฐานคือ {standard}มม. ตัวแทนที่ที่สูงขนาดนี้อาจใส่ในช่อง Binder ไม่พอดี",
-	"binder_print_group_colors": "สี",
-	"binder_print_group_font_sizes": "ขนาดตัวอักษร",
-	"binder_print_group_card_size": "ขนาดการ์ด",
-	"binder_print_group_style": "สไตล์",
 	"binder_print_label_background": "พื้นหลัง",
-	"binder_print_label_text": "ข้อความ",
 	"binder_print_label_border": "เส้นขอบ",
-	"binder_print_label_qr_color": "สีของ QR",
-	"binder_print_label_qr_backdrop": "พื้นหลัง QR",
-	"binder_print_label_card_name": "ชื่อการ์ด",
-	"binder_print_label_card_number": "หมายเลขการ์ด",
-	"binder_print_label_set_name": "ชื่อเซ็ต",
-	"binder_print_label_price": "ราคา",
-	"binder_print_show_field": "แสดง {field}",
-	"binder_print_field_font_size": "ขนาดตัวอักษรของ {field}",
-	"binder_print_field_size": "ขนาดของ {field}",
 	"binder_print_label_width": "ความกว้าง",
 	"binder_print_label_height": "ความสูง",
 	"binder_print_label_spacing": "ระยะห่าง",
-	"binder_print_label_row_gap": "ระยะห่างบรรทัด",
 	"binder_print_label_corner_radius": "รัศมีมุมโค้ง",
 	"binder_print_label_border_width": "ความหนาเส้นขอบ",
-	"binder_print_label_text_size": "ขนาดข้อความ",
-	"binder_print_label_qr_code": "QR โค้ด",
 	"binder_print_count_label": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "การ์ด {count} ใบที่จะพิมพ์"
 			}
@@ -394,8 +412,13 @@
 	"binder_print_fits_per_sheet": "พอดี {count} ใบต่อแผ่น ({columns} × {rows})",
 	"binder_print_pages_of_paper": [
 		{
-			"declarations": ["input pages", "local pagesPlural = pages: plural"],
-			"selectors": ["pagesPlural"],
+			"declarations": [
+				"input pages",
+				"local pagesPlural = pages: plural"
+			],
+			"selectors": [
+				"pagesPlural"
+			],
 			"match": {
 				"pagesPlural=other": "ประมาณ {pages} แผ่นกระดาษ"
 			}
@@ -630,5 +653,29 @@
 	"binder_toast_moved": "ย้ายแล้ว",
 	"binder_toast_removed_count": "ลบ {count} การ์ดแล้ว",
 	"binder_toast_moved_count": "ย้าย {count} การ์ดแล้ว",
-	"binder_toast_undo": "เลิกทำ"
+	"binder_toast_undo": "เลิกทำ",
+	"binder_print_row_card_name": "ชื่อการ์ด",
+	"binder_print_row_number": "หมายเลข",
+	"binder_print_row_set_name": "ชื่อชุด",
+	"binder_print_row_series_name": "ซีรีส์",
+	"binder_print_row_rarity": "ความหายาก",
+	"binder_print_row_price": "ราคา",
+	"binder_print_row_custom_text": "ข้อความกำหนดเอง",
+	"binder_print_row_card_image": "รูปการ์ด",
+	"binder_print_row_qr": "คิวอาร์โค้ด",
+	"binder_print_column_card": "การ์ด",
+	"binder_print_column_content": "เนื้อหา",
+	"binder_print_add_row": "เพิ่มแถว",
+	"binder_print_row_edit": "แก้ไข",
+	"binder_print_row_remove": "ลบ",
+	"binder_print_row_move_up": "เลื่อนขึ้น",
+	"binder_print_row_move_down": "เลื่อนลง",
+	"binder_print_row_field_color": "สี",
+	"binder_print_row_field_size": "ขนาด",
+	"binder_print_row_field_y_spacing": "ระยะห่างด้านล่าง",
+	"binder_print_row_field_backdrop": "พื้นหลัง",
+	"binder_print_row_field_text": "ข้อความ",
+	"binder_print_row_field_type": "ประเภท",
+	"binder_print_row_editor_edit_title": "แก้ไขแถว",
+	"binder_print_row_save": "บันทึก"
 }

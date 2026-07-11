@@ -81,8 +81,13 @@
 	"home_browse_aria": "Bläddra i {name}",
 	"home_set_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} set",
 				"countPlural=other": "{count} set"
@@ -185,8 +190,13 @@
 	"vault_bulk_add_cards_to_binder_item": "Lägg till {count} kort i binder",
 	"vault_bulk_add_to_binder_title": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "Lägg till {count} kort i en binder",
 				"countPlural=other": "Lägg till {count} kort i en binder"
@@ -225,8 +235,13 @@
 	"vault_import_backup_button": "Importera säkerhetskopia",
 	"vault_claim_local_cards": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "Du har {count} lokalt kort som inte finns i ditt moln-Vault.",
 				"countPlural=other": "Du har {count} lokala kort som inte finns i ditt moln-Vault."
@@ -261,8 +276,13 @@
 	"vault_csv_merge_duplicates": "Slå ihop dubblettstacks",
 	"vault_csv_import_button": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "Importera {count} stack",
 				"countPlural=other": "Importera {count} stacks"
@@ -300,8 +320,13 @@
 	"binder_progress_label": "Framsteg",
 	"binder_rule_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} regel",
 				"countPlural=other": "{count} regler"
@@ -310,8 +335,13 @@
 	],
 	"binder_card_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} kort",
 				"countPlural=other": "{count} kort"
@@ -364,34 +394,22 @@
 	"binder_print_taller_title": "Högre än ett standardkort",
 	"binder_print_oversize_width_desc": "Standardbredden är {standard} mm. Så breda platshållare får kanske inte plats i binderfickor.",
 	"binder_print_oversize_height_desc": "Standardhöjden är {standard} mm. Så höga platshållare får kanske inte plats i binderfickor.",
-	"binder_print_group_colors": "Färger",
-	"binder_print_group_font_sizes": "Teckenstorlekar",
-	"binder_print_group_card_size": "Kortstorlek",
-	"binder_print_group_style": "Stil",
 	"binder_print_label_background": "Bakgrund",
-	"binder_print_label_text": "Text",
 	"binder_print_label_border": "Kantlinje",
-	"binder_print_label_qr_color": "QR-färg",
-	"binder_print_label_qr_backdrop": "QR-bakgrund",
-	"binder_print_label_card_name": "Kortnamn",
-	"binder_print_label_card_number": "Kort-nr",
-	"binder_print_label_set_name": "Setnamn",
-	"binder_print_label_price": "Pris",
-	"binder_print_show_field": "Visa {field}",
-	"binder_print_field_font_size": "Teckenstorlek för {field}",
-	"binder_print_field_size": "Storlek för {field}",
 	"binder_print_label_width": "Bredd",
 	"binder_print_label_height": "Höjd",
 	"binder_print_label_spacing": "Mellanrum",
-	"binder_print_label_row_gap": "Radavstånd",
 	"binder_print_label_corner_radius": "Hörnradie",
 	"binder_print_label_border_width": "Kantlinjebredd",
-	"binder_print_label_text_size": "Textstorlek",
-	"binder_print_label_qr_code": "QR-kod",
 	"binder_print_count_label": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} kort att skriva ut",
 				"countPlural=other": "{count} kort att skriva ut"
@@ -401,8 +419,13 @@
 	"binder_print_fits_per_sheet": "Rymmer {count} per ark ({columns} × {rows})",
 	"binder_print_pages_of_paper": [
 		{
-			"declarations": ["input pages", "local pagesPlural = pages: plural"],
-			"selectors": ["pagesPlural"],
+			"declarations": [
+				"input pages",
+				"local pagesPlural = pages: plural"
+			],
+			"selectors": [
+				"pagesPlural"
+			],
 			"match": {
 				"pagesPlural=one": "Ungefär {pages} pappersark.",
 				"pagesPlural=other": "Ungefär {pages} pappersark."
@@ -638,5 +661,29 @@
 	"binder_toast_moved": "Flyttad",
 	"binder_toast_removed_count": "Tog bort {count} kort",
 	"binder_toast_moved_count": "Flyttade {count} kort",
-	"binder_toast_undo": "Ångra"
+	"binder_toast_undo": "Ångra",
+	"binder_print_row_card_name": "Kortnamn",
+	"binder_print_row_number": "Nummer",
+	"binder_print_row_set_name": "Setnamn",
+	"binder_print_row_series_name": "Serie",
+	"binder_print_row_rarity": "Sällsynthet",
+	"binder_print_row_price": "Pris",
+	"binder_print_row_custom_text": "Anpassad text",
+	"binder_print_row_card_image": "Kortbild",
+	"binder_print_row_qr": "QR-kod",
+	"binder_print_column_card": "Kort",
+	"binder_print_column_content": "Innehåll",
+	"binder_print_add_row": "Lägg till rad",
+	"binder_print_row_edit": "Redigera",
+	"binder_print_row_remove": "Ta bort",
+	"binder_print_row_move_up": "Flytta upp",
+	"binder_print_row_move_down": "Flytta ner",
+	"binder_print_row_field_color": "Färg",
+	"binder_print_row_field_size": "Storlek",
+	"binder_print_row_field_y_spacing": "Avstånd nedanför",
+	"binder_print_row_field_backdrop": "Bakgrund",
+	"binder_print_row_field_text": "Text",
+	"binder_print_row_field_type": "Typ",
+	"binder_print_row_editor_edit_title": "Redigera rad",
+	"binder_print_row_save": "Spara"
 }

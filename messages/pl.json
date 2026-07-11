@@ -81,8 +81,13 @@
 	"home_browse_aria": "Przeglądaj {name}",
 	"home_set_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} zestaw",
 				"countPlural=few": "{count} zestawy",
@@ -187,8 +192,13 @@
 	"vault_bulk_add_cards_to_binder_item": "Dodaj {count} kart do Binder",
 	"vault_bulk_add_to_binder_title": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "Dodaj {count} kartę do Binder",
 				"countPlural=few": "Dodaj {count} karty do Binder",
@@ -229,8 +239,13 @@
 	"vault_import_backup_button": "Importuj kopię zapasową",
 	"vault_claim_local_cards": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "Masz {count} lokalną kartę, której nie ma w Twoim Vault w chmurze.",
 				"countPlural=few": "Masz {count} lokalne karty, których nie ma w Twoim Vault w chmurze.",
@@ -267,8 +282,13 @@
 	"vault_csv_merge_duplicates": "Scal zduplikowane stacks",
 	"vault_csv_import_button": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "Importuj {count} stack",
 				"countPlural=few": "Importuj {count} stacks",
@@ -308,8 +328,13 @@
 	"binder_progress_label": "Postęp",
 	"binder_rule_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} reguła",
 				"countPlural=few": "{count} reguły",
@@ -320,8 +345,13 @@
 	],
 	"binder_card_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} karta",
 				"countPlural=few": "{count} karty",
@@ -376,34 +406,22 @@
 	"binder_print_taller_title": "Wyższa niż standardowa karta",
 	"binder_print_oversize_width_desc": "Standardowa szerokość to {standard}mm. Znaczniki tej szerokości mogą nie zmieścić się w kieszeniach Binder.",
 	"binder_print_oversize_height_desc": "Standardowa wysokość to {standard}mm. Znaczniki tej wysokości mogą nie zmieścić się w kieszeniach Binder.",
-	"binder_print_group_colors": "Kolory",
-	"binder_print_group_font_sizes": "Rozmiary czcionek",
-	"binder_print_group_card_size": "Rozmiar karty",
-	"binder_print_group_style": "Styl",
 	"binder_print_label_background": "Tło",
-	"binder_print_label_text": "Tekst",
 	"binder_print_label_border": "Obramowanie",
-	"binder_print_label_qr_color": "Kolor QR",
-	"binder_print_label_qr_backdrop": "Tło QR",
-	"binder_print_label_card_name": "Nazwa karty",
-	"binder_print_label_card_number": "Nr karty",
-	"binder_print_label_set_name": "Nazwa zestawu",
-	"binder_print_label_price": "Cena",
-	"binder_print_show_field": "Pokaż {field}",
-	"binder_print_field_font_size": "Rozmiar czcionki: {field}",
-	"binder_print_field_size": "Rozmiar: {field}",
 	"binder_print_label_width": "Szerokość",
 	"binder_print_label_height": "Wysokość",
 	"binder_print_label_spacing": "Odstęp",
-	"binder_print_label_row_gap": "Odstęp między wierszami",
 	"binder_print_label_corner_radius": "Promień zaokrąglenia",
 	"binder_print_label_border_width": "Grubość obramowania",
-	"binder_print_label_text_size": "Rozmiar tekstu",
-	"binder_print_label_qr_code": "Kod QR",
 	"binder_print_count_label": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} karta do wydruku",
 				"countPlural=few": "{count} karty do wydruku",
@@ -415,8 +433,13 @@
 	"binder_print_fits_per_sheet": "Mieści {count} na arkuszu ({columns} × {rows})",
 	"binder_print_pages_of_paper": [
 		{
-			"declarations": ["input pages", "local pagesPlural = pages: plural"],
-			"selectors": ["pagesPlural"],
+			"declarations": [
+				"input pages",
+				"local pagesPlural = pages: plural"
+			],
+			"selectors": [
+				"pagesPlural"
+			],
 			"match": {
 				"pagesPlural=one": "Około {pages} kartka papieru.",
 				"pagesPlural=few": "Około {pages} kartki papieru.",
@@ -654,5 +677,29 @@
 	"binder_toast_moved": "Przeniesiono",
 	"binder_toast_removed_count": "Usunięto {count} kart",
 	"binder_toast_moved_count": "Przeniesiono {count} kart",
-	"binder_toast_undo": "Cofnij"
+	"binder_toast_undo": "Cofnij",
+	"binder_print_row_card_name": "Nazwa karty",
+	"binder_print_row_number": "Numer",
+	"binder_print_row_set_name": "Nazwa zestawu",
+	"binder_print_row_series_name": "Seria",
+	"binder_print_row_rarity": "Rzadkość",
+	"binder_print_row_price": "Cena",
+	"binder_print_row_custom_text": "Tekst niestandardowy",
+	"binder_print_row_card_image": "Obraz karty",
+	"binder_print_row_qr": "Kod QR",
+	"binder_print_column_card": "Karta",
+	"binder_print_column_content": "Zawartość",
+	"binder_print_add_row": "Dodaj wiersz",
+	"binder_print_row_edit": "Edytuj",
+	"binder_print_row_remove": "Usuń",
+	"binder_print_row_move_up": "Przenieś w górę",
+	"binder_print_row_move_down": "Przenieś w dół",
+	"binder_print_row_field_color": "Kolor",
+	"binder_print_row_field_size": "Rozmiar",
+	"binder_print_row_field_y_spacing": "Odstęp poniżej",
+	"binder_print_row_field_backdrop": "Tło",
+	"binder_print_row_field_text": "Tekst",
+	"binder_print_row_field_type": "Typ",
+	"binder_print_row_editor_edit_title": "Edytuj wiersz",
+	"binder_print_row_save": "Zapisz"
 }

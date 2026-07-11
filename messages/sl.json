@@ -81,8 +81,13 @@
 	"home_browse_aria": "Brskaj {name}",
 	"home_set_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} komplet",
 				"countPlural=two": "{count} kompleta",
@@ -187,8 +192,13 @@
 	"vault_bulk_add_cards_to_binder_item": "Dodaj {count} kart v binder",
 	"vault_bulk_add_to_binder_title": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "Dodaj {count} karto v binder",
 				"countPlural=two": "Dodaj {count} karti v binder",
@@ -229,8 +239,13 @@
 	"vault_import_backup_button": "Uvozi varnostno kopijo",
 	"vault_claim_local_cards": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "Imaš {count} lokalno karto, ki ni v tvojem Vaultu v oblaku.",
 				"countPlural=two": "Imaš {count} lokalni karti, ki nista v tvojem Vaultu v oblaku.",
@@ -267,8 +282,13 @@
 	"vault_csv_merge_duplicates": "Združi podvojene stacke",
 	"vault_csv_import_button": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "Uvozi {count} stack",
 				"countPlural=two": "Uvozi {count} stacka",
@@ -308,8 +328,13 @@
 	"binder_progress_label": "Napredek",
 	"binder_rule_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} pravilo",
 				"countPlural=two": "{count} pravili",
@@ -320,8 +345,13 @@
 	],
 	"binder_card_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} karta",
 				"countPlural=two": "{count} karti",
@@ -376,34 +406,22 @@
 	"binder_print_taller_title": "Višje od standardne karte",
 	"binder_print_oversize_width_desc": "Standardna širina je {standard}mm. Tako široki nadomestki morda ne bodo šli v žepke binderja.",
 	"binder_print_oversize_height_desc": "Standardna višina je {standard}mm. Tako visoki nadomestki morda ne bodo šli v žepke binderja.",
-	"binder_print_group_colors": "Barve",
-	"binder_print_group_font_sizes": "Velikosti pisave",
-	"binder_print_group_card_size": "Velikost karte",
-	"binder_print_group_style": "Slog",
 	"binder_print_label_background": "Ozadje",
-	"binder_print_label_text": "Besedilo",
 	"binder_print_label_border": "Obroba",
-	"binder_print_label_qr_color": "Barva QR",
-	"binder_print_label_qr_backdrop": "Ozadje QR",
-	"binder_print_label_card_name": "Ime karte",
-	"binder_print_label_card_number": "Št. karte",
-	"binder_print_label_set_name": "Ime kompleta",
-	"binder_print_label_price": "Cena",
-	"binder_print_show_field": "Pokaži {field}",
-	"binder_print_field_font_size": "Velikost pisave: {field}",
-	"binder_print_field_size": "Velikost: {field}",
 	"binder_print_label_width": "Širina",
 	"binder_print_label_height": "Višina",
 	"binder_print_label_spacing": "Razmik",
-	"binder_print_label_row_gap": "Razmik vrstic",
 	"binder_print_label_corner_radius": "Zaokroženost robov",
 	"binder_print_label_border_width": "Debelina obrobe",
-	"binder_print_label_text_size": "Velikost besedila",
-	"binder_print_label_qr_code": "Koda QR",
 	"binder_print_count_label": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=one": "{count} karta za tisk",
 				"countPlural=two": "{count} karti za tisk",
@@ -415,8 +433,13 @@
 	"binder_print_fits_per_sheet": "Gre {count} na list ({columns} × {rows})",
 	"binder_print_pages_of_paper": [
 		{
-			"declarations": ["input pages", "local pagesPlural = pages: plural"],
-			"selectors": ["pagesPlural"],
+			"declarations": [
+				"input pages",
+				"local pagesPlural = pages: plural"
+			],
+			"selectors": [
+				"pagesPlural"
+			],
 			"match": {
 				"pagesPlural=one": "Približno {pages} list papirja.",
 				"pagesPlural=two": "Približno {pages} lista papirja.",
@@ -654,5 +677,29 @@
 	"binder_toast_moved": "Premaknjeno",
 	"binder_toast_removed_count": "Odstranjenih {count} kart",
 	"binder_toast_moved_count": "Premaknjenih {count} kart",
-	"binder_toast_undo": "Razveljavi"
+	"binder_toast_undo": "Razveljavi",
+	"binder_print_row_card_name": "Ime kartice",
+	"binder_print_row_number": "Številka",
+	"binder_print_row_set_name": "Ime kompleta",
+	"binder_print_row_series_name": "Serija",
+	"binder_print_row_rarity": "Redkost",
+	"binder_print_row_price": "Cena",
+	"binder_print_row_custom_text": "Besedilo po meri",
+	"binder_print_row_card_image": "Slika kartice",
+	"binder_print_row_qr": "Koda QR",
+	"binder_print_column_card": "Kartica",
+	"binder_print_column_content": "Vsebina",
+	"binder_print_add_row": "Dodaj vrstico",
+	"binder_print_row_edit": "Uredi",
+	"binder_print_row_remove": "Odstrani",
+	"binder_print_row_move_up": "Premakni gor",
+	"binder_print_row_move_down": "Premakni dol",
+	"binder_print_row_field_color": "Barva",
+	"binder_print_row_field_size": "Velikost",
+	"binder_print_row_field_y_spacing": "Razmik spodaj",
+	"binder_print_row_field_backdrop": "Ozadje",
+	"binder_print_row_field_text": "Besedilo",
+	"binder_print_row_field_type": "Vrsta",
+	"binder_print_row_editor_edit_title": "Uredi vrstico",
+	"binder_print_row_save": "Shrani"
 }

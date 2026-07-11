@@ -81,8 +81,13 @@
 	"home_browse_aria": "Jelajahi {name}",
 	"home_set_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "{count} set"
 			}
@@ -184,8 +189,13 @@
 	"vault_bulk_add_cards_to_binder_item": "Tambah {count} kartu ke binder",
 	"vault_bulk_add_to_binder_title": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "Tambah {count} kartu ke binder"
 			}
@@ -223,8 +233,13 @@
 	"vault_import_backup_button": "Impor cadangan",
 	"vault_claim_local_cards": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "Anda memiliki {count} kartu lokal yang belum ada di Vault cloud Anda."
 			}
@@ -258,8 +273,13 @@
 	"vault_csv_merge_duplicates": "Gabungkan stack duplikat",
 	"vault_csv_import_button": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "Impor {count} stack"
 			}
@@ -296,8 +316,13 @@
 	"binder_progress_label": "Progres",
 	"binder_rule_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "{count} aturan"
 			}
@@ -305,8 +330,13 @@
 	],
 	"binder_card_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "{count} kartu"
 			}
@@ -358,34 +388,22 @@
 	"binder_print_taller_title": "Lebih tinggi dari kartu standar",
 	"binder_print_oversize_width_desc": "Lebar standar adalah {standard}mm. Placeholder selebar ini mungkin tidak muat di kantong binder.",
 	"binder_print_oversize_height_desc": "Tinggi standar adalah {standard}mm. Placeholder setinggi ini mungkin tidak muat di kantong binder.",
-	"binder_print_group_colors": "Warna",
-	"binder_print_group_font_sizes": "Ukuran font",
-	"binder_print_group_card_size": "Ukuran kartu",
-	"binder_print_group_style": "Gaya",
 	"binder_print_label_background": "Latar belakang",
-	"binder_print_label_text": "Teks",
 	"binder_print_label_border": "Bingkai",
-	"binder_print_label_qr_color": "Warna QR",
-	"binder_print_label_qr_backdrop": "Latar QR",
-	"binder_print_label_card_name": "Nama kartu",
-	"binder_print_label_card_number": "No. Kartu",
-	"binder_print_label_set_name": "Nama set",
-	"binder_print_label_price": "Harga",
-	"binder_print_show_field": "Tampilkan {field}",
-	"binder_print_field_font_size": "Ukuran font {field}",
-	"binder_print_field_size": "Ukuran {field}",
 	"binder_print_label_width": "Lebar",
 	"binder_print_label_height": "Tinggi",
 	"binder_print_label_spacing": "Jarak",
-	"binder_print_label_row_gap": "Jarak baris",
 	"binder_print_label_corner_radius": "Radius sudut",
 	"binder_print_label_border_width": "Lebar bingkai",
-	"binder_print_label_text_size": "Ukuran teks",
-	"binder_print_label_qr_code": "Kode QR",
 	"binder_print_count_label": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "{count} kartu untuk dicetak"
 			}
@@ -394,8 +412,13 @@
 	"binder_print_fits_per_sheet": "Muat {count} per lembar ({columns} × {rows})",
 	"binder_print_pages_of_paper": [
 		{
-			"declarations": ["input pages", "local pagesPlural = pages: plural"],
-			"selectors": ["pagesPlural"],
+			"declarations": [
+				"input pages",
+				"local pagesPlural = pages: plural"
+			],
+			"selectors": [
+				"pagesPlural"
+			],
 			"match": {
 				"pagesPlural=other": "Sekitar {pages} lembar kertas."
 			}
@@ -630,5 +653,29 @@
 	"binder_toast_moved": "Dipindahkan",
 	"binder_toast_removed_count": "{count} kartu dihapus",
 	"binder_toast_moved_count": "{count} kartu dipindahkan",
-	"binder_toast_undo": "Urungkan"
+	"binder_toast_undo": "Urungkan",
+	"binder_print_row_card_name": "Nama kartu",
+	"binder_print_row_number": "Nomor",
+	"binder_print_row_set_name": "Nama set",
+	"binder_print_row_series_name": "Seri",
+	"binder_print_row_rarity": "Kelangkaan",
+	"binder_print_row_price": "Harga",
+	"binder_print_row_custom_text": "Teks khusus",
+	"binder_print_row_card_image": "Gambar kartu",
+	"binder_print_row_qr": "Kode QR",
+	"binder_print_column_card": "Kartu",
+	"binder_print_column_content": "Konten",
+	"binder_print_add_row": "Tambah baris",
+	"binder_print_row_edit": "Edit",
+	"binder_print_row_remove": "Hapus",
+	"binder_print_row_move_up": "Naikkan",
+	"binder_print_row_move_down": "Turunkan",
+	"binder_print_row_field_color": "Warna",
+	"binder_print_row_field_size": "Ukuran",
+	"binder_print_row_field_y_spacing": "Jarak bawah",
+	"binder_print_row_field_backdrop": "Latar",
+	"binder_print_row_field_text": "Teks",
+	"binder_print_row_field_type": "Tipe",
+	"binder_print_row_editor_edit_title": "Edit baris",
+	"binder_print_row_save": "Simpan"
 }

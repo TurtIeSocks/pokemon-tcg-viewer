@@ -81,8 +81,13 @@
 	"home_browse_aria": "瀏覽 {name}",
 	"home_set_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "{count} 個系列"
 			}
@@ -184,8 +189,13 @@
 	"vault_bulk_add_cards_to_binder_item": "新增 {count} 張卡片到 Binder",
 	"vault_bulk_add_to_binder_title": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "新增 {count} 張卡片到 Binder"
 			}
@@ -223,8 +233,13 @@
 	"vault_import_backup_button": "匯入備份",
 	"vault_claim_local_cards": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "你有 {count} 張本機卡片尚未加入雲端 Vault。"
 			}
@@ -258,8 +273,13 @@
 	"vault_csv_merge_duplicates": "合併重複的 Stack",
 	"vault_csv_import_button": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "匯入 {count} 個 Stack"
 			}
@@ -296,8 +316,13 @@
 	"binder_progress_label": "進度",
 	"binder_rule_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "{count} 條規則"
 			}
@@ -305,8 +330,13 @@
 	],
 	"binder_card_count": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "{count} 張卡片"
 			}
@@ -358,34 +388,22 @@
 	"binder_print_taller_title": "比標準卡片高",
 	"binder_print_oversize_width_desc": "標準寬度為 {standard}mm。這麼寬的佔位卡可能無法放入 Binder 內頁夾層。",
 	"binder_print_oversize_height_desc": "標準高度為 {standard}mm。這麼高的佔位卡可能無法放入 Binder 內頁夾層。",
-	"binder_print_group_colors": "顏色",
-	"binder_print_group_font_sizes": "字型大小",
-	"binder_print_group_card_size": "卡片大小",
-	"binder_print_group_style": "樣式",
 	"binder_print_label_background": "背景",
-	"binder_print_label_text": "文字",
 	"binder_print_label_border": "邊框",
-	"binder_print_label_qr_color": "QR 顏色",
-	"binder_print_label_qr_backdrop": "QR 背景",
-	"binder_print_label_card_name": "卡片名稱",
-	"binder_print_label_card_number": "卡片編號",
-	"binder_print_label_set_name": "系列名稱",
-	"binder_print_label_price": "價格",
-	"binder_print_show_field": "顯示 {field}",
-	"binder_print_field_font_size": "{field} 字型大小",
-	"binder_print_field_size": "{field} 大小",
 	"binder_print_label_width": "寬度",
 	"binder_print_label_height": "高度",
 	"binder_print_label_spacing": "間距",
-	"binder_print_label_row_gap": "行距",
 	"binder_print_label_corner_radius": "圓角半徑",
 	"binder_print_label_border_width": "邊框寬度",
-	"binder_print_label_text_size": "文字大小",
-	"binder_print_label_qr_code": "QR 碼",
 	"binder_print_count_label": [
 		{
-			"declarations": ["input count", "local countPlural = count: plural"],
-			"selectors": ["countPlural"],
+			"declarations": [
+				"input count",
+				"local countPlural = count: plural"
+			],
+			"selectors": [
+				"countPlural"
+			],
 			"match": {
 				"countPlural=other": "{count} 張卡片待列印"
 			}
@@ -394,8 +412,13 @@
 	"binder_print_fits_per_sheet": "每張紙可放 {count} 張（{columns} × {rows}）",
 	"binder_print_pages_of_paper": [
 		{
-			"declarations": ["input pages", "local pagesPlural = pages: plural"],
-			"selectors": ["pagesPlural"],
+			"declarations": [
+				"input pages",
+				"local pagesPlural = pages: plural"
+			],
+			"selectors": [
+				"pagesPlural"
+			],
 			"match": {
 				"pagesPlural=other": "大約需要 {pages} 張紙。"
 			}
@@ -630,5 +653,29 @@
 	"binder_toast_moved": "已移動",
 	"binder_toast_removed_count": "已移除 {count} 張卡片",
 	"binder_toast_moved_count": "已移動 {count} 張卡片",
-	"binder_toast_undo": "復原"
+	"binder_toast_undo": "復原",
+	"binder_print_row_card_name": "卡牌名稱",
+	"binder_print_row_number": "編號",
+	"binder_print_row_set_name": "系列名稱",
+	"binder_print_row_series_name": "系列",
+	"binder_print_row_rarity": "稀有度",
+	"binder_print_row_price": "價格",
+	"binder_print_row_custom_text": "自訂文字",
+	"binder_print_row_card_image": "卡牌圖片",
+	"binder_print_row_qr": "QR 碼",
+	"binder_print_column_card": "卡牌",
+	"binder_print_column_content": "內容",
+	"binder_print_add_row": "新增列",
+	"binder_print_row_edit": "編輯",
+	"binder_print_row_remove": "移除",
+	"binder_print_row_move_up": "上移",
+	"binder_print_row_move_down": "下移",
+	"binder_print_row_field_color": "顏色",
+	"binder_print_row_field_size": "大小",
+	"binder_print_row_field_y_spacing": "下方間距",
+	"binder_print_row_field_backdrop": "背景",
+	"binder_print_row_field_text": "文字",
+	"binder_print_row_field_type": "類型",
+	"binder_print_row_editor_edit_title": "編輯列",
+	"binder_print_row_save": "儲存"
 }

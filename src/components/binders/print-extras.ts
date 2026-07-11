@@ -3,9 +3,16 @@ import type { CardPriceEntry, FxTable } from "@/lib/corpus/price-types";
 import { faceLanguageFor, type SupportedLanguage } from "@/lib/languages";
 import { type QrSvg, qrSvgPath } from "@/lib/qr";
 import type { SlugIndex } from "@/lib/slug";
+import type { ContentRow } from "@/store/ui-prefs";
 import { formatPrice } from "@/store/userland/money";
 import { unitMarketValueUsdCents } from "@/store/userland/valuation";
+import { cdnImage } from "../holo-card/cdn-image";
 import type { HoloCardData } from "../holo-card/types";
+
+/** Output width (px) requested from the image CDN for a `cardImage` row. Generous
+ * enough for a placeholder printed at any of the row's mm sizes at ~300dpi; wsrv's
+ * `we` flag prevents upscaling past the source. */
+const CARD_IMAGE_CDN_WIDTH = 480;
 
 /** Per-placeholder derived extras; each field null when unavailable. */
 export interface PlaceholderExtra {
@@ -13,6 +20,67 @@ export interface PlaceholderExtra {
 	price: string | null;
 	/** Prebuilt QR for the card's /prices page, or null when unresolvable. */
 	qr: QrSvg | null;
+	/** CDN image URL for the card, or null when the card has no source image. */
+	image: string | null;
+}
+
+/**
+ * The resolved content of one {@link ContentRow} for one card. `null` (returned by
+ * {@link resolvePlaceholderRow}) means "no content for this card" — the row is
+ * omitted entirely rather than reserving blank space (an unpriced card drops its
+ * price row, a card with no art drops its image row, and so on).
+ */
+export type ResolvedRowContent =
+	| { kind: "text"; value: string }
+	| { kind: "image"; src: string }
+	| { kind: "qr"; qr: QrSvg };
+
+/** A non-empty trimmed string as a text row, else null (drives null-collapse). */
+function textRow(value: string | null | undefined): ResolvedRowContent | null {
+	const t = value?.trim();
+	return t ? { kind: "text", value: t } : null;
+}
+
+/**
+ * Resolve one content row to its printable content for a given card, or `null`
+ * when the card supplies nothing for it. Pure: card fields + precomputed
+ * {@link PlaceholderExtra} in, content out — so the renderer stays declarative and
+ * the null-collapse is unit-testable. Text-bearing rows collapse on an empty value;
+ * `price`/`qr`/`cardImage` collapse on a null extra.
+ */
+export function resolvePlaceholderRow(
+	row: ContentRow,
+	card: HoloCardData,
+	extra: PlaceholderExtra | undefined,
+): ResolvedRowContent | null {
+	switch (row.type) {
+		case "cardName":
+			return textRow(card.name);
+		case "number": {
+			const n = card.cardNumber?.toString().trim();
+			return n ? { kind: "text", value: `#${n}` } : null;
+		}
+		case "setName":
+			return textRow(card.setName);
+		case "seriesName":
+			return textRow(card.setSeries);
+		case "rarity":
+			return textRow(card.rarity);
+		case "price":
+			return textRow(extra?.price ?? null);
+		case "customText":
+			return textRow(row.text ?? null);
+		case "cardImage": {
+			const src = extra?.image ?? null;
+			return src ? { kind: "image", src } : null;
+		}
+		case "qr": {
+			const qr = extra?.qr ?? null;
+			return qr ? { kind: "qr", qr } : null;
+		}
+		default:
+			return null;
+	}
 }
 
 /**
@@ -59,6 +127,9 @@ export function buildPlaceholderExtras(args: {
 		out.set(card.id, {
 			price: cents == null ? null : formatPrice(cents, "USD"),
 			qr: url ? qrSvgPath(url) : null,
+			image: card.imageUrl
+				? cdnImage(card.imageUrl, { w: CARD_IMAGE_CDN_WIDTH })
+				: null,
 		});
 	}
 	return out;

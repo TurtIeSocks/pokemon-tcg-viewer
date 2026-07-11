@@ -90,3 +90,62 @@ export function placeholderMeta(
 ): string {
 	return `#${card.cardNumber} / ${card.setName}`;
 }
+
+/**
+ * Format a millimetre length, rounded to 0.01mm so float math (3.6 * 1.3) never
+ * leaks "5.399999…mm" into the DOM or the printed sheet. Shared by the dialog and
+ * the row editor so preview + paper agree on rounding.
+ */
+export const mm = (n: number) => `${Math.round(n * 100) / 100}mm`;
+
+/** Bounds + display format for one numeric unit-input. */
+export interface UnitFieldSpec {
+	unit: string;
+	min: number;
+	max: number;
+	step: number;
+	precision: number;
+}
+
+/**
+ * Bounds for each numeric unit-input in the print builder. Column-A card fields
+ * (size + frame) plus the per-row size / spacing fields the editor exposes.
+ * Defaults + current values live in the persisted store (`useUiPrefs.printPrefs`).
+ */
+export const PRINT_FIELD = {
+	cardWidth: { unit: "mm", min: 20, max: 120, step: 1, precision: 0 },
+	cardHeight: { unit: "mm", min: 20, max: 180, step: 1, precision: 0 },
+	spacing: { unit: "mm", min: 0, max: 20, step: 0.5, precision: 1 },
+	radius: { unit: "mm", min: 0, max: 8, step: 0.5, precision: 1 },
+	border: { unit: "mm", min: 0, max: 3, step: 0.1, precision: 2 },
+	// A content row's font size (text/qr) or image height. Precision 2 so the
+	// default 4.68mm round-trips through the input without truncation.
+	rowSize: { unit: "mm", min: 1, max: 80, step: 0.5, precision: 2 },
+	rowSpacing: { unit: "mm", min: 0, max: 20, step: 0.5, precision: 1 },
+} as const satisfies Record<string, UnitFieldSpec>;
+
+/**
+ * Return a NEW array with the item at `index` shifted by `delta` (±1). Pure and
+ * total: an out-of-range index/target yields an unchanged copy, so the "move up"
+ * on the first row and "move down" on the last are safe no-ops. Drives Column B's
+ * reorder buttons (the store replaces `rows` wholesale — never mutate in place).
+ */
+export function moveRow<T>(
+	rows: readonly T[],
+	index: number,
+	delta: number,
+): T[] {
+	const target = index + delta;
+	if (
+		index < 0 ||
+		index >= rows.length ||
+		target < 0 ||
+		target >= rows.length
+	) {
+		return rows.slice();
+	}
+	const next = rows.slice();
+	const [item] = next.splice(index, 1);
+	next.splice(target, 0, item);
+	return next;
+}
