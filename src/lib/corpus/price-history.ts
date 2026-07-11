@@ -2,7 +2,8 @@
 // daily rollup builder) and the client history runtime/chart. A history point
 // is [UTC epoch-day, representative USD-cents market], null value = a gap.
 import { convertMinorUnits } from "./fx";
-import type { CardPriceEntry, FinishCode, FxTable } from "./price-types";
+import type { CardPriceEntry, FxTable } from "./price-types";
+import { MARKET_FINISH_ORDER } from "./price-types";
 
 export type HistoryPoint = [epochDay: number, marketCentsUsd: number | null];
 /** cardId → points, ascending by day. */
@@ -18,13 +19,13 @@ export function epochDayUtc(dateYmd: string): number {
 	return Math.floor(Date.UTC(y, m - 1, d) / MS_PER_DAY);
 }
 
-/** Finish fallback order for the representative market (mirrors valuation). */
-const MARKET_FINISHES: FinishCode[] = ["H", "N"];
-
 /**
  * One representative USD-cents market for a card on a given day: tcgplayer
- * market via Holofoil→Normal, else cardmarket trend (EUR) converted to USD.
- * null when unpriced or FX can't reach USD.
+ * market via the shared MARKET_FINISH_ORDER (Normal-first), else cardmarket
+ * trend (EUR) converted to USD. null when unpriced or FX can't reach USD.
+ * MUST use the same finish order as valuation.ts — sharing MARKET_FINISH_ORDER
+ * is what keeps the sparkline and the portfolio value from disagreeing (they
+ * were Holo-first vs Normal-first and read ~10x apart).
  */
 export function representativeMarketUsdCents(
 	entry: CardPriceEntry | null,
@@ -32,7 +33,7 @@ export function representativeMarketUsdCents(
 ): number | null {
 	if (!entry) return null;
 	if (entry.tp) {
-		for (const f of MARKET_FINISHES) {
+		for (const f of MARKET_FINISH_ORDER) {
 			const pair = entry.tp[f];
 			if (pair && pair[0] !== null) return pair[0];
 		}

@@ -39,6 +39,18 @@ describe("buildPriceLines", () => {
 		);
 	});
 
+	test("tcgplayer line links DIRECTLY to the product page when tpId is present", () => {
+		const entry: CardPriceEntry = {
+			tp: { N: [700, 400], H: [72034, 53499] },
+			tpId: 107006,
+		};
+		const lines = buildPriceLines(card, entry, meta);
+		// every tcgplayer finish shares the one direct product URL (no slug needed)
+		for (const line of lines.filter((l) => l.source === "TCGplayer")) {
+			expect(line.url).toBe("https://www.tcgplayer.com/product/107006");
+		}
+	});
+
 	test("cardmarket line links to a Cardmarket search for the card", () => {
 		const entry: CardPriceEntry = { cm: [50168, 27674, 40096, 56391] };
 		const [line] = buildPriceLines(card, entry, meta);

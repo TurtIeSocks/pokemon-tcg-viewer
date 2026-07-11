@@ -17,10 +17,17 @@ test("epochDayUtc counts UTC days since epoch", () => {
 	);
 });
 
-test("representativeMarketUsdCents prefers tcgplayer H→N, else cardmarket→USD", () => {
+test("representativeMarketUsdCents prefers tcgplayer Normal→Holo (matches valuation), else cardmarket→USD", () => {
+	// Normal-first, shared with valuation.ts via MARKET_FINISH_ORDER: a card with
+	// both a $7 Normal and a $720 Holo resolves to Normal, so the sparkline and
+	// the portfolio value agree (they used to disagree ~100x, H-first vs N-first).
 	expect(
 		representativeMarketUsdCents({ tp: { H: [72034, 1], N: [700, 1] } }, fx),
-	).toBe(72034);
+	).toBe(700);
+	// Holo-only vintage (no Normal entry) still falls through to Holo.
+	expect(representativeMarketUsdCents({ tp: { H: [72034, 1] } }, fx)).toBe(
+		72034,
+	);
 	expect(representativeMarketUsdCents({ tp: { N: [700, 1] } }, fx)).toBe(700);
 	// cardmarket trend €10.00 → $10.90
 	expect(

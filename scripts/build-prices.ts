@@ -80,6 +80,10 @@ export function joinPrices(input: {
 				if (tuple.some((x) => x !== null)) entry.cm = tuple;
 			}
 		}
+		// Keep the tcgplayer product id so the client can build a DIRECT product
+		// link (tcgplayer.com/product/{tpId}) instead of a search URL. Only when
+		// we actually have tcgplayer prices (the id rides the tp lines).
+		if (tpId !== null && entry.tp) entry.tpId = tpId;
 		if (entry.tp || entry.cm) cards[cardId] = entry;
 	}
 

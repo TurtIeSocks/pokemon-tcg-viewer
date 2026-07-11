@@ -8,7 +8,8 @@ export interface PriceLine {
 	finish: string | null;
 	/** Native-currency formatted price (tcgplayer USD, cardmarket EUR). */
 	priceLabel: string;
-	/** Deep link back to the source (a search result satisfies TCGplayer's terms). */
+	/** Deep link back to the source: a direct product page when the id is known,
+	 * else a search result. */
 	url: string;
 	/** Source data date (YYYY-MM-DD); null when unknown. */
 	updatedAt: string | null;
@@ -34,6 +35,15 @@ function tpSearchUrl(card: FocusCardData): string {
 	return `https://www.tcgplayer.com/search/pokemon/product?q=${q}`;
 }
 
+/**
+ * Direct tcgplayer product page. The slug segment is optional — tcgplayer
+ * canonicalizes from the id alone — so `/product/{id}` is enough. Used when the
+ * blob carries the product id; otherwise we fall back to {@link tpSearchUrl}.
+ */
+function tpProductUrl(tpId: number): string {
+	return `https://www.tcgplayer.com/product/${tpId}`;
+}
+
 function cmSearchUrl(card: FocusCardData): string {
 	const q = encodeURIComponent(card.name);
 	return `https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${q}`;
@@ -55,6 +65,9 @@ export function buildPriceLines(
 	const lines: PriceLine[] = [];
 
 	if (entry.tp) {
+		// Direct product link when the blob carries the tcgplayer id; else search.
+		const tpUrl =
+			entry.tpId != null ? tpProductUrl(entry.tpId) : tpSearchUrl(card);
 		for (const code of FINISH_ORDER) {
 			const pair = entry.tp[code];
 			if (!pair) continue;
@@ -64,7 +77,7 @@ export function buildPriceLines(
 				source: "TCGplayer",
 				finish: FINISH_LABEL[code],
 				priceLabel: formatPrice(market, "USD"),
-				url: tpSearchUrl(card),
+				url: tpUrl,
 				updatedAt: meta.tpDate,
 			});
 		}
