@@ -27,12 +27,27 @@ export {
 	type NavTree,
 } from "../lib/nav-tree";
 
-// Memoize across requests in one server process, per region. The sets list
-// changes monthly; a process restart (deploy) picks up new sets. Avoids
-// rebuilding the index per request. A Map (not a single slot) so the west
-// catalog (pokemontcg.io-backed, en) and the asia catalog (TCGdex-only, ja)
+// Memoize across requests in one server process, per region, refreshed in the
+// background after a TTL — a stale hit serves the old tree immediately while a
+// refetch swaps in the new one, so upstream set-list changes reach a long-lived
+// process within one TTL, no deploy needed. Same TTL as the server corpus
+// (SERVER_CORPUS_TTL_MS) so nav and corpus drift apart by at most one window.
+// A Map (not a single slot) so the west catalog (en) and the asia catalog (ja)
 // cache independently — loading one must not evict or block the other.
-const cache = new Map<Region, Promise<NavTree>>();
+interface NavCacheEntry {
+	promise: Promise<NavTree>;
+	fetchedAt: number;
+	refreshing: boolean;
+}
+const cache = new Map<Region, NavCacheEntry>();
+
+/** How long a fetched nav tree is trusted before a background refresh. */
+export const NAV_TREE_TTL_MS = 15 * 60 * 1000;
+
+/** Test-only: drop the memoized trees so each test starts cold. */
+export function resetNavTreeForTests(): void {
+	cache.clear();
+}
 
 /**
  * Memoized nav tree (server-only), one per region. Shared by getNavTreeFn and
@@ -41,14 +56,31 @@ const cache = new Map<Region, Promise<NavTree>>();
  * getNavTreeFn concern.
  */
 export function loadNavTree(region: Region = "west"): Promise<NavTree> {
-	let promise = cache.get(region);
-	if (!promise) {
-		promise = fetchAllSets(REGION_BASE_LANGUAGE[region]).then(deriveNavTree);
+	const entry = cache.get(region);
+	if (!entry) {
+		const e = { fetchedAt: Date.now(), refreshing: false } as NavCacheEntry;
+		e.promise = fetchAllSets(REGION_BASE_LANGUAGE[region]).then(deriveNavTree);
 		// Evict on failure so a transient error doesn't poison the region forever.
-		promise.catch(() => cache.delete(region));
-		cache.set(region, promise);
+		e.promise.catch(() => cache.delete(region));
+		cache.set(region, e);
+		return e.promise;
 	}
-	return promise;
+	if (Date.now() - entry.fetchedAt > NAV_TREE_TTL_MS && !entry.refreshing) {
+		entry.refreshing = true;
+		fetchAllSets(REGION_BASE_LANGUAGE[region])
+			.then(deriveNavTree)
+			.then((tree) => {
+				entry.promise = Promise.resolve(tree);
+			})
+			.catch(() => {
+				// Keep serving the old tree; the next window retries.
+			})
+			.finally(() => {
+				entry.fetchedAt = Date.now();
+				entry.refreshing = false;
+			});
+	}
+	return entry.promise;
 }
 
 /** Parse+normalize an optional `lang`/`region` input: absent/unsupported → "west". */

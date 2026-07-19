@@ -1,6 +1,21 @@
-import { afterEach, describe, expect, mock, test } from "bun:test";
+import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	mock,
+	spyOn,
+	test,
+} from "bun:test";
 import type { PokemonSet } from "./card-mappers";
-import { deriveNavTree, findSeries, findSet, loadNavTree } from "./nav-tree";
+import {
+	deriveNavTree,
+	findSeries,
+	findSet,
+	loadNavTree,
+	NAV_TREE_TTL_MS,
+	resetNavTreeForTests,
+} from "./nav-tree";
 
 const sets: PokemonSet[] = [
 	{
@@ -116,5 +131,62 @@ describe("loadNavTree region memoization", () => {
 		const west3 = await loadNavTree("west");
 		expect(west3).toBe(west1);
 		expect(westFetch).toHaveBeenCalledTimes(2);
+	});
+});
+
+/** Drain the microtask/timer queue so a background refresh settles. */
+async function settle() {
+	for (let i = 0; i < 5; i++) await new Promise((r) => setTimeout(r, 0));
+}
+
+describe("loadNavTree TTL refresh", () => {
+	const T0 = 1_000_000_000;
+	let nowSpy: ReturnType<typeof spyOn<DateConstructor, "now">>;
+
+	beforeEach(() => {
+		resetNavTreeForTests();
+		nowSpy = spyOn(Date, "now").mockReturnValue(T0);
+	});
+	afterEach(() => {
+		nowSpy.mockRestore();
+	});
+
+	test("after the TTL the tree is refetched in the background and swapped in", async () => {
+		globalThis.fetch = mockSetsEndpoint("en", "base1", "Base");
+		const old = await loadNavTree("west");
+		expect(findSet(old, "series", "base")?.id).toBe("base1");
+
+		globalThis.fetch = mockSetsEndpoint("en", "me05", "Pitch Black");
+		nowSpy.mockReturnValue(T0 + NAV_TREE_TTL_MS + 1);
+		const stale = await loadNavTree("west");
+		expect(stale).toBe(old); // stale-while-revalidate: old tree served now
+		await settle();
+		const fresh = await loadNavTree("west");
+		expect(findSet(fresh, "series", "pitch-black")?.id).toBe("me05");
+	});
+
+	test("within the TTL no refetch happens", async () => {
+		const f = mockSetsEndpoint("en", "base1", "Base");
+		globalThis.fetch = f;
+		await loadNavTree("west");
+		nowSpy.mockReturnValue(T0 + NAV_TREE_TTL_MS - 1);
+		await loadNavTree("west");
+		await settle();
+		expect(f).toHaveBeenCalledTimes(2); // list + detail from the initial load only
+	});
+
+	test("a failed refresh keeps serving the old tree and backs off a full TTL", async () => {
+		globalThis.fetch = mockSetsEndpoint("en", "base1", "Base");
+		const old = await loadNavTree("west");
+
+		const failing = mock(async () => new Response(null, { status: 500 }));
+		globalThis.fetch = failing as unknown as typeof fetch;
+		nowSpy.mockReturnValue(T0 + NAV_TREE_TTL_MS + 1);
+		await loadNavTree("west");
+		await settle();
+		const kept = await loadNavTree("west");
+		await settle();
+		expect(kept).toBe(old);
+		expect(failing).toHaveBeenCalledTimes(1); // back-off: no hammering after failure
 	});
 });

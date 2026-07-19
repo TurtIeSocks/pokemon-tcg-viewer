@@ -40,12 +40,32 @@ function corpusUrl(region: Region): string {
 		: `${apiBase()}/corpus`;
 }
 
-// Memoize ONE index PER REGION for the process lifetime — a deploy restart
-// picks up a fresh corpus. Mirrors the getNavTreeFn memoization pattern (and
-// the client-side per-region in-flight map in store/corpus/corpus-runtime.ts).
-const cached = new Map<Region, Promise<ServerCorpus>>();
+// Memoize ONE index PER REGION, revalidated in the background after a TTL —
+// a stale hit is served immediately (stale-while-revalidate) while a
+// conditional GET (If-None-Match against the worker's ETag) checks R2; a 304
+// keeps the index, a 200 swaps in a freshly built one. So a corpus rebuild
+// reaches a long-lived server process within one TTL, no deploy needed.
+// Mirrors the loadNavTree TTL pattern (and the client-side per-region
+// in-flight map in store/corpus/corpus-runtime.ts).
+interface CacheEntry {
+	promise: Promise<ServerCorpus>;
+	etag: string | null;
+	fetchedAt: number;
+	revalidating: boolean;
+}
+const cached = new Map<Region, CacheEntry>();
 
-async function loadServerCorpus(region: Region): Promise<ServerCorpus> {
+/** How long a fetched corpus is trusted before a background ETag revalidation. */
+export const SERVER_CORPUS_TTL_MS = 15 * 60 * 1000;
+
+/** Test-only: drop all memoized corpora so each test starts cold. */
+export function resetServerCorpusForTests(): void {
+	cached.clear();
+}
+
+async function loadServerCorpus(
+	region: Region,
+): Promise<{ corpus: ServerCorpus; etag: string | null }> {
 	// The set tree MUST match the corpus region: an asia corpus (JP-lineage set
 	// ids like SV1a) paired with the west/en set list would resolve no sets, so
 	// every asia card would lose its setName/series/releaseDate and get dropped
@@ -59,21 +79,78 @@ async function loadServerCorpus(region: Region): Promise<ServerCorpus> {
 	const gz = await gzRes.arrayBuffer();
 	const cards = decodeCorpusGz(gz);
 	return {
-		index: buildIndex(cards, region),
-		setsById: new Map(sets.map((s) => [s.id, s])),
+		corpus: {
+			index: buildIndex(cards, region),
+			setsById: new Map(sets.map((s) => [s.id, s])),
+		},
+		etag: gzRes.headers.get("etag"),
 	};
 }
 
-function getServerCorpus(region: Region): Promise<ServerCorpus> {
-	let entry = cached.get(region);
-	if (!entry) {
-		entry = loadServerCorpus(region).catch((e) => {
-			cached.delete(region); // allow retry on next request after a transient failure
-			throw e;
-		});
-		cached.set(region, entry);
+/**
+ * Background refetch after the TTL. 304 → keep the index; 200 → build and swap
+ * in the new corpus; any failure → keep serving the old one. Success or
+ * failure, the TTL is re-armed so a broken upstream is probed at most once per
+ * window, never per request.
+ */
+async function revalidateServerCorpus(
+	region: Region,
+	entry: CacheEntry,
+): Promise<void> {
+	try {
+		const res = await fetch(
+			corpusUrl(region),
+			entry.etag ? { headers: { "If-None-Match": entry.etag } } : undefined,
+		);
+		if (res.status !== 304 && res.ok) {
+			const [gz, sets] = await Promise.all([
+				res.arrayBuffer(),
+				fetchAllSets(REGION_BASE_LANGUAGE[region]),
+			]);
+			const corpus: ServerCorpus = {
+				index: buildIndex(decodeCorpusGz(gz), region),
+				setsById: new Map(sets.map((s) => [s.id, s])),
+			};
+			entry.promise = Promise.resolve(corpus);
+			entry.etag = res.headers.get("etag");
+		}
+	} catch {
+		// Keep serving the old corpus; the next window retries.
+	} finally {
+		entry.fetchedAt = Date.now();
+		entry.revalidating = false;
 	}
-	return entry;
+}
+
+function getServerCorpus(region: Region): Promise<ServerCorpus> {
+	const entry = cached.get(region);
+	if (!entry) {
+		const e = {
+			etag: null,
+			fetchedAt: Date.now(),
+			revalidating: false,
+		} as CacheEntry;
+		e.promise = loadServerCorpus(region)
+			.then(({ corpus, etag }) => {
+				e.etag = etag;
+				e.fetchedAt = Date.now();
+				return corpus;
+			})
+			.catch((err) => {
+				cached.delete(region); // allow retry on next request after a transient failure
+				throw err;
+			});
+		cached.set(region, e);
+		return e.promise;
+	}
+	if (
+		Date.now() - entry.fetchedAt > SERVER_CORPUS_TTL_MS &&
+		!entry.revalidating
+	) {
+		entry.revalidating = true;
+		void revalidateServerCorpus(region, entry);
+	}
+	return entry.promise;
 }
 
 /**
@@ -91,25 +168,21 @@ export async function queryCorpusServer(
 	return queryCorpus(index, q, setsById);
 }
 
-// Memoize the full slug index per region alongside the corpus (same lifetime).
-// Built from the SAME (sets, cards) inputs as the client's slugIndexFor, so the
-// slugs are byte-identical to the client links + the $card route's resolution.
-const slugIndexCache = new Map<Region, Promise<SlugIndex>>();
+// Memoize the full slug index per corpus INSTANCE (WeakMap), so a TTL swap of
+// the corpus atomically invalidates it and the old index is GC'd with the old
+// corpus. Built from the SAME (sets, cards) inputs as the client's
+// slugIndexFor, so the slugs are byte-identical to the client links + the
+// $card route's resolution.
+const slugIndexes = new WeakMap<ServerCorpus, SlugIndex>();
 
-function getServerSlugIndex(region: Region): Promise<SlugIndex> {
-	let entry = slugIndexCache.get(region);
-	if (!entry) {
-		entry = getServerCorpus(region)
-			.then(({ index, setsById }) =>
-				buildSlugIndex([...setsById.values()], index.cards),
-			)
-			.catch((e) => {
-				slugIndexCache.delete(region); // mirror getServerCorpus: allow retry
-				throw e;
-			});
-		slugIndexCache.set(region, entry);
+async function getServerSlugIndex(region: Region): Promise<SlugIndex> {
+	const corpus = await getServerCorpus(region);
+	let idx = slugIndexes.get(corpus);
+	if (!idx) {
+		idx = buildSlugIndex([...corpus.setsById.values()], corpus.index.cards);
+		slugIndexes.set(corpus, idx);
 	}
-	return entry;
+	return idx;
 }
 
 /**
