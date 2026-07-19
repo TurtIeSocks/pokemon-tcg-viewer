@@ -134,9 +134,7 @@ export function loadCorpus(region: Region = "west"): Promise<void> {
 			// sets are in-memory only (never persisted), so only west can go stale.
 			const index = useCorpusRuntime.getState().indices[region];
 			if (region === "west" && index)
-				void useStore
-					.getState()
-					.ensureSetsCoverCorpus(new Set(index.cards.map((c) => c.setId)));
+				ensureSetsCoverageWhenReady(new Set(index.cards.map((c) => c.setId)));
 		})
 		.finally(() => {
 			inFlight.delete(region);
@@ -144,6 +142,26 @@ export function loadCorpus(region: Region = "west"): Promise<void> {
 		});
 	inFlight.set(region, task);
 	return task;
+}
+
+/**
+ * Run the sets-coverage check ({@link SetsSlice.ensureSetsCoverCorpus}) now if
+ * the persisted sets list has rehydrated, else once it does. The corpus load
+ * can finish BEFORE the async IDB rehydrate of the sets slice (observed in
+ * prod: the check saw `sets === null`, skipped, and never re-ran because
+ * loadCorpus is idempotent per session) — so when sets aren't there yet, defer
+ * to the first store write that has them.
+ */
+export function ensureSetsCoverageWhenReady(setIds: Set<string>): void {
+	if (useStore.getState().sets) {
+		void useStore.getState().ensureSetsCoverCorpus(setIds);
+		return;
+	}
+	const unsub = useStore.subscribe((s) => {
+		if (!s.sets) return;
+		unsub();
+		void useStore.getState().ensureSetsCoverCorpus(setIds);
+	});
 }
 
 /** Imperative: load whichever region's base corpus covers `lang`. */

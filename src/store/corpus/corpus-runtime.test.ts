@@ -470,3 +470,79 @@ test("makeCorpusFetcher still reads west sets when activeRegion is west (unchang
 	expect(cards[0].setName).toBe("Base Set");
 	expect(cards[0].setSeries).toBe("Base");
 });
+
+// --- ensureSetsCoverageWhenReady: the sets-coverage check must survive the
+// corpus-load-vs-store-rehydration race. In prod the corpus load completed
+// while the persisted sets slice was still rehydrating from IDB (sets===null),
+// so a coverage check that only runs at corpus-load time silently skips and
+// never re-runs — dead modal tabs for the new set persist all session.
+
+import * as cardDataMod from "../../server/card-data";
+import { resetSetsCoverageForTests } from "../sets-slice";
+import { ensureSetsCoverageWhenReady } from "./corpus-runtime";
+
+const staleSets: PokemonSet[] = [
+	{
+		id: "base1",
+		name: "Base Set",
+		series: "Base",
+		releaseDate: "1999-01-09",
+		total: 102,
+		images: {},
+	},
+];
+const freshSets: PokemonSet[] = [
+	...staleSets,
+	{
+		id: "me05",
+		name: "Pitch Black",
+		series: "Mega Evolution",
+		releaseDate: "2026-07-17",
+		total: 120,
+		images: {},
+	},
+];
+
+test("ensureSetsCoverageWhenReady refetches immediately when sets are already loaded and stale", async () => {
+	resetSetsCoverageForTests();
+	useStore.setState({ sets: staleSets, setsFetchedAt: Date.now() });
+	const spy = spyOn(cardDataMod, "getSetsFn").mockResolvedValue(freshSets);
+
+	ensureSetsCoverageWhenReady(new Set(["base1", "me05"]));
+	await new Promise((r) => setTimeout(r, 0));
+
+	expect(spy).toHaveBeenCalledTimes(1);
+	expect(useStore.getState().sets).toBe(freshSets);
+	spy.mockRestore();
+});
+
+test("ensureSetsCoverageWhenReady defers until the persisted sets rehydrate, then refetches", async () => {
+	resetSetsCoverageForTests();
+	useStore.setState({ sets: null, setsFetchedAt: null });
+	const spy = spyOn(cardDataMod, "getSetsFn").mockResolvedValue(freshSets);
+
+	ensureSetsCoverageWhenReady(new Set(["base1", "me05"]));
+	await new Promise((r) => setTimeout(r, 0));
+	expect(spy).not.toHaveBeenCalled(); // nothing to compare yet
+
+	// Rehydration lands: stale list, recent stamp (the exact prod state).
+	useStore.setState({ sets: staleSets, setsFetchedAt: Date.now() });
+	await new Promise((r) => setTimeout(r, 0));
+
+	expect(spy).toHaveBeenCalledTimes(1);
+	expect(useStore.getState().sets).toBe(freshSets);
+	spy.mockRestore();
+});
+
+test("ensureSetsCoverageWhenReady deferred path is a no-op when the rehydrated list already covers the corpus", async () => {
+	resetSetsCoverageForTests();
+	useStore.setState({ sets: null, setsFetchedAt: null });
+	const spy = spyOn(cardDataMod, "getSetsFn").mockResolvedValue(freshSets);
+
+	ensureSetsCoverageWhenReady(new Set(["base1"]));
+	useStore.setState({ sets: staleSets, setsFetchedAt: Date.now() });
+	await new Promise((r) => setTimeout(r, 0));
+
+	expect(spy).not.toHaveBeenCalled();
+	spy.mockRestore();
+});
