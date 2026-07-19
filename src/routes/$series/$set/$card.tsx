@@ -3,9 +3,9 @@ import { useEffect } from "react";
 import { CardPageView } from "../../../components/card/card-cockpit";
 import { TAB_MASK } from "../../../lib/card-route";
 import {
-	isSupportedLanguage,
-	type SupportedLanguage,
-} from "../../../lib/languages";
+	cardLangSearchMiddlewares,
+	validateCardLangSearch,
+} from "../../../lib/card-route-search";
 import { m } from "../../../paraglide/messages";
 import { getCardForRouteFn } from "../../../server/corpus-server";
 import { useRecentsStore } from "../../../store/recents";
@@ -13,14 +13,10 @@ import { useRecentsStore } from "../../../store/recents";
 export const Route = createFileRoute("/$series/$set/$card")({
 	// `?lang=de` rides in from the grid (the masked overlay preserves search), so
 	// a cold load / reload / shared link of this canonical URL still localizes.
-	validateSearch: (
-		search: Record<string, unknown>,
-	): { lang: SupportedLanguage | null } => ({
-		lang:
-			typeof search.lang === "string" && isSupportedLanguage(search.lang)
-				? search.lang
-				: null,
-	}),
+	// The strip middleware keeps a null (default) lang out of the URL — otherwise
+	// TanStack serializes it as the literal `?lang=null`.
+	validateSearch: validateCardLangSearch,
+	search: { middlewares: cardLangSearchMiddlewares },
 	loaderDeps: ({ search }) => ({ lang: search.lang }),
 	loader: async ({ params, deps }) => {
 		// One server fn resolves tree → set → card id → card + cross-links, all
