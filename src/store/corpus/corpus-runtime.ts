@@ -124,10 +124,24 @@ export function loadCorpus(region: Region = "west"): Promise<void> {
 					.setIndex(region, await buildIndexFromGz(stored, region));
 			}
 		}
-	})().finally(() => {
-		inFlight.delete(region);
-		useCorpusRuntime.getState().setLoading(region, false);
-	});
+	})()
+		.then(() => {
+			// The corpus revalidates by ETag every load, but the persisted west sets
+			// list sits behind a 7-day TTL — a brand-new set can exist in the corpus
+			// while missing from the list, which makes buildSlugIndex drop its cards
+			// (dead modal tab links; the "Pitch Black" incident). Let the sets slice
+			// force a refetch when the freshly-loaded corpus outruns the list. Asia
+			// sets are in-memory only (never persisted), so only west can go stale.
+			const index = useCorpusRuntime.getState().indices[region];
+			if (region === "west" && index)
+				void useStore
+					.getState()
+					.ensureSetsCoverCorpus(new Set(index.cards.map((c) => c.setId)));
+		})
+		.finally(() => {
+			inFlight.delete(region);
+			useCorpusRuntime.getState().setLoading(region, false);
+		});
 	inFlight.set(region, task);
 	return task;
 }

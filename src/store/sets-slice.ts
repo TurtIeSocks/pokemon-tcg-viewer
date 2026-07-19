@@ -28,6 +28,25 @@ export interface SetsSlice {
 	 * region-aware entry point used by asia browse/owned resolution.
 	 */
 	loadSetsForRegion: (region: Region) => Promise<void>;
+	/**
+	 * Corpus-driven invalidation of the persisted sets cache: when the loaded
+	 * corpus references a set id missing from the cached west list, bypass the
+	 * freshness TTL and refetch. See the "Pitch Black" incident: a new set's
+	 * cards arrive via the ETag-revalidated corpus days before the 7-day sets
+	 * TTL expires, and a sets list without the set makes buildSlugIndex drop
+	 * every one of its cards (dead modal tab links).
+	 */
+	ensureSetsCoverCorpus: (corpusSetIds: Iterable<string>) => Promise<void>;
+}
+
+// Missing-set signatures already force-refetched this session. Guards the
+// refetch loop when the SERVER's sets list also lacks the set (each corpus
+// load would otherwise re-trigger a futile refetch).
+const coverageForced = new Set<string>();
+
+/** Test-only: forget which coverage signatures were already refetched. */
+export function resetSetsCoverageForTests(): void {
+	coverageForced.clear();
 }
 
 // Per-region in-flight promise map, mirroring corpus-runtime's loadCorpus
@@ -82,6 +101,24 @@ export const createSetsSlice: StateCreator<SetsSlice> = (set, get) => ({
 		});
 		inFlight.set(region, task);
 		return task;
+	},
+	ensureSetsCoverCorpus: async (corpusSetIds) => {
+		const { sets, setsLoading } = get();
+		// No cached list yet (cold start / rehydration still pending): the normal
+		// loadSets path owns the first fetch — nothing to invalidate.
+		// ponytail: if store rehydration ever lands AFTER the corpus load, this
+		// misses one page load; corpus (network+gunzip) losing to a local IDB
+		// rehydrate hasn't been observed.
+		if (!sets || setsLoading) return;
+		const have = new Set(sets.map((s) => s.id));
+		const missing = [...new Set(corpusSetIds)].filter((id) => !have.has(id));
+		if (missing.length === 0) return;
+		const sig = missing.sort().join(",");
+		if (coverageForced.has(sig)) return;
+		coverageForced.add(sig);
+		// Drop the freshness stamp so loadSets's shouldRefetch gate passes.
+		set({ setsFetchedAt: null });
+		return get().loadSets();
 	},
 });
 

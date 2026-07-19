@@ -11,7 +11,11 @@ import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 import * as cardData from "../server/card-data";
 import type { PokemonSet } from "../server/card-mappers";
 import { useStore } from "./index";
-import { allLoadedSets, setsForRegion } from "./sets-slice";
+import {
+	allLoadedSets,
+	resetSetsCoverageForTests,
+	setsForRegion,
+} from "./sets-slice";
 
 const westSets: PokemonSet[] = [
 	{
@@ -146,6 +150,68 @@ test("allLoadedSets is memoized: stable ref for the same (sets, setsByRegion), f
 	const c = allLoadedSets(useStore.getState());
 	expect(c).not.toBe(a);
 	expect(c).toEqual(westSets);
+});
+
+// --- ensureSetsCoverCorpus: corpus-driven invalidation of the persisted sets
+// cache. The "Pitch Black" bug: the corpus blob ETag-revalidates every load
+// (fresh) but the persisted sets list sits behind a 7-day TTL, so a brand-new
+// set's cards exist in the corpus while its set is missing from the list —
+// buildSlugIndex then drops them and every modal tab link silently no-ops.
+
+const freshWestSets: PokemonSet[] = [
+	...westSets,
+	{
+		id: "me05",
+		name: "Pitch Black",
+		series: "Mega Evolution",
+		releaseDate: "2026-07-17",
+		total: 120,
+		images: {},
+	},
+];
+
+test("ensureSetsCoverCorpus force-refetches when the corpus references a set missing from the cached list", async () => {
+	resetSetsCoverageForTests();
+	// Stale-but-"fresh-by-TTL" persisted sets: no me05, fetched just now.
+	useStore.setState({ sets: westSets, setsFetchedAt: Date.now() });
+	getSetsFnSpy = spyOn(cardData, "getSetsFn").mockResolvedValue(freshWestSets);
+
+	await useStore.getState().ensureSetsCoverCorpus(["base1", "me05"]);
+
+	expect(getSetsFnSpy).toHaveBeenCalledTimes(1);
+	expect(useStore.getState().sets).toBe(freshWestSets);
+});
+
+test("ensureSetsCoverCorpus is a no-op when every corpus set is already in the list", async () => {
+	resetSetsCoverageForTests();
+	useStore.setState({ sets: westSets, setsFetchedAt: Date.now() });
+	getSetsFnSpy = spyOn(cardData, "getSetsFn").mockResolvedValue(freshWestSets);
+
+	await useStore.getState().ensureSetsCoverCorpus(["base1"]);
+
+	expect(getSetsFnSpy).not.toHaveBeenCalled();
+});
+
+test("ensureSetsCoverCorpus refetches once per missing-set signature (no loop when the server also lacks the set)", async () => {
+	resetSetsCoverageForTests();
+	useStore.setState({ sets: westSets, setsFetchedAt: Date.now() });
+	// Server ALSO missing me05: the refetched list still lacks it.
+	getSetsFnSpy = spyOn(cardData, "getSetsFn").mockResolvedValue(westSets);
+
+	await useStore.getState().ensureSetsCoverCorpus(["base1", "me05"]);
+	await useStore.getState().ensureSetsCoverCorpus(["base1", "me05"]);
+
+	expect(getSetsFnSpy).toHaveBeenCalledTimes(1);
+});
+
+test("ensureSetsCoverCorpus is a no-op before the sets list has loaded (initial-load path owns that fetch)", async () => {
+	resetSetsCoverageForTests();
+	useStore.setState({ sets: null, setsFetchedAt: null });
+	getSetsFnSpy = spyOn(cardData, "getSetsFn").mockResolvedValue(freshWestSets);
+
+	await useStore.getState().ensureSetsCoverCorpus(["me05"]);
+
+	expect(getSetsFnSpy).not.toHaveBeenCalled();
 });
 
 test("loadSetsForRegion('asia') de-dupes concurrent calls onto one in-flight request", async () => {
