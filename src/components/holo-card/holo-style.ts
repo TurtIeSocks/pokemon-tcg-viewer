@@ -202,21 +202,6 @@ export const SM_FULLART_RARITIES: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Mega Evolution block series (2025-2026, Scarlet & Violet-generation template):
- * the Western "Mega Evolution" serie and its JP counterpart. Its "Rare Holo EX"
- * Mega ex cards are full-face sheen foils, but they reach the procedural path
- * with no CDN mask (buildFoilUrls serves only swsh/sv/pgo) and no cosmos/frame
- * era, so they'd fall to the art-window "rare holo" default — the me05 bug. This
- * set routes them to the full-face V sheen. Lowercased series strings (pokemon
- * TCG `series` for the west, TCGdex `serie.name` for the asian region).
- * USER-EDITABLE.
- */
-export const MEGA_EVOLUTION_SERIES: ReadonlySet<string> = new Set([
-	"mega evolution",
-	"ポケモンカードゲーム mega", // asian-region serie name (TCGdex ja)
-]);
-
-/**
  * POP series (promo distribution) spans two frame eras: POP 1–5 use the EX
  * frame, POP 6–9 the DP frame. Lowercased set ids. USER-EDITABLE.
  */
@@ -328,6 +313,12 @@ function frameFor(
 	// live in the HGSS sets, so without this they'd take the hgss art-window clip.
 	if (rarityLower === "legend" || rarityLower === "rare holo legend")
 		return "fullface";
+	// "Rare Holo EX" is a full-face foil in EVERY era — the holofoil covers the
+	// foiled silver borders, not just the art window (verified across the 2003-07
+	// cosmos-ex, BW-EX, XY-EX/Mega, and 2025-26 Mega ex generations). Route to
+	// fullface so no era's art-window clip applies; the PATTERN (2003-07 cosmos
+	// galaxy vs the modern V sheen) is chosen in holoPresentation.
+	if (rarityLower === "rare holo ex") return "fullface";
 	const sid = setId?.toLowerCase();
 	if (sid && FULLFACE_FOIL_SETS.has(sid)) {
 		// Classic Collection reprints keep their original frame's window;
@@ -557,20 +548,18 @@ export function holoPresentation(
 				: "rare holo v";
 	}
 
-	// Mega Evolution era (2025-2026, e.g. me05 Pitch Black): its "Rare Holo EX"
-	// Mega ex cards are full-face sheen foils (S&V template) but reach the
-	// procedural path with frame=null — no CDN mask, not a cosmos era, no frame
-	// series — so without this they fall to the art-window "rare holo" default
-	// (holo-basic): the reported bug. Route them to the full-face V sheen; the
-	// "rare holo v" recipe is full-face regardless of frame, so frame stays null.
-	// Scoped to the Mega Evolution series so the vintage 2003-07 cosmos ex and the
-	// BW-era ex keep their current rendering (a full-face-cosmos correction for
-	// those is a separate, documented follow-up).
-	if (
-		rarityLower === "rare holo ex" &&
-		MEGA_EVOLUTION_SERIES.has((series ?? "").toLowerCase())
-	) {
-		eff = "rare holo v";
+	// "Rare Holo EX" (all eras): full-face COVERAGE (frameFor returned
+	// "fullface"), PATTERN by era. The 2003-2007 lowercase Pokémon-ex generation
+	// (serie ex / JP adv / pcg) is a cosmos/galaxy foil — now rendered full-face
+	// (foiled silver borders) rather than clipped to the art window. Every later
+	// generation — BW-EX, XY-EX/Mega, and the 2025-26 Mega Evolution block (e.g.
+	// me05 Pitch Black) — uses the sunpillar-V sheen. Runs AFTER the isXyFullArt
+	// override so it is the final word for this rarity across all eras (isXyFullArt
+	// only keys on frame==="fullface", which now matches these cards everywhere).
+	if (rarityLower === "rare holo ex") {
+		eff = EX_FRAME_SERIES.has((series ?? "").toLowerCase())
+			? "rare holo cosmos"
+			: "rare holo v";
 	}
 
 	// Known non-holo printing (TCGplayer variants say "normal", no holo). Only
