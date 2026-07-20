@@ -202,6 +202,21 @@ export const SM_FULLART_RARITIES: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Mega Evolution block series (2025-2026, Scarlet & Violet-generation template):
+ * the Western "Mega Evolution" serie and its JP counterpart. Its "Rare Holo EX"
+ * Mega ex cards are full-face sheen foils, but they reach the procedural path
+ * with no CDN mask (buildFoilUrls serves only swsh/sv/pgo) and no cosmos/frame
+ * era, so they'd fall to the art-window "rare holo" default — the me05 bug. This
+ * set routes them to the full-face V sheen. Lowercased series strings (pokemon
+ * TCG `series` for the west, TCGdex `serie.name` for the asian region).
+ * USER-EDITABLE.
+ */
+export const MEGA_EVOLUTION_SERIES: ReadonlySet<string> = new Set([
+	"mega evolution",
+	"ポケモンカードゲーム mega", // asian-region serie name (TCGdex ja)
+]);
+
+/**
  * POP series (promo distribution) spans two frame eras: POP 1–5 use the EX
  * frame, POP 6–9 the DP frame. Lowercased set ids. USER-EDITABLE.
  */
@@ -540,6 +555,22 @@ export function holoPresentation(
 			rarityLower === "rare secret" || rarityLower === "rare break"
 				? "rare secret"
 				: "rare holo v";
+	}
+
+	// Mega Evolution era (2025-2026, e.g. me05 Pitch Black): its "Rare Holo EX"
+	// Mega ex cards are full-face sheen foils (S&V template) but reach the
+	// procedural path with frame=null — no CDN mask, not a cosmos era, no frame
+	// series — so without this they fall to the art-window "rare holo" default
+	// (holo-basic): the reported bug. Route them to the full-face V sheen; the
+	// "rare holo v" recipe is full-face regardless of frame, so frame stays null.
+	// Scoped to the Mega Evolution series so the vintage 2003-07 cosmos ex and the
+	// BW-era ex keep their current rendering (a full-face-cosmos correction for
+	// those is a separate, documented follow-up).
+	if (
+		rarityLower === "rare holo ex" &&
+		MEGA_EVOLUTION_SERIES.has((series ?? "").toLowerCase())
+	) {
+		eff = "rare holo v";
 	}
 
 	// Known non-holo printing (TCGplayer variants say "normal", no holo). Only

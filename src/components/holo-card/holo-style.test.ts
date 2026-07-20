@@ -406,6 +406,55 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		}
 	});
 
+	test("Mega Evolution era (me05 Pitch Black): Rare Holo EX gets the full-face V sheen, not the art-window default", () => {
+		// me05's Mega ex cards are full-face sheen foils (S&V template) but reach
+		// the procedural path with frame=null (no CDN mask, not a cosmos era, no
+		// frame-series), so without era routing they fall to the generic art-window
+		// "rare holo" (holo-basic) default — the reported bug. "rare holo v" is
+		// full-face regardless of frame, so no frame change is needed.
+		const p = holoPresentation({
+			rarity: "Rare Holo EX",
+			series: "Mega Evolution",
+			setId: "me05",
+			cardNumber: "150",
+			subtypes: ["Basic", "ex"],
+			holo: true,
+		});
+		expect(p.effectiveRarity).toBe("rare holo v");
+		expect(p.className).toBe("holo-v");
+	});
+
+	test("Mega Evolution fix is era-scoped: the vintage 2003-07 EX era keeps its cosmos galaxy foil", () => {
+		// Regression guard. The 2003-2007 lowercase Pokémon-ex (serie "EX") is a
+		// cosmos/galaxy generation, NOT the modern sheen — it must stay
+		// "rare holo cosmos" (its own full-face-cosmos coverage is a separate,
+		// documented follow-up). The me05 routing must not touch it.
+		const p = holoPresentation({
+			rarity: "Rare Holo EX",
+			series: "EX",
+			setId: "ex1",
+			cardNumber: "99",
+			subtypes: ["Basic", "ex"],
+			holo: true,
+		});
+		expect(p.effectiveRarity).toBe("rare holo cosmos");
+	});
+
+	test("Mega Evolution fix is era-scoped: Black & White EX is left unchanged", () => {
+		// Regression guard: BW-era EX (bw4-11) must be untouched by the Mega routing
+		// (it stays on its current "rare holo cosmos" path; a BW→sheen correction is
+		// a separate documented follow-up).
+		const p = holoPresentation({
+			rarity: "Rare Holo EX",
+			series: "Black & White",
+			setId: "bw4",
+			cardNumber: "1",
+			subtypes: ["Basic", "EX"],
+			holo: true,
+		});
+		expect(p.effectiveRarity).toBe("rare holo cosmos");
+	});
+
 	test("XY era: gold secrets + BREAK route to fullface + gold foil", () => {
 		// 'Rare BREAK' isn't /holo/ and the printing is normal-only, so the
 		// downgrade would flatten it — the XY full-art path must beat that.
