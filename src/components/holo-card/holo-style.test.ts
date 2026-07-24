@@ -82,9 +82,12 @@ describe("getHoloClass", () => {
 		);
 	});
 
-	test("Double Rare → full-card holo-v, not art-window scanline", () => {
+	test("Double Rare → full-card sheen + sparkle stars (own recipe)", () => {
+		// SV/ME-era ex: the sunpillar sheen PLUS the scattered star sparkles the
+		// physical foil carries (upstream pokemon-holo-cards v1.1.6 recipe). Was
+		// lumped into "rare holo v", which has no stars: the reported bug.
 		expect(getHoloClass("Double Rare", "Scarlet & Violet", true)).toBe(
-			"holo-v",
+			"double-rare",
 		);
 	});
 
@@ -337,6 +340,22 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 				holo: false,
 			}).effectiveRarity,
 		).toBeNull();
+	});
+
+	test("ME-era Double rare ex keeps the starred double-rare recipe (me05 Morpeko ex)", () => {
+		// me05-055 Morpeko ex — TCGdex sentence-case "Double rare". The physical
+		// foil is the ex sheen with star sparkles overlaid (user-verified on Pitch
+		// Black pack openings); the plain "rare holo v" sunpillar has none.
+		const p = holoPresentation({
+			rarity: "Double rare",
+			series: "Mega Evolution",
+			setId: "me05",
+			cardNumber: "055",
+			subtypes: ["Basic", "EX"],
+			holo: true,
+		});
+		expect(p.effectiveRarity).toBe("double rare");
+		expect(p.className).toBe("double-rare");
 	});
 
 	test("SV Black Star Promos: ex → full-card etch, rest → full-face mirror", () => {

@@ -43,7 +43,7 @@ describe("getRarityClass", () => {
 		// vs the ptcg.io title-case key ("Double Rare"). It must map to the same
 		// foil class, not fall to the generic fallback.
 		expect(getRarityClass("Double rare")).toBe(getRarityClass("Double Rare"));
-		expect(getRarityClass("Double rare")).toBe("holo-v");
+		expect(getRarityClass("Double rare")).toBe("double-rare");
 		expect(getRarityClass("common")).toBe("no-foil");
 		expect(warnSpy).not.toHaveBeenCalled();
 	});

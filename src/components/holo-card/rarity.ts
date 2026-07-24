@@ -68,8 +68,9 @@ const RARITY_EFFECTIVE: Record<string, string | null> = {
 	// NOT the trainer-gallery sheen (that was the old, wrong bucket).
 	"Special Illustration Rare": "rare rainbow alt",
 	"Ultra Rare": "rare ultra",
-	// Double Rare (SV ex) is a full-card sheen, NOT a classic art-window holo.
-	"Double Rare": "rare holo v",
+	// Double Rare (SV/ME ex) is a full-card sheen with star sparkles overlaid —
+	// its own recipe (upstream pokemon-holo-cards v1.1.6), NOT the plain V etch.
+	"Double Rare": "double rare",
 	// SV Shiny Vault — baby shinies; V/VMAX-subtyped ones are upgraded by the
 	// shiny-vault remap in holoPresentation(). Shiny exes are "Shiny Ultra Rare".
 	"Shiny Rare": "rare shiny",
@@ -175,6 +176,8 @@ export function effectiveToClass(effective: string | null): string {
 		case "rare holo v":
 		case "rare holo vunion":
 			return "holo-v";
+		case "double rare":
+			return "double-rare";
 		case "rare holo vmax":
 			return "holo-vmax";
 		case "rare holo vstar":
