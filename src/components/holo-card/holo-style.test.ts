@@ -82,9 +82,12 @@ describe("getHoloClass", () => {
 		);
 	});
 
-	test("Double Rare → full-card holo-v, not art-window scanline", () => {
+	test("Double Rare → full-card sheen + sparkle stars (own recipe)", () => {
+		// SV/ME-era ex: the sunpillar sheen PLUS the scattered star sparkles the
+		// physical foil carries (upstream pokemon-holo-cards v1.1.6 recipe). Was
+		// lumped into "rare holo v", which has no stars: the reported bug.
 		expect(getHoloClass("Double Rare", "Scarlet & Violet", true)).toBe(
-			"holo-v",
+			"double-rare",
 		);
 	});
 
@@ -283,8 +286,96 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		).toBe("rare holo v");
 	});
 
-	test("SV Black Star Promos: ex → full-card etch, rest → full-face mirror", () => {
-		// svp-004 Mimikyu ex — SV ex treatment (full-card sunpillar family).
+	test("modern era: plain Rare with a holo printing still foils (me05 Bastiodon)", () => {
+		// me05-062 Bastiodon — the ME (and SV) era prints EVERY Rare-tier card as
+		// a holofoil, but TCGdex keeps the tier rarity "Rare". The holo-printing
+		// upgrade used to fire only in cosmos eras, so these rendered glare-only:
+		// the reported bug.
+		const bastiodon = holoPresentation({
+			rarity: "Rare",
+			series: "Mega Evolution",
+			setId: "me05",
+			cardNumber: "062",
+			subtypes: ["Stage2"],
+			holo: true,
+		});
+		expect(bastiodon.effectiveRarity).toBe("rare holo");
+		expect(bastiodon.className).toBe("holo-basic");
+		// SV/ME-era Rare holos foil the ART WINDOW + the thin silver BORDER —
+		// not the text panels (Landfall/Bulbapedia international spec;
+		// photo-verified on Abyss Eye + user's pack-opening observation). The
+		// svborder frame's seamed-union clip covers both regions.
+		expect(bastiodon.frame).toBe("svborder");
+		// SV era: same shape (sv04-121 Morpeko, rarity "Rare", printings holo+reverse).
+		const svMorpeko = holoPresentation({
+			rarity: "Rare",
+			series: "Scarlet & Violet",
+			setId: "sv04",
+			cardNumber: "121",
+			holo: true,
+		});
+		expect(svMorpeko.effectiveRarity).toBe("rare holo");
+		expect(svMorpeko.frame).toBe("svborder");
+		// SWSH era upgrade: also an art-window holo.
+		const swshUpgrade = holoPresentation({
+			rarity: "Rare",
+			series: "Sword & Shield",
+			setId: "swsh9",
+			cardNumber: "1",
+			holo: true,
+		});
+		expect(swshUpgrade.effectiveRarity).toBe("rare holo");
+		expect(swshUpgrade.frame).toBeNull();
+		// Cosmos eras keep the galaxy pattern for the same upgrade.
+		expect(
+			holoPresentation({
+				rarity: "Rare",
+				series: "Base",
+				setId: "base4",
+				cardNumber: "1",
+				holo: true,
+			}).effectiveRarity,
+		).toBe("rare holo cosmos");
+		// No holo printing signal → still glare-only (unknown ≠ holo).
+		expect(
+			holoPresentation({
+				rarity: "Rare",
+				series: "Mega Evolution",
+				setId: "me05",
+				cardNumber: "063",
+			}).effectiveRarity,
+		).toBeNull();
+		// Known non-holo printing stays glare-only.
+		expect(
+			holoPresentation({
+				rarity: "Rare",
+				series: "Mega Evolution",
+				setId: "me05",
+				cardNumber: "064",
+				holo: false,
+			}).effectiveRarity,
+		).toBeNull();
+	});
+
+	test("ME-era Double rare ex keeps the starred double-rare recipe (me05 Morpeko ex)", () => {
+		// me05-055 Morpeko ex — TCGdex sentence-case "Double rare". The physical
+		// foil is the ex sheen with star sparkles overlaid (user-verified on Pitch
+		// Black pack openings); the plain "rare holo v" sunpillar has none.
+		const p = holoPresentation({
+			rarity: "Double rare",
+			series: "Mega Evolution",
+			setId: "me05",
+			cardNumber: "055",
+			subtypes: ["Basic", "EX"],
+			holo: true,
+		});
+		expect(p.effectiveRarity).toBe("double rare");
+		expect(p.className).toBe("double-rare");
+	});
+
+	test("SV Black Star Promos: ex → Double Rare etch + stars, rest → full-face mirror", () => {
+		// svp-004 Mimikyu ex — SV ex treatment (the in-set Double Rare plate:
+		// sheen + star layer, which SV ex have carried since the 2023 redesign).
 		const mimikyu = holoPresentation({
 			rarity: "Promo",
 			series: "Scarlet & Violet",
@@ -293,7 +384,7 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 			subtypes: ["Basic", "ex"],
 			holo: true,
 		});
-		expect(mimikyu.effectiveRarity).toBe("rare holo v");
+		expect(mimikyu.effectiveRarity).toBe("double rare");
 		expect(mimikyu.frame).toBe("fullface");
 		// svp-013 Miraidon — regular promo, mirror foil across the whole face.
 		const miraidon = holoPresentation({
@@ -410,11 +501,12 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 	// borders), but the PATTERN differs by generation: the 2003-07 cosmos ex vs
 	// the modern V sheen (BW/XY/Mega). These four tests pin the whole matrix.
 
-	test("Mega Evolution era (me05 Pitch Black): Rare Holo EX → full-face V sheen, not the art-window default", () => {
-		// me05's Mega ex cards are full-face sheen foils (S&V template) but reach
-		// the procedural path (no CDN mask, not a cosmos era) — without routing they
-		// fell to the generic art-window "rare holo" (holo-basic) default: the
-		// reported bug.
+	test("Mega Evolution era (me05 Pitch Black): Rare Holo EX → full-face etched ultra, not the art-window default", () => {
+		// me05-096..103 are the full-art Ultra Rare ex slots; the corpus's
+		// ptcg.io overlay labels them "Rare Holo EX" (TCGdex live says "Ultra
+		// Rare"). Same physical tier as me01-04's "Ultra Rare" full-arts —
+		// etched full-face (official Pitch Black copy: "etched artwork") — so
+		// both labels must land on the same "rare ultra" recipe.
 		const p = holoPresentation({
 			rarity: "Rare Holo EX",
 			series: "Mega Evolution",
@@ -423,9 +515,40 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 			subtypes: ["Basic", "ex"],
 			holo: true,
 		});
-		expect(p.effectiveRarity).toBe("rare holo v");
-		expect(p.className).toBe("holo-v");
+		expect(p.effectiveRarity).toBe("rare ultra");
+		expect(p.className).toBe("ultra");
 		expect(p.frame).toBe("fullface");
+	});
+
+	test("ME-era special-product holo Commons/Uncommons → art-window cosmos, not full-face", () => {
+		// me01's 13 holo-flagged Commons/Uncommons (Collector Chest "Pixel
+		// Cosmos" prints, league cosmos promos) are art-window cosmos holos —
+		// the standard special-product foil across modern eras — NOT the
+		// full-face smooth sheen the Rare tier gets.
+		const ralts = holoPresentation({
+			rarity: "Common",
+			series: "Mega Evolution",
+			setId: "me01",
+			cardNumber: "058",
+			subtypes: ["Basic"],
+			holo: true,
+		});
+		expect(ralts.effectiveRarity).toBe("rare holo cosmos");
+		expect(ralts.frame).toBeNull();
+	});
+
+	test("ME Black Star Promos (mep): ex promos carry the Double Rare etch + stars", () => {
+		// Bulbapedia merch pages call the ex box promos "etched foil"; they use
+		// the in-set Double Rare ex plate (SV-era svp precedent).
+		const p = holoPresentation({
+			rarity: "Promo",
+			series: "Mega Evolution",
+			setId: "mep",
+			cardNumber: "011",
+			subtypes: ["Basic", "ex"],
+			holo: true,
+		});
+		expect(p.effectiveRarity).toBe("double rare");
 	});
 
 	test("Vintage 2003-07 EX era: Rare Holo EX → full-face cosmos (galaxy over the foiled borders), not clipped to the art window", () => {

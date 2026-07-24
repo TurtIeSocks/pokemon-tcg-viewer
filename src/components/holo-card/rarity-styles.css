@@ -31,6 +31,8 @@
 	--grain: url("/holo-textures/grain.webp");
 	--glitter: url("/holo-textures/glitter.png");
 	--glittersize: 25%;
+	/* Double Rare star-sparkle overlay — itzwoow/pokemon-holo-cards v1.1.6. */
+	--sparkle-stars: url("/holo-textures/sparkle-stars.png");
 
 	--space: 5%;
 	--angle: 133deg;
@@ -1007,6 +1009,190 @@
 
 .holo-card[data-rarity="rare holo v"] .holo-card-glare,
 .holo-card[data-subtypes="v-union"] .holo-card-glare {
+	background-image: radial-gradient(
+		farthest-corner circle at var(--pointer-x) var(--pointer-y),
+		hsl(0, 0%, 100%) 0%,
+		hsla(210, 3%, 54%, 0.33) 45%,
+		hsla(0, 0%, 20%, 0.9) 130%
+	);
+
+	opacity: calc(var(--card-opacity) * 0.5);
+
+	mix-blend-mode: hard-light;
+	filter: brightness(0.9) contrast(1.75);
+}
+
+/*
+
+  DOUBLE RARE (SV / Mega Evolution ex)
+
+  The V sunpillar sheen PLUS the scattered star sparkles the physical SV/ME ex
+  foil carries. Ported 1:1 from itzwoow/pokemon-holo-cards v1.3.0 (its v1.1.6
+  "double rare EX effect with sparkle-stars texture"), selector names adapted
+  (.holo-card__shine → .holo-card-shine). The star layer lives on shine:before
+  (free in this recipe), un-masked so the sparkle always covers the full face.
+
+*/
+
+.holo-card[data-rarity="double rare"]:not(.masked) .holo-card-shine {
+	filter: brightness(0.95) contrast(1.85) saturate(0.9);
+}
+
+.holo-card[data-rarity="double rare"] .holo-card-shine {
+	mix-blend-mode: screen;
+}
+
+.holo-card[data-rarity="double rare"] .holo-card-shine,
+.holo-card[data-rarity="double rare"] .holo-card-shine:after {
+	--space: 5%;
+	--angle: 133deg;
+	--imgsize: 500px;
+
+	background-image:
+		var(--grain),
+		repeating-linear-gradient(
+			0deg,
+			var(--sunpillar-clr-1) calc(var(--space) * 1),
+			var(--sunpillar-clr-2) calc(var(--space) * 2),
+			var(--sunpillar-clr-3) calc(var(--space) * 3),
+			var(--sunpillar-clr-4) calc(var(--space) * 4),
+			var(--sunpillar-clr-5) calc(var(--space) * 5),
+			var(--sunpillar-clr-6) calc(var(--space) * 6),
+			var(--sunpillar-clr-1) calc(var(--space) * 7)
+		),
+		repeating-linear-gradient(
+			var(--angle),
+			#0e152e 0%,
+			hsl(180, 10%, 60%) 3.8%,
+			hsl(180, 29%, 66%) 4.5%,
+			hsl(180, 10%, 60%) 5.2%,
+			#0e152e 10%,
+			#0e152e 12%
+		),
+		radial-gradient(
+			farthest-corner circle at var(--pointer-x) var(--pointer-y),
+			hsla(0, 0%, 0%, 0.1) 12%,
+			hsla(0, 0%, 0%, 0.15) 20%,
+			hsla(0, 0%, 0%, 0.25) 120%
+		);
+
+	background-blend-mode: screen, hue, hard-light;
+	background-size:
+		var(--imgsize) 100%,
+		200% 700%,
+		300% 100%,
+		200% 100%;
+	background-position:
+		center,
+		0% var(--background-y),
+		var(--background-x) var(--background-y),
+		var(--background-x) var(--background-y);
+
+	filter: brightness(0.8) contrast(2.95) saturate(0.65);
+}
+
+.holo-card[data-rarity="double rare"] .holo-card-shine:after {
+	content: "";
+
+	background-position:
+		center,
+		0% var(--background-y),
+		calc(var(--background-x) * -1) calc(var(--background-y) * -1),
+		var(--background-x) var(--background-y);
+	background-size:
+		var(--imgsize) 100%,
+		200% 400%,
+		195% 100%,
+		200% 100%;
+
+	filter: brightness(1) contrast(2.5) saturate(1.75);
+	mix-blend-mode: soft-light;
+}
+
+.holo-card[data-rarity="double rare"] .holo-card-shine:before {
+	content: "";
+	-webkit-mask-image: none !important;
+	mask-image: none !important;
+
+	background-image: var(--sparkle-stars);
+	background-size: 28% 28%;
+	background-position: calc(50% + (var(--pointer-from-left) - 0.5) * -18px)
+		calc(50% + (var(--pointer-from-top) - 0.5) * -18px);
+
+	mix-blend-mode: screen;
+	filter: brightness(calc(var(--pointer-from-center) * 0.8 + 0.5)) contrast(3)
+		saturate(0.6);
+	opacity: calc(var(--card-opacity) * 0.55);
+}
+
+/* Mega Evolution sets: the ex star layer is visibly larger, denser AND
+   MULTICOLORED — the physical stars are foil cutouts over the rainbow layer,
+   so each star's color comes from its position (user's Pitch Black Morpeko ex
+   photo: red/green/blue/pink/white star confetti, mixed sizes, full face).
+   Rendered the same way: the grayscale star texture becomes a LUMINANCE MASK
+   over a rainbow field, so star color varies by position and slides with the
+   pointer. SV-era cards keep the base recipe's subtle white-screen sparkle
+   (their physical layer is near-invisible). @supports-gated: without
+   luminance masking the no-alpha texture masks nothing and the whole rainbow
+   field would paint — old browsers keep the base grayscale stars instead. */
+@supports (mask-mode: luminance) {
+	.holo-card[data-set^="me"][data-rarity="double rare"]
+		.holo-card-shine:before {
+		background-image: repeating-linear-gradient(
+			33deg,
+			var(--red),
+			var(--yellow),
+			var(--green),
+			var(--blue),
+			var(--violet),
+			var(--red)
+		);
+		background-size: 250% 250%;
+		background-position: var(--background-x) var(--background-y);
+
+		/* TWO stamped star layers (union — mask-composite defaults to add):
+		   a large field + a smaller offset field drifting the opposite way =
+		   bigger, denser confetti in mixed sizes, matching the real foil.
+		   !important needed to beat the base recipe's own `mask-image: none
+	   !important` (which un-masks the star layer on CDN-masked cards). */
+		-webkit-mask-image: var(--sparkle-stars), var(--sparkle-stars) !important;
+		mask-image: var(--sparkle-stars), var(--sparkle-stars) !important;
+		-webkit-mask-size:
+			52% 52%,
+			31% 31%;
+		mask-size:
+			52% 52%,
+			31% 31%;
+		mask-mode: luminance, luminance; /* texture is grayscale, no alpha */
+		-webkit-mask-position:
+			calc(50% + (var(--pointer-from-left) - 0.5) * -18px)
+			calc(50% + (var(--pointer-from-top) - 0.5) * -18px),
+			calc(29% + (var(--pointer-from-left) - 0.5) * 14px)
+			calc(63% + (var(--pointer-from-top) - 0.5) * 14px);
+		mask-position:
+			calc(50% + (var(--pointer-from-left) - 0.5) * -18px)
+			calc(50% + (var(--pointer-from-top) - 0.5) * -18px),
+			calc(29% + (var(--pointer-from-left) - 0.5) * 14px)
+			calc(63% + (var(--pointer-from-top) - 0.5) * 14px);
+		-webkit-mask-repeat: repeat;
+		mask-repeat: repeat;
+
+		mix-blend-mode: screen;
+		/* Bold floor: bright even at rest so screen-blend can't thin the stars
+		   out over bright foil regions. */
+		filter: brightness(calc(var(--pointer-from-center) * 0.5 + 1.15))
+			contrast(1.8) saturate(1.6);
+		opacity: var(--card-opacity);
+	}
+}
+
+/* Same sets: the ex base sheen reads far more RAINBOW than SV's muted teal —
+   lift the saturation clamp on the sunpillar beams (base: saturate(0.65)). */
+.holo-card[data-set^="me"][data-rarity="double rare"] .holo-card-shine {
+	filter: brightness(0.8) contrast(2.6) saturate(1.15);
+}
+
+.holo-card[data-rarity="double rare"] .holo-card-glare {
 	background-image: radial-gradient(
 		farthest-corner circle at var(--pointer-x) var(--pointer-y),
 		hsl(0, 0%, 100%) 0%,
@@ -3806,4 +3992,126 @@
 	);
 	--clip-trainer-invert: var(--clip-invert);
 	--clip-energy-invert: var(--clip-invert);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   OUR EXTENSION — SV / Mega Evolution Rare-holo clip (data-frame="svborder")
+
+   The 2023 SV redesign dropped yellow borders: a booster-pull Rare's holofoil
+   covers the ART WINDOW plus the thin silver BORDER, never the text panels
+   (Landfall/Bulbapedia international spec; photo-verified on Abyss Eye).
+   Window + border ring is a DISJOINT union, which inset() cannot express —
+   one nonzero-winding polygon with zero-width seams paints both: outer edge
+   clockwise (+1), inner border edge counter-clockwise (-1 → text area hole),
+   window rectangle clockwise again (+1 → filled), all stitched through 0,0.
+
+     0%                                100%
+  0% ╔══════════════════════════════════╗ ◄─ border ring = FOIL
+     ║ ┌──────────────────────────────┐ ║ ◄─ --svb-border-y thick
+     ║ │  Bastiodon           HP 160  │ ║
+     ║ │ ┌──────────────────────────┐ │ ║ ◄── --svb-window-top
+     ║ │ │        ART = FOIL        │ │ ║  │
+     ║ │ └──────────────────────────┘ │ ║ ◄── --svb-window-bottom
+     ║ │  attacks / text — NO foil    │ ║
+     ║ └──────────────────────────────┘ ║
+     ╚══╪══════════════════════════════╪═╝
+        --svb-window-left              --svb-window-right
+
+   Six knobs. Window matches simey's generic modern window; border thickness
+   eyeballed off Pitch Black scans — tune from a real screenshot when one
+   lands. USER-EDITABLE.
+───────────────────────────────────────────────────────────────────────────── */
+
+.holo-card[data-frame="svborder"] {
+	/* ── THE SIX KNOBS ─────────────────────────────────────────────────── */
+	/* Calibrated off a user screenshot of Pitch Black Bastiodon 062/084
+	   (pack-opening video frame): window runs nearly border-to-border, only a
+	   hairline matte seam between border ring and art; border is chunkier
+	   than the SWSH-era default. */
+	--svb-window-top: 10%; /* foil TOP edge of the art window */
+	--svb-window-bottom: 48%; /* foil BOTTOM edge of the art window */
+	--svb-window-left: 5%; /* foil LEFT edge of the art window */
+	--svb-window-right: 95%; /* foil RIGHT edge (from card LEFT!) */
+	--svb-border-x: 4.5%; /* silver border thickness, left/right */
+	--svb-border-y: 3.2%; /* silver border thickness, top/bottom */
+
+	/* ── DERIVED SHAPE (no need to touch) ──────────────────────────────── */
+	--clip: polygon(
+		0% 0%,
+		100% 0%,
+		100% 100%,
+		0% 100%,
+		0% 0%,
+		var(--svb-border-x) var(--svb-border-y),
+		var(--svb-border-x) calc(100% - var(--svb-border-y)),
+		calc(100% - var(--svb-border-x)) calc(100% - var(--svb-border-y)),
+		calc(100% - var(--svb-border-x)) var(--svb-border-y),
+		var(--svb-border-x) var(--svb-border-y),
+		0% 0%,
+		var(--svb-window-left) var(--svb-window-top),
+		var(--svb-window-right) var(--svb-window-top),
+		var(--svb-window-right) var(--svb-window-bottom),
+		var(--svb-window-left) var(--svb-window-bottom),
+		var(--svb-window-left) var(--svb-window-top)
+	);
+	/* Modern frames put the stage badge outside the window — same shape for
+	   every card class. */
+	--clip-stage: var(--clip);
+	--clip-trainer: var(--clip);
+	--clip-energy: var(--clip);
+}
+
+/* Pattern override for the same frame: the SV/ME "Mirage" mirror foil
+   refracts HORIZONTALLY (TPCi "horizontal sheen"; Bulbapedia "refracted
+   horizontally instead of diagonally"; user video: bands run left-right) in
+   broad bands — simey's SWSH-era recipe is near-vertical and finer. Same
+   layer structure, gradients rotated to 0deg and widened: 2 color cycles
+   instead of 3 across the same 400% canvas, chunkier bright-bar streaks.
+   Position/size/blend/filter cascade in from the base rare-holo rules. */
+.holo-card[data-frame="svborder"][data-rarity="rare holo"] .holo-card-shine {
+	background-image:
+		repeating-linear-gradient(
+			0deg,
+			var(--violet),
+			var(--blue),
+			var(--green),
+			var(--yellow),
+			var(--red),
+			var(--violet),
+			var(--blue),
+			var(--green),
+			var(--yellow),
+			var(--red)
+		),
+		/* Mirror foil is SMOOTH — a broad luminance wave instead of simey's
+		   1px CRT-style scanlines (every stop interpolates, no hard edges). */
+		repeating-linear-gradient(
+			0deg,
+			var(--scanlines-dark) 0%,
+			var(--scanlines-light) 12%,
+			var(--scanlines-dark) 24%
+		);
+}
+
+.holo-card[data-frame="svborder"][data-rarity="rare holo"]
+	.holo-card-shine:before {
+	--bars: 4.5%;
+
+	/* Bright sheen bands with GRADUAL ramps — the base recipe's abrupt
+	   bar-color/bar-bg jumps read as hard stripes; every stop here fades. */
+	background-image:
+		repeating-linear-gradient(
+			0deg,
+			var(--bar-bg) 0%,
+			var(--bar-color) calc(var(--bars) * 3),
+			var(--bar-bg) calc(var(--bars) * 6),
+			var(--bar-bg) calc(var(--bars) * 14)
+		),
+		repeating-linear-gradient(
+			0deg,
+			var(--bar-bg) 0%,
+			var(--bar-color) calc(var(--bars) * 4),
+			var(--bar-bg) calc(var(--bars) * 8),
+			var(--bar-bg) calc(var(--bars) * 10)
+		);
 }

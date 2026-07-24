@@ -7,5 +7,9 @@ which itself credits:
 - Galaxy Holo from [aschefield101](https://www.deviantart.com/aschefield101/art/HoloSheet-2012-313543843)
 - Some backgrounds from [Vecteezy](https://www.vecteezy.com/free-photos)
 
+`sparkle-stars.png` is from
+[`itzwoow/pokemon-holo-cards`](https://github.com/itzwoow/pokemon-holo-cards)
+(MIT), the Double Rare star-sparkle overlay introduced in its v1.1.6.
+
 This project (`pokemon-tcg-viewer`) is non-commercial and released under
 the same MIT-spirited terms as the upstream repo.

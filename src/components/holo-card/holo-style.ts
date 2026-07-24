@@ -220,6 +220,18 @@ const POP_DP_SETS: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Series whose Rare-tier holofoil covers the art window PLUS the thin silver
+ * border (the 2023 SV redesign dropped yellow borders; text panels stay
+ * non-foil — Landfall/Bulbapedia international spec, photo-verified on Abyss
+ * Eye). Routes the holo-printing upgrade to frame="svborder", whose seamed
+ * union clip paints both regions. Lowercased `series` strings. USER-EDITABLE.
+ */
+export const BORDER_HOLO_SERIES: ReadonlySet<string> = new Set([
+	"scarlet & violet",
+	"mega evolution",
+]);
+
+/**
  * Interpret TCGplayer price-variant keys as a holo signal:
  *   • has "holofoil"        → true  (holo printing)
  *   • has "normal", no holo → false (non-holo printing — should not foil)
@@ -295,6 +307,7 @@ export type HoloFrame =
 	| "xy"
 	| "sm"
 	| "fullface"
+	| "svborder"
 	| null;
 
 function frameFor(
@@ -429,7 +442,7 @@ export function holoPresentation(
 	// Reverse holo printing: a per-PRINTING override, decided before everything
 	// else (a reverse is always physically foil, whatever the base rarity or
 	// the noisy variant flags say). CardProxy: rarity + " Reverse Holo".
-	const frame = frameFor(series, setId, rarity, cardNumber);
+	let frame = frameFor(series, setId, rarity, cardNumber);
 
 	if (reverse) {
 		const eff = `${(rarity ?? "common").toLowerCase()} reverse holo`;
@@ -453,12 +466,26 @@ export function holoPresentation(
 		eff = "rare holo cosmos";
 	}
 
-	// Cosmos-era upgrade: a plain "Rare"/"Common"/"Uncommon" that carries a
-	// HOLO printing (TCGdex marks POP + some vintage holos with the tier rarity,
-	// not "Rare Holo", but flags the holo variant) is still a cosmos holo — the
-	// rarity heuristic alone would leave it glare-only.
-	if (eff === null && holo === true && inCosmosEra) {
-		eff = "rare holo cosmos";
+	// Holo-printing upgrade: a plain "Rare"/"Common"/"Uncommon" that carries a
+	// HOLO printing (TCGdex marks POP + vintage holos AND every SV/ME-era Rare —
+	// those eras print the whole Rare tier as holofoil — with the tier rarity,
+	// not "Rare Holo", but flags the holo variant) still foils. The rarity
+	// heuristic alone would leave it glare-only. Pattern by era: cosmos galaxy
+	// in the vintage eras, the art-window scanline everywhere else.
+	if (eff === null && holo === true) {
+		if (inCosmosEra || (rarity ?? "").toLowerCase() !== "rare") {
+			// Vintage eras, and modern special-product Common/Uncommon holo
+			// prints (Collector Chest / league promos), are cosmos holos.
+			eff = "rare holo cosmos";
+		} else {
+			eff = "rare holo";
+			// SV/ME era: foil = art window + the thin silver border (never the
+			// text panels) — the svborder frame's seamed clip paints both.
+			// SWSH and earlier upgrades keep their plain era windows.
+			if (BORDER_HOLO_SERIES.has((series ?? "").toLowerCase())) {
+				frame = "svborder";
+			}
+		}
 	}
 
 	const number = cardNumber ?? "";
@@ -505,12 +532,14 @@ export function holoPresentation(
 		}
 	}
 
-	// SV-era Black Star Promos (svp): every card is rarity "Promo", but the
-	// physical treatments differ — ex promos carry the SV ex full-card etch
-	// (our "rare holo v" family), everything else is a full-face mirror holo
-	// (frame="fullface" via FULLFACE_FOIL_SETS un-clips the recipe).
-	if (setId?.toLowerCase() === "svp" && subtypesLower.includes("ex")) {
-		eff = "rare holo v";
+	// SV/ME Black Star Promos (svp/mep): every card is rarity "Promo", but the
+	// physical treatments differ — ex promos reuse the in-set Double Rare ex
+	// plate (etch + star layer; Bulbapedia calls the ME box promos "etched
+	// foil"), everything else keeps the set default (svp: full-face mirror via
+	// FULLFACE_FOIL_SETS).
+	const sid2 = setId?.toLowerCase();
+	if ((sid2 === "svp" || sid2 === "mep") && subtypesLower.includes("ex")) {
+		eff = "double rare";
 	}
 
 	if (isShiny) {
@@ -557,9 +586,17 @@ export function holoPresentation(
 	// override so it is the final word for this rarity across all eras (isXyFullArt
 	// only keys on frame==="fullface", which now matches these cards everywhere).
 	if (rarityLower === "rare holo ex") {
-		eff = EX_FRAME_SERIES.has((series ?? "").toLowerCase())
-			? "rare holo cosmos"
-			: "rare holo v";
+		const serLower = (series ?? "").toLowerCase();
+		if (EX_FRAME_SERIES.has(serLower)) {
+			eff = "rare holo cosmos";
+		} else if (serLower === "mega evolution") {
+			// ME sets: ptcg.io labels the full-art Ultra Rare ex slots (me05
+			// 096-103) "Rare Holo EX" where TCGdex says "Ultra Rare" — same
+			// physical etched full-art tier as the sibling sets' "Ultra Rare".
+			eff = "rare ultra";
+		} else {
+			eff = "rare holo v";
+		}
 	}
 
 	// Known non-holo printing (TCGplayer variants say "normal", no holo). Only

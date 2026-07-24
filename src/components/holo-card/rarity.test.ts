@@ -43,7 +43,7 @@ describe("getRarityClass", () => {
 		// vs the ptcg.io title-case key ("Double Rare"). It must map to the same
 		// foil class, not fall to the generic fallback.
 		expect(getRarityClass("Double rare")).toBe(getRarityClass("Double Rare"));
-		expect(getRarityClass("Double rare")).toBe("holo-v");
+		expect(getRarityClass("Double rare")).toBe("double-rare");
 		expect(getRarityClass("common")).toBe("no-foil");
 		expect(warnSpy).not.toHaveBeenCalled();
 	});
@@ -60,7 +60,10 @@ describe("getRarityClass", () => {
 		expect(getRarityClass("Secret Rare")).toBe("gold-secret");
 		// Shiny secrets carry the gold-glitter shiny-vmax foil, not plain rainbow.
 		expect(getRarityClass("Shiny Secret Rare")).toBe("shiny-vmax");
-		expect(getRarityClass("Mega Hyper Rare")).toBe("rainbow");
+		// SV/ME hyper rares are GOLD monochrome etched secrets (The Trainer
+		// Court / Bulbapedia), not the SWSH pastel rainbow — gold-glitter family.
+		expect(getRarityClass("Hyper Rare")).toBe("gold-secret");
+		expect(getRarityClass("Mega Hyper Rare")).toBe("gold-secret");
 		expect(getRarityClass("Kagayaku")).toBe("shining");
 		expect(warnSpy).not.toHaveBeenCalled();
 	});

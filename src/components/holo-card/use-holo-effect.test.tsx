@@ -75,7 +75,9 @@ test("hook writes centered, hidden state on mount (no animation needed)", () => 
 	expect(el.style.getPropertyValue("--rotate-y")).toBe("0deg");
 	expect(el.style.getPropertyValue("--background-x")).toBe("50%");
 	expect(el.style.getPropertyValue("--background-y")).toBe("50%");
-	expect(el.style.getPropertyValue("--card-opacity")).toBe("0");
+	expect(el.style.getPropertyValue("--card-opacity")).toBe(
+		"calc(0 * var(--shine-intensity, 1))",
+	);
 	// Mount must not require a frame to look correct.
 	expect(rafQueue.length).toBe(0);
 });
@@ -94,7 +96,9 @@ test("pointermove eases toward the pointer and fades the foil in", () => {
 	expect(el.style.getPropertyValue("--rotate-x")).toBe("7.143deg");
 	expect(el.style.getPropertyValue("--rotate-y")).toBe("-7.143deg");
 	// Opacity is interaction-driven (reaches 1), NOT distance-from-center.
-	expect(el.style.getPropertyValue("--card-opacity")).toBe("1");
+	expect(el.style.getPropertyValue("--card-opacity")).toBe(
+		"calc(1 * var(--shine-intensity, 1))",
+	);
 });
 
 test("pointerleave eases back to the centered, hidden state", () => {
@@ -123,7 +127,9 @@ test("pointerleave eases back to the centered, hidden state", () => {
 	expect(el.style.getPropertyValue("--rotate-y")).toBe("0deg");
 	expect(el.style.getPropertyValue("--background-x")).toBe("50%");
 	expect(el.style.getPropertyValue("--background-y")).toBe("50%");
-	expect(el.style.getPropertyValue("--card-opacity")).toBe("0");
+	expect(el.style.getPropertyValue("--card-opacity")).toBe(
+		"calc(0 * var(--shine-intensity, 1))",
+	);
 });
 
 test("pointer interaction never triggers a React re-render", () => {

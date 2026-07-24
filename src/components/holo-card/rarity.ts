@@ -62,14 +62,17 @@ const RARITY_EFFECTIVE: Record<string, string | null> = {
 	"Rare Ultra": "rare ultra",
 	"Rare Shining": "rare shining", // custom recipe (Neo) — no simey source
 
-	"Hyper Rare": "rare rainbow",
+	// SV/ME hyper rares are gold monochrome etched secrets — gold-glitter
+	// family, not the SWSH pastel rainbow (which stays "Rare Rainbow").
+	"Hyper Rare": "rare secret",
 	"Illustration Rare": "trainer gallery rare holo",
 	// Special Illustration Rare ≈ SWSH alternate-art secret (simey rainbow-alt),
 	// NOT the trainer-gallery sheen (that was the old, wrong bucket).
 	"Special Illustration Rare": "rare rainbow alt",
 	"Ultra Rare": "rare ultra",
-	// Double Rare (SV ex) is a full-card sheen, NOT a classic art-window holo.
-	"Double Rare": "rare holo v",
+	// Double Rare (SV/ME ex) is a full-card sheen with star sparkles overlaid —
+	// its own recipe (upstream pokemon-holo-cards v1.1.6), NOT the plain V etch.
+	"Double Rare": "double rare",
 	// SV Shiny Vault — baby shinies; V/VMAX-subtyped ones are upgraded by the
 	// shiny-vault remap in holoPresentation(). Shiny exes are "Shiny Ultra Rare".
 	"Shiny Rare": "rare shiny",
@@ -97,7 +100,7 @@ const RARITY_EFFECTIVE: Record<string, string | null> = {
 	"Rare Holo LEGEND": "rare holo", // cf. LEGEND
 	Kagayaku: "rare shining", // 輝く — Shining Pokémon
 	Shining: "rare shining",
-	"Mega Hyper Rare": "rare rainbow", // cf. Hyper Rare
+	"Mega Hyper Rare": "rare secret", // cf. Hyper Rare — ME gold etch
 	// Black White Rare — the 2 chase ex full-arts of Black Bolt (Zekrom, black)
 	// + White Flare (Reshiram, white), 2025. Full-bleed etched full-arts, so the
 	// sunpillar V etch (routed fullface in frameFor); "rare holo" wrongly clipped
@@ -175,6 +178,8 @@ export function effectiveToClass(effective: string | null): string {
 		case "rare holo v":
 		case "rare holo vunion":
 			return "holo-v";
+		case "double rare":
+			return "double-rare";
 		case "rare holo vmax":
 			return "holo-vmax";
 		case "rare holo vstar":
