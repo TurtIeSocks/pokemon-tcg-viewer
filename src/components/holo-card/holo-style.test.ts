@@ -301,16 +301,30 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		});
 		expect(bastiodon.effectiveRarity).toBe("rare holo");
 		expect(bastiodon.className).toBe("holo-basic");
+		// SV/ME-era holo Rares are foiled across the WHOLE face (borders went
+		// silver-foil in 2023) — no art-window clip (PokeBeach SV holo reveal).
+		expect(bastiodon.frame).toBe("fullface");
 		// SV era: same shape (sv04-121 Morpeko, rarity "Rare", printings holo+reverse).
-		expect(
-			holoPresentation({
-				rarity: "Rare",
-				series: "Scarlet & Violet",
-				setId: "sv04",
-				cardNumber: "121",
-				holo: true,
-			}).effectiveRarity,
-		).toBe("rare holo");
+		const svMorpeko = holoPresentation({
+			rarity: "Rare",
+			series: "Scarlet & Violet",
+			setId: "sv04",
+			cardNumber: "121",
+			holo: true,
+		});
+		expect(svMorpeko.effectiveRarity).toBe("rare holo");
+		expect(svMorpeko.frame).toBe("fullface");
+		// SWSH era (and earlier non-cosmos): still an art-window holo — the
+		// full-face policy starts with SV's silver borders.
+		const swshUpgrade = holoPresentation({
+			rarity: "Rare",
+			series: "Sword & Shield",
+			setId: "swsh9",
+			cardNumber: "1",
+			holo: true,
+		});
+		expect(swshUpgrade.effectiveRarity).toBe("rare holo");
+		expect(swshUpgrade.frame).toBeNull();
 		// Cosmos eras keep the galaxy pattern for the same upgrade.
 		expect(
 			holoPresentation({

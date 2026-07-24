@@ -220,6 +220,19 @@ const POP_DP_SETS: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Series whose holo Rares are foiled across the ENTIRE card face: the 2023
+ * Scarlet & Violet redesign dropped yellow borders and foils the silver
+ * borders too (PokeBeach SV holo-effects reveal), and Mega Evolution carries
+ * the treatment over. Only drives the holo-printing UPGRADE path (plain
+ * "Rare" + holo variant) — explicit-rarity families route themselves.
+ * Lowercased `series` strings. USER-EDITABLE.
+ */
+export const FULLFACE_HOLO_SERIES: ReadonlySet<string> = new Set([
+	"scarlet & violet",
+	"mega evolution",
+]);
+
+/**
  * Interpret TCGplayer price-variant keys as a holo signal:
  *   • has "holofoil"        → true  (holo printing)
  *   • has "normal", no holo → false (non-holo printing — should not foil)
@@ -429,7 +442,7 @@ export function holoPresentation(
 	// Reverse holo printing: a per-PRINTING override, decided before everything
 	// else (a reverse is always physically foil, whatever the base rarity or
 	// the noisy variant flags say). CardProxy: rarity + " Reverse Holo".
-	const frame = frameFor(series, setId, rarity, cardNumber);
+	let frame = frameFor(series, setId, rarity, cardNumber);
 
 	if (reverse) {
 		const eff = `${(rarity ?? "common").toLowerCase()} reverse holo`;
@@ -461,6 +474,11 @@ export function holoPresentation(
 	// in the vintage eras, the art-window scanline everywhere else.
 	if (eff === null && holo === true) {
 		eff = inCosmosEra ? "rare holo cosmos" : "rare holo";
+		// SV/ME era: the whole face (silver borders included) is foil — kill the
+		// art-window clip. Earlier eras keep their era clip windows.
+		if (!inCosmosEra && FULLFACE_HOLO_SERIES.has((series ?? "").toLowerCase())) {
+			frame = "fullface";
+		}
 	}
 
 	const number = cardNumber ?? "";
