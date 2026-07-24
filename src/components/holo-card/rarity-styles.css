@@ -4026,12 +4026,13 @@
 			var(--yellow),
 			var(--red)
 		),
+		/* Mirror foil is SMOOTH — a broad luminance wave instead of simey's
+		   1px CRT-style scanlines (every stop interpolates, no hard edges). */
 		repeating-linear-gradient(
 			0deg,
-			var(--scanlines-dark) calc(var(--scanlines-space) * 0),
-			var(--scanlines-dark) calc(var(--scanlines-space) * 2),
-			var(--scanlines-light) calc(var(--scanlines-space) * 2),
-			var(--scanlines-light) calc(var(--scanlines-space) * 4)
+			var(--scanlines-dark) 0%,
+			var(--scanlines-light) 12%,
+			var(--scanlines-dark) 24%
 		);
 }
 
@@ -4039,23 +4040,21 @@
 	.holo-card-shine:before {
 	--bars: 4.5%;
 
+	/* Bright sheen bands with GRADUAL ramps — the base recipe's abrupt
+	   bar-color/bar-bg jumps read as hard stripes; every stop here fades. */
 	background-image:
 		repeating-linear-gradient(
 			0deg,
-			var(--bar-bg) calc(var(--bars) * 2),
+			var(--bar-bg) 0%,
 			var(--bar-color) calc(var(--bars) * 3),
-			var(--bar-bg) calc(var(--bars) * 3.5),
-			var(--bar-color) calc(var(--bars) * 4),
-			var(--bar-bg) calc(var(--bars) * 5),
+			var(--bar-bg) calc(var(--bars) * 6),
 			var(--bar-bg) calc(var(--bars) * 14)
 		),
 		repeating-linear-gradient(
 			0deg,
-			var(--bar-bg) calc(var(--bars) * 2),
-			var(--bar-color) calc(var(--bars) * 3),
-			var(--bar-bg) calc(var(--bars) * 3.5),
+			var(--bar-bg) 0%,
 			var(--bar-color) calc(var(--bars) * 4),
-			var(--bar-bg) calc(var(--bars) * 5),
+			var(--bar-bg) calc(var(--bars) * 8),
 			var(--bar-bg) calc(var(--bars) * 10)
 		);
 }
