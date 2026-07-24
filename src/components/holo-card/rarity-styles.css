@@ -3967,12 +3967,16 @@
 
 .holo-card[data-frame="svborder"] {
 	/* ── THE SIX KNOBS ─────────────────────────────────────────────────── */
-	--svb-window-top: 9.85%; /* foil TOP edge of the art window */
-	--svb-window-bottom: 47.15%; /* foil BOTTOM edge of the art window */
-	--svb-window-left: 8%; /* foil LEFT edge of the art window */
-	--svb-window-right: 92%; /* foil RIGHT edge (from card LEFT!) */
-	--svb-border-x: 3.2%; /* silver border thickness, left/right */
-	--svb-border-y: 2.4%; /* silver border thickness, top/bottom */
+	/* Calibrated off a user screenshot of Pitch Black Bastiodon 062/084
+	   (pack-opening video frame): window runs nearly border-to-border, only a
+	   hairline matte seam between border ring and art; border is chunkier
+	   than the SWSH-era default. */
+	--svb-window-top: 10%; /* foil TOP edge of the art window */
+	--svb-window-bottom: 48%; /* foil BOTTOM edge of the art window */
+	--svb-window-left: 5%; /* foil LEFT edge of the art window */
+	--svb-window-right: 95%; /* foil RIGHT edge (from card LEFT!) */
+	--svb-border-x: 4.5%; /* silver border thickness, left/right */
+	--svb-border-y: 3.2%; /* silver border thickness, top/bottom */
 
 	/* ── DERIVED SHAPE (no need to touch) ──────────────────────────────── */
 	--clip: polygon(
