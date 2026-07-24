@@ -60,7 +60,10 @@ describe("getRarityClass", () => {
 		expect(getRarityClass("Secret Rare")).toBe("gold-secret");
 		// Shiny secrets carry the gold-glitter shiny-vmax foil, not plain rainbow.
 		expect(getRarityClass("Shiny Secret Rare")).toBe("shiny-vmax");
-		expect(getRarityClass("Mega Hyper Rare")).toBe("rainbow");
+		// SV/ME hyper rares are GOLD monochrome etched secrets (The Trainer
+		// Court / Bulbapedia), not the SWSH pastel rainbow — gold-glitter family.
+		expect(getRarityClass("Hyper Rare")).toBe("gold-secret");
+		expect(getRarityClass("Mega Hyper Rare")).toBe("gold-secret");
 		expect(getRarityClass("Kagayaku")).toBe("shining");
 		expect(warnSpy).not.toHaveBeenCalled();
 	});

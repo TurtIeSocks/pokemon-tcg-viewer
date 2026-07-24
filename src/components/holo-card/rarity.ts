@@ -62,7 +62,9 @@ const RARITY_EFFECTIVE: Record<string, string | null> = {
 	"Rare Ultra": "rare ultra",
 	"Rare Shining": "rare shining", // custom recipe (Neo) — no simey source
 
-	"Hyper Rare": "rare rainbow",
+	// SV/ME hyper rares are gold monochrome etched secrets — gold-glitter
+	// family, not the SWSH pastel rainbow (which stays "Rare Rainbow").
+	"Hyper Rare": "rare secret",
 	"Illustration Rare": "trainer gallery rare holo",
 	// Special Illustration Rare ≈ SWSH alternate-art secret (simey rainbow-alt),
 	// NOT the trainer-gallery sheen (that was the old, wrong bucket).
@@ -98,7 +100,7 @@ const RARITY_EFFECTIVE: Record<string, string | null> = {
 	"Rare Holo LEGEND": "rare holo", // cf. LEGEND
 	Kagayaku: "rare shining", // 輝く — Shining Pokémon
 	Shining: "rare shining",
-	"Mega Hyper Rare": "rare rainbow", // cf. Hyper Rare
+	"Mega Hyper Rare": "rare secret", // cf. Hyper Rare — ME gold etch
 	// Black White Rare — the 2 chase ex full-arts of Black Bolt (Zekrom, black)
 	// + White Flare (Reshiram, white), 2025. Full-bleed etched full-arts, so the
 	// sunpillar V etch (routed fullface in frameFor); "rare holo" wrongly clipped
