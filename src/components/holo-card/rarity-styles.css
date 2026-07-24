@@ -1116,14 +1116,23 @@
 
 	background-image: var(--sparkle-stars);
 	background-size: 28% 28%;
-	background-position:
-		calc(50% + (var(--pointer-from-left) - 0.5) * -18px)
+	background-position: calc(50% + (var(--pointer-from-left) - 0.5) * -18px)
 		calc(50% + (var(--pointer-from-top) - 0.5) * -18px);
 
 	mix-blend-mode: screen;
 	filter: brightness(calc(var(--pointer-from-center) * 0.8 + 0.5)) contrast(3)
 		saturate(0.6);
 	opacity: calc(var(--card-opacity) * 0.55);
+}
+
+/* Mega Evolution sets: the ex star layer is visibly larger + denser than
+   SV's near-invisible sparkle (photo-verified, JP Abyss Eye Morpeko ex RR —
+   mixed-size 4/5-point stars readable face-on). Bigger tile + higher floor. */
+.holo-card[data-set^="me"][data-rarity="double rare"] .holo-card-shine:before {
+	background-size: 34% 34%;
+	filter: brightness(calc(var(--pointer-from-center) * 0.7 + 0.7)) contrast(3)
+		saturate(0.7);
+	opacity: calc(var(--card-opacity) * 0.8);
 }
 
 .holo-card[data-rarity="double rare"] .holo-card-glare {
