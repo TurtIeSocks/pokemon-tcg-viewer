@@ -1125,14 +1125,56 @@
 	opacity: calc(var(--card-opacity) * 0.55);
 }
 
-/* Mega Evolution sets: the ex star layer is visibly larger + denser than
-   SV's near-invisible sparkle (photo-verified, JP Abyss Eye Morpeko ex RR —
-   mixed-size 4/5-point stars readable face-on). Bigger tile + higher floor. */
-.holo-card[data-set^="me"][data-rarity="double rare"] .holo-card-shine:before {
-	background-size: 34% 34%;
-	filter: brightness(calc(var(--pointer-from-center) * 0.7 + 0.7)) contrast(3)
-		saturate(0.7);
-	opacity: calc(var(--card-opacity) * 0.8);
+/* Mega Evolution sets: the ex star layer is visibly larger, denser AND
+   MULTICOLORED — the physical stars are foil cutouts over the rainbow layer,
+   so each star's color comes from its position (user's Pitch Black Morpeko ex
+   photo: red/green/blue/pink/white star confetti, mixed sizes, full face).
+   Rendered the same way: the grayscale star texture becomes a LUMINANCE MASK
+   over a rainbow field, so star color varies by position and slides with the
+   pointer. SV-era cards keep the base recipe's subtle white-screen sparkle
+   (their physical layer is near-invisible). @supports-gated: without
+   luminance masking the no-alpha texture masks nothing and the whole rainbow
+   field would paint — old browsers keep the base grayscale stars instead. */
+@supports (mask-mode: luminance) {
+	.holo-card[data-set^="me"][data-rarity="double rare"]
+		.holo-card-shine:before {
+		background-image: repeating-linear-gradient(
+			33deg,
+			var(--red),
+			var(--yellow),
+			var(--green),
+			var(--blue),
+			var(--violet),
+			var(--red)
+		);
+		background-size: 250% 250%;
+		background-position: var(--background-x) var(--background-y);
+
+		/* !important needed to beat the base recipe's own `mask-image: none
+	   !important` (which un-masks the star layer on CDN-masked cards). */
+		-webkit-mask-image: var(--sparkle-stars) !important;
+		mask-image: var(--sparkle-stars) !important;
+		-webkit-mask-size: 34% 34%;
+		mask-size: 34% 34%;
+		mask-mode: luminance; /* texture is grayscale, no alpha channel */
+		-webkit-mask-position: calc(50% + (var(--pointer-from-left) - 0.5) * -18px)
+			calc(50% + (var(--pointer-from-top) - 0.5) * -18px);
+		mask-position: calc(50% + (var(--pointer-from-left) - 0.5) * -18px)
+			calc(50% + (var(--pointer-from-top) - 0.5) * -18px);
+		-webkit-mask-repeat: repeat;
+		mask-repeat: repeat;
+
+		mix-blend-mode: screen;
+		filter: brightness(calc(var(--pointer-from-center) * 0.6 + 0.9)) contrast(2)
+			saturate(1.4);
+		opacity: calc(var(--card-opacity) * 0.9);
+	}
+}
+
+/* Same sets: the ex base sheen reads far more RAINBOW than SV's muted teal —
+   lift the saturation clamp on the sunpillar beams (base: saturate(0.65)). */
+.holo-card[data-set^="me"][data-rarity="double rare"] .holo-card-shine {
+	filter: brightness(0.8) contrast(2.6) saturate(1.15);
 }
 
 .holo-card[data-rarity="double rare"] .holo-card-glare {
