@@ -1150,24 +1150,39 @@
 		background-size: 250% 250%;
 		background-position: var(--background-x) var(--background-y);
 
-		/* !important needed to beat the base recipe's own `mask-image: none
+		/* TWO stamped star layers (union — mask-composite defaults to add):
+		   a large field + a smaller offset field drifting the opposite way =
+		   bigger, denser confetti in mixed sizes, matching the real foil.
+		   !important needed to beat the base recipe's own `mask-image: none
 	   !important` (which un-masks the star layer on CDN-masked cards). */
-		-webkit-mask-image: var(--sparkle-stars) !important;
-		mask-image: var(--sparkle-stars) !important;
-		-webkit-mask-size: 34% 34%;
-		mask-size: 34% 34%;
-		mask-mode: luminance; /* texture is grayscale, no alpha channel */
-		-webkit-mask-position: calc(50% + (var(--pointer-from-left) - 0.5) * -18px)
-			calc(50% + (var(--pointer-from-top) - 0.5) * -18px);
-		mask-position: calc(50% + (var(--pointer-from-left) - 0.5) * -18px)
-			calc(50% + (var(--pointer-from-top) - 0.5) * -18px);
+		-webkit-mask-image: var(--sparkle-stars), var(--sparkle-stars) !important;
+		mask-image: var(--sparkle-stars), var(--sparkle-stars) !important;
+		-webkit-mask-size:
+			52% 52%,
+			31% 31%;
+		mask-size:
+			52% 52%,
+			31% 31%;
+		mask-mode: luminance, luminance; /* texture is grayscale, no alpha */
+		-webkit-mask-position:
+			calc(50% + (var(--pointer-from-left) - 0.5) * -18px)
+			calc(50% + (var(--pointer-from-top) - 0.5) * -18px),
+			calc(29% + (var(--pointer-from-left) - 0.5) * 14px)
+			calc(63% + (var(--pointer-from-top) - 0.5) * 14px);
+		mask-position:
+			calc(50% + (var(--pointer-from-left) - 0.5) * -18px)
+			calc(50% + (var(--pointer-from-top) - 0.5) * -18px),
+			calc(29% + (var(--pointer-from-left) - 0.5) * 14px)
+			calc(63% + (var(--pointer-from-top) - 0.5) * 14px);
 		-webkit-mask-repeat: repeat;
 		mask-repeat: repeat;
 
 		mix-blend-mode: screen;
-		filter: brightness(calc(var(--pointer-from-center) * 0.6 + 0.9)) contrast(2)
-			saturate(1.4);
-		opacity: calc(var(--card-opacity) * 0.9);
+		/* Bold floor: bright even at rest so screen-blend can't thin the stars
+		   out over bright foil regions. */
+		filter: brightness(calc(var(--pointer-from-center) * 0.5 + 1.15))
+			contrast(1.8) saturate(1.6);
+		opacity: var(--card-opacity);
 	}
 }
 
