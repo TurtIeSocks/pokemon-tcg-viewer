@@ -3936,3 +3936,66 @@
 	--clip-trainer-invert: var(--clip-invert);
 	--clip-energy-invert: var(--clip-invert);
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   OUR EXTENSION — SV / Mega Evolution Rare-holo clip (data-frame="svborder")
+
+   The 2023 SV redesign dropped yellow borders: a booster-pull Rare's holofoil
+   covers the ART WINDOW plus the thin silver BORDER, never the text panels
+   (Landfall/Bulbapedia international spec; photo-verified on Abyss Eye).
+   Window + border ring is a DISJOINT union, which inset() cannot express —
+   one nonzero-winding polygon with zero-width seams paints both: outer edge
+   clockwise (+1), inner border edge counter-clockwise (-1 → text area hole),
+   window rectangle clockwise again (+1 → filled), all stitched through 0,0.
+
+     0%                                100%
+  0% ╔══════════════════════════════════╗ ◄─ border ring = FOIL
+     ║ ┌──────────────────────────────┐ ║ ◄─ --svb-border-y thick
+     ║ │  Bastiodon           HP 160  │ ║
+     ║ │ ┌──────────────────────────┐ │ ║ ◄── --svb-window-top
+     ║ │ │        ART = FOIL        │ │ ║  │
+     ║ │ └──────────────────────────┘ │ ║ ◄── --svb-window-bottom
+     ║ │  attacks / text — NO foil    │ ║
+     ║ └──────────────────────────────┘ ║
+     ╚══╪══════════════════════════════╪═╝
+        --svb-window-left              --svb-window-right
+
+   Six knobs. Window matches simey's generic modern window; border thickness
+   eyeballed off Pitch Black scans — tune from a real screenshot when one
+   lands. USER-EDITABLE.
+───────────────────────────────────────────────────────────────────────────── */
+
+.holo-card[data-frame="svborder"] {
+	/* ── THE SIX KNOBS ─────────────────────────────────────────────────── */
+	--svb-window-top: 9.85%; /* foil TOP edge of the art window */
+	--svb-window-bottom: 47.15%; /* foil BOTTOM edge of the art window */
+	--svb-window-left: 8%; /* foil LEFT edge of the art window */
+	--svb-window-right: 92%; /* foil RIGHT edge (from card LEFT!) */
+	--svb-border-x: 3.2%; /* silver border thickness, left/right */
+	--svb-border-y: 2.4%; /* silver border thickness, top/bottom */
+
+	/* ── DERIVED SHAPE (no need to touch) ──────────────────────────────── */
+	--clip: polygon(
+		0% 0%,
+		100% 0%,
+		100% 100%,
+		0% 100%,
+		0% 0%,
+		var(--svb-border-x) var(--svb-border-y),
+		var(--svb-border-x) calc(100% - var(--svb-border-y)),
+		calc(100% - var(--svb-border-x)) calc(100% - var(--svb-border-y)),
+		calc(100% - var(--svb-border-x)) var(--svb-border-y),
+		var(--svb-border-x) var(--svb-border-y),
+		0% 0%,
+		var(--svb-window-left) var(--svb-window-top),
+		var(--svb-window-right) var(--svb-window-top),
+		var(--svb-window-right) var(--svb-window-bottom),
+		var(--svb-window-left) var(--svb-window-bottom),
+		var(--svb-window-left) var(--svb-window-top)
+	);
+	/* Modern frames put the stage badge outside the window — same shape for
+	   every card class. */
+	--clip-stage: var(--clip);
+	--clip-trainer: var(--clip);
+	--clip-energy: var(--clip);
+}

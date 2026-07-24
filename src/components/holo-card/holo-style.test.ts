@@ -301,10 +301,11 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		});
 		expect(bastiodon.effectiveRarity).toBe("rare holo");
 		expect(bastiodon.className).toBe("holo-basic");
-		// SV/ME-era Rare holos foil the ART WINDOW + silver border only — the
-		// text panels are NOT foil (Landfall/Bulbapedia international spec;
-		// photo-verified on Abyss Eye). Art-window clip, not fullface.
-		expect(bastiodon.frame).toBeNull();
+		// SV/ME-era Rare holos foil the ART WINDOW + the thin silver BORDER —
+		// not the text panels (Landfall/Bulbapedia international spec;
+		// photo-verified on Abyss Eye + user's pack-opening observation). The
+		// svborder frame's seamed-union clip covers both regions.
+		expect(bastiodon.frame).toBe("svborder");
 		// SV era: same shape (sv04-121 Morpeko, rarity "Rare", printings holo+reverse).
 		const svMorpeko = holoPresentation({
 			rarity: "Rare",
@@ -314,7 +315,7 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 			holo: true,
 		});
 		expect(svMorpeko.effectiveRarity).toBe("rare holo");
-		expect(svMorpeko.frame).toBeNull();
+		expect(svMorpeko.frame).toBe("svborder");
 		// SWSH era upgrade: also an art-window holo.
 		const swshUpgrade = holoPresentation({
 			rarity: "Rare",

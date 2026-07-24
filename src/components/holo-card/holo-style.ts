@@ -220,6 +220,18 @@ const POP_DP_SETS: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Series whose Rare-tier holofoil covers the art window PLUS the thin silver
+ * border (the 2023 SV redesign dropped yellow borders; text panels stay
+ * non-foil — Landfall/Bulbapedia international spec, photo-verified on Abyss
+ * Eye). Routes the holo-printing upgrade to frame="svborder", whose seamed
+ * union clip paints both regions. Lowercased `series` strings. USER-EDITABLE.
+ */
+export const BORDER_HOLO_SERIES: ReadonlySet<string> = new Set([
+	"scarlet & violet",
+	"mega evolution",
+]);
+
+/**
  * Interpret TCGplayer price-variant keys as a holo signal:
  *   • has "holofoil"        → true  (holo printing)
  *   • has "normal", no holo → false (non-holo printing — should not foil)
@@ -295,6 +307,7 @@ export type HoloFrame =
 	| "xy"
 	| "sm"
 	| "fullface"
+	| "svborder"
 	| null;
 
 function frameFor(
@@ -429,7 +442,7 @@ export function holoPresentation(
 	// Reverse holo printing: a per-PRINTING override, decided before everything
 	// else (a reverse is always physically foil, whatever the base rarity or
 	// the noisy variant flags say). CardProxy: rarity + " Reverse Holo".
-	const frame = frameFor(series, setId, rarity, cardNumber);
+	let frame = frameFor(series, setId, rarity, cardNumber);
 
 	if (reverse) {
 		const eff = `${(rarity ?? "common").toLowerCase()} reverse holo`;
@@ -465,10 +478,13 @@ export function holoPresentation(
 			// prints (Collector Chest / league promos), are cosmos holos.
 			eff = "rare holo cosmos";
 		} else {
-			// Modern Rare holos (SWSH/SV/ME) foil the art window (+ the thin
-			// silver border in SV/ME — not the text panels, so the art-window
-			// clip stays the closest approximation; photo-verified on Abyss Eye).
 			eff = "rare holo";
+			// SV/ME era: foil = art window + the thin silver border (never the
+			// text panels) — the svborder frame's seamed clip paints both.
+			// SWSH and earlier upgrades keep their plain era windows.
+			if (BORDER_HOLO_SERIES.has((series ?? "").toLowerCase())) {
+				frame = "svborder";
+			}
 		}
 	}
 
