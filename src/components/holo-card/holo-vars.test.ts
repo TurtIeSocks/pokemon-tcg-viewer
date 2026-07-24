@@ -36,7 +36,11 @@ describe("setHoloVars", () => {
 		expect(el.style.getPropertyValue("--background-y")).toBe("50%");
 		expect(el.style.getPropertyValue("--pointer-from-left")).toBe("0.5");
 		expect(el.style.getPropertyValue("--pointer-from-top")).toBe("0.5");
-		expect(el.style.getPropertyValue("--card-opacity")).toBe("0");
+		// Wrapped in calc so the USER-EDITABLE --shine-intensity knob (see
+		// holo-card.css) scales every foil layer at their single gate.
+		expect(el.style.getPropertyValue("--card-opacity")).toBe(
+			"calc(0 * var(--shine-intensity, 1))",
+		);
 	});
 
 	test("off-center pointer: background remaps to simey's narrow bands, tilt faces cursor", () => {
@@ -57,7 +61,9 @@ describe("setHoloVars", () => {
 		).toBeCloseTo(Math.SQRT1_2, 3);
 		expect(el.style.getPropertyValue("--pointer-from-left")).toBe("0.75");
 		expect(el.style.getPropertyValue("--pointer-from-top")).toBe("0.75");
-		expect(el.style.getPropertyValue("--card-opacity")).toBe("1");
+		expect(el.style.getPropertyValue("--card-opacity")).toBe(
+			"calc(1 * var(--shine-intensity, 1))",
+		);
 	});
 
 	test("clamps out-of-range pointer and opacity inputs before writing", () => {
@@ -65,7 +71,9 @@ describe("setHoloVars", () => {
 		setHoloVars(el, 200, -50, 2);
 		expect(el.style.getPropertyValue("--pointer-x")).toBe("100%");
 		expect(el.style.getPropertyValue("--pointer-y")).toBe("0%");
-		expect(el.style.getPropertyValue("--card-opacity")).toBe("1");
+		expect(el.style.getPropertyValue("--card-opacity")).toBe(
+			"calc(1 * var(--shine-intensity, 1))",
+		);
 	});
 });
 

@@ -23,6 +23,15 @@
 	--background-y: var(--pointer-y);
 	--card-opacity: 0;
 
+	/* ── USER-EDITABLE — overall foil/glare strength ────────────────────────
+	   Every recipe gates its shine + glare opacity on --card-opacity, and the
+	   JS setter (holo-vars.ts) multiplies this knob into it — so one number
+	   scales ALL foil layers proportionally, including the pointer-tracking
+	   white glare ("flashlight" hot spot). 1 = simey-parity default;
+	   0.6-0.8 = tamer, less blown-out highlights; >1 = louder. Can also be
+	   set on any ancestor (or a single .holo-card) to scope the change. */
+	--shine-intensity: 1;
+
 	/* Content-derived glow color, overridden per energy type below
 	   (simey base.css .card.water etc.). Consumed by radiant-holo. */
 	--card-glow: hsl(175, 100%, 90%);

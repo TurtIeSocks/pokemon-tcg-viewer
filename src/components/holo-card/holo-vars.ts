@@ -108,5 +108,11 @@ export function setHoloVars(
 	);
 	el.style.setProperty("--pointer-from-left", `${round(px / 100)}`);
 	el.style.setProperty("--pointer-from-top", `${round(py / 100)}`);
-	el.style.setProperty("--card-opacity", `${round(clamp(opacity, 0, 1))}`);
+	// Wrapped in calc so the USER-EDITABLE --shine-intensity knob (see the
+	// .holo-card block in holo-card.css) scales every foil layer here, at
+	// their single gate — recipes all key their opacities off --card-opacity.
+	el.style.setProperty(
+		"--card-opacity",
+		`calc(${round(clamp(opacity, 0, 1))} * var(--shine-intensity, 1))`,
+	);
 }
