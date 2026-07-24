@@ -283,6 +283,62 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		).toBe("rare holo v");
 	});
 
+	test("modern era: plain Rare with a holo printing still foils (me05 Bastiodon)", () => {
+		// me05-062 Bastiodon — the ME (and SV) era prints EVERY Rare-tier card as
+		// a holofoil, but TCGdex keeps the tier rarity "Rare". The holo-printing
+		// upgrade used to fire only in cosmos eras, so these rendered glare-only:
+		// the reported bug.
+		const bastiodon = holoPresentation({
+			rarity: "Rare",
+			series: "Mega Evolution",
+			setId: "me05",
+			cardNumber: "062",
+			subtypes: ["Stage2"],
+			holo: true,
+		});
+		expect(bastiodon.effectiveRarity).toBe("rare holo");
+		expect(bastiodon.className).toBe("holo-basic");
+		// SV era: same shape (sv04-121 Morpeko, rarity "Rare", printings holo+reverse).
+		expect(
+			holoPresentation({
+				rarity: "Rare",
+				series: "Scarlet & Violet",
+				setId: "sv04",
+				cardNumber: "121",
+				holo: true,
+			}).effectiveRarity,
+		).toBe("rare holo");
+		// Cosmos eras keep the galaxy pattern for the same upgrade.
+		expect(
+			holoPresentation({
+				rarity: "Rare",
+				series: "Base",
+				setId: "base4",
+				cardNumber: "1",
+				holo: true,
+			}).effectiveRarity,
+		).toBe("rare holo cosmos");
+		// No holo printing signal → still glare-only (unknown ≠ holo).
+		expect(
+			holoPresentation({
+				rarity: "Rare",
+				series: "Mega Evolution",
+				setId: "me05",
+				cardNumber: "063",
+			}).effectiveRarity,
+		).toBeNull();
+		// Known non-holo printing stays glare-only.
+		expect(
+			holoPresentation({
+				rarity: "Rare",
+				series: "Mega Evolution",
+				setId: "me05",
+				cardNumber: "064",
+				holo: false,
+			}).effectiveRarity,
+		).toBeNull();
+	});
+
 	test("SV Black Star Promos: ex → full-card etch, rest → full-face mirror", () => {
 		// svp-004 Mimikyu ex — SV ex treatment (full-card sunpillar family).
 		const mimikyu = holoPresentation({

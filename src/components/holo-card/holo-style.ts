@@ -453,12 +453,14 @@ export function holoPresentation(
 		eff = "rare holo cosmos";
 	}
 
-	// Cosmos-era upgrade: a plain "Rare"/"Common"/"Uncommon" that carries a
-	// HOLO printing (TCGdex marks POP + some vintage holos with the tier rarity,
-	// not "Rare Holo", but flags the holo variant) is still a cosmos holo — the
-	// rarity heuristic alone would leave it glare-only.
-	if (eff === null && holo === true && inCosmosEra) {
-		eff = "rare holo cosmos";
+	// Holo-printing upgrade: a plain "Rare"/"Common"/"Uncommon" that carries a
+	// HOLO printing (TCGdex marks POP + vintage holos AND every SV/ME-era Rare —
+	// those eras print the whole Rare tier as holofoil — with the tier rarity,
+	// not "Rare Holo", but flags the holo variant) still foils. The rarity
+	// heuristic alone would leave it glare-only. Pattern by era: cosmos galaxy
+	// in the vintage eras, the art-window scanline everywhere else.
+	if (eff === null && holo === true) {
+		eff = inCosmosEra ? "rare holo cosmos" : "rare holo";
 	}
 
 	const number = cardNumber ?? "";
