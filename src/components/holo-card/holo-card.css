@@ -30,7 +30,7 @@
 	   white glare ("flashlight" hot spot). 1 = simey-parity default;
 	   0.6-0.8 = tamer, less blown-out highlights; >1 = louder. Can also be
 	   set on any ancestor (or a single .holo-card) to scope the change. */
-	--shine-intensity: 1;
+	--shine-intensity: 0.8;
 
 	/* Content-derived glow color, overridden per energy type below
 	   (simey base.css .card.water etc.). Consumed by radiant-holo. */
