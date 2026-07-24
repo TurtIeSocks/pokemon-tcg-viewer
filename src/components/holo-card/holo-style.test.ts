@@ -301,9 +301,10 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 		});
 		expect(bastiodon.effectiveRarity).toBe("rare holo");
 		expect(bastiodon.className).toBe("holo-basic");
-		// SV/ME-era holo Rares are foiled across the WHOLE face (borders went
-		// silver-foil in 2023) — no art-window clip (PokeBeach SV holo reveal).
-		expect(bastiodon.frame).toBe("fullface");
+		// SV/ME-era Rare holos foil the ART WINDOW + silver border only — the
+		// text panels are NOT foil (Landfall/Bulbapedia international spec;
+		// photo-verified on Abyss Eye). Art-window clip, not fullface.
+		expect(bastiodon.frame).toBeNull();
 		// SV era: same shape (sv04-121 Morpeko, rarity "Rare", printings holo+reverse).
 		const svMorpeko = holoPresentation({
 			rarity: "Rare",
@@ -313,9 +314,8 @@ describe("holoPresentation (CardProxy pipeline)", () => {
 			holo: true,
 		});
 		expect(svMorpeko.effectiveRarity).toBe("rare holo");
-		expect(svMorpeko.frame).toBe("fullface");
-		// SWSH era (and earlier non-cosmos): still an art-window holo — the
-		// full-face policy starts with SV's silver borders.
+		expect(svMorpeko.frame).toBeNull();
+		// SWSH era upgrade: also an art-window holo.
 		const swshUpgrade = holoPresentation({
 			rarity: "Rare",
 			series: "Sword & Shield",
