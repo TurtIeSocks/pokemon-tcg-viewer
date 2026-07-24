@@ -4003,3 +4003,59 @@
 	--clip-trainer: var(--clip);
 	--clip-energy: var(--clip);
 }
+
+/* Pattern override for the same frame: the SV/ME "Mirage" mirror foil
+   refracts HORIZONTALLY (TPCi "horizontal sheen"; Bulbapedia "refracted
+   horizontally instead of diagonally"; user video: bands run left-right) in
+   broad bands — simey's SWSH-era recipe is near-vertical and finer. Same
+   layer structure, gradients rotated to 0deg and widened: 2 color cycles
+   instead of 3 across the same 400% canvas, chunkier bright-bar streaks.
+   Position/size/blend/filter cascade in from the base rare-holo rules. */
+.holo-card[data-frame="svborder"][data-rarity="rare holo"] .holo-card-shine {
+	background-image:
+		repeating-linear-gradient(
+			0deg,
+			var(--violet),
+			var(--blue),
+			var(--green),
+			var(--yellow),
+			var(--red),
+			var(--violet),
+			var(--blue),
+			var(--green),
+			var(--yellow),
+			var(--red)
+		),
+		repeating-linear-gradient(
+			0deg,
+			var(--scanlines-dark) calc(var(--scanlines-space) * 0),
+			var(--scanlines-dark) calc(var(--scanlines-space) * 2),
+			var(--scanlines-light) calc(var(--scanlines-space) * 2),
+			var(--scanlines-light) calc(var(--scanlines-space) * 4)
+		);
+}
+
+.holo-card[data-frame="svborder"][data-rarity="rare holo"]
+	.holo-card-shine:before {
+	--bars: 4.5%;
+
+	background-image:
+		repeating-linear-gradient(
+			0deg,
+			var(--bar-bg) calc(var(--bars) * 2),
+			var(--bar-color) calc(var(--bars) * 3),
+			var(--bar-bg) calc(var(--bars) * 3.5),
+			var(--bar-color) calc(var(--bars) * 4),
+			var(--bar-bg) calc(var(--bars) * 5),
+			var(--bar-bg) calc(var(--bars) * 14)
+		),
+		repeating-linear-gradient(
+			0deg,
+			var(--bar-bg) calc(var(--bars) * 2),
+			var(--bar-color) calc(var(--bars) * 3),
+			var(--bar-bg) calc(var(--bars) * 3.5),
+			var(--bar-color) calc(var(--bars) * 4),
+			var(--bar-bg) calc(var(--bars) * 5),
+			var(--bar-bg) calc(var(--bars) * 10)
+		);
+}
