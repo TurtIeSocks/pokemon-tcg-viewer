@@ -175,15 +175,6 @@ describe("worker", () => {
 		);
 	});
 
-	test("preflight is cacheable for a day (halves conditional-GET traffic)", async () => {
-		const res = await worker.fetch(
-			new Request("https://proxy.test/corpus", { method: "OPTIONS" }),
-			env,
-			ctx,
-		);
-		expect(res.headers.get("Access-Control-Max-Age")).toBe("86400");
-	});
-
 	test("non-GET is rejected", async () => {
 		const res = await worker.fetch(
 			new Request("https://proxy.test/v2/cards", { method: "POST" }),
@@ -360,7 +351,7 @@ describe("worker", () => {
 		expect(res.status).toBe(503);
 	});
 
-	test("serves cached response on a hit and revalidates in the background", async () => {
+	test("serves a cached /v2 response without re-hitting the origin", async () => {
 		let n = 0;
 		const fetchMock = mock(
 			async () => new Response(JSON.stringify({ n: ++n }), { status: 200 }),
@@ -375,9 +366,50 @@ describe("worker", () => {
 
 		const r2 = await worker.fetch(new Request(url), env, ctx);
 		expect(await r2.json()).toEqual({ n: 1 }); // hit → served from cache
-		expect(pending.length).toBe(1); // background SWR refresh scheduled
-		await Promise.all(pending);
-		expect(n).toBe(2); // origin revalidated in the background
+		// The regression this guards: a hit used to schedule an unconditional
+		// refetch, so every cache hit still cost one api.tcgdex.net subrequest.
+		expect(pending.length).toBe(0);
+		expect(n).toBe(1);
+	});
+
+	test("preflight is cacheable for a day (halves conditional-GET traffic)", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus", { method: "OPTIONS" }),
+			env,
+			ctx,
+		);
+		expect(res.headers.get("Access-Control-Max-Age")).toBe("86400");
+	});
+
+	test("a cached blob route skips the R2 GET on the second hit", async () => {
+		let r2gets = 0;
+		const counting = {
+			...env,
+			CORPUS: {
+				get: async (key: string) => {
+					r2gets++;
+					return CORPUS.get(key);
+				},
+			},
+		} as unknown as typeof env;
+
+		// These had no edge cache: every request was an R2 Class B op. The
+		// /version probes are the worst of them — every caller sends
+		// `cache: "no-store"`, so nothing upstream absorbed the polling.
+		for (const url of [
+			"https://proxy.test/corpus-detail",
+			"https://proxy.test/corpus-prices",
+			"https://proxy.test/corpus-i18n/fr",
+			"https://proxy.test/corpus-prices/history/base1",
+		]) {
+			r2gets = 0;
+			await worker.fetch(new Request(url), counting, ctx);
+			await Promise.all(pending);
+			pending = [];
+			const hit = await worker.fetch(new Request(url), counting, ctx);
+			expect(hit.status).toBe(200);
+			expect(r2gets).toBe(1);
+		}
 	});
 
 	test("/corpus-i18n/ko serves the overlay blob (Asian overlay lang)", async () => {

@@ -79,19 +79,91 @@ function withCors(res: Response, env: Env): Response {
 	return out;
 }
 
-function fetchOrigin(url: URL, env: Env): Promise<Response> {
+function fetchOrigin(url: URL): Promise<Response> {
 	return fetch(ORIGIN + url.pathname + url.search);
 }
 
-// Add shared-cache SWR directives to the stored copy. The edge serves the
-// cached body immediately and refreshes it in the background.
+// Add a shared-cache TTL to the stored copy. `stale-while-revalidate` is
+// deliberately absent: the Cache API ignores it (only `fetch` honors it), so
+// promising SWR here would just be a lie in a header.
 function cacheable(res: Response): Response {
 	const out = new Response(res.clone().body, res);
-	out.headers.set(
-		"Cache-Control",
-		"s-maxage=3600, stale-while-revalidate=86400",
-	);
+	out.headers.set("Cache-Control", "s-maxage=3600");
 	return out;
+}
+
+function edgeCache(): Cache {
+	// `caches.default` is a Workers-specific extension absent from the
+	// standard CacheStorage type.
+	return (caches as unknown as { default: Cache }).default;
+}
+
+function missing(message: string, env: Env): Response {
+	return new Response(message, { status: 503, headers: corsHeaders(env) });
+}
+
+/**
+ * Serve a gzipped R2 blob: edge-cached, ETag'd, conditional-GET aware.
+ *
+ * The edge cache is what makes this cheap — a hit skips the R2 GET entirely
+ * (an R2 Class B operation, billed per request). It cannot skip the worker
+ * invocation itself: on workers.dev the worker runs before any cache, and the
+ * response's own `s-maxage` is inert because no zone CDN sits in front of it.
+ */
+async function serveBlob(
+	request: Request,
+	env: Env,
+	ctx: ExecutionContext,
+	key: string,
+	notBuilt: string,
+): Promise<Response> {
+	const cache = edgeCache();
+	// Key on the path alone. None of these routes read a query param, so without
+	// this a `?x=1` cache-buster would miss on every request and bill an R2 GET
+	// each time — the exact cost this cache exists to avoid.
+	const url = new URL(request.url);
+	const cacheKey = new Request(url.origin + url.pathname, { method: "GET" });
+	const cached = await cache.match(cacheKey);
+	if (cached) return serveCorpus(cached, request, env);
+
+	const obj = await env.CORPUS.get(key);
+	if (!obj) return missing(notBuilt, env);
+
+	const res = new Response(obj.body, {
+		headers: {
+			"Content-Type": "application/octet-stream",
+			ETag: `"${obj.etag}"`,
+			// Sent to the browser (which honors SWR) as well as stored in the edge
+			// cache (which honors only s-maxage — see `cacheable`). Hourly edge
+			// revalidation means a weekly rebuild lands within ~1h, and clients
+			// still get cheap 304s via the ETag.
+			"Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+		},
+	});
+	ctx.waitUntil(cache.put(cacheKey, res.clone()));
+	return serveCorpus(res, request, env);
+}
+
+/**
+ * Serve a small JSON meta doc (a version probe). Deliberately NOT edge-cached:
+ * its whole job is to answer "is there a newer build?", and a stale answer
+ * defeats it. The R2 objects here are a few hundred bytes.
+ */
+async function serveMeta(
+	env: Env,
+	key: string,
+	notBuilt: string,
+): Promise<Response> {
+	const obj = await env.CORPUS.get(key);
+	if (!obj) return missing(notBuilt, env);
+	return new Response(obj.body, {
+		headers: {
+			...corsHeaders(env),
+			"Content-Type": "application/json",
+			"Cache-Control":
+				"public, max-age=60, s-maxage=300, stale-while-revalidate=86400",
+		},
+	});
 }
 
 export default {
@@ -113,105 +185,42 @@ export default {
 		const url = new URL(request.url);
 
 		if (url.pathname === "/corpus") {
-			const cache = (caches as unknown as { default: Cache }).default;
-			const cacheKey = new Request(url.toString(), { method: "GET" });
-			const cached = await cache.match(cacheKey);
-			if (cached) return serveCorpus(cached, request, env);
-
-			const obj = await env.CORPUS.get("corpus/latest.json.gz");
-			if (!obj) {
-				return new Response("Corpus not built yet", {
-					status: 503,
-					headers: corsHeaders(env),
-				});
-			}
-			const res = new Response(obj.body, {
-				headers: {
-					"Content-Type": "application/octet-stream",
-					ETag: `"${obj.etag}"`,
-					// Edge revalidates hourly so a weekly rebuild is visible within ~1h
-					// (vs up to a week). Clients still get cheap 304s via the ETag.
-					"Cache-Control":
-						"public, s-maxage=3600, stale-while-revalidate=86400",
-				},
-			});
-			ctx.waitUntil(cache.put(cacheKey, res.clone()));
-			return serveCorpus(res, request, env);
+			return serveBlob(
+				request,
+				env,
+				ctx,
+				"corpus/latest.json.gz",
+				"Corpus not built yet",
+			);
 		}
 
 		if (url.pathname === "/corpus-detail/version") {
-			const obj = await env.CORPUS.get("corpus/detail-meta.json");
-			if (!obj) {
-				return new Response("Detail not built yet", {
-					status: 503,
-					headers: corsHeaders(env),
-				});
-			}
-			return new Response(obj.body, {
-				headers: {
-					...corsHeaders(env),
-					"Content-Type": "application/json",
-					"Cache-Control":
-						"public, max-age=60, s-maxage=300, stale-while-revalidate=86400",
-				},
-			});
+			return serveMeta(env, "corpus/detail-meta.json", "Detail not built yet");
 		}
 
 		if (url.pathname === "/corpus-detail") {
-			const obj = await env.CORPUS.get("corpus/detail-latest.json.gz");
-			if (!obj) {
-				return new Response("Detail not built yet", {
-					status: 503,
-					headers: corsHeaders(env),
-				});
-			}
-			const res = new Response(obj.body, {
-				headers: {
-					"Content-Type": "application/octet-stream",
-					ETag: `"${obj.etag}"`,
-					"Cache-Control":
-						"public, s-maxage=3600, stale-while-revalidate=86400",
-				},
-			});
-			return serveCorpus(res, request, env);
+			return serveBlob(
+				request,
+				env,
+				ctx,
+				"corpus/detail-latest.json.gz",
+				"Detail not built yet",
+			);
 		}
 
 		// Daily market-price blob (spec 2026-07-03-pricing-implementation-design §3).
 		if (url.pathname === "/corpus-prices/version") {
-			const obj = await env.CORPUS.get("corpus/prices/meta.json");
-			if (!obj) {
-				return new Response("Prices not built yet", {
-					status: 503,
-					headers: corsHeaders(env),
-				});
-			}
-			return new Response(obj.body, {
-				headers: {
-					...corsHeaders(env),
-					"Content-Type": "application/json",
-					"Cache-Control":
-						"public, max-age=60, s-maxage=300, stale-while-revalidate=86400",
-				},
-			});
+			return serveMeta(env, "corpus/prices/meta.json", "Prices not built yet");
 		}
 
 		if (url.pathname === "/corpus-prices") {
-			const obj = await env.CORPUS.get("corpus/prices/latest.json.gz");
-			if (!obj) {
-				return new Response("Prices not built yet", {
-					status: 503,
-					headers: corsHeaders(env),
-				});
-			}
-			const res = new Response(obj.body, {
-				headers: {
-					"Content-Type": "application/octet-stream",
-					ETag: `"${obj.etag}"`,
-					"Cache-Control":
-						"public, s-maxage=3600, stale-while-revalidate=86400",
-				},
-			});
-			return serveCorpus(res, request, env);
+			return serveBlob(
+				request,
+				env,
+				ctx,
+				"corpus/prices/latest.json.gz",
+				"Prices not built yet",
+			);
 		}
 
 		// GET /corpus-prices/history/:setId -> per-set price history blob.
@@ -219,25 +228,13 @@ export default {
 			/^\/corpus-prices\/history\/([^/]+)$/,
 		);
 		if (historyMatch) {
-			const setId = historyMatch[1];
-			const obj = await env.CORPUS.get(
-				`corpus/prices/history/${setId}.json.gz`,
+			return serveBlob(
+				request,
+				env,
+				ctx,
+				`corpus/prices/history/${historyMatch[1]}.json.gz`,
+				"No history for set",
 			);
-			if (!obj) {
-				return new Response("No history for set", {
-					status: 503,
-					headers: corsHeaders(env),
-				});
-			}
-			const res = new Response(obj.body, {
-				headers: {
-					"Content-Type": "application/octet-stream",
-					ETag: `"${obj.etag}"`,
-					"Cache-Control":
-						"public, s-maxage=3600, stale-while-revalidate=86400",
-				},
-			});
-			return serveCorpus(res, request, env);
 		}
 
 		// GET /corpus-i18n/:lang/version -> overlay meta JSON (like /corpus-detail/version).
@@ -252,21 +249,11 @@ export default {
 					headers: corsHeaders(env),
 				});
 			}
-			const obj = await env.CORPUS.get(`corpus/i18n/${lang}/meta.json`);
-			if (!obj) {
-				return new Response("Overlay not built yet", {
-					status: 503,
-					headers: corsHeaders(env),
-				});
-			}
-			return new Response(obj.body, {
-				headers: {
-					...corsHeaders(env),
-					"Content-Type": "application/json",
-					"Cache-Control":
-						"public, max-age=60, s-maxage=300, stale-while-revalidate=86400",
-				},
-			});
+			return serveMeta(
+				env,
+				`corpus/i18n/${lang}/meta.json`,
+				"Overlay not built yet",
+			);
 		}
 
 		// GET /corpus-i18n/:lang -> overlay names blob (like /corpus-detail).
@@ -279,22 +266,13 @@ export default {
 					headers: corsHeaders(env),
 				});
 			}
-			const obj = await env.CORPUS.get(`corpus/i18n/${lang}/names.json.gz`);
-			if (!obj) {
-				return new Response("Overlay not built yet", {
-					status: 503,
-					headers: corsHeaders(env),
-				});
-			}
-			const res = new Response(obj.body, {
-				headers: {
-					"Content-Type": "application/octet-stream",
-					ETag: `"${obj.etag}"`,
-					"Cache-Control":
-						"public, s-maxage=3600, stale-while-revalidate=86400",
-				},
-			});
-			return serveCorpus(res, request, env);
+			return serveBlob(
+				request,
+				env,
+				ctx,
+				`corpus/i18n/${lang}/names.json.gz`,
+				"Overlay not built yet",
+			);
 		}
 
 		// GET /corpus-region/:region(/version|/detail)? -> Phase 2 Asian-region
@@ -312,71 +290,28 @@ export default {
 			}
 
 			if (suffix === "/version") {
-				const obj = await env.CORPUS.get(`corpus/region/${region}/meta.json`);
-				if (!obj) {
-					return new Response("Region corpus not built yet", {
-						status: 503,
-						headers: corsHeaders(env),
-					});
-				}
-				return new Response(obj.body, {
-					headers: {
-						...corsHeaders(env),
-						"Content-Type": "application/json",
-						"Cache-Control":
-							"public, max-age=60, s-maxage=300, stale-while-revalidate=86400",
-					},
-				});
+				return serveMeta(
+					env,
+					`corpus/region/${region}/meta.json`,
+					"Region corpus not built yet",
+				);
 			}
 
-			const key =
-				suffix === "/detail"
-					? `corpus/region/${region}/detail-latest.json.gz`
-					: `corpus/region/${region}/latest.json.gz`;
-
-			// Base region blob shares the /corpus edge-cache pattern; detail
-			// mirrors /corpus-detail (no edge cache, just R2 + serveCorpus).
-			if (suffix !== "/detail") {
-				const cache = (caches as unknown as { default: Cache }).default;
-				const cacheKey = new Request(url.toString(), { method: "GET" });
-				const cached = await cache.match(cacheKey);
-				if (cached) return serveCorpus(cached, request, env);
-
-				const obj = await env.CORPUS.get(key);
-				if (!obj) {
-					return new Response("Region corpus not built yet", {
-						status: 503,
-						headers: corsHeaders(env),
-					});
-				}
-				const res = new Response(obj.body, {
-					headers: {
-						"Content-Type": "application/octet-stream",
-						ETag: `"${obj.etag}"`,
-						"Cache-Control":
-							"public, s-maxage=3600, stale-while-revalidate=86400",
-					},
-				});
-				ctx.waitUntil(cache.put(cacheKey, res.clone()));
-				return serveCorpus(res, request, env);
-			}
-
-			const obj = await env.CORPUS.get(key);
-			if (!obj) {
-				return new Response("Region detail not built yet", {
-					status: 503,
-					headers: corsHeaders(env),
-				});
-			}
-			const res = new Response(obj.body, {
-				headers: {
-					"Content-Type": "application/octet-stream",
-					ETag: `"${obj.etag}"`,
-					"Cache-Control":
-						"public, s-maxage=3600, stale-while-revalidate=86400",
-				},
-			});
-			return serveCorpus(res, request, env);
+			return suffix === "/detail"
+				? serveBlob(
+						request,
+						env,
+						ctx,
+						`corpus/region/${region}/detail-latest.json.gz`,
+						"Region detail not built yet",
+					)
+				: serveBlob(
+						request,
+						env,
+						ctx,
+						`corpus/region/${region}/latest.json.gz`,
+						"Region corpus not built yet",
+					);
 		}
 
 		if (!url.pathname.startsWith("/v2/")) {
@@ -388,22 +323,18 @@ export default {
 
 		// Stable cache key: sort query params so equivalent requests collide.
 		url.searchParams.sort();
-		// `caches.default` is a Workers-specific extension absent from the
-		// standard CacheStorage type.
-		const cache = (caches as unknown as { default: Cache }).default;
+		const cache = edgeCache();
 		const cacheKey = new Request(url.toString(), { method: "GET" });
 
+		// A hit is served as-is. It used to also schedule an unconditional
+		// background refetch, which meant every hit still cost one origin
+		// subrequest — the cache saved latency but no upstream load at all. The
+		// Cache API honors `s-maxage` on its own: once the hour is up, `match`
+		// misses and the next request refills below.
 		const cached = await cache.match(cacheKey);
-		if (cached) {
-			ctx.waitUntil(
-				fetchOrigin(url, env).then((fresh) =>
-					fresh.ok ? cache.put(cacheKey, cacheable(fresh)) : undefined,
-				),
-			);
-			return withCors(cached, env);
-		}
+		if (cached) return withCors(cached, env);
 
-		const fresh = await fetchOrigin(url, env);
+		const fresh = await fetchOrigin(url);
 		if (fresh.ok) ctx.waitUntil(cache.put(cacheKey, cacheable(fresh)));
 		return withCors(fresh, env);
 	},
