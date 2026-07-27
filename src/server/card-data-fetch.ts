@@ -29,6 +29,23 @@ export function apiBase(): string {
 	).replace(/\/$/, "");
 }
 
+/**
+ * Fetch a worker /v2 passthrough path with the shared secret.
+ *
+ * The worker gates /v2/* on this header (worker/src/index.ts proxyDenied) —
+ * without it the route is an open TCGdex proxy for anyone who reads the URL out
+ * of the client bundle. Nothing in the browser calls /v2/*, so the token stays
+ * server-side: it lives in /etc/tcg/env alongside the other runtime secrets and
+ * must never be given a VITE_ prefix.
+ */
+function proxyFetch(path: string): Promise<Response> {
+	const token = process.env.PROXY_TOKEN;
+	return fetch(
+		`${apiBase()}${path}`,
+		token ? { headers: { "x-proxy-token": token } } : undefined,
+	);
+}
+
 /** TCGdex set detail shape (GET /v2/en/sets/{id}). */
 export interface TcgdexSetDetail {
 	id: string;
@@ -82,8 +99,7 @@ const SETS_CONCURRENCY = 10;
  * has no equivalent for.
  */
 export async function fetchAllSets(baseLang = "en"): Promise<PokemonSet[]> {
-	const base = apiBase();
-	const listResp = await fetch(`${base}/v2/${baseLang}/sets`);
+	const listResp = await proxyFetch(`/v2/${baseLang}/sets`);
 	if (!listResp.ok) throw new Error("Unable to fetch sets list");
 	const list = (await listResp.json()) as TcgdexSetListEntry[];
 
@@ -94,8 +110,8 @@ export async function fetchAllSets(baseLang = "en"): Promise<PokemonSet[]> {
 			batch.map(async (entry) => {
 				// Encode the id: JP-lineage set ids contain characters like "+"
 				// (e.g. SM1+, SM3+) that are otherwise mangled in the path and 404.
-				const r = await fetch(
-					`${base}/v2/${baseLang}/sets/${encodeURIComponent(entry.id)}`,
+				const r = await proxyFetch(
+					`/v2/${baseLang}/sets/${encodeURIComponent(entry.id)}`,
 				);
 				if (!r.ok) {
 					// One unfetchable set must not abort the whole region's nav tree
@@ -142,10 +158,10 @@ export async function fetchCardById(
 	id: string,
 	lang: SupportedLanguage = "en",
 ): Promise<FocusCardData> {
-	let resp = await fetch(`${apiBase()}/v2/${lang}/cards/${id}`);
+	let resp = await proxyFetch(`/v2/${lang}/cards/${id}`);
 	let usedEn = lang === "en";
 	if (!resp.ok && lang !== "en") {
-		resp = await fetch(`${apiBase()}/v2/en/cards/${id}`);
+		resp = await proxyFetch(`/v2/en/cards/${id}`);
 		usedEn = true;
 	}
 	if (!resp.ok) {
@@ -163,7 +179,7 @@ export async function fetchCardById(
 	// the localized text. Skipped when the response already IS English (no point
 	// re-fetching) or EN also has none (a truly imageless card → ptcg fallback).
 	if (!json.image && !usedEn) {
-		const en = await fetch(`${apiBase()}/v2/en/cards/${id}`);
+		const en = await proxyFetch(`/v2/en/cards/${id}`);
 		if (en.ok) {
 			const enJson = (await en.json()) as TcgdexFocusCard;
 			if (enJson.image) json.image = enJson.image;

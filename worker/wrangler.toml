@@ -2,12 +2,22 @@ name = "pokemon-tcg-proxy"
 main = "src/index.ts"
 compatibility_date = "2024-11-01"
 
-# Set the browser origin allowed to call this proxy (your Pages URL):
-#   wrangler deploy --var ALLOW_ORIGIN:https://<user>.github.io
-# Set the API key as a secret (never commit it):
-#   wrangler secret put POKEMONTCG_API_KEY
+# Browser origins allowed to read the corpus blobs — comma-separated, "*" for
+# any. Any localhost port is always allowed so `bun run dev` works against this.
+# A browser enforces this; curl does not, so treat it as anti-hotlinking, not
+# as access control.
+#
+# The /v2/* TCGdex passthrough is gated separately, on a shared secret that only
+# the SSR server holds. It has no browser callers, so this is a real lock. Set it
+# BEFORE deploying this config or the route 503s:
+#   wrangler secret put PROXY_TOKEN        # same value as PROXY_TOKEN in /etc/tcg/env
+#
+# Optional and off by default: ALLOW_PROXY_IPS pins /v2/* to specific client IPs
+# on top of the token. Only use it on a static address — a residential IP rotates
+# on lease renewal and silently takes SSR card fetches down with it.
+#   ALLOW_PROXY_IPS = "203.0.113.7"
 [vars]
-ALLOW_ORIGIN = "*"
+ALLOW_ORIGIN = "https://ptcg.turtlesocks.dev,https://deckography.com,https://www.deckography.com"
 
 # R2 bucket holding the prebuilt card corpus blob (corpus/latest.json.gz),
 # uploaded by the build-corpus GitHub Action. Served by the /corpus route.

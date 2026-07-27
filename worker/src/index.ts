@@ -1,10 +1,63 @@
 export interface Env {
-	/** Allowed browser origin for CORS; defaults to "*". */
+	/** Comma-separated browser origin allowlist. "*" allows any. */
 	ALLOW_ORIGIN?: string;
+	/**
+	 * Shared secret required on /v2/* proxy calls, set with
+	 * `wrangler secret put PROXY_TOKEN`. Unset closes the route.
+	 */
+	PROXY_TOKEN?: string;
+	/**
+	 * Optional extra pin on /v2/*: comma-separated client IPs, ANDed with the
+	 * token. Empty means any IP holding a valid token. Only worth setting on a
+	 * static address — a residential IP rotates on lease renewal and takes SSR
+	 * card fetches down with it.
+	 */
+	ALLOW_PROXY_IPS?: string;
 	CORPUS: R2Bucket;
 }
 
 const ORIGIN = "https://api.tcgdex.net";
+
+const PROXY_TOKEN_HEADER = "x-proxy-token";
+
+function csv(value: string | undefined): string[] {
+	return (value ?? "")
+		.split(",")
+		.map((s) => s.trim())
+		.filter(Boolean);
+}
+
+/** Any localhost port, so `bun run dev` still works against the prod allowlist. */
+function isLocalOrigin(origin: string): boolean {
+	try {
+		const { hostname } = new URL(origin);
+		return hostname === "localhost" || hostname === "127.0.0.1";
+	} catch {
+		return false;
+	}
+}
+
+function originAllowed(origin: string, env: Env): boolean {
+	const allowed = csv(env.ALLOW_ORIGIN);
+	return (
+		allowed.includes("*") || allowed.includes(origin) || isLocalOrigin(origin)
+	);
+}
+
+/**
+ * Constant-time string compare. Workers ships `crypto.subtle.timingSafeEqual`,
+ * but its behavior on mismatched lengths is unspecified and the test runtime
+ * has no such extension — five lines of XOR need neither caveat. The length
+ * check leaks only the length, which is the standard trade.
+ */
+function secretMatches(got: string | null, want: string): boolean {
+	if (!got || got.length !== want.length) return false;
+	let diff = 0;
+	for (let i = 0; i < want.length; i++) {
+		diff |= got.charCodeAt(i) ^ want.charCodeAt(i);
+	}
+	return diff === 0;
+}
 
 // Overlay-name blobs shipped for these languages (Phase 1b Western + Phase 2
 // Asian). `ja` is deliberately excluded: it's the Asian base corpus language
@@ -37,9 +90,22 @@ function isSupportedRegion(region: string): region is SupportedRegion {
 	return (SUPPORTED_REGIONS as readonly string[]).includes(region);
 }
 
-function corsHeaders(env: Env): Record<string, string> {
+function corsHeaders(request: Request, env: Env): Record<string, string> {
+	const origin = request.headers.get("Origin");
+	const allowed = csv(env.ALLOW_ORIGIN);
+	// An allowlist can only ever echo ONE origin back, so the response now
+	// varies by request. Any shared cache must key on Origin or it will hand
+	// one site's grant to the next caller. (The edge entries this worker stores
+	// carry no CORS headers at all — see serveBlob — but browsers and any
+	// future zone CDN still need to be told.)
+	const acao = allowed.includes("*")
+		? "*"
+		: origin && originAllowed(origin, env)
+			? origin
+			: null;
 	return {
-		"Access-Control-Allow-Origin": env.ALLOW_ORIGIN ?? "*",
+		...(acao ? { "Access-Control-Allow-Origin": acao } : {}),
+		Vary: "Origin",
 		"Access-Control-Allow-Methods": "GET,OPTIONS",
 		// If-None-Match is a non-simple request header, so the client's conditional
 		// GET triggers a CORS preflight — the worker must allow it or the browser
@@ -65,15 +131,15 @@ function serveCorpus(res: Response, request: Request, env: Env): Response {
 	if (inm && etag && inm === etag) {
 		return new Response(null, {
 			status: 304,
-			headers: { ...corsHeaders(env), ETag: etag },
+			headers: { ...corsHeaders(request, env), ETag: etag },
 		});
 	}
-	return withCors(res, env);
+	return withCors(res, request, env);
 }
 
-function withCors(res: Response, env: Env): Response {
+function withCors(res: Response, request: Request, env: Env): Response {
 	const out = new Response(res.body, res);
-	for (const [k, v] of Object.entries(corsHeaders(env))) {
+	for (const [k, v] of Object.entries(corsHeaders(request, env))) {
 		out.headers.set(k, v);
 	}
 	return out;
@@ -98,8 +164,51 @@ function edgeCache(): Cache {
 	return (caches as unknown as { default: Cache }).default;
 }
 
-function missing(message: string, env: Env): Response {
-	return new Response(message, { status: 503, headers: corsHeaders(env) });
+function missing(message: string, request: Request, env: Env): Response {
+	return new Response(message, {
+		status: 503,
+		headers: corsHeaders(request, env),
+	});
+}
+
+function forbidden(request: Request, env: Env): Response {
+	return new Response("Forbidden", {
+		status: 403,
+		headers: corsHeaders(request, env),
+	});
+}
+
+/**
+ * Gate the TCGdex passthrough on a shared secret.
+ *
+ * No browser calls /v2/* — only the SSR server does (see
+ * src/server/card-data-fetch.ts), so the secret lives in /etc/tcg/env and never
+ * reaches a client bundle. That makes this a real lock, unlike the origin
+ * allowlist below, which a browser enforces and curl ignores.
+ *
+ * An unset PROXY_TOKEN closes the route instead of opening it. A proxy that
+ * quietly serves the whole internet when misconfigured is the exact failure
+ * this exists to prevent, and a loud 503 is a far cheaper way to find out.
+ */
+function proxyDenied(request: Request, env: Env): Response | null {
+	if (!env.PROXY_TOKEN) {
+		return missing("Proxy not configured", request, env);
+	}
+	if (
+		!secretMatches(request.headers.get(PROXY_TOKEN_HEADER), env.PROXY_TOKEN)
+	) {
+		return forbidden(request, env);
+	}
+	const pinned = csv(env.ALLOW_PROXY_IPS);
+	// Cloudflare overwrites CF-Connecting-IP at the edge, so a client cannot
+	// forge it. Empty list = no pin; see the ALLOW_PROXY_IPS note on Env.
+	if (
+		pinned.length &&
+		!pinned.includes(request.headers.get("CF-Connecting-IP") ?? "")
+	) {
+		return forbidden(request, env);
+	}
+	return null;
 }
 
 /**
@@ -127,7 +236,7 @@ async function serveBlob(
 	if (cached) return serveCorpus(cached, request, env);
 
 	const obj = await env.CORPUS.get(key);
-	if (!obj) return missing(notBuilt, env);
+	if (!obj) return missing(notBuilt, request, env);
 
 	const res = new Response(obj.body, {
 		headers: {
@@ -169,10 +278,10 @@ async function serveMeta(
 	const url = new URL(request.url);
 	const cacheKey = new Request(url.origin + url.pathname, { method: "GET" });
 	const cached = await cache.match(cacheKey);
-	if (cached) return withCors(cached, env);
+	if (cached) return withCors(cached, request, env);
 
 	const obj = await env.CORPUS.get(key);
-	if (!obj) return missing(notBuilt, env);
+	if (!obj) return missing(notBuilt, request, env);
 
 	const res = new Response(obj.body, {
 		headers: {
@@ -183,7 +292,7 @@ async function serveMeta(
 		},
 	});
 	ctx.waitUntil(cache.put(cacheKey, res.clone()));
-	return withCors(res, env);
+	return withCors(res, request, env);
 }
 
 export default {
@@ -192,13 +301,29 @@ export default {
 		env: Env,
 		ctx: ExecutionContext,
 	): Promise<Response> {
+		// Origin gate. A 403 rather than a bare missing CORS header: omitting the
+		// header still ships the full corpus blob and merely has the browser throw
+		// it away, which costs exactly as much bandwidth as serving it.
+		//
+		// Scope, plainly: this stops another *site* embedding the corpus. It does
+		// not stop a scraper — anything that is not a browser either sends no
+		// Origin (and is allowed through, as the SSR server must be) or forges
+		// one. Only a rate limit stops that, and workers.dev has none.
+		const reqOrigin = request.headers.get("Origin");
+		if (reqOrigin && !originAllowed(reqOrigin, env)) {
+			return forbidden(request, env);
+		}
+
 		if (request.method === "OPTIONS") {
-			return new Response(null, { status: 204, headers: corsHeaders(env) });
+			return new Response(null, {
+				status: 204,
+				headers: corsHeaders(request, env),
+			});
 		}
 		if (request.method !== "GET") {
 			return new Response("Method Not Allowed", {
 				status: 405,
-				headers: corsHeaders(env),
+				headers: corsHeaders(request, env),
 			});
 		}
 
@@ -278,7 +403,7 @@ export default {
 			if (!isOverlayLang(lang)) {
 				return new Response("Not Found", {
 					status: 404,
-					headers: corsHeaders(env),
+					headers: corsHeaders(request, env),
 				});
 			}
 			return serveMeta(
@@ -297,7 +422,7 @@ export default {
 			if (!isOverlayLang(lang)) {
 				return new Response("Not Found", {
 					status: 404,
-					headers: corsHeaders(env),
+					headers: corsHeaders(request, env),
 				});
 			}
 			return serveBlob(
@@ -319,7 +444,7 @@ export default {
 			if (!isSupportedRegion(region)) {
 				return new Response("Not Found", {
 					status: 404,
-					headers: corsHeaders(env),
+					headers: corsHeaders(request, env),
 				});
 			}
 
@@ -353,9 +478,12 @@ export default {
 		if (!url.pathname.startsWith("/v2/")) {
 			return new Response("Not Found", {
 				status: 404,
-				headers: corsHeaders(env),
+				headers: corsHeaders(request, env),
 			});
 		}
+
+		const denied = proxyDenied(request, env);
+		if (denied) return denied;
 
 		// Stable cache key: sort query params so equivalent requests collide.
 		url.searchParams.sort();
@@ -368,10 +496,10 @@ export default {
 		// Cache API honors `s-maxage` on its own: once the hour is up, `match`
 		// misses and the next request refills below.
 		const cached = await cache.match(cacheKey);
-		if (cached) return withCors(cached, env);
+		if (cached) return withCors(cached, request, env);
 
 		const fresh = await fetchOrigin(url);
 		if (fresh.ok) ctx.waitUntil(cache.put(cacheKey, cacheable(fresh)));
-		return withCors(fresh, env);
+		return withCors(fresh, request, env);
 	},
 };
