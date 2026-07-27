@@ -175,6 +175,15 @@ describe("worker", () => {
 		);
 	});
 
+	test("preflight is cacheable for a day (halves conditional-GET traffic)", async () => {
+		const res = await worker.fetch(
+			new Request("https://proxy.test/corpus", { method: "OPTIONS" }),
+			env,
+			ctx,
+		);
+		expect(res.headers.get("Access-Control-Max-Age")).toBe("86400");
+	});
+
 	test("non-GET is rejected", async () => {
 		const res = await worker.fetch(
 			new Request("https://proxy.test/v2/cards", { method: "POST" }),

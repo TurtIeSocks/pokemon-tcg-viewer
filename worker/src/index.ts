@@ -45,6 +45,10 @@ function corsHeaders(env: Env): Record<string, string> {
 		// GET triggers a CORS preflight — the worker must allow it or the browser
 		// rejects the request (and loadCorpus falls back to stale stored bytes).
 		"Access-Control-Allow-Headers": "Content-Type, If-None-Match",
+		// Without this the browser default (~5s in Chrome/Firefox) makes nearly
+		// every conditional corpus GET pay a fresh OPTIONS first — two worker
+		// invocations per fetch. A day is safe: these CORS terms are static.
+		"Access-Control-Max-Age": "86400",
 		// Expose ETag to cross-origin fetch(): the app reads it to store the build
 		// hash and send If-None-Match on the next load. Without this, the browser
 		// hides ETag (res.headers.get("ETag") === null), the client stores "", never
