@@ -253,6 +253,14 @@ describe("worker", () => {
 		);
 		expect(res.status).toBe(200);
 		expect(await res.json()).toMatchObject({ version: "abc", count: 2 });
+		// A version probe may go stale by at most a minute — long enough to
+		// collapse a polling client, short enough to still be a probe.
+		expect(res.headers.get("Cache-Control")).toBe(
+			"public, max-age=60, s-maxage=60",
+		);
+		expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
+			"https://x.github.io",
+		);
 	});
 
 	test("/corpus-detail returns 503 when the object is missing", async () => {
@@ -401,6 +409,10 @@ describe("worker", () => {
 			"https://proxy.test/corpus-prices",
 			"https://proxy.test/corpus-i18n/fr",
 			"https://proxy.test/corpus-prices/history/base1",
+			"https://proxy.test/corpus-detail/version",
+			"https://proxy.test/corpus-prices/version",
+			"https://proxy.test/corpus-i18n/fr/version",
+			"https://proxy.test/corpus-region/asia/version",
 		]) {
 			r2gets = 0;
 			await worker.fetch(new Request(url), counting, ctx);

@@ -144,26 +144,46 @@ async function serveBlob(
 	return serveCorpus(res, request, env);
 }
 
+/** How long a version probe may be answered from the edge cache. */
+const META_TTL_S = 60;
+
 /**
- * Serve a small JSON meta doc (a version probe). Deliberately NOT edge-cached:
- * its whole job is to answer "is there a newer build?", and a stale answer
- * defeats it. The R2 objects here are a few hundred bytes.
+ * Serve a small JSON meta doc (a version probe).
+ *
+ * These are the most-polled endpoints in the whole worker and every caller
+ * sends `cache: "no-store"` (see detail-runtime / prices-runtime /
+ * i18n-runtime), so the browser cache never absorbs any of it — without an
+ * edge cache each poll is an unconditional R2 GET. A 60s window is the whole
+ * budget: a probe exists to answer "is there a newer build?", and corpus
+ * rebuilds are weekly, so a minute of staleness costs nothing and collapses a
+ * polling client down to one R2 GET per minute.
  */
 async function serveMeta(
+	request: Request,
 	env: Env,
+	ctx: ExecutionContext,
 	key: string,
 	notBuilt: string,
 ): Promise<Response> {
+	const cache = edgeCache();
+	const url = new URL(request.url);
+	const cacheKey = new Request(url.origin + url.pathname, { method: "GET" });
+	const cached = await cache.match(cacheKey);
+	if (cached) return withCors(cached, env);
+
 	const obj = await env.CORPUS.get(key);
 	if (!obj) return missing(notBuilt, env);
-	return new Response(obj.body, {
+
+	const res = new Response(obj.body, {
 		headers: {
-			...corsHeaders(env),
 			"Content-Type": "application/json",
-			"Cache-Control":
-				"public, max-age=60, s-maxage=300, stale-while-revalidate=86400",
+			// `s-maxage` is what the Cache API reads; `max-age` is for any client
+			// that does not opt out of its own cache the way our runtimes do.
+			"Cache-Control": `public, max-age=${META_TTL_S}, s-maxage=${META_TTL_S}`,
 		},
 	});
+	ctx.waitUntil(cache.put(cacheKey, res.clone()));
+	return withCors(res, env);
 }
 
 export default {
@@ -195,7 +215,13 @@ export default {
 		}
 
 		if (url.pathname === "/corpus-detail/version") {
-			return serveMeta(env, "corpus/detail-meta.json", "Detail not built yet");
+			return serveMeta(
+				request,
+				env,
+				ctx,
+				"corpus/detail-meta.json",
+				"Detail not built yet",
+			);
 		}
 
 		if (url.pathname === "/corpus-detail") {
@@ -210,7 +236,13 @@ export default {
 
 		// Daily market-price blob (spec 2026-07-03-pricing-implementation-design §3).
 		if (url.pathname === "/corpus-prices/version") {
-			return serveMeta(env, "corpus/prices/meta.json", "Prices not built yet");
+			return serveMeta(
+				request,
+				env,
+				ctx,
+				"corpus/prices/meta.json",
+				"Prices not built yet",
+			);
 		}
 
 		if (url.pathname === "/corpus-prices") {
@@ -250,7 +282,9 @@ export default {
 				});
 			}
 			return serveMeta(
+				request,
 				env,
+				ctx,
 				`corpus/i18n/${lang}/meta.json`,
 				"Overlay not built yet",
 			);
@@ -291,7 +325,9 @@ export default {
 
 			if (suffix === "/version") {
 				return serveMeta(
+					request,
 					env,
+					ctx,
 					`corpus/region/${region}/meta.json`,
 					"Region corpus not built yet",
 				);
