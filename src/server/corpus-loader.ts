@@ -10,7 +10,11 @@ import {
 	queryCorpus,
 } from "../store/corpus/corpus-engine";
 import type { CorpusCard } from "../store/corpus/corpus-types";
-import { apiBase, fetchAllSets } from "./card-data-fetch";
+import {
+	apiBase,
+	getAllSetsCached,
+	resetAllSetsCacheForTests,
+} from "./card-data-fetch";
 import type { PokemonSet } from "./card-mappers";
 
 // SERVER-ONLY corpus loader. Imports node:zlib, so it must never reach the
@@ -58,9 +62,14 @@ const cached = new Map<Region, CacheEntry>();
 /** How long a fetched corpus is trusted before a background ETag revalidation. */
 export const SERVER_CORPUS_TTL_MS = 15 * 60 * 1000;
 
-/** Test-only: drop all memoized corpora so each test starts cold. */
+/**
+ * Test-only: drop all memoized corpora so each test starts cold. Also clears
+ * the set-catalog memo underneath, for the same reason resetNavTreeForTests
+ * does: a leftover catalog would satisfy this test's fetch assertions.
+ */
 export function resetServerCorpusForTests(): void {
 	cached.clear();
+	resetAllSetsCacheForTests();
 }
 
 async function loadServerCorpus(
@@ -72,7 +81,7 @@ async function loadServerCorpus(
 	// by the year filter. Mirror nav-tree.ts, which fetches per region base lang.
 	const [gzRes, sets] = await Promise.all([
 		fetch(corpusUrl(region)),
-		fetchAllSets(REGION_BASE_LANGUAGE[region]),
+		getAllSetsCached(REGION_BASE_LANGUAGE[region]),
 	]);
 	if (!gzRes.ok)
 		throw new Error(`${corpusUrl(region)} fetch failed: ${gzRes.status}`);
@@ -105,7 +114,7 @@ async function revalidateServerCorpus(
 		if (res.status !== 304 && res.ok) {
 			const [gz, sets] = await Promise.all([
 				res.arrayBuffer(),
-				fetchAllSets(REGION_BASE_LANGUAGE[region]),
+				getAllSetsCached(REGION_BASE_LANGUAGE[region]),
 			]);
 			const corpus: ServerCorpus = {
 				index: buildIndex(decodeCorpusGz(gz), region),

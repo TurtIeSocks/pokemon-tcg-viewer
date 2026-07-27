@@ -1,9 +1,11 @@
-import { afterEach, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, expect, mock, test } from "bun:test";
 import {
 	fetchAllSets,
 	fetchCardById,
+	getAllSetsCached,
 	getCardByIdCached,
 	mapTcgdexSet,
+	resetAllSetsCacheForTests,
 	type TcgdexSetDetail,
 } from "./card-data-fetch";
 import { mapTcgdexFocusCard, type TcgdexFocusCard } from "./card-mappers";
@@ -96,8 +98,85 @@ test("mapTcgdexSet falls back to a pokemontcg.io logo/symbol url when TCGdex has
 });
 
 const realFetch = globalThis.fetch;
+beforeEach(() => {
+	resetAllSetsCacheForTests();
+});
 afterEach(() => {
 	globalThis.fetch = realFetch;
+});
+
+/** Two-set catalog: one `/sets` list call + one detail call per set. */
+function setsCatalog(): ReturnType<typeof mock> {
+	const detail = (id: string) =>
+		JSON.stringify({
+			id,
+			name: id,
+			cardCount: { total: 1, official: 1 },
+			serie: { id: "base", name: "Base" },
+			cards: [{ id: `${id}-1` }],
+		});
+	return mock(async (url: string | URL) => {
+		const u = String(url);
+		if (u.endsWith("/sets"))
+			return new Response(JSON.stringify([{ id: "base1" }, { id: "base2" }]), {
+				status: 200,
+			});
+		return new Response(detail(u.slice(u.lastIndexOf("/") + 1)), {
+			status: 200,
+		});
+	});
+}
+
+test("getAllSetsCached collapses the per-set fanout to one pass", async () => {
+	const f = setsCatalog();
+	globalThis.fetch = f as unknown as typeof fetch;
+
+	const a = await getAllSetsCached();
+	const b = await getAllSetsCached();
+
+	expect(a.map((s) => s.id)).toEqual(["base1", "base2"]);
+	expect(b).toBe(a);
+	// 1 list + 2 details. Uncached, the second call would double it — and in
+	// production the catalog is ~170 sets, so every raw call is ~171 requests.
+	expect(f).toHaveBeenCalledTimes(3);
+});
+
+test("getAllSetsCached single-flights concurrent callers", async () => {
+	const f = setsCatalog();
+	globalThis.fetch = f as unknown as typeof fetch;
+
+	const [a, b] = await Promise.all([getAllSetsCached(), getAllSetsCached()]);
+
+	expect(b).toBe(a);
+	expect(f).toHaveBeenCalledTimes(3);
+});
+
+test("getAllSetsCached caches per base language", async () => {
+	const f = setsCatalog();
+	globalThis.fetch = f as unknown as typeof fetch;
+
+	await getAllSetsCached("en");
+	await getAllSetsCached("ja");
+
+	// Separate catalogs: the ja region must not be served the en cache entry.
+	expect(f).toHaveBeenCalledTimes(6);
+	expect(f.mock.calls.some(([u]) => String(u).includes("/v2/ja/sets"))).toBe(
+		true,
+	);
+});
+
+test("getAllSetsCached evicts a failed fetch so the next call retries", async () => {
+	globalThis.fetch = mock(
+		async () => new Response("nope", { status: 500 }),
+	) as unknown as typeof fetch;
+	await expect(getAllSetsCached()).rejects.toThrow();
+
+	const f = setsCatalog();
+	globalThis.fetch = f as unknown as typeof fetch;
+	expect((await getAllSetsCached()).map((s) => s.id)).toEqual([
+		"base1",
+		"base2",
+	]);
 });
 
 function apiCard(id: string): TcgdexFocusCard {

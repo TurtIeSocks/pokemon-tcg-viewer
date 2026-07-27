@@ -8,7 +8,7 @@ import {
 } from "../lib/languages";
 import { LANG_COOKIE } from "../lib/loader-region";
 import { deriveNavTree, type NavSet, type NavTree } from "../lib/nav-tree";
-import { fetchAllSets } from "./card-data-fetch";
+import { getAllSetsCached, resetAllSetsCacheForTests } from "./card-data-fetch";
 
 // Server-only: holds a createServerFn handler. The pure nav-tree API
 // (types + deriveNavTree/findSeries/findSet) lives in ../lib/nav-tree and is
@@ -44,9 +44,14 @@ const cache = new Map<Region, NavCacheEntry>();
 /** How long a fetched nav tree is trusted before a background refresh. */
 export const NAV_TREE_TTL_MS = 15 * 60 * 1000;
 
-/** Test-only: drop the memoized trees so each test starts cold. */
+/**
+ * Test-only: drop the memoized trees so each test starts cold. Also clears the
+ * set-catalog memo underneath — "cold" has to mean cold all the way down, or a
+ * prior test's cached catalog silently satisfies this one's fetch assertions.
+ */
 export function resetNavTreeForTests(): void {
 	cache.clear();
+	resetAllSetsCacheForTests();
 }
 
 /**
@@ -59,7 +64,9 @@ export function loadNavTree(region: Region = "west"): Promise<NavTree> {
 	const entry = cache.get(region);
 	if (!entry) {
 		const e = { fetchedAt: Date.now(), refreshing: false } as NavCacheEntry;
-		e.promise = fetchAllSets(REGION_BASE_LANGUAGE[region]).then(deriveNavTree);
+		e.promise = getAllSetsCached(REGION_BASE_LANGUAGE[region]).then(
+			deriveNavTree,
+		);
 		// Evict on failure so a transient error doesn't poison the region forever.
 		e.promise.catch(() => cache.delete(region));
 		cache.set(region, e);
@@ -67,7 +74,7 @@ export function loadNavTree(region: Region = "west"): Promise<NavTree> {
 	}
 	if (Date.now() - entry.fetchedAt > NAV_TREE_TTL_MS && !entry.refreshing) {
 		entry.refreshing = true;
-		fetchAllSets(REGION_BASE_LANGUAGE[region])
+		getAllSetsCached(REGION_BASE_LANGUAGE[region])
 			.then(deriveNavTree)
 			.then((tree) => {
 				entry.promise = Promise.resolve(tree);

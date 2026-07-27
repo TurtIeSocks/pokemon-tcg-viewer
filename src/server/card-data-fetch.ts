@@ -172,6 +172,51 @@ export async function fetchCardById(
 	return mapTcgdexFocusCard(json);
 }
 
+// `fetchAllSets` is the app's most expensive upstream call by an order of
+// magnitude: one `/sets` list request plus ONE request per set (~170 in the
+// west catalog), every time. Three call sites want it — getSetsFn (a client
+// RPC), loadNavTree, and the server corpus loader — and until this memo they
+// each paid the full fanout independently, so a cold process burned ~340
+// worker invocations before serving its first page.
+//
+// Caching the promise (same idiom as getCardByIdCached above) also collapses
+// concurrent callers into one pass. The TTL matches NAV_TREE_TTL_MS /
+// SERVER_CORPUS_TTL_MS, so an upstream set-list change still reaches a
+// long-lived process without a deploy — though a caller's own refresh can now
+// land on a still-fresh entry here and re-arm without refetching, which puts
+// the real worst case at two windows (~30min). Sets change ~monthly; that is
+// well inside tolerance, and it buys ~170 fewer upstream requests per miss.
+// Keyed by base language: the west (en) and asia (ja) catalogs are different
+// data and must not share an entry.
+interface AllSetsEntry {
+	promise: Promise<PokemonSet[]>;
+	fetchedAt: number;
+}
+const allSetsCache = new Map<string, AllSetsEntry>();
+
+/** How long a fetched set catalog is trusted. Mirrors NAV_TREE_TTL_MS. */
+export const ALL_SETS_TTL_MS = 15 * 60 * 1000;
+
+/** Test-only: drop the memoized catalogs so each test starts cold. */
+export function resetAllSetsCacheForTests(): void {
+	allSetsCache.clear();
+}
+
+/** Memoized `fetchAllSets`. Prefer this everywhere; the raw fetcher is the seam tests drive. */
+export function getAllSetsCached(baseLang = "en"): Promise<PokemonSet[]> {
+	const hit = allSetsCache.get(baseLang);
+	if (hit && Date.now() - hit.fetchedAt <= ALL_SETS_TTL_MS) return hit.promise;
+
+	// Evict on failure so a transient upstream error doesn't poison the whole
+	// TTL window — the next caller retries instead of inheriting the rejection.
+	const promise = fetchAllSets(baseLang).catch((e) => {
+		allSetsCache.delete(baseLang);
+		throw e;
+	});
+	allSetsCache.set(baseLang, { promise, fetchedAt: Date.now() });
+	return promise;
+}
+
 const POKEMON_LIST_LIMIT = 1025;
 
 /** Raw species-list fetch (PokéAPI). */
