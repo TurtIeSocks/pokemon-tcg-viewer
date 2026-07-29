@@ -24,6 +24,31 @@ different times):
 | `VITE_API_BASE` | build time | GitHub Actions repo **variable** | baked into the client bundle (corpus fetch + client API) |
 | `API_BASE` | runtime | `/etc/tcg/env` on the server | server-side SSR card fetches |
 
+**Both are required — neither has a default.** They used to fall back to the
+maintainer's own `pokemon-tcg-proxy.ptcg-viewer.workers.dev`, which made one
+deployment's identity the project's default: a fork that forgot either variable
+silently sent its traffic to someone else's Worker, on someone else's bill.
+`VITE_API_BASE` was the worse of the two, since it bakes into every browser
+bundle and would do that from every visitor's machine. Both now throw with the
+fix in the message instead.
+
+### Running without a Worker at all
+
+`API_BASE` can point straight at `https://api.tcgdex.net`. The Worker's `/v2/*`
+route is a byte-identical passthrough — it forwards `pathname + search` to that
+same origin — so SSR card and set fetches work unchanged, with no Worker, no
+R2 bucket, and no `PROXY_TOKEN`.
+
+What you lose is everything the Worker adds on top: the `/corpus*` blob routes
+have no upstream equivalent, so the in-memory search index, the offline detail
+blob, price data, and the i18n name overlays will not load. `VITE_API_BASE` has
+no equivalent escape hatch for the same reason — the client only ever calls
+`/corpus*`, so it genuinely requires a Worker.
+
+Useful for a quick local run or a minimal fork; not a supported production
+setup, since every SSR render then hits TCGdex directly with no edge cache in
+front of it.
+
 `/etc/tcg/env` (chmod 600, owned by `deploy`):
 
 ```sh

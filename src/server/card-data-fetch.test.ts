@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, mock, test } from "bun:test";
 import {
+	apiBase,
 	fetchAllSets,
 	fetchCardById,
 	getAllSetsCached,
@@ -126,6 +127,28 @@ function setsCatalog(): ReturnType<typeof mock> {
 		});
 	});
 }
+
+test("apiBase throws rather than defaulting to someone else's Worker", () => {
+	const saved = process.env.API_BASE;
+	delete process.env.API_BASE;
+	try {
+		// The regression this guards: a convenience default here silently points a
+		// fork's SSR traffic at the maintainer's deployment, on their bill.
+		expect(() => apiBase()).toThrow(/API_BASE is not set/);
+	} finally {
+		process.env.API_BASE = saved;
+	}
+});
+
+test("apiBase strips a trailing slash so path joins stay single-slashed", () => {
+	const saved = process.env.API_BASE;
+	process.env.API_BASE = "https://worker.test/";
+	try {
+		expect(apiBase()).toBe("https://worker.test");
+	} finally {
+		process.env.API_BASE = saved;
+	}
+});
 
 test("getAllSetsCached collapses the per-set fanout to one pass", async () => {
 	const f = setsCatalog();

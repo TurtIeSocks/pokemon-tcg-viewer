@@ -20,13 +20,29 @@ import {
 	type TcgdexFocusCard,
 } from "./card-mappers";
 
-// v2: the CF Worker proxies TCGdex. Default changed from pokemontcg.io to the
-// worker so cold starts without API_BASE still resolve to TCGdex data.
-// Server-only — never in the client bundle.
+/**
+ * Base URL of the Cloudflare Worker that proxies TCGdex. Server-only — never in
+ * the client bundle.
+ *
+ * Deliberately has no default. It used to fall back to the maintainer's own
+ * `pokemon-tcg-proxy.ptcg-viewer.workers.dev`, which made one deployment's
+ * identity the whole project's default: a fork that forgot `API_BASE` silently
+ * sent its SSR traffic to someone else's Worker, on someone else's bill. Since
+ * the proxy became token-gated that same fork now gets an unexplainable 503
+ * instead. Failing immediately, with the fix in the message, beats either.
+ */
 export function apiBase(): string {
-	return (
-		process.env.API_BASE ?? "https://pokemon-tcg-proxy.ptcg-viewer.workers.dev"
-	).replace(/\/$/, "");
+	const base = process.env.API_BASE;
+	if (!base) {
+		throw new Error(
+			"API_BASE is not set. Point it at your own deployed Worker (see " +
+				"deploy/DEPLOY.md), or straight at https://api.tcgdex.net to run " +
+				"without a Worker at all — the /v2 card routes are a byte-identical " +
+				"passthrough. Note the /corpus* blob routes exist only on the Worker, " +
+				"so search and the in-memory index will not load on that path.",
+		);
+	}
+	return base.replace(/\/$/, "");
 }
 
 /**
