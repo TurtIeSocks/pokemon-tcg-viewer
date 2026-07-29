@@ -1,0 +1,57 @@
+# Lint, typecheck, and test every pull request and every push to main.
+#
+# SECURITY (this is a PUBLIC repo): this job MUST stay on `ubuntu-latest`.
+# It is the only workflow here that runs on `pull_request`, which means a fork
+# can run it with attacker-authored code. Never move it to [self-hosted, tcg]
+# and never give it secrets — deploy.yml explains why at length. It needs
+# neither: everything below runs against the checkout alone.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A newer push supersedes an in-flight run of the same ref.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+
+      # Also runs the `postinstall` paraglide compile, which is what generates
+      # src/paraglide. That directory is gitignored, so without this step every
+      # `@/paraglide` import is a missing module.
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      # src/routeTree.gen.ts is gitignored too, and only the TanStack Start vite
+      # plugin emits it — there is no standalone codegen CLI. Typecheck needs it:
+      # without it `tsc -b` reports 96 errors, with it zero. Tests do not (bun
+      # resolves around it), but the build is worth running on its own merit, and
+      # build:check additionally guards against server-only code reaching the
+      # client bundle.
+      - name: Build (also generates the route tree)
+        run: bun run build:check
+
+      # `if: always()` so one red check does not hide the other two. A run that
+      # fails lint should still tell you whether the types and tests are fine.
+      - name: Lint
+        if: always()
+        run: bun run lint
+
+      - name: Typecheck
+        if: always()
+        run: bun run typecheck
+
+      - name: Test
+        if: always()
+        run: bun test
