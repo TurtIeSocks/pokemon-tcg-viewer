@@ -5,8 +5,8 @@ import {
 	regionForLanguage,
 } from "../lib/languages";
 import {
-	fetchAllSets,
 	fetchCardById,
+	getAllSetsCached,
 	getPokemonListCached,
 } from "./card-data-fetch";
 import type {
@@ -37,7 +37,7 @@ function parseSetsLangInput(input: unknown): string {
 export const getSetsFn = createServerFn({ method: "GET" })
 	.inputValidator(parseSetsLangInput)
 	.handler(
-		({ data: baseLang }): Promise<PokemonSet[]> => fetchAllSets(baseLang),
+		({ data: baseLang }): Promise<PokemonSet[]> => getAllSetsCached(baseLang),
 	);
 
 export const getCardByIdFn = createServerFn({ method: "GET" })

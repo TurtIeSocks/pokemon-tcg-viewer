@@ -24,6 +24,31 @@ different times):
 | `VITE_API_BASE` | build time | GitHub Actions repo **variable** | baked into the client bundle (corpus fetch + client API) |
 | `API_BASE` | runtime | `/etc/tcg/env` on the server | server-side SSR card fetches |
 
+**Both are required — neither has a default.** They used to fall back to the
+maintainer's own `pokemon-tcg-proxy.ptcg-viewer.workers.dev`, which made one
+deployment's identity the project's default: a fork that forgot either variable
+silently sent its traffic to someone else's Worker, on someone else's bill.
+`VITE_API_BASE` was the worse of the two, since it bakes into every browser
+bundle and would do that from every visitor's machine. Both now throw with the
+fix in the message instead.
+
+### Running without a Worker at all
+
+`API_BASE` can point straight at `https://api.tcgdex.net`. The Worker's `/v2/*`
+route is a byte-identical passthrough — it forwards `pathname + search` to that
+same origin — so SSR card and set fetches work unchanged, with no Worker, no
+R2 bucket, and no `PROXY_TOKEN`.
+
+What you lose is everything the Worker adds on top: the `/corpus*` blob routes
+have no upstream equivalent, so the in-memory search index, the offline detail
+blob, price data, and the i18n name overlays will not load. `VITE_API_BASE` has
+no equivalent escape hatch for the same reason — the client only ever calls
+`/corpus*`, so it genuinely requires a Worker.
+
+Useful for a quick local run or a minimal fork; not a supported production
+setup, since every SSR render then hits TCGdex directly with no edge cache in
+front of it.
+
 `/etc/tcg/env` (chmod 600, owned by `deploy`):
 
 ```sh
@@ -33,6 +58,60 @@ API_BASE=https://pokemon-tcg-proxy.<subdomain>.workers.dev
 The pokemontcg.io API key stays a **Cloudflare Worker secret** — it never lives
 on the app server. (Future option: absorb the Worker on-box and move the key to
 `/etc/tcg/env`.)
+
+## Locking down the Worker
+
+The Worker has two kinds of route, and only one of them can actually be locked.
+
+**`/v2/*` (TCGdex passthrough) — closed.** Nothing in the browser calls it; only
+SSR card fetches do. It requires a shared secret, `PROXY_TOKEN`, held in both the
+Worker (as a secret) and `/etc/tcg/env`. With no token set the route returns 503
+rather than serving the world.
+
+**`/corpus*` (the blobs) — origin allowlist only.** The browser fetches these, so
+no credential can protect them: anything the client bundle knows is public. The
+`ALLOW_ORIGIN` list in `worker/wrangler.toml` makes an off-allowlist *website*
+get a 403 instead of the blob, which stops hotlinking. It does not stop a
+scraper — `curl` never sends an `Origin` and a forged one is one flag away. Only
+a rate limit stops that, and `workers.dev` has no WAF; that needs the Worker
+moved to a custom domain on a real zone.
+
+Any `localhost` port is always allowed, so `bun run dev` works against the
+production allowlist unchanged.
+
+### Rotating or setting PROXY_TOKEN
+
+Order matters — done in this order there is no window where SSR card fetches
+break:
+
+1. Generate a token and put it in the Worker:
+   ```sh
+   openssl rand -hex 32          # copy the output
+   wrangler secret put PROXY_TOKEN
+   ```
+   The deployed Worker ignores it until step 3, so nothing changes yet.
+2. Add the same value to `/etc/tcg/env` on the app server and restart, so the
+   server starts sending the header before anything requires it:
+   ```sh
+   sudo sh -c 'echo "PROXY_TOKEN=<value>" >> /etc/tcg/env'
+   sudo systemctl restart tcg
+   ```
+3. Deploy the Worker. It now enforces the token, and the server is already
+   sending it.
+
+Reverse that order — deploying the Worker first — and every SSR card fetch 403s
+until step 2 lands. `PROXY_TOKEN` is server-side only and must never be given a
+`VITE_` prefix, which would bake it into the client bundle and hand it to
+everyone.
+
+### Optional: pin the proxy to specific IPs
+
+`ALLOW_PROXY_IPS` in `worker/wrangler.toml` (comma-separated) is ANDed with the
+token, so a request needs both. It is off by default and worth setting **only on
+a static address** — a residential IP rotates on lease renewal and silently
+takes SSR card fetches down with it whenever the ISP feels like it. The token
+already binds the proxy to whoever holds it, and unlike an IP it survives the
+move.
 
 ## Billing env inventory (paid cloud tier)
 
@@ -62,6 +141,7 @@ mechanism as the CI-only build-time vars below.
 | `APP_ORIGIN` | `@tcgvault/cloud` (optional) | `/etc/tcg/env` (server runtime) | no |
 | `VITE_SUPABASE_URL` | core — **both** client bundle AND server SSR | GitHub Actions repo **Variable** (build time) AND `/etc/tcg/env` (server runtime) | no |
 | `VITE_SUPABASE_ANON_KEY` | core — **both** client bundle AND server SSR | GitHub Actions repo **Variable** (build time) AND `/etc/tcg/env` (server runtime) | no (RLS-scoped) |
+| `PROXY_TOKEN` | core (SSR `/v2/*` fetches) | `/etc/tcg/env` (server runtime) **and** `wrangler secret put` | **yes** |
 | `ANTHROPIC_API_KEY` | core (`/api/scan`, AI card scan) | `/etc/tcg/env` (server runtime) | **yes** |
 | `SCAN_MODEL` | core (`/api/scan`, optional, default `claude-haiku-4-5`) | `/etc/tcg/env` (server runtime) | no |
 

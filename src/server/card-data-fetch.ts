@@ -20,13 +20,46 @@ import {
 	type TcgdexFocusCard,
 } from "./card-mappers";
 
-// v2: the CF Worker proxies TCGdex. Default changed from pokemontcg.io to the
-// worker so cold starts without API_BASE still resolve to TCGdex data.
-// Server-only — never in the client bundle.
+/**
+ * Base URL of the Cloudflare Worker that proxies TCGdex. Server-only — never in
+ * the client bundle.
+ *
+ * Deliberately has no default. It used to fall back to the maintainer's own
+ * `pokemon-tcg-proxy.ptcg-viewer.workers.dev`, which made one deployment's
+ * identity the whole project's default: a fork that forgot `API_BASE` silently
+ * sent its SSR traffic to someone else's Worker, on someone else's bill. Since
+ * the proxy became token-gated that same fork now gets an unexplainable 503
+ * instead. Failing immediately, with the fix in the message, beats either.
+ */
 export function apiBase(): string {
-	return (
-		process.env.API_BASE ?? "https://pokemon-tcg-proxy.ptcg-viewer.workers.dev"
-	).replace(/\/$/, "");
+	const base = process.env.API_BASE;
+	if (!base) {
+		throw new Error(
+			"API_BASE is not set. Point it at your own deployed Worker (see " +
+				"deploy/DEPLOY.md), or straight at https://api.tcgdex.net to run " +
+				"without a Worker at all — the /v2 card routes are a byte-identical " +
+				"passthrough. Note the /corpus* blob routes exist only on the Worker, " +
+				"so search and the in-memory index will not load on that path.",
+		);
+	}
+	return base.replace(/\/$/, "");
+}
+
+/**
+ * Fetch a worker /v2 passthrough path with the shared secret.
+ *
+ * The worker gates /v2/* on this header (worker/src/index.ts proxyDenied) —
+ * without it the route is an open TCGdex proxy for anyone who reads the URL out
+ * of the client bundle. Nothing in the browser calls /v2/*, so the token stays
+ * server-side: it lives in /etc/tcg/env alongside the other runtime secrets and
+ * must never be given a VITE_ prefix.
+ */
+function proxyFetch(path: string): Promise<Response> {
+	const token = process.env.PROXY_TOKEN;
+	return fetch(
+		`${apiBase()}${path}`,
+		token ? { headers: { "x-proxy-token": token } } : undefined,
+	);
 }
 
 /** TCGdex set detail shape (GET /v2/en/sets/{id}). */
@@ -82,8 +115,7 @@ const SETS_CONCURRENCY = 10;
  * has no equivalent for.
  */
 export async function fetchAllSets(baseLang = "en"): Promise<PokemonSet[]> {
-	const base = apiBase();
-	const listResp = await fetch(`${base}/v2/${baseLang}/sets`);
+	const listResp = await proxyFetch(`/v2/${baseLang}/sets`);
 	if (!listResp.ok) throw new Error("Unable to fetch sets list");
 	const list = (await listResp.json()) as TcgdexSetListEntry[];
 
@@ -94,8 +126,8 @@ export async function fetchAllSets(baseLang = "en"): Promise<PokemonSet[]> {
 			batch.map(async (entry) => {
 				// Encode the id: JP-lineage set ids contain characters like "+"
 				// (e.g. SM1+, SM3+) that are otherwise mangled in the path and 404.
-				const r = await fetch(
-					`${base}/v2/${baseLang}/sets/${encodeURIComponent(entry.id)}`,
+				const r = await proxyFetch(
+					`/v2/${baseLang}/sets/${encodeURIComponent(entry.id)}`,
 				);
 				if (!r.ok) {
 					// One unfetchable set must not abort the whole region's nav tree
@@ -142,10 +174,10 @@ export async function fetchCardById(
 	id: string,
 	lang: SupportedLanguage = "en",
 ): Promise<FocusCardData> {
-	let resp = await fetch(`${apiBase()}/v2/${lang}/cards/${id}`);
+	let resp = await proxyFetch(`/v2/${lang}/cards/${id}`);
 	let usedEn = lang === "en";
 	if (!resp.ok && lang !== "en") {
-		resp = await fetch(`${apiBase()}/v2/en/cards/${id}`);
+		resp = await proxyFetch(`/v2/en/cards/${id}`);
 		usedEn = true;
 	}
 	if (!resp.ok) {
@@ -163,13 +195,58 @@ export async function fetchCardById(
 	// the localized text. Skipped when the response already IS English (no point
 	// re-fetching) or EN also has none (a truly imageless card → ptcg fallback).
 	if (!json.image && !usedEn) {
-		const en = await fetch(`${apiBase()}/v2/en/cards/${id}`);
+		const en = await proxyFetch(`/v2/en/cards/${id}`);
 		if (en.ok) {
 			const enJson = (await en.json()) as TcgdexFocusCard;
 			if (enJson.image) json.image = enJson.image;
 		}
 	}
 	return mapTcgdexFocusCard(json);
+}
+
+// `fetchAllSets` is the app's most expensive upstream call by an order of
+// magnitude: one `/sets` list request plus ONE request per set (~170 in the
+// west catalog), every time. Three call sites want it — getSetsFn (a client
+// RPC), loadNavTree, and the server corpus loader — and until this memo they
+// each paid the full fanout independently, so a cold process burned ~340
+// worker invocations before serving its first page.
+//
+// Caching the promise (same idiom as getCardByIdCached above) also collapses
+// concurrent callers into one pass. The TTL matches NAV_TREE_TTL_MS /
+// SERVER_CORPUS_TTL_MS, so an upstream set-list change still reaches a
+// long-lived process without a deploy — though a caller's own refresh can now
+// land on a still-fresh entry here and re-arm without refetching, which puts
+// the real worst case at two windows (~30min). Sets change ~monthly; that is
+// well inside tolerance, and it buys ~170 fewer upstream requests per miss.
+// Keyed by base language: the west (en) and asia (ja) catalogs are different
+// data and must not share an entry.
+interface AllSetsEntry {
+	promise: Promise<PokemonSet[]>;
+	fetchedAt: number;
+}
+const allSetsCache = new Map<string, AllSetsEntry>();
+
+/** How long a fetched set catalog is trusted. Mirrors NAV_TREE_TTL_MS. */
+export const ALL_SETS_TTL_MS = 15 * 60 * 1000;
+
+/** Test-only: drop the memoized catalogs so each test starts cold. */
+export function resetAllSetsCacheForTests(): void {
+	allSetsCache.clear();
+}
+
+/** Memoized `fetchAllSets`. Prefer this everywhere; the raw fetcher is the seam tests drive. */
+export function getAllSetsCached(baseLang = "en"): Promise<PokemonSet[]> {
+	const hit = allSetsCache.get(baseLang);
+	if (hit && Date.now() - hit.fetchedAt <= ALL_SETS_TTL_MS) return hit.promise;
+
+	// Evict on failure so a transient upstream error doesn't poison the whole
+	// TTL window — the next caller retries instead of inheriting the rejection.
+	const promise = fetchAllSets(baseLang).catch((e) => {
+		allSetsCache.delete(baseLang);
+		throw e;
+	});
+	allSetsCache.set(baseLang, { promise, fetchedAt: Date.now() });
+	return promise;
 }
 
 const POKEMON_LIST_LIMIT = 1025;
