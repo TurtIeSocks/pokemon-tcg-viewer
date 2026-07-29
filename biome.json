@@ -38,6 +38,10 @@
 			"linter": { "enabled": false },
 			"assist": { "enabled": false },
 			"formatter": { "enabled": false }
+		},
+		{
+			"includes": ["src/components/holo-card/*.css"],
+			"linter": { "enabled": false }
 		}
 	]
 }

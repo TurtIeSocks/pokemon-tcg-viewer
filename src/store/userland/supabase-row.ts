@@ -225,8 +225,7 @@ export function rowToProfile(row: ProfileRow): Profile {
 			typeof row.display_language === "string" ? row.display_language : "en",
 		// Additive column (site-chrome language); rows written before it existed
 		// read back as "en".
-		uiLanguage:
-			typeof row.ui_language === "string" ? row.ui_language : "en",
+		uiLanguage: typeof row.ui_language === "string" ? row.ui_language : "en",
 		displayCurrency:
 			typeof row.display_currency === "string" ? row.display_currency : "USD",
 		hideValue: typeof row.hide_value === "boolean" ? row.hide_value : false,
