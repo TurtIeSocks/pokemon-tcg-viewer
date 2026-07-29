@@ -6,6 +6,7 @@ import {
 import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import type { HoloCardData } from "./components/holo-card";
+import type { Region } from "./lib/languages";
 import type { FocusCardData } from "./server/card-mappers";
 import { buildIndex } from "./store/corpus/corpus-engine";
 import { useCorpusRuntime } from "./store/corpus/corpus-runtime";
@@ -190,9 +191,20 @@ export function makeSnapshot(
  * Seed the in-memory corpus index from `cards` so `loadCorpus()` early-returns
  * (no `fetch('/corpus')` in tests). Call in a test/`beforeEach` before rendering
  * any component that renders a card grid.
+ *
+ * Pins `activeRegion` as well as the index, and that is not incidental. The
+ * store's `index` is derived (`indices[activeRegion] ?? null`) and the
+ * back-compat `setState({ index })` shim only ever writes `indices.west`, so
+ * seeding while a previous test file has left `activeRegion` on "asia" derives
+ * null and silently seeds nothing. `reset()` deliberately preserves
+ * `activeRegion`, so one asia test poisons every later seed in the same
+ * process. That is order-dependent, therefore platform-dependent: it passed on
+ * macOS and failed 7 tests on Linux CI.
  */
-export function seedCorpus(cards: CorpusCard[]): void {
-	useCorpusRuntime.setState({ index: buildIndex(cards) });
+export function seedCorpus(cards: CorpusCard[], region: Region = "west"): void {
+	const { setActiveRegion, setIndex } = useCorpusRuntime.getState();
+	setActiveRegion(region);
+	setIndex(region, buildIndex(cards, region));
 }
 
 /**
