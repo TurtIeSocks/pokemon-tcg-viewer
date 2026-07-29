@@ -7,7 +7,14 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"includes": ["**", "!src/app.css"]
+		"includes": [
+			"**",
+			"!src/app.css",
+			"!messages/**",
+			"!.claude/**",
+			"!.mcp.json",
+			"!components.json"
+		]
 	},
 	"formatter": {
 		"enabled": true,
