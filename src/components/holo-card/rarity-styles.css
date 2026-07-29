@@ -1,6 +1,12 @@
 /*
  * Per-rarity foil recipes — VERBATIM port of simeydotme/pokemon-cards-css.
  *
+ * Biome's linter is disabled for this directory's CSS (see biome.json overrides).
+ * The !important declarations and the descending specificity are load-bearing:
+ * each rarity recipe overrides the shared holo layers by force, so "fixing"
+ * noImportantStyles or noDescendingSpecificity would silently change how foils
+ * render. Linting a vendored file also guarantees drift on the next upstream sync.
+ *
  * DOM structure (holo-card.tsx / holo-card.css):
  *   .holo-card (data-rarity / data-subtypes / data-supertype / data-set /
  *               data-number / data-trainer-gallery; type + .masked classes)

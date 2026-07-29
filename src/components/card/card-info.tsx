@@ -141,8 +141,7 @@ function StatStrip({ card }: { card: FocusCardData }) {
 			) : null}
 			{card.artist ? (
 				<span>
-					Illus.{" "}
-					<b className="font-medium text-(--ink-muted)">{card.artist}</b>
+					Illus. <b className="font-medium text-(--ink-muted)">{card.artist}</b>
 				</span>
 			) : null}
 		</div>
@@ -216,8 +215,7 @@ function CardMetaStrip({ card }: { card: FocusCardData }) {
 				<div className="flex flex-wrap items-center gap-x-5 gap-y-2">
 					{items.map((it) => (
 						<span key={it.label}>
-							{it.label}{" "}
-							<b className="font-medium text-(--ink)">{it.value}</b>
+							{it.label} <b className="font-medium text-(--ink)">{it.value}</b>
 						</span>
 					))}
 				</div>

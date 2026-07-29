@@ -15,7 +15,15 @@ Skipping either leaves the dev server broken in confusing, partial ways.
 - Tests: `bun test` (Bun runner; `fake-indexeddb` + happy-dom preloaded via `bunfig.toml`).
 - **Test cloud/auth locally without the magic-link email:** `bun run dev:preview` (sets `VITE_CLAUDE_PREVIEW=true`) → a gated dev-login panel (bottom-right) signs in a throwaway local user (`preview@local.dev`) in one click. The Claude-preview launch config sets the flag automatically. Needs the local Supabase stack up (`supabase start`) + `VITE_SUPABASE_*` in `.env`. Magic links otherwise land in Mailpit (`:55324`), never a real inbox.
 - Typecheck: `bunx tsc -b`.
-- Lint: `bunx biome check --write <files>`. Note: `bun run lint` can fail on a nested `biome.json` inside a worktree — pass explicit file paths (or `--config-path=.`).
+- Lint: `bunx biome check --write <files>`. `bun run lint` (bare `biome check`) **hides every real finding** when a nested `biome.json` exists under `.claude/worktrees/` — biome bails on the config before it reports anything, so lint looks *broken* rather than *failing*. Always pass `--config-path=.` plus explicit paths to see the truth.
+- **Two generated files are gitignored, and stale ones fake a red baseline.** `src/paraglide/` comes from the `postinstall` paraglide compile; `src/routeTree.gen.ts` is emitted only by the TanStack Start vite plugin (no standalone CLI). Stale or missing, they report roughly 57 test failures and 52 type errors that do not exist on a clean checkout. **Run `bun install && bun run build` before believing any red baseline** — install regenerates paraglide, the build regenerates routeTree (`tsc -b` is 96 errors without it, 0 with). Never report these as pre-existing breakage; they are a local artifact.
+- **Verify any "CI would pass" claim against a clean clone, not the working copy**, which has a `.env` and stale codegen that CI does not:
+  ```
+  git clone --branch <branch> . /tmp/ci-sim && cd /tmp/ci-sim
+  bun install --frozen-lockfile && bun run build:check && bun run lint && bun run typecheck && bun test
+  ```
+  Worth the two minutes: on 2026-07-29 the working copy said 2127/0 green while a clean clone failed 14 corpus-runtime tests, because the suite was silently relying on `.env` for `VITE_API_BASE`.
+- CI: `.github/workflows/ci.yml` runs lint + typecheck + test on every PR. It is the only `pull_request` trigger in the repo — keep it on `ubuntu-latest` with no secrets, never the self-hosted runner (see the warning in `deploy.yml`).
 - Health scan (React): `npx react-doctor@latest --verbose .` — a perf/a11y/correctness + dead-code lens (not installed; run via npx). Accepted-deviation rules to **ignore**: `react-compiler-no-manual-memoization` (manual memo is intentional), route `only-export-components`, TanStack-Form `noChildrenProp`/`no-prevent-default`. `role="img"`+`aria-label` on meaningful icons is correct (not a `prefer-tag-over-role` bug).
 
 ## User-land ("Vault") architecture — `src/store/userland/`
