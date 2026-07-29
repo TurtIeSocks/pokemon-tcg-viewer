@@ -24,6 +24,28 @@ GlobalRegistrator.register();
 const { cleanup } =
 	require("@testing-library/react") as typeof import("@testing-library/react");
 
+// Required lazily for the same reason as RTL above: everything here must load
+// after GlobalRegistrator.register().
+const { useCorpusRuntime } =
+	require("./store/corpus/corpus-runtime-store") as typeof import("./store/corpus/corpus-runtime-store");
+
 afterEach(() => {
 	cleanup();
+	// Reset the corpus runtime between tests. `bun test` runs all 217 files in
+	// ONE process, so this module-level store is shared by every file and leaks
+	// forward: whatever the previous test left is what the next one starts with.
+	//
+	// activeRegion is the sharp edge. The store's `reset()` deliberately
+	// preserves it (the app wants a refetch to stay on the current catalog), so
+	// a single test that switches to "asia" silently changes behaviour for every
+	// later file — `useActiveRegionNavTree` starts calling a server fn that has
+	// no Start context under test, and `seedCorpus` used to derive a null index.
+	// Nothing throws at the seam; components just render empty.
+	//
+	// That made failures depend on file order, and file order depends on the
+	// filesystem, so the suite passed on macOS and failed on Linux CI. Resetting
+	// the region explicitly is what makes each file start from the same place.
+	const corpus = useCorpusRuntime.getState();
+	corpus.reset();
+	corpus.setActiveRegion("west");
 });
