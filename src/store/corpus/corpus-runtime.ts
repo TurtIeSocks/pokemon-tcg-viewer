@@ -64,6 +64,15 @@ const inFlight = new Map<Region, Promise<void>>();
  * that region is already loaded. Two different regions can load concurrently;
  * repeat calls for the same region de-dupe onto the in-flight request.
  */
+/**
+ * How long a stored corpus is trusted before the next conditional GET.
+ *
+ * One hour against a blob that rebuilds weekly: a returning visitor costs one
+ * request per hour instead of one per page load, and the worst-case window in
+ * which two browsers disagree is an hour rather than a week.
+ */
+export const CORPUS_REVALIDATE_TTL_MS = 60 * 60 * 1000;
+
 export function loadCorpus(region: Region = "west"): Promise<void> {
 	if (useCorpusRuntime.getState().indices[region]) return Promise.resolve();
 	const existing = inFlight.get(region);
@@ -75,13 +84,32 @@ export function loadCorpus(region: Region = "west"): Promise<void> {
 			readMeta(region),
 			readGz(region),
 		]);
-		// Always revalidate against the server (cheap conditional GET): the ETag is
-		// the build hash, so it's the only sound cache-invalidation signal. A pure
-		// time window (e.g. "fresh < 1 day") let two browsers on the same URL serve
-		// different corpus builds for up to a day. 304 → reuse stored bytes (no
-		// re-download); 200 → adopt the new build; offline/error → fall back to
-		// stored. loadCorpus is idempotent per region within a session (early
-		// return above), so this is one 304 per page load, not per navigation.
+		// Inside the revalidation window, trust the stored bytes and skip the
+		// network entirely. This USED to revalidate unconditionally, which cost one
+		// request per page load forever just to be told nothing had changed — the
+		// single largest source of worker invocations from real users.
+		//
+		// The earlier reasoning rejected a time window because a day-long one let
+		// two browsers on the same URL serve different builds for up to a day. That
+		// objection is about the SIZE of the window, not the idea: the corpus
+		// rebuilds weekly, so an hour caps divergence at an hour against a blob
+		// that changes every ~168. The ETag check below is unchanged and still the
+		// only invalidation signal; it is simply no longer asked twenty times an
+		// hour. A user hitting Refresh in settings calls clearCorpus first, which
+		// drops the meta, so a manual refresh always reaches the network.
+		if (
+			stored &&
+			meta &&
+			Date.now() - meta.fetchedAt < CORPUS_REVALIDATE_TTL_MS
+		) {
+			useCorpusRuntime
+				.getState()
+				.setIndex(region, await buildIndexFromGz(stored, region));
+			return;
+		}
+		// Past the window: revalidate by ETag (the build hash, the only sound
+		// invalidation signal). 304 → reuse stored bytes (no re-download); 200 →
+		// adopt the new build; offline/error → fall back to stored.
 		try {
 			const res = await fetch(corpusUrl(region), {
 				// Only send If-None-Match when the cached body is actually present:

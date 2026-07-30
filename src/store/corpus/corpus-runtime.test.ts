@@ -3,6 +3,7 @@ import type { PokemonSet } from "../../server/card-mappers";
 import { useStore } from "../index";
 import { buildIndex } from "./corpus-engine";
 import {
+	CORPUS_REVALIDATE_TTL_MS,
 	ensureRegionForLanguage,
 	ensureRegionsForOwned,
 	loadCorpus,
@@ -11,7 +12,11 @@ import {
 } from "./corpus-runtime";
 import { clearCorpus } from "./corpus-store";
 import type { CorpusCard } from "./corpus-types";
+
 import { useI18nRuntime } from "./i18n-runtime";
+
+/** Fixed clock origin for the revalidation-window tests. */
+const T0 = 1_000_000_000;
 
 const realFetch = globalThis.fetch;
 
@@ -70,8 +75,20 @@ test("loadCorpus fetches, stores, and exposes a ready index", async () => {
 	expect(useCorpusRuntime.getState().index?.cards.length).toBe(1);
 });
 
-test("loadCorpus revalidates a fresh cache and picks up a new build", async () => {
-	// First load: corpus build "v1" (1 card), stored in IDB with a recent fetchedAt.
+const twoCards: CorpusCard[] = [
+	...sample,
+	{
+		id: "base1-5",
+		name: "Charmeleon",
+		imageUrl: "a",
+		imageUrlSmall: "b",
+		supertype: "Pokémon",
+		setId: "base1",
+		number: "5",
+	},
+];
+
+test("loadCorpus skips the network while the stored copy is inside the window", async () => {
 	globalThis.fetch = mock(
 		async () =>
 			new Response(gzipOf(sample), { status: 200, headers: { ETag: '"v1"' } }),
@@ -79,23 +96,67 @@ test("loadCorpus revalidates a fresh cache and picks up a new build", async () =
 	await loadCorpus();
 	expect(useCorpusRuntime.getState().index?.cards.length).toBe(1);
 
-	// New page load with the SAME (fresh, < 1 day old) IDB cache present, but the
-	// server now serves a different build "v2" (2 cards). The cache must not be
-	// trusted blindly: loadCorpus must revalidate and converge on the new build,
-	// otherwise two browsers on the same URL show different corpora.
+	// Second page load, same hour. This used to cost one conditional GET every
+	// time just to be told nothing changed, which was the largest source of
+	// worker invocations from real users.
 	useCorpusRuntime.setState({ index: null });
-	const twoCards: CorpusCard[] = [
-		...sample,
-		{
-			id: "base1-5",
-			name: "Charmeleon",
-			imageUrl: "a",
-			imageUrlSmall: "b",
-			supertype: "Pokémon",
-			setId: "base1",
-			number: "5",
-		},
-	];
+	const f = mock(async () => new Response(gzipOf(twoCards), { status: 200 }));
+	globalThis.fetch = f as unknown as typeof fetch;
+
+	await loadCorpus();
+
+	expect(f).not.toHaveBeenCalled();
+	expect(useCorpusRuntime.getState().index?.cards.length).toBe(1);
+});
+
+test("loadCorpus revalidates past the window and picks up a new build", async () => {
+	const nowSpy = spyOn(Date, "now").mockReturnValue(T0);
+	try {
+		globalThis.fetch = mock(
+			async () =>
+				new Response(gzipOf(sample), {
+					status: 200,
+					headers: { ETag: '"v1"' },
+				}),
+		) as unknown as typeof fetch;
+		await loadCorpus();
+		expect(useCorpusRuntime.getState().index?.cards.length).toBe(1);
+
+		// Past the window the ETag is still the only invalidation signal, so a new
+		// build must be adopted. Two browsers may disagree for at most one window,
+		// never indefinitely.
+		nowSpy.mockReturnValue(T0 + CORPUS_REVALIDATE_TTL_MS + 1);
+		useCorpusRuntime.setState({ index: null });
+		const f = mock(
+			async () =>
+				new Response(gzipOf(twoCards), {
+					status: 200,
+					headers: { ETag: '"v2"' },
+				}),
+		);
+		globalThis.fetch = f as unknown as typeof fetch;
+
+		await loadCorpus();
+
+		expect(f).toHaveBeenCalled();
+		expect(useCorpusRuntime.getState().index?.cards.length).toBe(2);
+	} finally {
+		nowSpy.mockRestore();
+	}
+});
+
+test("a settings Refresh still reaches the network inside the window", async () => {
+	globalThis.fetch = mock(
+		async () =>
+			new Response(gzipOf(sample), { status: 200, headers: { ETag: '"v1"' } }),
+	) as unknown as typeof fetch;
+	await loadCorpus();
+
+	// What the Refresh button does: clearCorpus drops the stored blob AND its
+	// meta, so the freshness gate has nothing to short-circuit on. Without this
+	// the button would silently do nothing for an hour.
+	await clearCorpus();
+	useCorpusRuntime.setState({ index: null });
 	const f = mock(
 		async () =>
 			new Response(gzipOf(twoCards), {
@@ -104,24 +165,41 @@ test("loadCorpus revalidates a fresh cache and picks up a new build", async () =
 			}),
 	);
 	globalThis.fetch = f as unknown as typeof fetch;
+
 	await loadCorpus();
-	expect(f).toHaveBeenCalled(); // revalidated, did not short-circuit on freshness
+
+	expect(f).toHaveBeenCalled();
 	expect(useCorpusRuntime.getState().index?.cards.length).toBe(2);
 });
 
 test("loadCorpus falls back to the stored blob when offline", async () => {
-	globalThis.fetch = mock(
-		async () =>
-			new Response(gzipOf(sample), { status: 200, headers: { ETag: '"v1"' } }),
-	) as unknown as typeof fetch;
-	await loadCorpus();
-	useCorpusRuntime.setState({ index: null });
+	// Past the revalidation window on purpose. Inside it the freshness gate
+	// short-circuits before any fetch, so this would pass without ever
+	// exercising the offline path it exists to cover.
+	const nowSpy = spyOn(Date, "now").mockReturnValue(T0);
+	try {
+		globalThis.fetch = mock(
+			async () =>
+				new Response(gzipOf(sample), {
+					status: 200,
+					headers: { ETag: '"v1"' },
+				}),
+		) as unknown as typeof fetch;
+		await loadCorpus();
+		useCorpusRuntime.setState({ index: null });
+		nowSpy.mockReturnValue(T0 + CORPUS_REVALIDATE_TTL_MS + 1);
 
-	globalThis.fetch = mock(async () => {
-		throw new Error("offline");
-	}) as unknown as typeof fetch;
-	await loadCorpus();
-	expect(useCorpusRuntime.getState().index?.cards.length).toBe(1);
+		const f = mock(async () => {
+			throw new Error("offline");
+		});
+		globalThis.fetch = f as unknown as typeof fetch;
+		await loadCorpus();
+
+		expect(f).toHaveBeenCalled();
+		expect(useCorpusRuntime.getState().index?.cards.length).toBe(1);
+	} finally {
+		nowSpy.mockRestore();
+	}
 });
 
 test("makeCorpusFetcher returns a paginated CardFetcher over the index", async () => {
