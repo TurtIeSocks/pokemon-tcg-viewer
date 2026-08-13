@@ -23,8 +23,15 @@ src/routeTree.gen.ts
 .env*.local
 
 # VCS / CI / editor / docs — irrelevant to the runtime image.
+#
+# .gitignore is deliberately NOT excluded. Tailwind v4 automatically detects
+# which files to scan for class names and prunes that walk with .gitignore.
+# Without it in the context, the SSR pass scans the client pass's own build
+# output, generates a different set of utilities, and hashes app.css
+# differently — so the SSR HTML links a stylesheet that was never emitted, it
+# 404s, and every page renders unstyled white until the client bundle boots.
+# scripts/check-ssr-assets.ts fails the build if that ever recurs.
 .git
-.gitignore
 .github
 .claude
 .vscode
