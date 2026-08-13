@@ -77,6 +77,21 @@ curl -s https://<your-domain>/api/health
 reflects `VITE_SUPABASE_URL` at runtime, and `plugin` is `absent` on any build
 without the private `@tcgvault/cloud` package (the normal open-core case).
 
+## Compression
+
+`vite.config.ts` sets Nitro's `compressPublicAssets`, so the build writes `.gz`
+and `.br` siblings and the server picks one by `Accept-Encoding`. That matters
+more here than on the bare-metal path, where nginx's `gzip on` was doing the
+job: Nitro compresses nothing at runtime, and the two render-blocking
+stylesheets on `/` are 290 KB uncompressed against 32 KB brotli.
+
+The SSR HTML itself is still uncompressed, since pre-compression cannot cover a
+dynamic response and Nitro has no runtime equivalent. A home-page document is
+around 200 KB. If you want that compressed too, add Traefik's `compress`
+middleware to the application's custom labels in Coolify; it will leave the
+pre-compressed static assets alone, since those already carry a
+`Content-Encoding`.
+
 ## Resources and build time
 
 The build runs `bun install` plus a full Vite/Nitro build of a large React app.

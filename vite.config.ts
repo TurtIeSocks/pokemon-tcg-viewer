@@ -52,6 +52,14 @@ export default defineConfig({
 			prerender: { enabled: false },
 		}),
 		viteReact(),
-		nitro(),
+		// Pre-compress public assets at build time (.gz + .br siblings, which the
+		// node-server then serves by Accept-Encoding). Nitro compresses nothing at
+		// runtime and its docs push that job onto an edge CDN — which is exactly
+		// what deploy/nginx/tcg.conf's `gzip on` was doing. A container deploy has
+		// no nginx, so without this the two render-blocking stylesheets on `/`
+		// ship at 290 KB instead of 40 KB and the page paints white until they
+		// land. Pre-compressing costs build seconds and zero request-time CPU.
+		// Harmless to the nginx path, which serves those files off disk itself.
+		nitro({ compressPublicAssets: { gzip: true, brotli: true } }),
 	],
 });
