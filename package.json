@@ -7,7 +7,7 @@
 		"dev": "vite dev",
 		"dev:preview": "VITE_CLAUDE_PREVIEW=true vite dev",
 		"build": "vite build",
-		"build:check": "vite build && bun run scripts/check-client-bundle.ts",
+		"build:check": "vite build && bun run scripts/check-client-bundle.ts && bun run scripts/check-ssr-assets.ts",
 		"check:bundle": "bun run scripts/check-client-bundle.ts",
 		"start": "node --env-file-if-exists=.env .output/server/index.mjs",
 		"test": "bun test",
