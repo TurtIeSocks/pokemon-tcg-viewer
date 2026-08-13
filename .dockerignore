@@ -1,0 +1,49 @@
+# Build context trimming. The image builds from source with `bun install` +
+# `vite build`, so nothing pre-built or host-local should be copied in.
+
+# Host installs / build output (rebuilt inside the image; a musl/glibc
+# mismatch from a copied node_modules is a classic silent breakage).
+node_modules
+.output
+.nitro
+.tanstack
+dist
+dist-ssr
+dev-dist
+
+# Generated during the build by the paraglide + TanStack Start vite plugins.
+# Copying stale ones in is worse than having none (see CLAUDE.md).
+src/paraglide
+src/routeTree.gen.ts
+
+# Secrets + host state. Runtime config comes from the container env, never
+# from a baked-in .env.
+.env
+.env.local
+.env*.local
+
+# VCS / CI / editor / docs — irrelevant to the runtime image.
+.git
+.gitignore
+.github
+.claude
+.vscode
+.idea
+.DS_Store
+docs
+refactor-workspace
+supabase
+worker
+deploy
+*.md
+
+# Local corpus artifacts (served from R2 via the Cloudflare Worker, not the app).
+corpus
+corpus*.json.gz
+corpus-detail.meta.json
+corpus-gap.json
+scripts/data/.cache
+
+# Test-only noise
+*.log
+.playwright-mcp

@@ -149,6 +149,15 @@ All artifacts and the step-by-step runbook live in `deploy/`:
 | `deploy/DEPLOY.md`                     | One-time setup + ongoing deploy + CF rules |
 | `.github/workflows/deploy.yml`         | Push-to-deploy via self-hosted runner      |
 
+### Docker / Coolify
+
+If you would rather not run nginx and systemd yourself, the root `Dockerfile`
+builds the same Nitro output and serves it on `:3000`, with `/api/health` wired
+up as the container health check. `COOLIFY.md` covers the Coolify-specific
+settings — build pack, ports, and the build-time vs runtime split that catches
+people out, since `VITE_*` vars are inlined at build time and do nothing if set
+only on the running container.
+
 ## API proxy (Cloudflare Worker)
 
 The app reaches the Pokémon TCG API through a Cloudflare Worker (`worker/`) that
