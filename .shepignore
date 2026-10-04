@@ -1,0 +1,15 @@
+# Build inputs and outputs shep-deploy must NOT link in from the operator's
+# checkout. Each release installs and builds its own; everything else that
+# git ignores (Flockfile.override.toml, .env) is still shared.
+node_modules
+.output
+.nitro
+.tanstack
+dist
+src/routeTree.gen.ts
+src/paraglide
+target
+project.inlang/cache
+project.inlang/.meta.json
+project.inlang/README.md
+project.inlang/.gitignore

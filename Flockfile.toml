@@ -1,0 +1,31 @@
+# shep app definition, read by `shep start` and by shep-deploy.
+#
+# Host-specific settings (cwd, user, secrets, the build's VITE_* values) go in
+# Flockfile.override.toml next to the operator's checkout. It is gitignored,
+# shep-deploy links it into every release, and it wins over this file on
+# every key it names.
+
+[[app]]
+name = "deckography"
+script = ".output/server/index.mjs"
+interpreter = "node"
+max_memory = "1G"
+kill_timeout = "10s"
+
+[app.env]
+NODE_ENV = "production"
+HOST = "127.0.0.1"
+PORT = "3000"
+
+[app.readiness_probe]
+kind = "http"
+target = "http://127.0.0.1:3000/api/health"
+interval = "5s"
+timeout = "3s"
+failure_threshold = 3
+
+# Same steps as the Dockerfile's build stage. VITE_API_BASE and the optional
+# VITE_SUPABASE_* values are baked into the client bundle, so they belong in
+# the override's [dog.deploy.build.env].
+[dog.deploy.build]
+command = "bun install --frozen-lockfile --ignore-scripts && bun run build:check"
