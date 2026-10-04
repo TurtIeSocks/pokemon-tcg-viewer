@@ -8,3 +8,8 @@ node_modules
 dist
 src/routeTree.gen.ts
 src/paraglide
+target
+project.inlang/cache
+project.inlang/.meta.json
+project.inlang/README.md
+project.inlang/.gitignore
